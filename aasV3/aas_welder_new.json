@@ -1,0 +1,523 @@
+{
+  "assetAdministrationShells": [
+    {
+      "modelType": "AssetAdministrationShell",
+      "idShort": "Welder",
+      "id": "http://www.lg.co.kr/refrigerator/innercase/Welder",
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": ""
+      },
+      "submodels": [
+        {
+          "type": "ExternalReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "http://www.lg.co.kr/refrigerator/Innercase/PiercingTrimmingEquipment/InformationModel"
+            }
+          ]
+        },
+        {
+          "type": "ExternalReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "http://www.lg.co.kr/refrigerator/Innercase/Welder/Data"
+            }
+          ]
+        }
+      ],
+      "category": "CONSTANT"
+    }
+  ],
+  "conceptDescriptions": [],
+  "submodels": [
+    {
+      "idShort": "InformationModel",
+      "administration": {},
+      "id": "http://www.lg.co.kr/refrigerator/Innercase/PiercingTrimmingEquipment/InformationModel",
+      "kind": "Instance",
+      "submodelElements": [
+        {
+          "idShort": "MDTInfo",
+          "value": [
+            {
+              "idShort": "AssetName",
+              "valueType": "xs:string",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "AssetType",
+              "valueType": "xs:string",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "Status",
+              "valueType": "xs:string",
+              "modelType": "Property"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        },
+        {
+          "idShort": "TwinComposition",
+          "modelType": "SubmodelElementCollection"
+        }
+      ],
+      "modelType": "Submodel"
+    },
+    {
+      "modelType": "Submodel",
+      "idShort": "Data",
+      "id": "http://www.lg.co.kr/refrigerator/Innercase/Welder/Data",
+      "kind": "Instance",
+      "category": "",
+      "submodelElements": [
+        {
+          "idShort": "SubModelInfo",
+          "value": [
+            {
+              "idShort": "Title",
+              "valueType": "xs:string",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "Creator",
+              "valueType": "xs:string",
+              "modelType": "Property"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        },
+        {
+          "modelType": "SubmodelElementCollection",
+          "category": "",
+          "idShort": "DataInfo",
+          "value": [
+            {
+              "idShort": "Equipment",
+              "value": [
+                {
+                  "idShort": "EquipmentID",
+                  "valueType": "xs:string",
+                  "value": "equ1",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "EquipmentName",
+                  "valueType": "xs:string",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "EquipmentParameters",
+                  "modelType": "SubmodelElementList",
+                  "typeValueListElement": "SubmodelElement",
+                  "value": [
+                    {
+                      "idShort": "PhaseA",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "PhaseA",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterName",
+                          "valueType": "xs:string",
+                          "value": "PhaseA",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterType",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterGrade",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "welder",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "LSL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "USL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "PeriodicDataCollectionIndicator",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "DataCollectionPeriod",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    },
+                    {
+                      "idShort": "PhaseB",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "PhaseB",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterName",
+                          "valueType": "xs:string",
+                          "value": "PhaseB",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterType",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterGrade",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "welder",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "LSL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "USL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "PeriodicDataCollectionIndicator",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "DataCollectionPeriod",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    },
+                    {
+                      "idShort": "PhaseC",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "PhaseC",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterName",
+                          "valueType": "xs:string",
+                          "value": "PhaseC",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterType",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterGrade",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "welder",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "LSL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "USL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "PeriodicDataCollectionIndicator",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "DataCollectionPeriod",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    },
+                    {
+                      "idShort": "Mean",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "Mean",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterName",
+                          "valueType": "xs:string",
+                          "value": "Mean",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterType",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterGrade",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "welder",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "LSL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "USL",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "PeriodicDataCollectionIndicator",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "DataCollectionPeriod",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "idShort": "EquipmentParameterTraces",
+                  "modelType": "SubmodelElementList",
+                  "typeValueListElement": "SubmodelElement",
+                  "value": [
+                    {
+                      "idShort": "PhaseA",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "equ1",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "PhaseA",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EventDateTime",
+                          "modelType": "Property",
+                          "valueType": "xs:string",
+                          "value": ""
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterValue",
+                          "valueType": "xs:float",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ValidationResultCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    },
+                    {
+                      "idShort": "PhaseB",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "equ1",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "PhaseB",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EventDateTime",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterValue",
+                          "valueType": "xs:float",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ValidationResultCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    },
+                    {
+                      "idShort": "PhaseC",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "equ1",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "PhaseC",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EventDateTime",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterValue",
+                          "valueType": "xs:float",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ValidationResultCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    },
+                    {
+                      "idShort": "Mean",
+                      "modelType": "SubmodelElementCollection",
+                      "value": [
+                        {
+                          "idShort": "EquipmentID",
+                          "valueType": "xs:string",
+                          "value": "equ1",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterID",
+                          "valueType": "xs:string",
+                          "value": "Mean",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "EventDateTime",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterUOMCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ParameterValue",
+                          "valueType": "xs:float",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ValidationResultCode",
+                          "valueType": "xs:string",
+                          "modelType": "Property"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

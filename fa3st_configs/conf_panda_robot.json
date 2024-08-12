@@ -1,0 +1,37 @@
+{
+	"endpoints": [{
+		"@class": "de.fraunhofer.iosb.ilt.faaast.service.endpoint.http.HttpEndpoint",
+		"port": 14437
+	}],
+	"assetConnections": [{
+		"@class": "de.fraunhofer.iosb.ilt.faaast.service.assetconnection.mqtt.MqttAssetConnection",
+		"serverUri": "tcp://localhost:1883",
+		"subscriptionProviders": {
+			"(Submodel)http://www.lg.co.kr/PandaRobot/1/Data, (SubmodelElement)DataInfo, (Property)Motor02": {
+				"format": "JSON",
+				"topic": "mdt/panda_robot/1",
+				"query": "$.motor02"
+			},
+			"(Submodel)http://www.lg.co.kr/PandaRobot/1/Data, (SubmodelElement)DataInfo, (Property)Motor01": {
+				"format": "JSON",
+				"topic": "mdt/panda_robot/1",
+				"query": "$.motor01"
+			},
+			"(Submodel)http://www.lg.co.kr/PandaRobot/1/Data, (SubmodelElement)DataInfo, (Property)Motor03": {
+				"format": "JSON",
+				"topic": "mdt/panda_robot/1",
+				"query": "$.motor03"
+			},
+			"(Submodel)http://www.lg.co.kr/PandaRobot/1/Data, (SubmodelElement)DataInfo, (Property)Motor04": {
+				"format": "JSON",
+				"topic": "mdt/panda_robot/1",
+				"query": "$.motor04"
+			},
+			"(Submodel)http://www.lg.co.kr/PandaRobot/1/Data, (SubmodelElement)DataInfo, (Property)Motor05": {
+				"format": "JSON",
+				"topic": "mdt/panda_robot/1",
+				"query": "$.motor05"
+			}
+		}
+	}]
+}

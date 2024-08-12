@@ -1,0 +1,4657 @@
+{
+  "assetAdministrationShells": [
+    {
+      "modelType": "AssetAdministrationShell",
+      "idShort": "InnercaseFromingProcess",
+      "id": "http://www.lg.co.kr/refrigerator/Innercase",
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": ""
+      },
+      "derivedFrom": {
+        "keys": []
+      },
+      "submodels": [
+        {
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "http://www.lg.co.kr/refrigerator/Innercase/InformationModel"
+            }
+          ]
+        },
+        {
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "http://www.lg.co.kr/refrigerator/Innercase/Simulation/ProcessOptimization"
+            }
+          ]
+        },
+        {
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "http://www.lg.co.kr/refrigerator/innercase/Behavior/ProcessOptimization"
+            }
+          ]
+        }
+      ],
+      "administration": {
+        "revision": "",
+        "version": ""
+      },
+      "category": "CONSTANT"
+    }
+  ],
+  "conceptDescriptions": [],
+  "submodels": [
+    {
+      "modelType": "Submodel",
+      "kind": "Instance",
+      "idShort": "InformationModel",
+      "id": "http://www.lg.co.kr/refrigerator/Innercase/InformationModel",
+      "semanticId": {
+        "keys": []
+      },
+      "administration": {
+        "revision": "",
+        "version": ""
+      },
+      "category": "CONSTANT",
+      "submodelElements": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "semanticId": {
+            "keys": []
+          },
+          "category": "",
+          "idShort": "MDTInfo",
+          "value": [
+            {
+              "modelType": "Property",
+              "value": "InnercaseFormingProcess",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "AssetName",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "자산이름"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "Process",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "AssetType",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "트윈화대상자산타입(Machine,Process,Line,Factory)"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "Created",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Status",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "MDT모델의현재상태(Created,Registered,Executed)"
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "AssetDescription",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "냉장고내함성형공정트윈",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Purpose",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "MDT생성목적"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "2023-08-17",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "CreationDate",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "MDT생성일자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "RegistrationDate",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "MDT풀등록일자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExecutionDate",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "MDT실행일자"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "InnercaseFormingProcess",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "IdShort",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "URI등으로표현되는MDTID"
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "AsssetInformationInFactory",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "AssetIDinFactory",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "공장에서관리하는자산ID"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "AssetNameInFactory",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "공장에서부여한자산명"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "AssetLocationInFactory",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "자산위치"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Subject",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "MDT대표설명주제어"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "냉장고내함성형공정트윈",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Description",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "MDT에대한설명"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "semanticId": {
+            "keys": []
+          },
+          "category": "",
+          "idShort": "TwinComposition",
+          "value": [
+            {
+              "modelType": "Property",
+              "value": "InnercaseProcessTwinComposition",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "CompositionID",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "트윈조합식별자"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "Process",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "CompositionType",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "트윈조합타입"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "ETRI",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "CompositionCreator",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "트윈조합생성자"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "내함성형공정TwinCompositioin",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "CompositionDescription",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "트윈조합에대한설명"
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionItem1",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "InnercaseFormingProcess",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈대상"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Reference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈주소"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "InnercaseFromingProcess공정트윈",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionItem2",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "Heater",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈대상"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase/Heater",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Reference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈주소"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "Heater설비트윈",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionItem3",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "VacuumFormer",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈대상"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Reference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈주소"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "VacuumFormer설비트윈",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionItem4",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "PiercingTrimmingEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈대상"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/innercase/PiercingTrimmingEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Reference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈주소"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "PiercingTrimmingEquipment설비트윈",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionItem5",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "QualityInspectionEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈대상"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/innercase/QualityInspectionEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Reference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈주소"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "QualityInspectionEquipment설비트윈",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "조합트윈설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionDependency1",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "InnercaseFormingProcess",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "소스트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "Heater",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "TargetId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "타켓트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "contain",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DependecyType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "포함,순차관계"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionDependency2",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "InnercaseFormingProcess",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "소스트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "VacuumFormer",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "TargetId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "타켓트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "contain",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DependecyType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "포함,순차관계"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionDependency3",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "InnercaseFormingProcess",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "소스트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "PiercingTrimmingEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "TargetId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "타켓트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "contain",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DependecyType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "포함,순차관계"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionDependency4",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "InnercaseFormingProcess",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "소스트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "QualityInspectionEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "TargetId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "타켓트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "contain",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DependecyType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "포함,순차관계"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionDependency5",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "Heater",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "소스트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "VacuumFormer",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "TargetId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "타켓트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "sequence",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DependecyType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "포함,순차관계"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionDependency6",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "VacuumFormer",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "소스트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "PiercingTrimmingEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "TargetId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "타켓트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "sequence",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DependecyType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "포함,순차관계"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "CompositionDependency7",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "PiercingTrimmingEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "소스트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "QualityInspectionEquipment",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "TargetId",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "타켓트윈"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "sequence",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DependecyType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "포함,순차관계"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Description",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "설명"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "modelType": "Submodel",
+      "kind": "Instance",
+      "idShort": "Simulation",
+      "id": "http://www.lg.co.kr/refrigerator/Innercase/Simulation/ProcessOptimization",
+      "semanticId": {
+        "keys": []
+      },
+      "administration": {
+        "revision": "",
+        "version": ""
+      },
+      "category": "CONSTANT",
+      "submodelElements": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "semanticId": {
+            "keys": []
+          },
+          "category": "",
+          "idShort": "SubModelInfo",
+          "value": [
+            {
+              "modelType": "Property",
+              "value": "Innercase-Line-Production-Flow-Analysis-Simulation-Model",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Title",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "해당자산에대한시뮬레이션모델의제목"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "SKKU-Kim",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Creator",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션을생성한주체"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Subject",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션을대표하는주요키워드"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Description",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "제목을풀어서기술한설명"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Contributor",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션생성에기여한주체"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Publisher",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션을배포한주체"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Date",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션생성일자"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "Simulation",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Type",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델타입"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "spp",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Format",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션파일포멧(확장자)"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "ProcessOptimization",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Identifier",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델식별자"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Language",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "사용언어"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Relation",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "트윈연계/연동을위한메타정보"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Rights",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "MDTSubModelCreator가정의한Publisher권한(CRUD)"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Source",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션이참조/연동한정보소스주소"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Coverage",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델시뮬레이션의제한및연동적용범위"
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "ReferenceAddress",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DockerImageID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "시뮬레이션모델을컨테이너화한도커이미지주소"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Address",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "시뮬레이션모델이저장된DB주소"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "semanticId": {
+            "keys": []
+          },
+          "category": "",
+          "idShort": "SimulationInfo",
+          "value": [
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Model",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ModelFileType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "FMI에따른FMU의형식등의정보제공"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "ModelFileVersion",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "버전을구분할수있는정보와함께시뮬레이션모델의버전을제공"
+                    }
+                  ],
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "MDT/ProcessLine/SubModel/Simulation/SimulationInfo/ModelVersionId/0.3",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "ModelVersionId",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "모델버전번호(URIoridShort)"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "ModelPreviewImage",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "사용자인터페이스에서모델을나타내는이미지파일"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "LGE_CW_Innercase00_PlnatSimulationModel_v0.3.spp",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "DigitalFile",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "모델파일(*.fmu,*.smd,*.spp,*.alp,*.nlogo)"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "ModelFileReleaseNotesTxt",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "릴리스에대한정보"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "ModelFileReleaseNotesFile",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "릴리스에대한정보파일"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "MinResourceRequirements",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "GPUSpec",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "실행을위한GPU자원"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "GPUNum",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "GPU수"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "CPUSpec",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "실행을위한CPU자원"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "CPUNum",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "CPU수"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "MemorySize",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "메모리크기"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "MemorySpeed",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "메모리속도"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "SimulationTool",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "TecnomatixPlantSimulation16.1",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SimToolName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "시뮬레이션툴이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "Windows",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OperatingSyatem",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "운영시스템(c-code,darwin64,linux64,win64)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "LicenseModel",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "라이선스정보(free,perpetual,subscription,volumeBased)"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input1",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "HT_ProcessTime",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input2",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "HT_FaultRate",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input3",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "VF_ProcessTime",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input4",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "VF_FaultRate",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input5",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "PT_ProcessTime",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input6",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "PT_FaultRate",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input7",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "QI_ProcessTime",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "Input8",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "QI_FaultRate",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값ID(idShort)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값옵션"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "InputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "입력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "TotalThroughput",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "TotalThroughput",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값ID"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값에대한설명"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "WorkingRatioByProcess",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "WorkingRatioByProcess",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값ID"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값형태"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputOption",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값에대한설명"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputDescription",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값에대한설명"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": [
+        {
+          "language": "Korean",
+          "text": "Simulationsubmodeltemplate"
+        }
+      ]
+    },
+    {
+      "modelType": "Submodel",
+      "kind": "Instance",
+      "idShort": "Behavior",
+      "id": "http://www.lg.co.kr/refrigerator/innercase/Behavior/ProcessOptimization",
+      "semanticId": {
+        "keys": []
+      },
+      "administration": {
+        "revision": "",
+        "version": ""
+      },
+      "category": "CONSTANT",
+      "submodelElements": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "semanticId": {
+            "keys": []
+          },
+          "category": "",
+          "idShort": "SubModelInfo",
+          "value": [
+            {
+              "modelType": "Property",
+              "value": "SurfaceInspection",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Title",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior정책명"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "ETRI",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Creator",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "BehaviororPolicy생성주체"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Subject",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델을대표하는주요키워드"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "Behavior서브모델",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Description",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "제목을풀어서기술한설명"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Contributor",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior생성에기여한주체"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Publisher",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior를선언해행동정책을생성주체"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Date",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior생성일자"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "Behavior",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Type",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델타입"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Format",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델개발에사용된프레임워크/툴"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Identifier",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior식별자"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Language",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "사용언어"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Relation",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "트윈연계/연동을위한메타정보"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Rights",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior모델Creator가정의한Publisher권한(CRUD)"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Source",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델Behavior가참조/연동한정보소스주소"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "Coverage",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "하부모델Behavior의적용범위"
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "ReferenceAddress",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DockerImageID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "Behavior모델을컨테이너화한도커이미지주소"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "Address",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "Behavior모델이저장된DB주소"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "semanticId": {
+            "keys": []
+          },
+          "category": "",
+          "idShort": "BehaviorInfo",
+          "value": [
+            {
+              "modelType": "Property",
+              "value": "ProcessOptimization",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "BehaviorID",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "BehaviorID"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "ProcessOptimization",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "BehaviorName",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior명"
+                }
+              ]
+            },
+            {
+              "modelType": "Property",
+              "value": "workflow",
+              "valueType": "STRING",
+              "category": "",
+              "idShort": "BehaviorType",
+              "description": [
+                {
+                  "language": "Korean",
+                  "text": "Behavior타입"
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "ExternalInteraction",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출발지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DestinationEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "목적지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateEntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionCondition",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이조건(조건문,if..else..then..)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "State_Start",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "Start",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateReference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태와연관된서브모델참조"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "EntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "DataPreparing",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "DataPreparing",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase/Simulation/ProcessOptimization",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateReference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태와연관된서브모델참조"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "EntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "End",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "End",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateReference",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태와연관된서브모델참조"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "EntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "transition2",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "transition2",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이타입"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionCondition",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이조건(조건문,if..else..then..)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "start",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceStateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출발지상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "SurfaceInspecting",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DestinationStateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "목적지상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping1",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "HT_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "HT_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping2",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "HT_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "HT_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping3",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "VF_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "VF_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping4",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "VF_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "VF_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping5",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "PT_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "PT_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping6",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "PT_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "PT_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping7",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "QI_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "QI_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping8",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "QI_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "QI_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "transition3",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "transition3",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이타입"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionCondition",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이조건(조건문,if..else..then..)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "SurfaceInspecting",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceStateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출발지상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "End",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DestinationStateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "목적지상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping1",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "TotalThroughput",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "TotalThroughput",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping2",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "WorkingRatioByProcess",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "WorkingRatioByProcess",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "TotalThroughput",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "TotalThroughput",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값ID"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "float",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값형태"
+                    },
+                    {
+                      "language": "Korean",
+                      "text": "0:양품,1:불량"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "WorkingRatioByProcess",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "WorkingRatioByProcess",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값ID"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputValue",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "float",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "OutputType",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출력값형태"
+                    },
+                    {
+                      "language": "Korean",
+                      "text": "0:양품,1:불량"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "HeaterData",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "HeaterData",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase/Heater/Data",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출발지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DestinationEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "목적지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateEntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionCondition",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이조건(조건문,if..else..then..)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping1",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "TaktTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "HT_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping2",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "HT_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "VacuumFormerData",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "VacuumFormerData",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/Data",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출발지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DestinationEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "목적지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateEntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionCondition",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이조건(조건문,if..else..then..)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping1",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "TaktTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "VF_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping2",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "VF_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "PiercingTrimingEquipmentData",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "PiercingTrimingEquipmentData",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase/PiercingTrimmingEquipment/Data",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출발지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DestinationEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "목적지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateEntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionCondition",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이조건(조건문,if..else..then..)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "TaktTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "PT_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping2",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "PT_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "kind": "Instance",
+              "semanticId": {
+                "keys": []
+              },
+              "category": "",
+              "idShort": "QualityInspectionEquipmentData",
+              "value": [
+                {
+                  "modelType": "Property",
+                  "value": "QualityInspectionEquipmentData",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "ExternalInteractionName",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "외부상호작용이름"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "http://www.lg.co.kr/refrigerator/Innercase/QualityInspectionEquipment/Data",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "SourceEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "출발지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "DestinationEquipmentID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "목적지MDT식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateEntryAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진입실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateExitAction",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태진출실행코드(파라미터값설정또는수학식)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionID",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이식별자"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "Property",
+                  "value": "",
+                  "valueType": "STRING",
+                  "category": "",
+                  "idShort": "StateTransitionCondition",
+                  "description": [
+                    {
+                      "language": "Korean",
+                      "text": "상태천이조건(조건문,if..else..then..)"
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "TaktTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "QI_ProcesTime",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "modelType": "SubmodelElementCollection",
+                  "kind": "Instance",
+                  "semanticId": {
+                    "keys": []
+                  },
+                  "category": "",
+                  "idShort": "InOutMapping2",
+                  "value": [
+                    {
+                      "modelType": "Property",
+                      "value": "FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "OutputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "출발지의출력데이터"
+                        }
+                      ]
+                    },
+                    {
+                      "modelType": "Property",
+                      "value": "QI_FaultRate",
+                      "valueType": "STRING",
+                      "category": "",
+                      "idShort": "InputID",
+                      "description": [
+                        {
+                          "language": "Korean",
+                          "text": "목적지의입력데이터"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "description": [
+        {
+          "language": "Korean",
+          "text": "Behaviorsubmodeltemplate"
+        }
+      ]
+    }
+  ]
+}

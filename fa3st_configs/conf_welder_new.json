@@ -1,0 +1,18 @@
+{
+	"endpoints": [{
+		"@class": "de.fraunhofer.iosb.ilt.faaast.service.endpoint.http.HttpEndpoint",
+		"port": 443,
+		"sniEnabled": false
+	}],
+	"assetConnections": [{
+		"@class": "de.fraunhofer.iosb.ilt.faaast.service.assetconnection.mqtt.MqttAssetConnection",
+		"serverUri": "tcp://localhost:1883",
+		"subscriptionProviders": {
+			"(Submodel)http://www.lg.co.kr/refrigerator/Innercase/Welder/Data, (SubmodelElement)DataInfo, (SubmodelElement)Equipment, (SubmodelElement)EquipmentParameterTraces, (SubmodelElement)0, (Property)ParameterValue": {
+				"format": "JSON",
+				"topic": "mdt/welder/1",
+				"query": "$"
+			}
+		}
+	}]
+}

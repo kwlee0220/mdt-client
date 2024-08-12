@@ -1,0 +1,132 @@
+# 초기 상태 확인
+mdt instance list
+
+# MDTI 등록 (vacuum)
+mdt instance add vacuum --jar fa3st-repository.jar --model aas_vacuum.json --instance_conf conf_vacuum.json
+mdt instance add vacuum --image kwlee0220/faaast-service --model aas_vacuum.json --instance_conf conf_vacuum.json
+
+# MDTI 등록 (welder)
+mdt instance add welder --jar fa3st-repository.jar --model aas_welder.json --instance_conf conf_welder.json
+mdt instance add welder --image kwlee0220/faaast-service --model aas_welder.json --instance_conf conf_welder.json
+
+# 등록 확인
+mdt instance list
+mdt instance list -t
+mdt instance list -lt
+
+# MDTI 정보 확인
+mdt instance get vacuum
+mdt instance get vacuum -o json
+
+mdt aas get 'http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer'
+
+# MDTI 구동
+mdt instance start vacuum -v
+
+# 실행 확인
+mdt instance list -lt
+mdt aas list -lt
+mdt aas get --id_short VacuumFormer
+mdt aas get --id_short VacuumFormer -o json
+mdt submodel get --id_short Data
+mdt submodel get --id_short Data -o json
+mdt submodel get --id_short Data -o tree
+
+
+# MDTI 등록 (inspection)
+mdt instance add inspection --jar fa3st-repository.jar --aas aas_inspection.json --conf conf_inspection.json
+mdt instance add inspection --image mdt/faaast-service --aas aas_inspection.json
+
+# 등록 확인
+mdt instance list -lt
+
+# MDTI 구동
+mdt instance start inspection -vv
+
+# 등록 확인
+mdt instance list -lt
+mdt instance get inspection
+mdt aas get --id_short QualityInspectionEquipment
+mdt aas get --id_short QualityInspectionEquipment -o json
+
+# MDTI 등록 (inspection)
+mdt instance add heater --jar fa3st-repository.jar --aas aas_heater.json --conf conf_heater.json
+mdt instance add piercing --jar fa3st-repository.jar --aas aas_piercing.json --conf conf_piercing.json
+mdt instance add innercase --jar fa3st-repository.jar --model aas_innercase.json --instance_conf conf_innercase.json
+mdt instance add welder --jar fa3st-repository.jar --aas aas_welder.json --conf conf_welder.json
+
+mdt instance add heater --image mdt/faaast-service --aas aas_heater.json
+mdt instance add piercing --image mdt/faaast-service --aas aas_piercing.json
+mdt instance add innercase --image mdt/faaast-service --aas aas_innercase.json
+mdt instance add welder --image kwlee0220/faaast-service --aas aas_welder.json --conf conf_welder.json
+
+
+
+# 쉘 명령들과의 연동
+mdt instance list | awk -F '|' '{print $2}'
+mdt instance list -l | grep AI | awk -F '|' '{print $1}'
+
+
+mdt get ksx9101 KR3
+#####################################################################################
+##### MDT Server 시작
+cd /mnt/d/Dropbox/Temp/fa3st-repository
+java -jar /mnt/c/development/mdt/mdt.instance/build/libs/mdt.server-all.jar
+
+
+#####################################################################################
+cd /mnt/c/development/mdt/mdt.simulator
+java -jar /mnt/c/development/mdt/mdt.simulator/build/libs/mdt.simulator-0.0.1-all.jar
+
+
+##### MDT Instance 상태 출력
+mdt instance list -lt --repeat 1s
+
+##### MDT Instance 등록처 출력
+cd /mnt/d/Dropbox/Temp/mdt-instances
+watch -t -n 1 tree
+
+##### 설비 상태 출력
+mdt property get http://www.lg.co.kr/refrigerator/Innercase/Welder/Data Parameters --repeat 1s
+
+##### MQTT 발송 이벤트 출력
+mosquitto_sub -t "mdt/manager/#"
+mosquitto_sub -t "mdt/welder/#"
+
+##### Instance 추가
+cd /mnt/d/Dropbox/Temp/fa3st-repository
+mdt instance add welder --jar fa3st-repository.jar --model aas_welder.json --instance_conf conf_welder.json
+
+##### Instance 시작
+mdt instance start welder -v
+
+##### Instance 종료 및 삭제
+mdt instance stop welder
+mdt instance remove welder
+
+#####################################################################################
+cd /mnt/d/Dropbox/Temp/fa3st-repository/ispark
+mdt instance add KR3 --jar mdt-instance-1.0.0.jar -m aas_KR3.json -c conf_KR3.json
+
+
+#####################################################################################
+
+##############################################
+##### 설비 이벤트 발송 시작
+conda activate mdt
+cd /mnt/c/development/mdt/mdt.asset.welder
+python scripts/publish_welder_currents.py 23.05.26.csv --sync --skip 3700
+
+##### 설비 불량품 생산 검출
+conda activate mdt
+cd /mnt/c/development/mdt/mdtpy/
+python scripts/Samco_application.py
+
+#####################################################################################
+
+
+
+watch -t -n 1 'ps -af | grep fa3st-repository | grep -v grep | grep -v client'
+watch -n 1 -t 'jps | grep mdt-instance'
+
+docker run kwlee0220/faaast-service

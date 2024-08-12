@@ -1,0 +1,22 @@
+plugins {
+	id 'java'
+	id 'application'
+	id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+mainClassName = 'mdt.cli.MDTCommandsMain'
+
+dependencies {
+	implementation project(":utils")
+	
+	implementation "org.nocrala.tools.texttablefmt:text-table-formatter:${text_table_version}"
+	implementation "org.barfuin.texttree:text-tree:${text_tree_version}"
+}
+
+shadowJar {
+	mergeServiceFiles()
+	
+	exclude 'META-INF/*.SF'
+	exclude 'META-INF/*.DSA'
+	exclude 'META-INF/*.RSA'
+}

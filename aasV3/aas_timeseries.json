@@ -1,0 +1,139 @@
+{
+  "submodels": [
+    {
+      "modelType": "Submodel",
+      "idShort": "Current_TimeSeries",
+      "id": "http://www.lg.co.kr/refrigerator/Innercase/VacuumFormer/InformationModel",
+      "kind": "Instance",
+      "category": "",
+      "submodelElements": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "category": "",
+          "idShort": "Metadata",
+          "Name": {
+            "language": "Korean",
+            "text": "전류"
+          },
+          "Description": {
+            "language": "Korean",
+            "text": "융착기 전류 정보"
+          }
+        },
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "category": "",
+          "idShort": "Segments",
+          "value": [
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "LinkedSegment_00001",
+              "RecordCount": {
+                "modelType": "Property",
+                "value": 5000,
+                "valueType": "LONG",
+                "idShort": "RecordCount"
+              },
+              "StartTime": {
+                "modelType": "Property",
+                "value": "2020-09-19T14:40:38.318",
+                "valueType": "TIMESTAMP",
+                "idShort": "StartTime"
+              },
+              "EndTime": {
+                "modelType": "Property",
+                "value": "2020-09-19T15:40:38.318",
+                "valueType": "TIMESTAMP",
+                "idShort": "EndTime"
+              },
+              "Duration": {
+                "modelType": "Property",
+                "value": "P3DT4H59M",
+                "valueType": "STRING",
+                "idShort": "Duration"
+              },
+              "SamplingInterval": {
+                "modelType": "Property",
+                "value": 1,
+                "valueType": "LONG",
+                "idShort": "SamplingInterval"
+              },
+              "State": {
+                "modelType": "Property",
+                "value": "completed",
+                "valueType": "STRING",
+                "idShort": "State"
+              },
+              "LastUpdate": {
+                "modelType": "Property",
+                "value": "2020-09-19T15:40:38.318",
+                "valueType": "TIMESTAMP",
+                "idShort": "LastUpdate"
+              },
+              "Endpoint": {
+                "modelType": "Property",
+                "value": "jdbc:...",
+                "valueType": "STRING",
+                "idShort": "Endpoint"
+              },
+              "Query": {
+                "modelType": "Property",
+                "value": "select * from ...",
+                "valueType": "STRING",
+                "idShort": "Query"
+              }
+            },
+            {
+              "modelType": "SubmodelElementCollection",
+              "idShort": "LinkedSegment_00002",
+              "RecordCount": {
+                "modelType": "Property",
+                "value": 5000,
+                "valueType": "LONG",
+                "idShort": "RecordCount"
+              },
+              "StartTime": {
+                "modelType": "Property",
+                "value": "2020-09-19T14:40:38.318",
+                "valueType": "TIMESTAMP",
+                "idShort": "StartTime"
+              },
+              "SamplingInterval": {
+                "modelType": "Property",
+                "value": 1,
+                "valueType": "LONG",
+                "idShort": "SamplingInterval"
+              },
+              "State": {
+                "modelType": "Property",
+                "value": "in progress",
+                "valueType": "STRING",
+                "idShort": "State"
+              },
+              "LastUpdate": {
+                "modelType": "Property",
+                "value": "2020-09-19T15:40:38.318",
+                "valueType": "TIMESTAMP",
+                "idShort": "LastUpdate"
+              },
+              "Endpoint": {
+                "modelType": "Property",
+                "value": "jdbc:...",
+                "valueType": "STRING",
+                "idShort": "Endpoint"
+              },
+              "Query": {
+                "modelType": "Property",
+                "value": "select * from ...",
+                "valueType": "STRING",
+                "idShort": "Query"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

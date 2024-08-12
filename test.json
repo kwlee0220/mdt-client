@@ -1,0 +1,32 @@
+{
+  "modelType": "SubmodelElementCollection",
+  "idShort": "ElectricCurrents",
+  "value": [
+    {
+      "modelType": "Property",
+      "idShort": "Timestamp",
+      "category": "PARAMETER",
+      "description": [
+        {
+          "language": "Korean",
+          "text": "변경시각"
+        }
+      ],
+      "valueType": "xs:dateTime",
+      "value": "2023-05-26 02:37:05"
+    },
+    {
+      "modelType": "Property",
+      "idShort": "Mean",
+      "category": "PARAMETER",
+      "description": [
+        {
+          "language": "Korean",
+          "text": "설비전력 (평균)"
+        }
+      ],
+      "valueType": "xs:float",
+      "value": "4.29237"
+    }
+  ]
+}

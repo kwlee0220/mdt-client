@@ -1,1 +1,1 @@
-# mdt-client
+# mdt.client

@@ -1,0 +1,96 @@
+{
+  "assetAdministrationShells": [
+    {
+      "modelType": "AssetAdministrationShell",
+      "idShort": "Welder",
+      "id": "http://www.lg.co.kr/refrigerator/innercase/Welder",
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": ""
+      },
+      "derivedFrom": {
+        "keys": []
+      },
+      "submodels": [
+        {
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "http://www.lg.co.kr/refrigerator/Innercase/Welder/Data"
+            }
+          ],
+          "type": "ExternalReference"
+        }
+      ],
+      "administration": {
+        "revision": "",
+        "version": ""
+      },
+      "category": "CONSTANT"
+    }
+  ],
+  "conceptDescriptions": [],
+  "submodels": [
+    {
+      "modelType": "Submodel",
+      "idShort": "Data",
+      "id": "http://www.lg.co.kr/refrigerator/Innercase/Welder/Data",
+      "kind": "Instance",
+      "category": "",
+      "submodelElements": [
+        {
+          "modelType": "SubmodelElementCollection",
+          "kind": "Instance",
+          "category": "",
+          "idShort": "DataInfo",
+          "value": [
+            {
+              "modelType": "Property",
+              "value": 0.0,
+              "valueType": "FLOAT",
+              "category": "PARAMETER",
+              "idShort": "PhaseA",
+              "description": [{
+	              "language": "Korean",
+	              "text": "설비전력 (A상)"
+	          }]
+            },
+            {
+              "modelType": "Property",
+              "value": 0.0,
+              "valueType": "FLOAT",
+              "category": "PARAMETER",
+              "idShort": "PhaseB",
+              "description": [{
+	              "language": "Korean",
+	              "text": "설비전력 (B상)"
+	          }]
+            },
+            {
+              "modelType": "Property",
+              "value": 0.0,
+              "valueType": "FLOAT",
+              "category": "PARAMETER",
+              "idShort": "PhaseC",
+              "description": [{
+	              "language": "Korean",
+	              "text": "설비전력 (C상)"
+	          }]
+            },
+            {
+              "modelType": "Property",
+              "value": 0.0,
+              "valueType": "FLOAT",
+              "category": "PARAMETER",
+              "idShort": "Mean",
+              "description": [{
+	              "language": "Korean",
+	              "text": "설비전력 (평균)"
+	          }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

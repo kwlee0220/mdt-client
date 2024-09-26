@@ -16,22 +16,21 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementCollect
 
 import com.google.common.base.Preconditions;
 
-import utils.Indexed;
-import utils.stream.FStream;
-
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.DataType;
 import mdt.model.DataTypes;
 import mdt.model.SubmodelUtils;
 import mdt.timeseries.RecordSchema.Field;
+import utils.Indexed;
+import utils.stream.FStream;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class Record extends AbstractMDTSubmodelElementCollection {
-	private static final Reference SEMANTIC_ID
+public class Record extends SubmodelElementCollectionEntity {
+	public static final Reference SEMANTIC_ID
 					= new DefaultReference.Builder()
 							.type(ReferenceTypes.EXTERNAL_REFERENCE)
 							.keys(new DefaultKey.Builder()
@@ -124,6 +123,7 @@ public class Record extends AbstractMDTSubmodelElementCollection {
 		return new RecordSchema(fields);
 	}
 	
+	@SuppressWarnings("unchecked")
 	private Property toProperty(Field field, Object value) {
 		 return SubmodelUtils.newProperty(field.getName(), field.getType().getTypeDefXsd(),
 				 							field.getType().toValueString(value));
@@ -135,6 +135,7 @@ public class Record extends AbstractMDTSubmodelElementCollection {
 	}
 	
 	private static Field getField(Property prop) {
+		@SuppressWarnings("rawtypes")
 		DataType type = DataTypes.fromAas4jDatatype(prop.getValueType());
 		return new Field(prop.getIdShort(), type);
 	}

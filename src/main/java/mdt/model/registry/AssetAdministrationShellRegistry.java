@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 
+import mdt.model.ResourceAlreadyExistsException;
+import mdt.model.ResourceNotFoundException;
+
 
 /**
  *

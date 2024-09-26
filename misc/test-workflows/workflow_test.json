@@ -1,0 +1,37 @@
+{
+  "id": "InnerCaseForming1",
+  "name": "내함 성형 최적화 공정xxxx",
+  "description": "본 워크플로우는 여러 설비로 구성된 내함 성형 공정 과정을 최적화를 시뮬레이션한다.",
+  "parameters": [
+    { "name": "simulation-twin", "description": "내함 성형 공정 트윈 식별자" },
+    { "name": "simulation-submodel", "description": "내함 성형 공정의 시뮬레이션 Submodel의 idShort" }
+  ],
+  "tasks": [ {
+    "id":  "copy-heater-cycletime",
+    "template": "copy-cycletime",
+    "arguments": [
+      { "name": "equipment-twin", "value": "KRCW-01ELIF027" },
+      { "name": "simulation-input-index", "value": "0" }
+    ]
+  } ],
+  "taskTemplates": [
+    {
+      "id": "copy-cycletime",
+      "name": "Cycle time 데이터 준비",
+      "type": "mdt.task.builtin.CopyTask",
+      "description": "Process optimization task 수행을 위한 설비의 cycletime 데이터 복사",
+      "parameters": [
+        { "name": "equipment-twin", "description": "설비 트윈 식별자" },
+        { "name": "simulation-input-index", "description": "시뮬레이션 공정의 입력 SME 위치 prefix" }
+      ],
+      "inputPorts": [ {
+        "name": "input",
+        "valueReference": "*${equipment-twin}/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue"
+      } ],
+      "outputPorts": [ {
+        "name": "output",
+        "valueReference": "*${simulation-twin}/${simulation-submodel}/SimulationInfo.Inputs[${simulation-input-index}].InputValue"
+      } ]
+    }
+  ]
+}

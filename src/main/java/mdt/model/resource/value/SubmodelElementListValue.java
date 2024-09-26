@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import com.google.common.collect.Lists;
-
 import utils.stream.FStream;
 
 
@@ -14,24 +12,21 @@ import utils.stream.FStream;
  * @author Kang-Woo Lee (ETRI)
  */
 public class SubmodelElementListValue implements SubmodelElementValue, Supplier<List<SubmodelElementValue>> {
-	private String m_idShort;
-	private List<SubmodelElementValue> m_elementValues = Lists.newArrayList();
+	private final String m_idShort;
+	private final List<SubmodelElementValue> m_elementValues;
+	
+	public SubmodelElementListValue(String id, List<SubmodelElementValue> values) {
+		m_idShort = id;
+		m_elementValues = values;
+	}
 	
 	public String getIdShort() {
 		return m_idShort;
 	}
 	
-	public void setIdShort(String id) {
-		m_idShort = id;
-	}
-	
 	@Override
 	public List<SubmodelElementValue> get() {
 		return m_elementValues;
-	}
-	
-	public void addElementValue(SubmodelElementValue value) {
-		this.m_elementValues.add(value);
 	}
 
 	@Override

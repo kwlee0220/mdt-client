@@ -24,17 +24,13 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements SubmodelRepository {
-	private final String m_url;
-	
-	public HttpSubmodelRepositoryClient(OkHttpClient client, String url) {
-		super(client);
-		
-		m_url = url;
+	public HttpSubmodelRepositoryClient(OkHttpClient client, String endpoint) {
+		super(client,endpoint);
 	}
 
 	@Override
 	public List<SubmodelService> getAllSubmodels() {
-		Request req = new Request.Builder().url(m_url).get().build();
+		Request req = new Request.Builder().url(getEndpoint()).get().build();
 		List<Submodel> submodelList = callList(req, Submodel.class);
 		return FStream.from(submodelList)
 						.map(this::toService)
@@ -46,7 +42,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	public SubmodelService getSubmodelById(String submodelId) {
 		Preconditions.checkNotNull(submodelId);
 		
-		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodelId));
+		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		Submodel submodel = call(req, Submodel.class);
@@ -56,7 +52,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	@Override
 	public List<SubmodelService> getAllSubmodelsByIdShort(String idShort) {
 		Preconditions.checkNotNull(idShort);
-		String url = String.format("%s?idShort=%s", m_url, idShort);
+		String url = String.format("%s?idShort=%s", getEndpoint(), idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		List<Submodel> submodelList = callList(req, Submodel.class);
@@ -69,7 +65,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	@Override
 	public List<SubmodelService> getAllSubmodelBySemanticId(String semanticId) {
 		Preconditions.checkNotNull(semanticId);
-		String url = String.format("%s?semanticId=%s", m_url, semanticId);
+		String url = String.format("%s?semanticId=%s", getEndpoint(), semanticId);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		List<Submodel> submodelList = callList(req, Submodel.class);
@@ -86,7 +82,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 		try {
 			RequestBody reqBody = createRequestBody(submodel);
 			
-			Request req = new Request.Builder().url(m_url).post(reqBody).build();
+			Request req = new Request.Builder().url(getEndpoint()).post(reqBody).build();
 			submodel = call(req, Submodel.class);
 			return toService(submodel);
 		}
@@ -99,7 +95,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	public HttpSubmodelServiceClient putSubmodelById(Submodel submodel) {
 		Preconditions.checkNotNull(submodel);
 		
-		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodel.getId()));
+		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodel.getId()));
 		try {
 			RequestBody reqBody = createRequestBody(submodel);
 			
@@ -116,7 +112,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	public void deleteSubmodelById(String submodelId) {
 		Preconditions.checkNotNull(submodelId);
 		
-		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodelId));
+		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -125,7 +121,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	private HttpSubmodelServiceClient toService(Submodel submodel) {
 		Preconditions.checkNotNull(submodel);
 		
-		String urlPrefix = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(submodel.getId()));
+		String urlPrefix = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodel.getId()));
 		return new HttpSubmodelServiceClient(getHttpClient(), urlPrefix);
 	}
 }

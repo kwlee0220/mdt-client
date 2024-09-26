@@ -1,0 +1,47 @@
+[
+
+{
+  "id": "copy-cycletime",
+  "name": "Cycle time 데이터 준비",
+  "type": "mdt.task.builtin.CopyTask",
+  "description": "Process optimization task 수행을 위한 설비의 cycletime 데이터 복사",
+  "parameters": [
+    { "name": "src-mdt-id", "description": "설비 트윈 식별자" },
+    { "name": "tar_input_index", "description": "시뮬레이션 입력 정보 순서" }
+  ],
+  "inputPorts": [ {
+    "name": "source",
+    "value": "*{{src-mdt-id}}/DataDataInfo.Equipment.EquipmentParameterValues[1].ParameterValue"
+  } ],
+  "outputPorts": [ {
+    "name": "target",
+    "value": "QC/Simulation/SimulationInfo.Inputs[{{tar_input_index}}].InputValue"
+  } ]
+},
+
+{
+  "id": "내함_성형",
+  "name": "내함 성형 공정 최적화 태스크",
+  "type": "mdt.task.builtin.HttpTask",
+  "description": "Process optimization task",
+  "parameters": [
+    { "name": "sim-input-prefix", "description": "시뮬레이션 공정의 입력 SME 위치 prefix" },
+    { "name": "sim-output", "description": "시뮬레이션 공정의 출력 SME 위치" }
+  ],
+  "options": [
+    { "name": "url", "value": "http://129.254.91.75:12987/operations/process-optimization" },
+    { "name": "timeout", "value": "5m" },
+    { "name": "logger", "value": "info" }
+  ],
+  "inputPorts": [
+    { "name": "heater", "value": "*${sim-input-prefix}[0].InputValue" },
+    { "name": "vaccum", "value": "*${sim-input-prefix}[1].InputValue" },
+    { "name": "piercing", "value": "*${sim-input-prefix}[2].InputValue" },
+    { "name": "inspection", "value": "*${sim-input-prefix}[3].InputValue" }
+  ],
+  "outputPorts": [ 
+    { "name": "TotalThroughput", "value": "*${sim-output}" }
+  ]
+}
+
+]

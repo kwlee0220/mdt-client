@@ -5,7 +5,7 @@ import java.sql.Timestamp;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.LOT;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -14,7 +14,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultLOT extends AbstractMDTSubmodelElementCollection implements LOT {
+public class DefaultLOT extends SubmodelElementCollectionEntity implements LOT {
 	@PropertyField(idShort="LotId") private String lotId;
 	@PropertyField(idShort="ItemId") private String itemId;
 	@PropertyField(idShort="State") private String state;

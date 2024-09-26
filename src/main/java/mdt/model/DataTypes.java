@@ -1,5 +1,6 @@
 package mdt.model;
 
+import java.math.BigDecimal;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 
+import com.fasterxml.jackson.core.io.BigDecimalParser;
 import com.google.common.collect.Maps;
 
 import lombok.experimental.UtilityClass;
@@ -27,7 +29,7 @@ public class DataTypes {
 	public static StringType STRING = new StringType();
 	public static BooleanType BOOLEAN = new BooleanType();
 	public static ShortType SHORT = new ShortType();
-	public static IntegerType INTEGER = new IntegerType();
+	public static IntType INT = new IntType();
 	public static LongType LONG = new LongType();
 	public static FloatType FLOAT = new FloatType();
 	public static DoubleType DOUBLE = new DoubleType();
@@ -35,6 +37,7 @@ public class DataTypes {
 	public static DateType DATE = new DateType();
 	public static TimeType TIME = new TimeType();
 	public static DurationType DURATION = new DurationType();
+	public static DecimalType DECIMAL = new DecimalType();
 	
 	public static DataType<?> fromAas4jDatatype(DataTypeDefXsd type) {
 		return _XSD_TO_TYPES.get(type);
@@ -45,8 +48,8 @@ public class DataTypes {
 	}
 	
 	private static final DataType<?>[] _TYPES = {
-		STRING, BOOLEAN, SHORT, INTEGER, LONG, FLOAT, DOUBLE,
-		DATE_TIME, DATE, TIME, DURATION,
+		STRING, BOOLEAN, SHORT, INT, LONG, FLOAT, DOUBLE,
+		DATE_TIME, DATE, TIME, DURATION, DECIMAL,
 	};
 	private static final Map<String,DataType<?>> _NAME_TO_TYPES = Maps.newHashMap();
 	private static final Map<DataTypeDefXsd,DataType<?>> _XSD_TO_TYPES = Maps.newHashMap();
@@ -167,9 +170,9 @@ public class DataTypes {
 		}
 	}
 
-	public static class IntegerType extends AbstractDataType<Integer> implements DataType<Integer> {
-		private IntegerType() {
-			super("xs:integer", DataTypeDefXsd.INTEGER, Integer.class);
+	public static class IntType extends AbstractDataType<Integer> implements DataType<Integer> {
+		private IntType() {
+			super("xs:int", DataTypeDefXsd.INT, Integer.class);
 		}
 	
 		@Override
@@ -251,6 +254,22 @@ public class DataTypes {
 			catch ( ParseException e ) {
 				throw new IllegalArgumentException("Invalid string (not xs:time string): " + str);
 			}
+		}
+	}
+
+	public static class DecimalType extends AbstractDataType<BigDecimal> implements DataType<BigDecimal> {
+		private DecimalType() {
+			super("xs:decimal", DataTypeDefXsd.DECIMAL, BigDecimal.class);
+		}
+	
+		@Override
+		public String toValueString(BigDecimal value) {
+			return (value != null) ? ""+value : null;
+		}
+	
+		@Override
+		public BigDecimal parseValueString(String str) {
+			return (str != null) ? BigDecimalParser.parse(str) : null;
 		}
 	}
 }

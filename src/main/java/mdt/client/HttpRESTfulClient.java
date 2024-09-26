@@ -1,6 +1,9 @@
 package mdt.client;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+
+import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,11 +13,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import utils.InternalException;
-import utils.LoggerSettable;
-import utils.func.FOption;
-import utils.func.Tuple;
-
 import mdt.client.operation.HttpSimulationClient;
 import mdt.model.MDTExceptionEntity;
 import okhttp3.Headers;
@@ -23,27 +21,47 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import utils.InternalException;
+import utils.LoggerSettable;
+import utils.func.FOption;
+import utils.func.Tuple;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpRESTfulClient implements LoggerSettable {
+public class HttpRESTfulClient implements HttpClientProxy, LoggerSettable {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpSimulationClient.class);
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 	
 	private final OkHttpClient m_client;
+	private final String m_endpoint;
 	protected final JsonMapper m_mapper;
 	private Logger m_logger = null;
 	
-	public HttpRESTfulClient(OkHttpClient client) {
+	public HttpRESTfulClient(OkHttpClient client, String endpoint, @Nullable JsonMapper jsonMapper) {
 		m_client = client;
-		m_mapper = JsonMapper.builder().build();
+		m_endpoint = endpoint;
+		m_mapper = (jsonMapper != null) ? jsonMapper : JsonMapper.builder().build();
 	}
 	
+	public HttpRESTfulClient(OkHttpClient client, String endpoint) {
+		this(client, endpoint, null);
+	}
+	
+	@Override
+	public String getEndpoint() {
+		return m_endpoint;
+	}
+	
+	@Override
 	public OkHttpClient getHttpClient() {
 		return m_client;
+	}
+	
+	public JsonMapper getJsonMapper() {
+		return m_mapper;
 	}
 	
 	public <T> T parseJson(String jsonStr, TypeReference<T> typeRef)
@@ -59,8 +77,14 @@ public class HttpRESTfulClient implements LoggerSettable {
 		return RequestBody.create(jsonString, JSON);
 	}
 	
-	public RequestBody createRequestBody(Object desc) throws JsonProcessingException {
-		return RequestBody.create(writeJson(desc), JSON);
+	public RequestBody createRequestBody(Object desc) {
+		try {
+			return RequestBody.create(writeJson(desc), JSON);
+		}
+		catch ( JsonProcessingException e ) {
+			String msg = String.format("Failed to write Json: object=%s, cause=%s", desc, e);
+			throw new MDTClientException(msg);
+		}
 	}
 
 	public <T> T call(Request req, TypeReference<T> typeRef) {
@@ -112,8 +136,11 @@ public class HttpRESTfulClient implements LoggerSettable {
 				throw new AssertionError();
 			}
 		}
+//		catch ( JsonMappingException e ) {
+//			
+//		}
 		catch ( IOException e ) {
-			throw new MDTClientException(resp.toString());
+			throw new MDTClientException(resp.toString() + ", cause=" + e);
 		}
 	}
 
@@ -130,16 +157,64 @@ public class HttpRESTfulClient implements LoggerSettable {
 
 	private static final TypeReference<MDTExceptionEntity> EXCEPTION_ENTITY
 																= new TypeReference<MDTExceptionEntity>(){};
-	private void throwErrorResponse(String respBody) throws MDTClientException {
+//	private void throwErrorResponse(String respBody) throws MDTClientException {
+//		try {
+//			MDTExceptionEntity entity = parseJson(respBody, EXCEPTION_ENTITY);
+//			throw entity.toClientException();
+//		}
+//		catch ( MDTClientException e ) {
+//			throw e;
+//		}
+//		catch ( Exception e ) {
+//			throw new InternalException("failed to parse ExceptionMessage: " + respBody);
+//		}
+//	}
+	
+	@SuppressWarnings("unchecked")
+	private void throwErrorResponse(String respBody) throws MDTClientException, RuntimeException {
+		MDTExceptionEntity entity = null;
 		try {
-			MDTExceptionEntity entity = parseJson(respBody, EXCEPTION_ENTITY);
-			throw entity.toClientException();
-		}
-		catch ( MDTClientException e ) {
-			throw e;
+			entity = parseJson(respBody, EXCEPTION_ENTITY);
 		}
 		catch ( Exception e ) {
 			throw new InternalException("failed to parse ExceptionMessage: " + respBody);
+		}
+
+		Class<? extends RuntimeException> cls = null;
+		try {
+			cls = (Class<? extends RuntimeException>) Class.forName(entity.getCode());
+		}
+		catch ( Exception e ) {
+			throw entity.toClientException();
+		}
+		
+		if ( entity.getText() != null && entity.getText().length() > 0 ) {
+			throw createException(entity, cls, entity.getText());
+		}
+		else {
+			throw createException(entity, cls);
+		}
+	}
+	
+	private RuntimeException createException(MDTExceptionEntity entity,
+											Class<? extends RuntimeException> entityCls, String details) {
+		try {
+			Constructor<? extends RuntimeException> ctor = entityCls.getConstructor(String.class);
+			return ctor.newInstance(details);
+		}
+		catch ( Exception e ) {
+			return entity.toClientException();
+		}
+	}
+	
+	private RuntimeException createException(MDTExceptionEntity entity,
+												Class<? extends RuntimeException> entityCls) {
+		try {
+			Constructor<? extends RuntimeException> ctor = entityCls.getConstructor();
+			return ctor.newInstance();
+		}
+		catch ( Exception e ) {
+			return entity.toClientException();
 		}
 	}
 }

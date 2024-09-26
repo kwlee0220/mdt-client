@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.BOM;
 import mdt.ksx9101.model.BOMs;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -14,13 +14,13 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultBOMs extends SubmodelElementListHandle<BOM,DefaultBOM> implements BOMs {
+public class DefaultBOMs extends SubmodelElementListEntity<BOM,DefaultBOM> implements BOMs {
 	public DefaultBOMs() {
 		super("BOMs", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public DefaultBOM newElementHandle() {
+	public DefaultBOM newElementEntity() {
 		return new DefaultBOM();
 	}
 }

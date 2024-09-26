@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Repair;
 import mdt.ksx9101.model.Repairs;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -14,14 +14,14 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultRepairs extends SubmodelElementListHandle<Repair,DefaultRepair>
+public class DefaultRepairs extends SubmodelElementListEntity<Repair,DefaultRepair>
 								implements Repairs {
 	public DefaultRepairs() {
 		super("Repairs", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public DefaultRepair newElementHandle() {
+	public DefaultRepair newElementEntity() {
 		return new DefaultRepair();
 	}
 }

@@ -1,0 +1,200 @@
+[
+{
+  "id": "mdt.task.builtin.SetTask",
+  "name": "AAS 모델 데이터 변경 태스크",
+  "type": "mdt.task.builtin.SetTask",
+  "description": "AAS 모델의 데이터를 갱신하는 태스크",
+  "options": [
+    { "name": "endpoint", "required": "false", "description": "MDT-Manager 접속 endpoint" },
+    { "name": "logger", "required": "false", "description": "Logger level" }
+  ],
+  "outputPorts": [
+    { "name": "target", "required": "true", "description": "변경될 SubmodelElement 위치" }
+  ]
+},
+
+{
+  "id": "mdt.task.builtin.CopyTask",
+  "name": "AAS 모델 데이터 복사 태스크",
+  "type": "mdt.task.builtin.CopyTask",
+  "description": "AAS SubmodelElement 사이의 데이터를 복사하는 태스크",
+  "options": [
+    { "name": "endpoint", "required": "false", "description": "MDT-Manager 접속 endpoint" },
+    { "name": "logger", "required": "false", "description": "Logger level" }
+  ],
+  "inputPorts": [
+    { "name": "source",  "required": "true", "description": "복사할 원시 SubmodelElement 위치" }
+  ],
+  "outputPorts": [
+    { "name": "target", "required": "true", "description": "변경될 SubmodelElement 위치" }
+  ]
+},
+
+{
+  "id": "mdt.task.builtin.JavaTask",
+  "name": "Java 기반 태스크",
+  "type": "mdt.task.builtin.JavaTask",
+  "description": "Java 클래스를 활용하여 태스크를 수행하는 태스크.",
+  "options": [
+    { "name": "endpoint", "required": "false", "description": "MDT-Manager 접속 endpoint" },
+    { "name": "logger", "required": "false", "description": "Logger level" },
+    { "name": "class", "required": "true", "description": "실행시킬 Java 클래스의 FQCN" },
+    { "name": "timeout", "required": "false", "description": "태스크 수행 제한 시간" }
+  ],
+  "inputPorts": [ ],
+  "outputPorts": [ ]
+},
+
+{
+  "id": "mdt.task.builtin.ProgramTask",
+  "name": "실행 프로그램 기반 태스크",
+  "type": "mdt.task.builtin.ProgramTask",
+  "description": "실행 프로그램을 구동하여 태스크를 수행하는 태스크.",
+  "options": [
+    { "name": "endpoint", "required": "false", "description": "MDT-Manager 접속 endpoint" },
+    { "name": "logger", "required": "false", "description": "Logger level" },
+    { "name": "command", "required": "true", "description": "구동시킬 프로그램 경로" },
+    { "name": "workingDir", "required": "false", "description": "실행 프로그램을 구동시킬 디렉토리 경로" },
+    { "name": "timeout", "required": "false", "description": "태스크 수행 제한 시간" }
+  ],
+  "inputPorts": [ ],
+  "outputPorts": [ ]
+},
+
+{
+  "id": "mdt.task.builtin.HttpTask",
+  "name": "HTTP기반 원격 수행 태스크",
+  "type": "mdt.task.builtin.HttpTask",
+  "description": "실행 프로그램을 구동하여 태스크를 수행하는 태스크.",
+  "options": [
+    { "name": "endpoint", "required": "false", "description": "MDT-Manager 접속 endpoint" },
+    { "name": "logger", "required": "false", "description": "Logger level" },
+    { "name": "url", "required": "true", "description": "원격 태스크 수행 서버 URL" },
+    { "name": "pollInterval", "required": "false", "description": "비동기로 태스크가 수행되는 경우 서버 수행 여부 확인 시간 간격" },
+    { "name": "timeout", "required": "false", "description": "태스크 수행 제한 시간" }
+  ],
+  "inputPorts": [ ],
+  "outputPorts": [ ]
+},
+
+{
+  "id": "mdt.task.builtin.Jslt2Task",
+  "name": "JSLT 태스크",
+  "type": "mdt.task.builtin.Jslt2Task",
+  "description": "JSLT script를 활용한 SME를 변형시키는 태스크.",
+  "options": [
+    { "name": "endpoint", "required": "false", "description": "MDT-Manager 접속 endpoint" },
+    { "name": "logger", "required": "false", "description": "Logger level" },
+    { "name": "script", "required": "false", "description": "JSLT script 파일 경로" },
+    { "name": "expr", "required": "false", "description": "JSLT script 문자열" }
+  ],
+  "inputPorts": [ ],
+  "outputPorts": [
+    { "name": "target", "required": "true", "description": "변형된 결과 SubmodelElement 저장될 위치" }
+  ]
+},
+
+{
+  "id": "mdt.task.builtin.AASOperationTask",
+  "name": "AAS Operation 구동 태스크",
+  "type": "mdt.task.builtin.JavaTask",
+  "description": "AAS 모델 내 Operation을 구동하는 태스크.",
+  "options": [
+    { "name": "endpoint", "required": "false", "description": "MDT-Manager 접속 endpoint" },
+    { "name": "logger", "required": "false", "description": "Logger level" },
+    { "name": "operation", "required": "true", "description": "실행시킬 Operation SubmodelElement reference" },
+    { "name": "async", "required": "false", "description": "비동기 태스크 수행 여부. (default: false)" },
+    { "name": "timeout", "required": "false", "description": "태스크 수행 제한 시간" }
+  ],
+  "inputPorts": [ ],
+  "outputPorts": [ ]
+},
+
+
+
+
+{
+  "id": "copy-cycletime",
+  "name": "Cycle time 데이터 준비",
+  "type": "mdt.task.builtin.CopyTask",
+  "description": "Process optimization task 수행을 위한 설비의 cycletime 데이터 복사",
+  "parameters": [
+    { "name": "src-mdt-id", "description": "설비 트윈 식별자" },
+    { "name": "tar_input_index", "description": "시뮬레이션 입력 정보 순서" }
+  ],
+  "inputPorts": [ {
+    "name": "source",
+    "value": "{{src-mdt-id}}/DataDataInfo.Equipment.EquipmentParameterValues[1].ParameterValue.$value"
+  } ],
+  "outputPorts": [ {
+    "name": "target",
+    "value": "QC/Simulation/SimulationInfo.Inputs[{{tar_input_index}}].InputValue"
+  } ]
+},
+
+{
+  "id": "내함_성형",
+  "name": "내함 성형 공정 최적화 태스크",
+  "type": "mdt.task.builtin.HttpTask",
+  "description": "Process optimization task",
+  "options": [
+    { "name": "url", "value": "http://129.254.91.75:12987/operations/test-operation" },
+    { "name": "timeout", "value": "5m" },
+    { "name": "logger", "value": "info" }
+  ],
+  "inputPorts": [
+    { "name": "heater", "value": "QC/Simulation/SimulationInfo.Inputs[0].InputValue.$value" },
+    { "name": "vaccum", "value": "QC/Simulation/SimulationInfo.Inputs[1].InputValue.$value" },
+    { "name": "piercing", "value": "QC/Simulation/SimulationInfo.Inputs[2].InputValue.$value" },
+    { "name": "inspection", "value": "QC/Simulation/SimulationInfo.Inputs[3].InputValue.$value" }
+  ],
+  "outputPorts": [ 
+    { "name": "TotalThroughput", "value": "QC/Simulation/SimulationInfo.Outputs[0].OutputValue.$value" }
+  ]
+},
+
+{
+  "id": "내함_성형_공정",
+  "name": "내함 성형 최적화 공정",
+  "tasks": [
+    {
+      "id":  "copy-heater-cycletime",
+      "template": "copy-cycletime",
+      "arguments": [
+          { "src-mdt-id": "KRCW-01ELIF027" },
+          { "tar_input_index": 0 }
+      ]
+    },
+    {
+      "id":  "copy-vacuum-cycletime",
+      "template": "copy-cycletime",
+      "arguments": [
+          { "src-mdt-id": "KRCW-01ELQI005" },
+          { "tar_input_index": 1 }
+      ]
+    },
+    {
+      "id":  "copy-piercing-cycletime",
+      "template": "copy-cycletime",
+      "arguments": [
+          { "src-mdt-id": "KRCW-01ESUM006" },
+          { "tar_input_index": 2 }
+      ]
+    },
+    {
+      "id":  "copy-inspection-cycletime",
+      "template": "copy-cycletime",
+      "arguments": [
+          { "src-mdt-id": "KRCW-01ETHT006" },
+          { "tar_input_index": 3 }
+      ]
+    },
+    {
+      "id":  "process-optimization",
+      "template": "내함_성형",
+      "dependencies": ["copy-heater-cycletime", "copy-vacuum-cycletime", "copy-piercing-cycletime", "copy-inspection-cycletime"]
+    }
+  ]
+}
+
+]

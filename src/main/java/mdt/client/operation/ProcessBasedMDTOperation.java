@@ -2,6 +2,7 @@ package mdt.client.operation;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
@@ -19,12 +20,12 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
+import utils.KeyValue;
 import utils.async.AbstractThreadedExecution;
 import utils.async.AsyncState;
 import utils.async.CancellableWork;
 import utils.async.Guard;
 import utils.func.FOption;
-import utils.func.KeyValue;
 import utils.io.IOUtils;
 import utils.stream.FStream;
 
@@ -44,50 +45,13 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 	private final Guard m_guard = Guard.create();
 	@GuardedBy("m_guard") private Process m_process;
 	
-	public static class FileArgument {
-		private final String m_name;
-		private final File m_argFile;
-		private final boolean m_isOutput;
-		
-		public FileArgument(String name, File argFile, boolean isOutput) {
-			m_name = name;
-			m_argFile = argFile;
-			m_isOutput = isOutput;
-		}
-		
-		public String getName() {
-			return m_name;
-		}
-		
-		public File getFile() {
-			return m_argFile;
-		}
-		
-		public boolean isOutput() {
-			return m_isOutput;
-		}
-		
-		public String read() throws IOException {
-			try {
-				return IOUtils.toString(m_argFile);
-			}
-			catch ( IOException e ) {
-				throw new IOException("Failed to read output file: " + m_argFile + ", cause=" + e.getMessage());
-			}
-		}
-		
-		@Override
-		public String toString() {
-			String inoutStr = (m_isOutput) ? "out" : "in";
-			return String.format("%s: %s (%s)", m_name, m_argFile, inoutStr);
-		}
-	}
-	
 	private ProcessBasedMDTOperation(Builder builder) {
 		m_command = builder.m_command;
 		m_workingDirectory = builder.m_workingDirectory;
 		m_fileArguments = builder.m_fileArguments;
 		m_timeout = builder.m_timeout;
+		
+		setLogger(s_logger);
 	}
 
 	@Override
@@ -99,15 +63,20 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 				throw new IllegalArgumentException("Invalid working directory: " + m_workingDirectory);
 			}
 			builder.directory(m_workingDirectory);
-			if ( s_logger.isDebugEnabled() ) {
-				s_logger.debug("set working directory: " + m_workingDirectory);
+			if ( getLogger().isDebugEnabled() ) {
+				getLogger().debug("set working directory: " + m_workingDirectory);
 			}
+			
+			File stdoutLogFile = new File(m_workingDirectory, "stdout.log");
+			builder.redirectOutput(Redirect.to(stdoutLogFile));
+			File stderrLogFile = new File(m_workingDirectory, "stderr.log");
+			builder.redirectError(stderrLogFile);
 		}
 		
 		try {
-			if ( s_logger.isDebugEnabled() ) {
+			if ( getLogger().isDebugEnabled() ) {
 				String toStr = ( m_timeout != null ) ? ", timeout=" + m_timeout : "";
-				s_logger.debug("starting program: {}{}", m_command, toStr);
+				getLogger().debug("starting program: {}{}", m_command, toStr);
 			}
 			Process process = m_guard.getOrThrow(() -> m_process = builder.start());
 			if ( m_timeout != null ) {
@@ -149,8 +118,8 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 	public boolean cancelWork() {
 		return m_guard.get(() -> {
 			if ( m_process != null ) {
-				if ( s_logger.isInfoEnabled() ) {
-					s_logger.debug("killing process: pid={}", m_process.toHandle().pid());
+				if ( getLogger().isInfoEnabled() ) {
+					getLogger().debug("killing process: pid={}", m_process.toHandle().pid());
 				}
 				m_process.destroy();
 			}
@@ -177,6 +146,45 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 				.forEach(File::delete);
 	}
 	
+	public static class FileArgument {
+		private final String m_name;
+		private final File m_argFile;
+		private final boolean m_isOutput;
+		
+		public FileArgument(String name, File argFile, boolean isOutput) {
+			m_name = name;
+			m_argFile = argFile;
+			m_isOutput = isOutput;
+		}
+		
+		public String getName() {
+			return m_name;
+		}
+		
+		public File getFile() {
+			return m_argFile;
+		}
+		
+		public boolean isOutput() {
+			return m_isOutput;
+		}
+		
+		public String read() throws IOException {
+			try {
+				return IOUtils.toString(m_argFile);
+			}
+			catch ( IOException e ) {
+				throw new IOException("Failed to read output file: " + m_argFile + ", cause=" + e.getMessage());
+			}
+		}
+		
+		@Override
+		public String toString() {
+			String inoutStr = (m_isOutput) ? "out" : "in";
+			return String.format("%s: %s (%s)", m_name, m_argFile, inoutStr);
+		}
+	}
+	
 	public static Builder builder() {
 		return new Builder();
 	}
@@ -185,6 +193,7 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 		private File m_workingDirectory;
 		private List<FileArgument> m_fileArguments = Lists.newArrayList();
 		private Duration m_timeout;
+		private boolean m_addPortFileToCommandLine = true;
 		
 		public ProcessBasedMDTOperation build() {
 			return new ProcessBasedMDTOperation(this);
@@ -197,6 +206,11 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 		
 		public Builder setCommand(String command) {
 			m_command.add(0, command);
+			return this;
+		}
+		
+		public Builder addPortFileToCommandLine(boolean flag) {
+			m_addPortFileToCommandLine = flag;
 			return this;
 		}
 		
@@ -218,12 +232,16 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 		public Builder addFileArgument(String argName, String argValue, boolean output) {
 			try {
 				File file = toFile(argName);
-				file.getParentFile().mkdirs();
+				if ( file.getParentFile() != null ) {
+					file.getParentFile().mkdirs();
+				}
 				
 				argValue = FOption.getOrElse(argValue, "");
 				Files.writeString(file.toPath(), argValue, StandardCharsets.UTF_8);
 				
-				m_command.add(file.getPath());
+				if ( m_addPortFileToCommandLine ) {
+					m_command.add(file.getPath());
+				}
 				m_fileArguments.add(new FileArgument(argName, file, output));
 				
 				return this;

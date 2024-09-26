@@ -30,7 +30,7 @@ public final class ParameterNode implements Node {
 		String slStr = ( Objects.nonNull(m_param.getLSL()) || Objects.nonNull(m_param.getUSL()) )
 					? String.format(", 공정범위: %s-%s", m_param.getLSL(), m_param.getUSL())
 					: "";
-		String paramValue = FOption.map(m_paramValue, ParameterValue::getParameterValue, "N/A");
+		String paramValue = FOption.mapOrElse(m_paramValue, ParameterValue::getParameterValue, "N/A");
 		return String.format("%s (%s): %s%s", idStr, m_param.getParameterType(), paramValue, slStr);
 	}
 

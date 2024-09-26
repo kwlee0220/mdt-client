@@ -112,7 +112,7 @@ public class InstanceDescriptorSerDe {
 			DefaultInstanceDescriptor desc = new DefaultInstanceDescriptor();
 			desc.setId(getStringField(node, "id"));
 			desc.setStatus(FOption.map(getStringField(node, "status"), MDTInstanceStatus::valueOf));
-			desc.setEndpoint(getStringField(node, "endpoint"));
+			desc.setBaseEndpoint(getStringField(node, "baseEndpoint"));
 			
 			desc.setAasId(getStringField(node, "aasId"));
 			desc.setAasIdShort(getStringField(node, "aasIdShort"));
@@ -140,6 +140,8 @@ public class InstanceDescriptorSerDe {
 	}
 	
 	private static class InstanceDescriptorSerializer extends StdSerializer<InstanceDescriptor> {
+		private static final long serialVersionUID = 1L;
+
 		private InstanceDescriptorSerializer() {
 			this(null);
 		}
@@ -153,7 +155,7 @@ public class InstanceDescriptorSerDe {
 			gen.writeStartObject();
 			gen.writeStringField("id", desc.getId());
 			gen.writeStringField("status", desc.getStatus().name());
-			gen.writeStringField("endpoint", desc.getEndpoint());
+			gen.writeStringField("baseEndpoint", desc.getBaseEndpoint());
 			
 			gen.writeStringField("aasId", desc.getAasId());
 			gen.writeStringField("aasIdShort", desc.getAasIdShort());

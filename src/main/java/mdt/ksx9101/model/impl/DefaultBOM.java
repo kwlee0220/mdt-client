@@ -3,7 +3,7 @@ package mdt.ksx9101.model.impl;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.BOM;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -12,7 +12,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultBOM extends AbstractMDTSubmodelElementCollection implements BOM {
+public class DefaultBOM extends SubmodelElementCollectionEntity implements BOM {
 	@PropertyField(idShort="BOMID") private String BOMID;
 	@PropertyField(idShort="BOMType") private String BOMType;
 	@PropertyField(idShort="ItemID") private String itemID;

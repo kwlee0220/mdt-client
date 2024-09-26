@@ -22,9 +22,9 @@ import lombok.NoArgsConstructor;
 @Data
 public final class MDTClientConfig {
 	private static final Logger s_logger = LoggerFactory.getLogger(MDTClientConfig.class);
-	private static final String DEFAULT_ENDPOINT = "http://localhost:12985/instance-manager";
+//	private static final String DEFAULT_ENDPOINT = "http://localhost:12985/instance-manager";
 
-	private String endpoint = DEFAULT_ENDPOINT;
+	private String endpoint;
 	
 	public static MDTClientConfig load(Path configFile) throws IOException {
 		if ( s_logger.isInfoEnabled() ) {

@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.CompositionDependencies;
 import mdt.ksx9101.model.CompositionDependency;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -17,7 +17,7 @@ import mdt.model.SubmodelElementListHandle;
  */
 @Getter @Setter
 public class DefaultCompositionDependencies
-			extends SubmodelElementListHandle<CompositionDependency,DefaultCompositionDependency>
+			extends SubmodelElementListEntity<CompositionDependency,DefaultCompositionDependency>
 									implements CompositionDependencies {
 	public DefaultCompositionDependencies() {
 		super("CompositionDependencies", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
@@ -29,7 +29,7 @@ public class DefaultCompositionDependencies
 	}
 
 	@Override
-	public DefaultCompositionDependency newElementHandle() {
+	public DefaultCompositionDependency newElementEntity() {
 		return new DefaultCompositionDependency();
 	}
 }

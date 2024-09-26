@@ -9,29 +9,31 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.google.common.base.Preconditions;
+
+import utils.func.FOption;
 import utils.func.Tuple;
 import utils.stream.FStream;
 
 import mdt.client.HttpAASRESTfulClient;
-import mdt.client.HttpServiceFactory;
-import mdt.client.MDTClientConfig;
+import mdt.client.HttpMDTServiceProxy;
+import mdt.client.SSLUtils;
 import mdt.model.AASUtils;
+import mdt.model.InvalidResourceStatusException;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelUtils;
 import mdt.model.instance.AddMDTInstancePayload;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.instance.MDTInstanceManagerClient;
 import mdt.model.instance.MDTInstanceManagerException;
-import mdt.model.registry.AASRegistry;
-import mdt.model.registry.InvalidResourceStatusException;
-import mdt.model.registry.RegistryException;
-import mdt.model.registry.ResourceNotFoundException;
-import mdt.model.registry.SubmodelRegistry;
 import mdt.model.service.SubmodelService;
+import mdt.model.workflow.MDTWorkflowManagerException;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
@@ -43,68 +45,16 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
-											implements MDTInstanceManagerClient {
-	public static final String PATH_INSTANCE_MANAGER = "/instance-manager";
-	public static final String PATH_AAS_REPOSITORY = "/shell-registry";
-	public static final String PATH_SUBMODEL_REPOSITORY = "/submodel-registry";
-	
-	private final HttpServiceFactory m_serviceFactory;
-	private final String m_baseUrl;
-	private final String m_endpoint;
+											implements MDTInstanceManager, HttpMDTServiceProxy {
 	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
 	
-	public static HttpMDTInstanceManagerClient connect(MDTClientConfig config) {
-		return connect(config.getEndpoint());
-	}
-	
-	public static HttpMDTInstanceManagerClient connect(String host, int port) {
-		try {
-			HttpServiceFactory svcFact = new HttpServiceFactory();
-			String endpoint = String.format("http://%s:%d/%s", host, port, PATH_INSTANCE_MANAGER);
-			return new HttpMDTInstanceManagerClient(svcFact, endpoint);
-		}
-		catch ( Exception e ) {
-			throw new MDTInstanceManagerException("" + e);
-		}
-	}
-	
-	public static HttpMDTInstanceManagerClient connect(String endpoint) {
-		try {
-			HttpServiceFactory svcFact = new HttpServiceFactory();
-			return new HttpMDTInstanceManagerClient(svcFact, endpoint);
-		}
-		catch ( Exception e ) {
-			throw new MDTInstanceManagerException("" + e);
-		}
-	}
-	
-	private HttpMDTInstanceManagerClient(HttpServiceFactory svcFact, String endpoint) {
-		super(svcFact.getHttpClient());
-		
-		m_serviceFactory = svcFact;
-		
-		int idx = endpoint.lastIndexOf('/');
-		m_baseUrl = endpoint.substring(0, idx);
-		m_endpoint = endpoint;
-	}
-	
-	public String getEndpoint() {
-		return m_endpoint;
-	}
-
-	@Override
-	public AASRegistry getAssetAdministrationShellRegistry() {
-		return m_serviceFactory.getAssetAdministrationShellRegistry(m_baseUrl + PATH_AAS_REPOSITORY);
-	}
-
-	@Override
-	public SubmodelRegistry getSubmodelRegistry() {
-		return m_serviceFactory.getSubmodelRegistry(m_baseUrl + PATH_SUBMODEL_REPOSITORY);
+	private HttpMDTInstanceManagerClient(Builder builder) {
+		super(builder.m_httpClient, builder.m_endpoint);
 	}
 
     // @GetMapping({"instances/{id}"})
 	InstanceDescriptor getInstanceDescriptor(String id) {
-		String url = String.format("%s/instances/%s", m_endpoint, id);
+		String url = String.format("%s/instances/%s", getEndpoint(), id);
 
 		Request req = new Request.Builder().url(url).get().build();
 		String json = call(req, String.class);
@@ -125,7 +75,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
     // @GetMapping({"/instances"})
 	@Override
 	public List<MDTInstance> getAllInstances() throws MDTInstanceManagerException {
-		String url = String.format("%s/instances", m_endpoint);
+		String url = String.format("%s/instances", getEndpoint());
 		Request req = new Request.Builder().url(url).get().build();
 		
 		String descListJson = call(req, String.class);
@@ -137,7 +87,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
     // @GetMapping({"/instances?filter={filter}"})
 	@Override
 	public List<MDTInstance> getAllInstancesByFilter(String filter) {
-		String url = String.format("%s/instances", m_endpoint);
+		String url = String.format("%s/instances", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
 						 		.addQueryParameter("filter", filter)
 					 			.build();
@@ -169,7 +119,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
     // @GetMapping({"/instances?aggregate=count"})
 	@Override
 	public long countInstances() {
-		String url = String.format("%s/instances", m_endpoint);
+		String url = String.format("%s/instances", getEndpoint());
 		Request req = new Request.Builder().url(url).get().build();
 		
 		String countStr = call(req, String.class);
@@ -187,7 +137,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 			AddMDTInstancePayload add = new AddMDTInstancePayload(id, env, arguments);
 			RequestBody reqBody = createRequestBody(add);
 
-			String url = String.format("%s/instances", m_endpoint);
+			String url = String.format("%s/instances", getEndpoint());
 			Request req = new Request.Builder().url(url).post(reqBody).build();
 			String json = call(req, String.class);
 			InstanceDescriptor desc = m_serde.readInstanceDescriptor(json);
@@ -214,19 +164,19 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
 			builder = builder.addFormDataPart("imageId", imageId);
 		}
 		if ( jarFile != null ) {
-			builder = builder.addFormDataPart("jar", MDTInstanceManager.CANONICAL_FA3ST_JAR_FILE,
+			builder = builder.addFormDataPart("jar", MDTInstanceManager.FA3ST_JAR_FILE_NAME,
 												RequestBody.create(jarFile, OCTET_TYPE));
 		}
 		if ( modelFile != null ) {
-			builder = builder.addFormDataPart("initialModel", MDTInstanceManager.CANONICAL_MODEL_FILE,
+			builder = builder.addFormDataPart("initialModel", MDTInstanceManager.MODEL_FILE_NAME,
 												RequestBody.create(modelFile, JSON_TYPE));
 		}
 		if ( confFile != null ) {
-			builder = builder.addFormDataPart("instanceConf", MDTInstanceManager.CANONICAL_CONF_FILE,
+			builder = builder.addFormDataPart("instanceConf", MDTInstanceManager.CONF_FILE_NAME,
 												RequestBody.create(confFile, JSON_TYPE));
 		}
 
-		String url = String.format("%s/instances", m_endpoint);
+		String url = String.format("%s/instances", getEndpoint());
 		RequestBody reqBody = builder.build();
 		Request req = new Request.Builder().url(url).post(reqBody).build();
 		String json = call(req, String.class);
@@ -237,7 +187,7 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
     // @DeleteMapping("/instances/{id}")
 	@Override
 	public void removeInstance(String id) throws MDTInstanceManagerException {
-		String url = String.format("%s/instances/%s", m_endpoint, id);
+		String url = String.format("%s/instances/%s", getEndpoint(), id);
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
@@ -249,17 +199,68 @@ public class HttpMDTInstanceManagerClient extends HttpAASRESTfulClient
     // @DeleteMapping("/instances")
 	@Override
 	public void removeAllInstances() throws MDTInstanceManagerException {
-		String url = String.format("%s/instances", m_endpoint);
+		String url = String.format("%s/instances", getEndpoint());
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
 	}
 
+	/**
+	 * 모델 {@link Reference}에 해당하는 {@link SubmodelElement} 객체를 반환한다.
+	 * 
+	 *  @param ref	접근하고자 하는 Reference 객체.
+	 *  @return	{@link SubmodelElement} 객체
+	 *  @throws	ResourceNotFoundException	Reference에 해당하는 SubmodelElement가 존재하지 않는 경우.
+	 *  @throws InvalidResourceStatusException	Reference에 해당하는 SubmodelElement를 포함한
+	 *  					MDTInstnace가 RUNNING 상태가 아닌 경우.
+	 */
 	public SubmodelElement getSubmodelElementByReference(Reference ref)
-		throws ResourceNotFoundException, InvalidResourceStatusException, RegistryException {
+		throws ResourceNotFoundException, InvalidResourceStatusException {
 		Tuple<String,String> info = SubmodelUtils.parseSubmodelReference(ref);
 		
 		MDTInstance inst = getInstanceBySubmodelId(info._1);
 		SubmodelService svc = inst.getSubmodelServiceById(info._1);
 		return svc.getSubmodelElementByPath(info._2);
+	}
+
+	public static Builder builder() {
+		return new Builder();
+	}
+	public static class Builder {
+		private OkHttpClient m_httpClient;
+		private String m_endpoint;
+		private JsonMapper m_mapper;
+		
+		private Builder() { }
+		
+		public HttpMDTInstanceManagerClient build() {
+			Preconditions.checkState(m_endpoint != null, "MDTInstanceManager endpoint has not been set");
+			
+			if ( m_httpClient == null ) {
+				try {
+					m_httpClient = SSLUtils.newTrustAllOkHttpClientBuilder().build();
+				}
+				catch ( Exception e ) {
+					throw new MDTWorkflowManagerException("" + e);
+				}
+			}
+			m_mapper = FOption.getOrElse(m_mapper, AASUtils::getJsonMapper);
+			
+			return new HttpMDTInstanceManagerClient(this);
+		}
+		
+		public Builder httpClient(OkHttpClient client) {
+			m_httpClient = client;
+			return this;
+		}
+		
+		public Builder endpoint(String endpoint) {
+			m_endpoint = endpoint;
+			return this;
+		}
+		
+		public Builder jsonMapper(JsonMapper mapper) {
+			m_mapper = mapper;
+			return this;
+		}
 	}
 }

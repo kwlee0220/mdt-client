@@ -11,12 +11,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import utils.UnitUtils;
-import utils.func.KeyValue;
 import utils.stream.FStream;
 
 import mdt.cli.MDTCommand;
-import mdt.client.MDTClientConfig;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
@@ -31,8 +29,6 @@ import picocli.CommandLine.Unmatched;
 public abstract class MDTTaskCommand<T extends MDTTask> extends MDTCommand {
 	protected MDTInstanceManager m_manager;
 	
-	abstract protected T newTask();
-	
 	protected Duration m_timeout = null;
 	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\"")
 	public void setTimeout(String toStr) {
@@ -41,10 +37,12 @@ public abstract class MDTTaskCommand<T extends MDTTask> extends MDTCommand {
 	
 	@Unmatched()
 	private List<String> m_unmatcheds = Lists.newArrayList();
+	
+	protected abstract T newTask();
 
 	@Override
-	public void run(MDTClientConfig configs) {
-		m_manager = (HttpMDTInstanceManagerClient)createMDTInstanceManager(configs);
+	public void run(MDTManager manager) throws Exception {
+		m_manager = manager.getInstanceManager();
 		
 		// 모든 port 및 option 정보는 unmatcheds에 포함되어 있다.
 		Map<String,String> unmatchedOptions = FStream.from(m_unmatcheds)
@@ -52,11 +50,9 @@ public abstract class MDTTaskCommand<T extends MDTTask> extends MDTCommand {
 													.toMap(b -> trimHeadingDashes(b.get(0)), b -> b.get(1));
 		
 		Map<String,Port> inputPorts = Maps.newHashMap();
-		Map<String,Port> inoutPorts = Maps.newHashMap();
 		Map<String,Port> outputPorts = Maps.newHashMap();
 		FStream.from(unmatchedOptions)
-				.filter(kv -> Port.isPortOptionName(kv.key()))
-				.map(kv -> Port.from(m_manager, kv.key(), kv.value()))
+				.map(kv -> Ports.from(m_manager, kv.key(), kv.value()))
 				.forEach(port -> {
 					if ( port.isInputPort() ) {
 						inputPorts.put(port.getName(), port);
@@ -64,20 +60,12 @@ public abstract class MDTTaskCommand<T extends MDTTask> extends MDTCommand {
 					else if ( port.isOutputPort() ) {
 						outputPorts.put(port.getName(), port);
 					}
-					else if ( port.isInoutPort() ) {
-						inoutPorts.put(port.getName(), port);
-					}
 				});
 		
-		Map<String,String> options = FStream.from(unmatchedOptions)
-											.filter(kv -> !Port.isPortOptionName(kv.key()))
-											.toMap(KeyValue::key, KeyValue::value);
-		
 		T task = newTask();
-		task.setMDTInstanceManager(m_manager);
 		
 		try {
-			task.run(inputPorts, inoutPorts, outputPorts, options);
+			task.run(m_manager, inputPorts, outputPorts, m_timeout);
 		}
 		catch ( CancellationException e ) {
 			System.err.println("MDTTask cancelled: " + e.getMessage());
@@ -107,10 +95,11 @@ public abstract class MDTTaskCommand<T extends MDTTask> extends MDTCommand {
 
 	@SuppressWarnings("deprecation")
 	protected static final void main(MDTTaskCommand<?> task, String... args) throws Exception {
-		CommandLine commandLine = new CommandLine(task).setUsageHelpWidth(100);
-		commandLine = commandLine.setStopAtUnmatched(true)
-								.setUnmatchedArgumentsAllowed(true)
-								.setUnmatchedOptionsArePositionalParams(true);
+		CommandLine commandLine = new CommandLine(task)
+									.setUsageHelpWidth(100)
+									.setStopAtUnmatched(true)
+									.setUnmatchedArgumentsAllowed(true)
+									.setUnmatchedOptionsArePositionalParams(true);
 		try {
 			commandLine.parse(args);
 

@@ -1,13 +1,13 @@
 package mdt.ksx9101.model;
 
-import mdt.model.MDTSubmodelElement;
+import mdt.model.SubmodelElementEntity;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface MDTInfo extends MDTSubmodelElement {
+public interface MDTInfo extends SubmodelElementEntity {
 	public String getAssetID();
 	public void setAssetID(String id);
 	

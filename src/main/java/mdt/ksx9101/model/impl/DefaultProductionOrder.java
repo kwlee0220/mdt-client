@@ -3,7 +3,7 @@ package mdt.ksx9101.model.impl;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ProductionOrder;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -12,7 +12,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultProductionOrder extends AbstractMDTSubmodelElementCollection implements ProductionOrder {
+public class DefaultProductionOrder extends SubmodelElementCollectionEntity implements ProductionOrder {
 	@PropertyField(idShort="ProductionOrderID") private String productionOrderID;
 	@PropertyField(idShort="ProductionOrderSequence") private String productionOrderSequence;
 	@PropertyField(idShort="OperationID") private String operationID;

@@ -1,0 +1,5 @@
+{
+  "MachineId": get-value-by-path(., "EquipmentID"),
+  "MachineName": get-value-by-path(., "EquipmentName"),
+  "TaktTimeDist": get-parameter-value(., "TaktTimeEstimatedResult")
+}

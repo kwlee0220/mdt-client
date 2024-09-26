@@ -8,14 +8,13 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
-import utils.func.FOption;
-import utils.func.Funcs;
-import utils.func.KeyValue;
-import utils.func.Tuple;
-import utils.stream.FStream;
-
 import mdt.model.DataType;
 import mdt.model.DataTypes;
+import utils.KeyValue;
+import utils.func.FOption;
+import utils.func.Funcs;
+import utils.func.Tuple;
+import utils.stream.FStream;
 
 
 /**
@@ -75,6 +74,7 @@ public class SubmodelElementUpdater {
 		}
 	}
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void updateProperty(Property prop, PropertyValue<?> value) {
 		DataType dtype = DataTypes.fromAas4jDatatype(prop.getValueType());
 		prop.setValue(dtype.toValueString(value.get()));

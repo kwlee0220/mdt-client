@@ -6,8 +6,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 
 import utils.func.Tuple;
 
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelUtils;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.service.SubmodelService;
 
 

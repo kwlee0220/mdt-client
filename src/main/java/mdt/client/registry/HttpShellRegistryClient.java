@@ -7,6 +7,7 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 
+import mdt.client.HttpMDTServiceProxy;
 import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
 import mdt.model.registry.AASRegistry;
@@ -20,13 +21,18 @@ import okhttp3.RequestBody;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpShellRegistryClient extends HttpRegistryClient implements AASRegistry {
+public class HttpShellRegistryClient extends HttpRegistryClient implements AASRegistry, HttpMDTServiceProxy {
 	private final String m_endpoint;
 	
 	public HttpShellRegistryClient(OkHttpClient client, String endpoint) {
 		super(client);
 		
 		m_endpoint = endpoint;
+	}
+
+	@Override
+	public String getEndpoint() {
+		return m_endpoint;
 	}
 
 	@Override

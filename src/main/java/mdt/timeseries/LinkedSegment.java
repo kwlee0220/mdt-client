@@ -8,15 +8,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class LinkedSegment extends AbstractMDTSubmodelElementCollection {
-	private static final Reference SEMANTIC_ID
+public class LinkedSegment extends SubmodelElementCollectionEntity {
+	public static final Reference SEMANTIC_ID
 		= new DefaultReference.Builder()
 				.type(ReferenceTypes.EXTERNAL_REFERENCE)
 				.keys(new DefaultKey.Builder()

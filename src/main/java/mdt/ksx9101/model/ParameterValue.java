@@ -6,14 +6,14 @@ import org.apache.commons.beanutils.PropertyUtils;
 
 import com.google.common.base.Preconditions;
 
-import mdt.ksx9101.AasCRUDOperations;
+import mdt.ksx9101.AasCRUDActions;
 import mdt.model.SubmodelUtils;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface ParameterValue extends AasCRUDOperations {
+public interface ParameterValue extends AasCRUDActions {
 	public String getEntityId();
 	public void setEntityId(String containerId);
 
@@ -42,7 +42,7 @@ public interface ParameterValue extends AasCRUDOperations {
 				PropertyUtils.setSimpleProperty(this, pathSegs.get(0), value);
 			}
 			catch ( Exception e ) {
-				String msg = String.format("Failed to update ParameterValue: %s", value);
+//				String msg = String.format("Failed to update ParameterValue: %s", value);
 			}
 		}
 	}

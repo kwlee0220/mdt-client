@@ -1,13 +1,8 @@
 package mdt.sample;
 
 import java.io.File;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.List;
-import java.util.Map;
 
-import com.google.common.reflect.TypeToken;
-
+import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 
@@ -16,7 +11,7 @@ import mdt.client.instance.HttpMDTInstanceManagerClient;
  * @author Kang-Woo Lee (ETRI)
  */
 public class SampleAddInstance {
-	private static final String ENDPOINT = "http://localhost:12985/instance-manager";
+	private static final String ENDPOINT = "http://localhost:12985";
 	private static final File MODEL_DIR = new File("D:\\Dropbox\\Temp\\fa3st-repository\\ispark\\models_postgresql");
 	
 	static class CustomClass {
@@ -24,9 +19,11 @@ public class SampleAddInstance {
 		public final void notOverridablePublicMethod() { }
 	}
 	
+	@SuppressWarnings("unused")
 	public static final void main(String... args) throws Exception {
 		// MDTInstanceManager에 접속함.
-		HttpMDTInstanceManagerClient manager = HttpMDTInstanceManagerClient.connect(ENDPOINT);
+		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT)
+																	.getInstanceManager();
 
 		HttpMDTInstanceClient kr3 = addInstance(manager, "KR3");
 		HttpMDTInstanceClient innercaseProcess = addInstance(manager, "내함_성형");

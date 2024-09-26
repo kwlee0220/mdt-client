@@ -1,0 +1,9 @@
+{
+  "MachineId": get-value-by-path(., "AssetID"),
+  "MachineName": get-value-by-path(., "AssetName"),
+  "MachineType": get-value-by-path(., "AssetType"),
+}
+
+
+
+java -cp mdt-client-all.jar mdt.task.builtin.JsltTaskCommand --expr '{ "MachineId": get-value-by-path(., "AssetID"), "MachineName": get-value-by-path(., "AssetName"), "MachineType": get-value-by-path(., "AssetType") }' --in.information KRCW-01ELIF027/InformationModel/MDTInfo --out.output stdout

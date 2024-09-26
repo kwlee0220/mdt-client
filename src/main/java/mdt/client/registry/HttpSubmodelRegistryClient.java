@@ -71,7 +71,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor descriptor) {
-		String url = String.format("%s/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(descriptor.getId()));
+		String url = String.format("%s/submodel-descriptors", m_endpoint);
 		try {
 			RequestBody reqBody = createRequestBody(descriptor);
 			

@@ -5,7 +5,7 @@ import com.google.common.base.Objects;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.EquipmentParameter;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -14,7 +14,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultEquipmentParameter extends AbstractMDTSubmodelElementCollection
+public class DefaultEquipmentParameter extends SubmodelElementCollectionEntity
 										implements EquipmentParameter {
 	@PropertyField(idShort="EquipmentID") private String equipmentId;
 	@PropertyField(idShort="ParameterID") private String parameterId;

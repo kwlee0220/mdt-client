@@ -8,20 +8,21 @@ import org.eclipse.digitaltwin.aas4j.v3.model.LangStringNameType;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringTextType;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import utils.stream.FStream;
 
-import mdt.client.MDTClientConfig;
-import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.model.registry.ResourceNotFoundException;
+import mdt.model.DescriptorUtils;
+import mdt.model.MDTManager;
+import mdt.model.ResourceNotFoundException;
+import mdt.model.instance.MDTInstance;
+import mdt.model.instance.SubmodelReference;
 import mdt.model.service.SubmodelService;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
@@ -29,15 +30,21 @@ import picocli.CommandLine.Parameters;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "submodel", description = "get Submodel information.")
+@Command(
+	name = "submodel",
+	parameterListHeading = "Parameters:%n",
+	optionListHeading = "Options:%n",
+	mixinStandardHelpOptions = true,
+	description = "Get Submodel information."
+)
 public class GetSubmodelCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelCommand.class);
 
-	@Parameters(index="0", arity="1", paramLabel="id", description="Submodel id to show")
-	private String m_submodelId = null;
+	@Parameters(index="0", arity="0..1", paramLabel="ref", description="SubmodelReference to show")
+	private String m_submodelRefString = null;
 	
-	@Option(names={"--mdt"}, paramLabel="id", description="MDTInstance id to show")
-	private String m_mdtId = null;
+	@Option(names={"--id"}, paramLabel="id", description="Submodel id to show")
+	private String m_submodelId = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: table or json)")
@@ -48,26 +55,33 @@ public class GetSubmodelCommand extends MDTCommand {
 	}
 
 	@Override
-	public void run(MDTClientConfig configs) throws Exception {
-		HttpMDTInstanceManagerClient client = this.createMDTInstanceManager(configs);
+	public void run(MDTManager manager) throws Exception {
+		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
 		
 		SubmodelService submodelSvc = null;
-		try {
-			HttpMDTInstanceClient inst = (HttpMDTInstanceClient)client.getInstanceBySubmodelId(m_submodelId);
-			submodelSvc = inst.getSubmodelServiceById(m_submodelId);
+		if ( m_submodelRefString != null ) {
+			try {
+				submodelSvc = SubmodelReference.parseString(client, m_submodelRefString).get();
+			}
+			catch ( ResourceNotFoundException e ) {
+				System.err.printf("Unknown SubmodelReference: %s", m_submodelRefString);
+				System.exit(-1);
+			}
 		}
-		catch ( ResourceNotFoundException expected ) {
-			if ( m_mdtId == null ) {
+		else if ( m_submodelId != null ) {
+			try {
+				MDTInstance inst = client.getInstanceBySubmodelId(m_submodelId);
+				submodelSvc = inst.getSubmodelServiceById(m_submodelId);
+			}
+			catch ( Exception e ) {
 				System.err.printf("Unknown Submodel id: %s", m_submodelId);
 				System.exit(-1);
 			}
-			HttpMDTInstanceClient inst = client.getInstance(m_mdtId);
-			submodelSvc = inst.getSubmodelServiceByIdShort(m_submodelId);
 		}
 			
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
-			displayAsSimple(submodelSvc);
+			displayAsSimple(manager, submodelSvc);
 		}
 		else if ( m_output.equalsIgnoreCase("json") ) {
 			displayAsJson(submodelSvc);
@@ -79,23 +93,7 @@ public class GetSubmodelCommand extends MDTCommand {
 	}
 
 	public static final void main(String... args) throws Exception {
-		GetSubmodelCommand cmd = new GetSubmodelCommand();
-
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
-		try {
-			commandLine.parse(args);
-
-			if ( commandLine.isUsageHelpRequested() ) {
-				commandLine.usage(System.out, Ansi.OFF);
-			}
-			else {
-				cmd.run();
-			}
-		}
-		catch ( Throwable e ) {
-			System.err.println(e);
-			commandLine.usage(System.out, Ansi.OFF);
-		}
+		main(new GetSubmodelCommand(), args);
 	}
 	
 	private void displayAsJson(SubmodelService submodelSvc)
@@ -107,7 +105,7 @@ public class GetSubmodelCommand extends MDTCommand {
 		System.out.println(jsonStr);
 	}
 	
-	private void displayAsSimple(SubmodelService submodelSvc) {
+	private void displayAsSimple(MDTManager manager, SubmodelService submodelSvc) {
 		Table table = new Table(2);
 		Submodel submodel = submodelSvc.getSubmodel();
 
@@ -152,8 +150,10 @@ public class GetSubmodelCommand extends MDTCommand {
 			table.addCell(" DESCRIPTION "); table.addCell("");
 		}
 		
-//		String epStr = RegistryModelConverter.getEndpointString(submodelSvc.getEndpoint()); 
-//		table.addCell(" ENDPOINT "); table.addCell(" " + epStr);
+		SubmodelDescriptor descriptor = manager.getSubmodelRegistry()
+												.getSubmodelDescriptorById(submodel.getId());
+		String endpoint = DescriptorUtils.getEndpointString(descriptor.getEndpoints());
+		table.addCell(" ENDPOINT "); table.addCell(" " + endpoint);
 		
 		System.out.println(table.render());
 	}

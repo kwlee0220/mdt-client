@@ -54,6 +54,7 @@ public class MDTSubmodelElementUtils {
 		return null;
 	}
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Property toProperty(PropertyField anno, Object value) {
 		try {
 			if ( value != null || anno.keepNullField() ) {
@@ -80,7 +81,7 @@ public class MDTSubmodelElementUtils {
 																	Object fieldValue) {
 		SubmodelElementCollection output;
 		if ( fieldValue != null ) {
-			if ( fieldValue instanceof MDTSubmodelElement smcAdaptor ) {
+			if ( fieldValue instanceof SubmodelElementEntity smcAdaptor ) {
 				SubmodelElement fieldSme = smcAdaptor.toAasModel();
 				if ( fieldSme instanceof SubmodelElementCollection smc ) {
 					output = smc;
@@ -117,7 +118,7 @@ public class MDTSubmodelElementUtils {
 	static SubmodelElementList toSubmodelElementList(SMLField smlAnno, Field field, Object fieldValue) {
 		SubmodelElementList output;
 		if ( fieldValue != null ) {
-			if ( fieldValue instanceof MDTSubmodelElement handle ) {
+			if ( fieldValue instanceof SubmodelElementEntity handle ) {
 				SubmodelElement sme = handle.toAasModel();
 				if ( sme instanceof SubmodelElementList sml ) {
 					return sml;
@@ -157,7 +158,7 @@ public class MDTSubmodelElementUtils {
 	static DefaultSubmodelElementList toSubmodelElementList(Iterable<?> iterable) {
 		List<SubmodelElement> smeMembers = Lists.newArrayList();
 		for ( Object member: iterable ) {
-			if ( member instanceof MDTSubmodelElement adaptor) {
+			if ( member instanceof SubmodelElementEntity adaptor) {
 				smeMembers.add((SubmodelElement)adaptor.toAasModel());
 			}
 			else if ( member instanceof SubmodelElement sme ) {
@@ -174,7 +175,7 @@ public class MDTSubmodelElementUtils {
 							.value(smeMembers)
 							.build();
 	}
-	static SubmodelElementList toSubmodelElementList(MDTSubmodelElement adaptor) {
+	static SubmodelElementList toSubmodelElementList(SubmodelElementEntity adaptor) {
 		SubmodelElement sme = adaptor.toAasModel();
 		if ( sme instanceof SubmodelElementList sml ) {
 			return sml;

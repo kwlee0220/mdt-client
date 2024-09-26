@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.async.AsyncResult;
 
+import mdt.client.HttpMDTManagerClient;
 import mdt.client.SSLUtils;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.operation.HttpOperationClient;
@@ -17,10 +18,12 @@ import okhttp3.OkHttpClient;
  * @author Kang-Woo Lee (ETRI)
  */
 public class SampleRunHttpOperation {
-	private static final String ENDPOINT = "http://localhost:12985/instance-manager";
+	private static final String ENDPOINT = "http://localhost:12985";
 	
+	@SuppressWarnings("unused")
 	public static final void main(String... args) throws Exception {
-		HttpMDTInstanceManagerClient manager = HttpMDTInstanceManagerClient.connect(ENDPOINT);
+		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT)
+																	.getInstanceManager();
 		
 		OkHttpClient http = SSLUtils.newTrustAllOkHttpClientBuilder().build();
 		String request = "{ \"submodelEndpoint\": \"https://localhost:10502/api/v3.0/submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMv64K07ZWoX-yEse2YlS9zbS9TaW11bGF0aW9uL1Byb2Nlc3NPcHRpbWl6YXRpb24=\" }";

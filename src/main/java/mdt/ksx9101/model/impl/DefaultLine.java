@@ -3,7 +3,7 @@ package mdt.ksx9101.model.impl;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Line;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -12,7 +12,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultLine extends AbstractMDTSubmodelElementCollection implements Line {
+public class DefaultLine extends SubmodelElementCollectionEntity implements Line {
 	@PropertyField(idShort="LineID") private String lineID;
 	@PropertyField(idShort="LineName") private String lineName;
 	@PropertyField(idShort="LineType") private String lineType;

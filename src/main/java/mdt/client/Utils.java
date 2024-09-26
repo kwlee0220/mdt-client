@@ -7,7 +7,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.LangStringNameType;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringTextType;
 
 import utils.CSV;
-import utils.func.KeyValue;
+import utils.KeyValue;
 import utils.stream.FStream;
 
 /**

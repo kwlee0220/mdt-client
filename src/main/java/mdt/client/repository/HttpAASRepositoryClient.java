@@ -22,22 +22,14 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpAASRepositoryClient extends Fa3stHttpClient
-													implements AssetAdministrationShellRepository {
-	private final String m_url;
-	
-	public HttpAASRepositoryClient(OkHttpClient client, String urlPrefix) {
-		super(client);
-		
-		m_url = urlPrefix;
-	}
-	
-	public String getUrlPrefix() {
-		return m_url;
+										implements AssetAdministrationShellRepository {
+	public HttpAASRepositoryClient(OkHttpClient client, String endpoint) {
+		super(client, endpoint);
 	}
 
 	@Override
 	public List<AssetAdministrationShellService> getAllAssetAdministrationShells() {
-		Request req = new Request.Builder().url(m_url).get().build();
+		Request req = new Request.Builder().url(getEndpoint()).get().build();
 		List<AssetAdministrationShell> aasList = callList(req, AssetAdministrationShell.class);
 		
 		return FStream.from(aasList)
@@ -48,7 +40,7 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 
 	@Override
 	public HttpAASServiceClient getAssetAdministrationShellById(String aasId) {
-		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(aasId));
+		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(aasId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		AssetAdministrationShell aas = call(req, AssetAdministrationShell.class);
@@ -57,7 +49,7 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 
 	@Override
 	public List<AssetAdministrationShellService> getAssetAdministrationShellByAssetId(String assetId) {
-		String url = String.format("%s?assetId=%s", m_url, assetId);
+		String url = String.format("%s?assetId=%s", getEndpoint(), assetId);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		List<AssetAdministrationShell> aasList = callList(req, AssetAdministrationShell.class);
@@ -70,7 +62,7 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 
 	@Override
 	public List<AssetAdministrationShellService> getAssetAdministrationShellByIdShort(String idShort) {
-		String url = String.format("%s?idShort=%s", m_url, idShort);
+		String url = String.format("%s?idShort=%s", getEndpoint(), idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		List<AssetAdministrationShell> aasList = callList(req, AssetAdministrationShell.class);
@@ -86,7 +78,7 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 		try {
 			RequestBody reqBody = createRequestBody(aas);
 			
-			Request req = new Request.Builder().url(m_url).post(reqBody).build();
+			Request req = new Request.Builder().url(getEndpoint()).post(reqBody).build();
 			aas = call(req, AssetAdministrationShell.class);
 			return toService(aas);
 		}
@@ -97,7 +89,7 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 
 	@Override
 	public AssetAdministrationShellService putAssetAdministrationShellById(AssetAdministrationShell aas) {
-		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(aas.getId()));
+		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(aas.getId()));
 		try {
 			RequestBody reqBody = createRequestBody(aas);
 			
@@ -112,14 +104,14 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 
 	@Override
 	public void deleteAssetAdministrationShellById(String aasId) {
-		String url = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(aasId));
+		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(aasId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
 	}
 	
 	private HttpAASServiceClient toService(AssetAdministrationShell aas) {
-		String urlPrefix = String.format("%s/%s", m_url, AASUtils.encodeBase64UrlSafe(m_url));
+		String urlPrefix = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(getEndpoint()));
 		return new HttpAASServiceClient(getHttpClient(), urlPrefix);
 	}
 }

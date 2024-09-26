@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ProductionPerformance;
 import mdt.ksx9101.model.ProductionPerformances;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -15,14 +15,14 @@ import mdt.model.SubmodelElementListHandle;
  */
 @Getter @Setter
 public class DefaultProductionPerformances
-				extends SubmodelElementListHandle<ProductionPerformance,DefaultProductionPerformance>
+				extends SubmodelElementListEntity<ProductionPerformance,DefaultProductionPerformance>
 				implements ProductionPerformances {
 	public DefaultProductionPerformances() {
 		super("ProductionPerformances", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public DefaultProductionPerformance newElementHandle() {
+	public DefaultProductionPerformance newElementEntity() {
 		return new DefaultProductionPerformance();
 	}
 }

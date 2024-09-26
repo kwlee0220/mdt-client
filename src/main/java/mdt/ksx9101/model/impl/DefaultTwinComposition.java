@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.CompositionDependency;
 import mdt.ksx9101.model.TwinComposition;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 import mdt.model.SMLField;
 
@@ -19,7 +19,7 @@ import mdt.model.SMLField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultTwinComposition extends AbstractMDTSubmodelElementCollection
+public class DefaultTwinComposition extends SubmodelElementCollectionEntity
 									implements TwinComposition {
 	@PropertyField(idShort="CompositionID") private String compositionID;
 	@PropertyField(idShort="CompositionType") private String compositionType;

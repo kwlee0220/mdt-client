@@ -3,7 +3,7 @@ package mdt.ksx9101.model.impl;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.CompositionItem;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -12,7 +12,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultCompositionItem extends AbstractMDTSubmodelElementCollection
+public class DefaultCompositionItem extends SubmodelElementCollectionEntity
 										implements CompositionItem {
 	@PropertyField(idShort="ID") private String id;
 	@PropertyField(idShort="Reference") private String reference;

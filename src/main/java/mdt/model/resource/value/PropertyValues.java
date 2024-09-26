@@ -1,22 +1,26 @@
 package mdt.model.resource.value;
 
-import java.text.ParseException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
-import utils.func.FOption;
-
 import lombok.experimental.UtilityClass;
 import mdt.model.DataType;
 import mdt.model.DataTypes;
 import mdt.model.DataTypes.BooleanType;
+import mdt.model.DataTypes.DateTimeType;
+import mdt.model.DataTypes.DateType;
 import mdt.model.DataTypes.DoubleType;
 import mdt.model.DataTypes.DurationType;
 import mdt.model.DataTypes.FloatType;
-import mdt.model.DataTypes.IntegerType;
+import mdt.model.DataTypes.IntType;
+import mdt.model.DataTypes.LongType;
+import mdt.model.DataTypes.ShortType;
 import mdt.model.DataTypes.StringType;
+import utils.DataUtils;
+import utils.func.FOption;
 
 /**
  *
@@ -24,38 +28,44 @@ import mdt.model.DataTypes.StringType;
  */
 @UtilityClass
 public class PropertyValues {
+	@SuppressWarnings("unused")
 	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd");
 	
 	public static PropertyValue<?> fromDataType(DataType<?> dtype, Object initValue) {
 		if ( dtype instanceof StringType ) {
 			return new StringValue(FOption.map(initValue, v -> "" + v));
 		}
-		else if ( dtype instanceof IntegerType ) {
-			return new IntegerValue((Integer)initValue);
+		else if ( dtype instanceof IntType ) {
+			return new IntegerValue(DataUtils.asInt(initValue));
 		}
 		else if ( dtype instanceof DurationType ) {
-			return new DurationValue((Duration)initValue);
+			if ( initValue instanceof String ) {
+				return new DurationValue(Duration.parse((String)initValue));
+			}
+			else {
+				return new DurationValue((Duration)initValue);
+			}
 		}
 		else if ( dtype instanceof BooleanType ) {
-			return new BooleanValue((Boolean)initValue);
+			return new BooleanValue(DataUtils.asBoolean(initValue));
 		}
 		else if ( dtype instanceof FloatType ) {
-			return new FloatValue((Float)initValue);
+			return new FloatValue(DataUtils.asFloat(initValue));
 		}
 		else if ( dtype instanceof DoubleType ) {
-			return new DoubleValue((Double)initValue);
+			return new DoubleValue(DataUtils.asDouble(initValue));
 		}
-		else if ( dtype instanceof DateTimeValue ) {
-			return new DateTimeValue((Instant)initValue);
+		else if ( dtype instanceof DateTimeType ) {
+			return new DateTimeValue(DataUtils.asInstant(initValue));
 		}
-		else if ( dtype instanceof DateValue ) {
+		else if ( dtype instanceof DateType ) {
 			return new DateValue((Date)initValue);
 		}
-		else if ( dtype instanceof LongValue ) {
-			return new LongValue((Long)initValue);
+		else if ( dtype instanceof LongType ) {
+			return new LongValue(DataUtils.asLong(initValue));
 		}
-		else if ( dtype instanceof ShortValue ) {
-			return new ShortValue((Short)initValue);
+		else if ( dtype instanceof ShortType ) {
+			return new ShortValue(DataUtils.asShort(initValue));
 		}
 		else {
 			throw new IllegalArgumentException("Unexpected PropertyValue type: " + dtype);
@@ -93,6 +103,9 @@ public class PropertyValues {
 		else if ( value instanceof Short lv ) {
 			return new ShortValue(lv);
 		}
+		else if ( value instanceof BigDecimal bd ) {
+			return new DecimalValue(bd);
+		}
 		else {
 			throw new IllegalArgumentException("Unexpected PropertyValue: " + value);
 		}
@@ -102,105 +115,55 @@ public class PropertyValues {
 		public StringValue(String value) {
 			super(DataTypes.STRING, value);
 		}
-
-		@Override
-		public void setString(String str) {
-			set(str);
-		}
 	}
 	public static class IntegerValue extends PropertyValue<Integer> {
 		public IntegerValue(int value) {
-			super(DataTypes.INTEGER, value);
-		}
-
-		@Override
-		public void setString(String str) {
-			set(Integer.parseInt(str));
+			super(DataTypes.INT, value);
 		}
 	}
 	public static class FloatValue extends PropertyValue<Float> {
 		public FloatValue(float value) {
 			super(DataTypes.FLOAT, value);
 		}
-
-		@Override
-		public void setString(String str) {
-			set(Float.parseFloat(str));
-		}
 	}
 	public static class DoubleValue extends PropertyValue<Double> {
 		public DoubleValue(double value) {
 			super(DataTypes.DOUBLE, value);
-		}
-
-		@Override
-		public void setString(String str) {
-			set(Double.parseDouble(str));
 		}
 	}
 	public static class DateTimeValue extends PropertyValue<Instant> {
 		public DateTimeValue(Instant value) {
 			super(DataTypes.DATE_TIME, value);
 		}
-
-		@Override
-		public void setString(String str) {
-			set(Instant.parse(str));
-		}
 	}
 	public static class DateValue extends PropertyValue<Date> {
 		public DateValue(Date value) {
 			super(DataTypes.DATE, value);
-		}
-
-		@Override
-		public void setString(String str) {
-			try {
-				set(DATE_FORMATTER.parse(str));
-			}
-			catch ( ParseException e ) {
-				throw new IllegalArgumentException("invalid Date string: " + str);
-			}
 		}
 	}
 	public static class DurationValue extends PropertyValue<Duration> {
 		public DurationValue(Duration value) {
 			super(DataTypes.DURATION, value);
 		}
-
-		@Override
-		public void setString(String str) {
-			set(Duration.parse(str));
-		}
 	}
 	public static class BooleanValue extends PropertyValue<Boolean> {
 		public BooleanValue(boolean value) {
 			super(DataTypes.BOOLEAN, value);
-		}
-
-		@Override
-		public void setString(String str) {
-			set(Boolean.parseBoolean(str));
 		}
 	}
 	public static class LongValue extends PropertyValue<Long> {
 		public LongValue(long value) {
 			super(DataTypes.LONG, value);
 		}
-
-		@Override
-		public void setString(String str) {
-			set(Long.parseLong(str));
-		}
 	}
 	public static class ShortValue extends PropertyValue<Short> {
 		public ShortValue(short value) {
 			super(DataTypes.SHORT, value);
 		}
-
-		@Override
-		public void setString(String str) {
-			set(Short.parseShort(str));
+	}
+	public static class DecimalValue extends PropertyValue<BigDecimal> {
+		public DecimalValue(BigDecimal value) {
+			super(DataTypes.DECIMAL, value);
 		}
 	}
 }

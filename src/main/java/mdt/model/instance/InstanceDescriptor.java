@@ -28,11 +28,11 @@ public interface InstanceDescriptor {
 	public MDTInstanceStatus getStatus();
 	
 	/**
-	 * 대상 MDTInstance에 부여된 endpoint를 반환한다.
+	 * 대상 MDTInstance에 부여된 기반 endpoint를 반환한다.
 	 * 대상 MDTInstance의 상태가 {@link MDTInstanceStatus#RUNNING}이 아닌 경우는
 	 * {@code null}이 반환된다.
 	 */
-	@Nullable public String getEndpoint();
+	@Nullable public String getBaseEndpoint();
 	
 	/**
 	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 식별자를 반환한다.

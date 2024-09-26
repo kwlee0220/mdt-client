@@ -14,20 +14,24 @@ import org.slf4j.LoggerFactory;
 import utils.func.FOption;
 import utils.stream.FStream;
 
-import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstance;
 import mdt.model.service.SubmodelService;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 
 /**
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "list", description = "list all Submodels.")
+@Command(
+	name = "list",
+	parameterListHeading = "Parameters:%n",
+	optionListHeading = "Options:%n",
+	mixinStandardHelpOptions = true,
+	description = "List all Submodels."
+)
 public class ListSubmodelAllCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListSubmodelAllCommand.class);
 	
@@ -36,49 +40,34 @@ public class ListSubmodelAllCommand extends MDTCommand {
 	
 	@Option(names={"--table", "-t"}, description="display instances in a table format.")
 	private boolean m_tableFormat = false;
+
+	public static final void main(String... args) throws Exception {
+		main(new ListSubmodelAllCommand(), args);
+	}
 	
 	public ListSubmodelAllCommand() {
 		setLogger(s_logger);
 	}
 
 	@Override
-	public void run(MDTClientConfig configs) throws Exception {
-		HttpMDTInstanceManagerClient mdtClient = this.createMDTInstanceManager(configs);
+	public void run(MDTManager manager) throws Exception {
+		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
+		
 		if ( m_long ) {
 			if ( m_tableFormat ) {
-				displayLongAsTable(mdtClient);
+				displayLongAsTable(client);
 			}
 			else {
-				displayLongNoTable(mdtClient);
+				displayLongNoTable(client);
 			}
 		}
 		else {
 			if ( m_tableFormat ) {
-				displayShortTable(mdtClient);
+				displayShortTable(client);
 			}
 			else {
-				displayShortNoTable(mdtClient);
+				displayShortNoTable(client);
 			}
-		}
-	}
-
-	public static final void main(String... args) throws Exception {
-		ListSubmodelAllCommand cmd = new ListSubmodelAllCommand();
-
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
-		try {
-			commandLine.parse(args);
-
-			if ( commandLine.isUsageHelpRequested() ) {
-				commandLine.usage(System.out, Ansi.OFF);
-			}
-			else {
-				cmd.run();
-			}
-		}
-		catch ( Throwable e ) {
-			System.err.println(e);
-			commandLine.usage(System.out, Ansi.OFF);
 		}
 	}
 	

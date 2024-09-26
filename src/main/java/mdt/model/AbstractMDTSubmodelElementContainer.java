@@ -18,14 +18,14 @@ import utils.InternalException;
 import utils.func.Try;
 import utils.stream.FStream;
 
-import mdt.ksx9101.AasCRUDOperations;
+import mdt.ksx9101.AasCRUDActions;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class AbstractMDTSubmodelElementContainer implements AasCRUDOperations {
+public class AbstractMDTSubmodelElementContainer implements AasCRUDActions {
 	protected String m_idShort;
 	protected String m_idShortRef;
 	protected String m_category;
@@ -125,7 +125,7 @@ public class AbstractMDTSubmodelElementContainer implements AasCRUDOperations {
 			try {
 				field.setAccessible(true);
 				Object fieldValue = field.get(this);
-				if ( fieldValue instanceof AasCRUDOperations op ) {
+				if ( fieldValue instanceof AasCRUDActions op ) {
 					String subIdShortPath = SubmodelUtils.buildIdShortPath(pathSegs.subList(1, pathSegs.size()));
 					op.update(subIdShortPath, fieldValue);
 				}
@@ -152,11 +152,11 @@ public class AbstractMDTSubmodelElementContainer implements AasCRUDOperations {
 			try {
 				field.setAccessible(true);
 				Object fieldValue = field.get(this);
-				if ( fieldValue instanceof AbstractMDTSubmodelElementCollection smcAdaptor
+				if ( fieldValue instanceof SubmodelElementCollectionEntity smcAdaptor
 					&& idShort.equals(smcAdaptor.getIdShort()) ) {
 					return field;
 				}
-				if ( fieldValue instanceof SubmodelElementListHandle<?, ?> smlHandle
+				if ( fieldValue instanceof SubmodelElementListEntity<?, ?> smlHandle
 						&& idShort.equals(smlHandle.getIdShort()) ) {
 					return field;
 				}
@@ -195,10 +195,10 @@ public class AbstractMDTSubmodelElementContainer implements AasCRUDOperations {
 		}
 		
 		Class<?> fieldType = anno.adaptorClass();
-		if ( !AbstractMDTSubmodelElementCollection.class.isAssignableFrom(fieldType) ) {
+		if ( !SubmodelElementCollectionEntity.class.isAssignableFrom(fieldType) ) {
 			fieldType = field.getType();
 		}
-		if ( !AbstractMDTSubmodelElementCollection.class.isAssignableFrom(fieldType) ) {
+		if ( !SubmodelElementCollectionEntity.class.isAssignableFrom(fieldType) ) {
 			String msg = String.format("Field(%s.%s) is not SubmodelElementCollection adaptor",
 										field.getDeclaringClass(), field.getName());
 			throw new ModelGenerationException(msg);
@@ -207,8 +207,8 @@ public class AbstractMDTSubmodelElementContainer implements AasCRUDOperations {
 		SubmodelElementCollection smc;
 		try {
 			smc = (SubmodelElementCollection)element;
-			AbstractMDTSubmodelElementCollection adaptor
-							= (AbstractMDTSubmodelElementCollection)fieldType.getConstructor().newInstance();
+			SubmodelElementCollectionEntity adaptor
+							= (SubmodelElementCollectionEntity)fieldType.getConstructor().newInstance();
 			adaptor.fromAasModel(smc);
 			PropertyUtils.setSimpleProperty(this, field.getName(), adaptor);
 		}
@@ -239,7 +239,7 @@ public class AbstractMDTSubmodelElementContainer implements AasCRUDOperations {
 		Try<Object> fieldValue = Try.get(() -> PropertyUtils.getSimpleProperty(this, field.getName()));
 		if ( fieldValue.isSuccessful()
 			&& fieldValue.getUnchecked() != null
-			&& fieldValue.getUnchecked() instanceof SubmodelElementListHandle handle ) {
+			&& fieldValue.getUnchecked() instanceof SubmodelElementListEntity handle ) {
 			handle.fromAasModel(element);
 			return;
 		}
@@ -247,12 +247,12 @@ public class AbstractMDTSubmodelElementContainer implements AasCRUDOperations {
 		Class<?> fieldType = field.getType();
 		if ( Collection.class.isAssignableFrom(fieldType) ) {
 			Class<?> elmClass = anno.elementClass();
-			if ( MDTSubmodelElement.class.isAssignableFrom(elmClass) ) {
+			if ( SubmodelElementEntity.class.isAssignableFrom(elmClass) ) {
 				try {
 					Constructor<?> elmCtor = elmClass.getDeclaredConstructor();
-					List<MDTSubmodelElement> coll = FStream.from(sml.getValue())
+					List<SubmodelElementEntity> coll = FStream.from(sml.getValue())
 															.mapOrThrow(sme -> {
-																MDTSubmodelElement elm = (MDTSubmodelElement)elmCtor.newInstance();
+																SubmodelElementEntity elm = (SubmodelElementEntity)elmCtor.newInstance();
 																elm.fromAasModel(sme);
 																return elm;
 															})

@@ -12,8 +12,8 @@ import com.google.common.base.Preconditions;
 import utils.func.Tuple;
 import utils.stream.FStream;
 
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelUtils;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.resource.value.SubmodelElementValue;
 import mdt.model.service.SubmodelService;
 
@@ -110,6 +110,9 @@ public class SubmodelElementReference {
 	
 	public static SubmodelElementReference parseString(MDTInstanceManager manager, String refExpr) {
 		String[] parts = refExpr.split("/");
+		if ( parts.length != 3 ) {
+			throw new IllegalArgumentException("invalid SubmodelElementReference: " + refExpr);
+		}
 		return newInstance(manager, parts[0], parts[1], parts[2]);
 	}
 

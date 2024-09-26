@@ -2,6 +2,7 @@ package mdt.client;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.SocketTimeoutException;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
@@ -9,32 +10,39 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
-import utils.InternalException;
-import utils.func.Lazy;
-
 import mdt.model.MDTExceptionEntity;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import utils.InternalException;
+import utils.func.Lazy;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpAASRESTfulClient {
+public class HttpAASRESTfulClient implements HttpClientProxy {
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-	
+
 	private final OkHttpClient m_client;
+	private final String m_endpoint;
 	protected final Lazy<JsonSerializer> m_ser = Lazy.of(JsonSerializer::new);
 	protected final Lazy<JsonDeserializer> m_deser = Lazy.of(JsonDeserializer::new);
 	
-	public HttpAASRESTfulClient(OkHttpClient client) {
+	public HttpAASRESTfulClient(OkHttpClient client, String endpoint) {
+		m_endpoint = endpoint;
 		m_client = client;
 	}
-	
+
+	@Override
+	public String getEndpoint() {
+		return m_endpoint;
+	}
+
+	@Override
 	public OkHttpClient getHttpClient() {
 		return m_client;
 	}
@@ -60,7 +68,13 @@ public class HttpAASRESTfulClient {
 			return parseResponse(resp, responseCls);
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			if ( e instanceof SocketTimeoutException ) {
+				String msg = String.format("Failed to connect to RESTful Server: endpoint=%s", m_endpoint);
+				throw new MDTClientException(msg, e);
+			}
+			else {
+				throw new MDTClientException("" + e);
+			}
 		}
 	}
 	public <T> List<T> callList(Request req, Class<T> responseCls) throws RuntimeException {

@@ -26,6 +26,7 @@ public class RecordSchema {
 	@AllArgsConstructor
 	public static class Field {
 		private String name;
+		@SuppressWarnings("rawtypes")
 		private DataType type;
 	}
 	

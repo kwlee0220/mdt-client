@@ -17,17 +17,15 @@ import org.slf4j.LoggerFactory;
 
 import utils.stream.FStream;
 
-import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.DescriptorUtils;
+import mdt.model.MDTManager;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstance;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.service.AssetAdministrationShellService;
 import mdt.model.service.SubmodelService;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
@@ -36,7 +34,13 @@ import picocli.CommandLine.Parameters;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "aas", description = "get AssetAdministrationShell information.")
+@Command(
+	name = "get",
+	parameterListHeading = "Parameters:%n",
+	optionListHeading = "Options:%n",
+	mixinStandardHelpOptions = true,
+	description = "Get AssetAdministrationShell information."
+)
 public class GetAASCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetAASCommand.class);
 
@@ -46,21 +50,25 @@ public class GetAASCommand extends MDTCommand {
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: 'table', 'json' or 'env')")
 	private String m_output = "table";
+
+	public static final void main(String... args) throws Exception {
+		main(new GetAASCommand(), args);
+	}
 	
 	public GetAASCommand() {
 		setLogger(s_logger);
 	}
 
 	@Override
-	public void run(MDTClientConfig configs) throws Exception {
-		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
+	public void run(MDTManager manager) throws Exception {
+		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
 		
 		HttpMDTInstanceClient instance = null;
 		try {
-			instance = mgr.getInstanceByAasId(m_aasId);
+			instance = client.getInstanceByAasId(m_aasId);
 		}
 		catch ( ResourceNotFoundException expected ) {
-			List<MDTInstance> instList = mgr.getAllInstancesByAasIdShort(m_aasId);
+			List<MDTInstance> instList = client.getAllInstancesByAasIdShort(m_aasId);
 			if ( instList.size() == 1 ) {
 				instance = (HttpMDTInstanceClient)instList.get(0);
 			}
@@ -87,26 +95,6 @@ public class GetAASCommand extends MDTCommand {
 		else {
 			System.err.println("Unknown output: " + m_output);
 			System.exit(-1);
-		}
-	}
-
-	public static final void main(String... args) throws Exception {
-		GetAASCommand cmd = new GetAASCommand();
-
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
-		try {
-			commandLine.parse(args);
-
-			if ( commandLine.isUsageHelpRequested() ) {
-				commandLine.usage(System.out, Ansi.OFF);
-			}
-			else {
-				cmd.run();
-			}
-		}
-		catch ( Throwable e ) {
-			System.err.println(e);
-			commandLine.usage(System.out, Ansi.OFF);
 		}
 	}
 	

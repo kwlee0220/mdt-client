@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.SubModelInfo;
 import mdt.ksx9101.model.impl.DefaultSubModelInfo;
-import mdt.model.AbstractMDTSubmodel;
+import mdt.model.SubmodelEntity;
 import mdt.model.SMCField;
 
 /**
@@ -17,7 +17,7 @@ import mdt.model.SMCField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultSimulation extends AbstractMDTSubmodel implements Simulation {
+public class DefaultSimulation extends SubmodelEntity implements Simulation {
 	@SMCField(idShort="SubModelInfo", adaptorClass=DefaultSubModelInfo.class)
 	private SubModelInfo subModelInfo;
 	

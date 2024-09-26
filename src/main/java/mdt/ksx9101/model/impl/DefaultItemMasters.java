@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ItemMaster;
 import mdt.ksx9101.model.ItemMasters;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -14,14 +14,14 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultItemMasters extends SubmodelElementListHandle<ItemMaster,DefaultItemMaster>
+public class DefaultItemMasters extends SubmodelElementListEntity<ItemMaster,DefaultItemMaster>
 									implements ItemMasters {
 	public DefaultItemMasters() {
 		super("ItemMasters", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public DefaultItemMaster newElementHandle() {
+	public DefaultItemMaster newElementEntity() {
 		return new DefaultItemMaster();
 	}
 }

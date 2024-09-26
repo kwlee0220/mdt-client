@@ -16,8 +16,8 @@ public interface ServiceFactory {
 	public AASRegistry getAssetAdministrationShellRegistry(String endpoint);
 	public SubmodelRegistry getSubmodelRegistry(String endpoint);
 
-	public AssetAdministrationShellRepository getAssetAdministrationShellRepository(String url);
-	public SubmodelRepository getSubmodelRepository(String url);
+	public AssetAdministrationShellRepository getAssetAdministrationShellRepository(String endpoint);
+	public SubmodelRepository getSubmodelRepository(String endpoint);
 
 	public AssetAdministrationShellService getAssetAdministrationShellService(String endpoint);
 	public SubmodelService getSubmodelService(String endpoint);

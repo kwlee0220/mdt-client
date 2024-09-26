@@ -4,12 +4,16 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 
+import mdt.model.MDTService;
+import mdt.model.ResourceAlreadyExistsException;
+import mdt.model.ResourceNotFoundException;
+
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface AASRegistry {
+public interface AASRegistry extends MDTService {
 	/**
 	 * 등록된 모든 Asset administration shell descriptor 들을 반환한다.
 	 * 

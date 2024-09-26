@@ -3,7 +3,7 @@ package mdt.ksx9101.model.impl;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Andon;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -12,7 +12,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultAndon extends AbstractMDTSubmodelElementCollection implements Andon {
+public class DefaultAndon extends SubmodelElementCollectionEntity implements Andon {
 	@PropertyField(idShort="AndonID") private Long andonID;
 	@PropertyField(idShort="GroupID") private String groupID;
 	@PropertyField(idShort="OperationID") private String operationID;

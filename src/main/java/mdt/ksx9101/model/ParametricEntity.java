@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import utils.func.KeyValue;
+import utils.KeyValue;
 
 
 /**

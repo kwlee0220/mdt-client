@@ -20,18 +20,20 @@ import mdt.client.HttpAASRESTfulClient;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.DescriptorUtils;
+import mdt.model.InvalidResourceStatusException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.registry.InvalidResourceStatusException;
 import mdt.model.service.SubmodelService;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
 
 /**
+ * <code>HttpMDTInstanceClient</code>는 HTTP를 기반으로 하여 
+ * {@link MDTInstance}를 원격에서 활용하기 위한 인터페이스를 정의한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -39,15 +41,13 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	private static final RequestBody EMPTY_BODY = RequestBody.create("", null);
 	
 	private final HttpMDTInstanceManagerClient m_manager;
-	private final String m_endpoint;
 	private AtomicReference<InstanceDescriptor> m_desc;
 	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
 	
-	public HttpMDTInstanceClient(HttpMDTInstanceManagerClient manager, InstanceDescriptor desc) {
-		super(manager.getHttpClient());
+	HttpMDTInstanceClient(HttpMDTInstanceManagerClient manager, InstanceDescriptor desc) {
+		super(manager.getHttpClient(), String.format("%s/instances/%s", manager.getEndpoint(), desc.getId()));
 		
 		m_manager = manager;
-		m_endpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
 		m_desc = new AtomicReference<>(desc);
 	}
 	
@@ -62,11 +62,10 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	}
 
 	@Override
-	public String getEndpoint() {
-		return m_desc.get().getEndpoint();
+	public String getBaseEndpoint() {
+		return m_desc.get().getBaseEndpoint();
 	}
 	
-
 	@Override
 	public String getAasId() {
 		return m_desc.get().getAasId();
@@ -97,6 +96,11 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 		return m_desc.get();
 	}
 
+	/**
+	 * 대상 MDTInstance의 상태 정보를 재로드한다.
+	 * 
+	 * @return	재로드된 HTTP 기반 MDTInstance proxy 객체.
+	 */
 	public HttpMDTInstanceClient reload() {
 		InstanceDescriptor desc = m_manager.getInstanceDescriptor(getId());
 		m_desc.set(desc);
@@ -164,7 +168,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
 	@Override
 	public HttpAASServiceClient getAssetAdministrationShellService() {
-		String endpoint = DescriptorUtils.toAASServiceEndpointString(getEndpoint(), getAasId());
+		String endpoint = DescriptorUtils.toAASServiceEndpointString(getBaseEndpoint(), getAasId());
 		if ( endpoint == null ) {
 			throw new InvalidResourceStatusException("AssetAdministrationShell",
 													String.format("mdt=%s, id=%s", getId(), getAasId()),
@@ -175,21 +179,31 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
 	@Override
 	public List<SubmodelService> getAllSubmodelServices() throws InvalidResourceStatusException {
-		return FStream.from(getInstanceSubmodelDescriptors())
+		return FStream.from(getAllInstanceSubmodelDescriptors())
 						.map(desc -> toSubmodelService(desc.getId()))
 						.toList();
 	}
-	public SubmodelService getSubmodelServiceById(String id) {
-		InstanceSubmodelDescriptor desc = getInstanceSubmodelDescriptorById(id);
-		return toSubmodelService(desc.getId());
-	}
-	public SubmodelService getSubmodelServiceByIdShort(String idShort) {
-		InstanceSubmodelDescriptor desc = getInstanceSubmodelDescriptorByIdShort(idShort);
+
+	@Override
+	public SubmodelService getSubmodelServiceById(String submodelId) {
+		InstanceSubmodelDescriptor desc = getInstanceSubmodelDescriptorById(submodelId);
 		return toSubmodelService(desc.getId());
 	}
 
-	
-	public List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptors() {
+	@Override
+	public SubmodelService getSubmodelServiceByIdShort(String submodelIdShort) {
+		InstanceSubmodelDescriptor desc = getInstanceSubmodelDescriptorByIdShort(submodelIdShort);
+		return toSubmodelService(desc.getId());
+	}
+
+	@Override
+	public SubmodelService getSubmodelServiceBySemanticId(String semanticId) {
+		InstanceSubmodelDescriptor desc = getInstanceSubmodelDescriptorBySemanticId(semanticId);
+		return toSubmodelService(desc.getId());
+	}
+
+	@Override
+	public List<InstanceSubmodelDescriptor> getAllInstanceSubmodelDescriptors() {
 		return FStream.from(m_desc.get().getInstanceSubmodelDescriptors())
 						.cast(InstanceSubmodelDescriptor.class)
 						.toList();
@@ -199,7 +213,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
     // @GetMapping({"instances/{id}/aas_descriptor"})
 	@Override
 	public AssetAdministrationShellDescriptor getAASDescriptor() {
-		String url = String.format("%s/aas_descriptor", m_endpoint);
+		String url = String.format("%s/aas_descriptor", getEndpoint());
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, AssetAdministrationShellDescriptor.class);
@@ -208,7 +222,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
     // @GetMapping({"instances/{id}/submodel_descriptors"})
 	@Override
 	public List<SubmodelDescriptor> getAllSubmodelDescriptors() {
-		String url = String.format("%s/submodel_descriptors", m_endpoint);
+		String url = String.format("%s/submodel_descriptors", getEndpoint());
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);
@@ -225,14 +239,16 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	
 	@Override
 	public String toString() {
-		String submodelIdStr = FStream.from(getSubmodelIdShorts()).join(", ");
+		String submodelIdStr = FStream.from(getAllInstanceSubmodelDescriptors())
+										.map(InstanceSubmodelDescriptor::getIdShort)
+										.join(", ");
 		return String.format("[%s] AAS=%s SubmodelIdShorts=(%s) status=%s",
 								getId(), getAasId(), submodelIdStr, getStatus());
 	}
 	
     // @PutMapping({"instance-manager/instances/{id}/start"})
 	private InstanceDescriptor sendStartRequest() {
-		String url = String.format("%s/start", m_endpoint);
+		String url = String.format("%s/start", getEndpoint());
 		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
 		
 		String descJson = call(req, String.class);
@@ -241,7 +257,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
     // @PutMapping({"instance-manager/instances/{id}/stop"})
 	private InstanceDescriptor sendStopRequest() {
-		String url = String.format("%s/stop", m_endpoint);
+		String url = String.format("%s/stop", getEndpoint());
 		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
 		
 		String descJson = call(req, String.class);
@@ -249,7 +265,7 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	}
 	
 	private SubmodelService toSubmodelService(String id) {
-		String baseEndpoint = getEndpoint();
+		String baseEndpoint = getBaseEndpoint();
 		if ( baseEndpoint == null ) {
 			throw new InvalidResourceStatusException("MDTInstance", "id=" + getId(), getStatus());
 		}

@@ -17,7 +17,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import utils.stream.FStream;
 
 import mdt.model.AASUtils;
-import mdt.model.registry.ResourceNotFoundException;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.resource.value.SubmodelElementValue;
 
 /**

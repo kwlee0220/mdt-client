@@ -8,14 +8,12 @@ import org.slf4j.LoggerFactory;
 import utils.func.FOption;
 import utils.stream.FStream;
 
-import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.InvalidResourceStatusException;
+import mdt.model.MDTManager;
 import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
-import mdt.model.registry.InvalidResourceStatusException;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 
 
@@ -23,7 +21,13 @@ import picocli.CommandLine.Option;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "list", description = "list all AssetAdministrationShells.")
+@Command(
+	name = "aas",
+	parameterListHeading = "Parameters:%n",
+	optionListHeading = "Options:%n",
+	mixinStandardHelpOptions = true,
+	description = "List all AssetAdministrationShells."
+)
 public class ListAASAllCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListAASAllCommand.class);
 	
@@ -32,49 +36,34 @@ public class ListAASAllCommand extends MDTCommand {
 	
 	@Option(names={"--table", "-t"}, description="display AssetAdministrationShells in a table format.")
 	private boolean m_tableFormat = false;
+
+	public static final void main(String... args) throws Exception {
+		main(new ListAASAllCommand(), args);
+	}
 	
 	public ListAASAllCommand() {
 		setLogger(s_logger);
 	}
 
 	@Override
-	public void run(MDTClientConfig configs) throws Exception {
-		HttpMDTInstanceManagerClient mgr = this.createMDTInstanceManager(configs);
+	public void run(MDTManager manager) throws Exception {
+		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
+		
 		if ( m_long ) {
 			if ( m_tableFormat ) {
-				displayLongAsTable(mgr);
+				displayLongAsTable(client);
 			}
 			else {
-				displayLongNoTable(mgr);
+				displayLongNoTable(client);
 			}
 		}
 		else {
 			if ( m_tableFormat ) {
-				displayShortTable(mgr);
+				displayShortTable(client);
 			}
 			else {
-				displayShortNoTable(mgr);
+				displayShortNoTable(client);
 			}
-		}
-	}
-
-	public static final void main(String... args) throws Exception {
-		ListAASAllCommand cmd = new ListAASAllCommand();
-
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
-		try {
-			commandLine.parse(args);
-
-			if ( commandLine.isUsageHelpRequested() ) {
-				commandLine.usage(System.out, Ansi.OFF);
-			}
-			else {
-				cmd.run();
-			}
-		}
-		catch ( Throwable e ) {
-			System.err.println(e);
-			commandLine.usage(System.out, Ansi.OFF);
 		}
 	}
 	
@@ -173,9 +162,5 @@ public class ListAASAllCommand extends MDTCommand {
 			displayNames,										// DISPLAY_NAME
 			smIdCsv,											// SUBMODELS
 		};
-	}
-	
-	private String toNullabelString(Object str) {
-		return (str != null) ? str.toString() : "";
 	}
 }

@@ -6,8 +6,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import com.google.common.base.Preconditions;
 
 import lombok.experimental.Delegate;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelUtils;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.resource.value.PropertyValues.StringValue;
 import mdt.model.service.SubmodelService;
 

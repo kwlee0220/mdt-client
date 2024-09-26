@@ -4,7 +4,7 @@ import com.google.common.base.Objects;
 
 import lombok.Getter;
 import lombok.Setter;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -13,7 +13,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class Input extends AbstractMDTSubmodelElementCollection {
+public class Input extends SubmodelElementCollectionEntity {
 	@PropertyField(idShort="InputID")
 	private String inputID;
 	

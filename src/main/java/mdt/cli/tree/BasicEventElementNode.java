@@ -7,9 +7,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.BasicEventElement;
 
 import com.google.common.collect.Lists;
 
-import utils.stream.FStream;
-
 import mdt.client.Utils;
+import utils.stream.FStream;
 
 
 /**
@@ -42,9 +41,5 @@ public final class BasicEventElementNode implements Node {
 		attributes.add(new TextNode("DisplayName: " + Utils.concatLangStringNameTypes(m_event.getDisplayName())));
 		
 		return FStream.from(attributes);
-	}
-	
-	private boolean isEmpty(Object obj) {
-		return (obj == null || obj.toString().trim().length() == 0);
 	}
 }

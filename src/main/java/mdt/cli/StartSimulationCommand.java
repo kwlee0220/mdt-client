@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import utils.UnitUtils;
 import utils.func.Funcs;
 
-import mdt.client.MDTClientConfig;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.operation.HttpSimulationClient;
@@ -22,12 +21,11 @@ import mdt.client.operation.OperationStatusResponse;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.ksx9101.simulation.Simulation;
 import mdt.model.DescriptorUtils;
+import mdt.model.MDTManager;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelUtils;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.registry.SubmodelRegistry;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
@@ -35,7 +33,13 @@ import picocli.CommandLine.Parameters;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@Command(name = "start", description = "Start a simulation.")
+@Command(
+	name = "simulation",
+	parameterListHeading = "Parameters:%n",
+	optionListHeading = "Options:%n",
+	mixinStandardHelpOptions = true,
+	description = "Start a simulation."
+)
 public class StartSimulationCommand extends MDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(StartSimulationCommand.class);
 	private static final Duration DEFAULT_POLL_TIMEOUT = Duration.ofSeconds(3);
@@ -67,35 +71,19 @@ public class StartSimulationCommand extends MDTCommand {
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
 
+	public static final void main(String... args) throws Exception {
+		main(new StartSimulationCommand(), args);
+	}
+
 	public StartSimulationCommand() {
 		setLogger(s_logger);
 	}
-
-	public static final void main(String... args) throws Exception {
-		StartSimulationCommand cmd = new StartSimulationCommand();
-
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
-		try {
-			commandLine.parse(args);
-
-			if ( commandLine.isUsageHelpRequested() ) {
-				commandLine.usage(System.out, Ansi.OFF);
-			}
-			else {
-				cmd.run();
-			}
-		}
-		catch ( Throwable e ) {
-			System.err.println(e);
-			commandLine.usage(System.out, Ansi.OFF);
-		}
-	}
 		
 	@Override
-	public void run(MDTClientConfig configs) throws Exception {
-		HttpMDTInstanceManagerClient mdtClient = this.createMDTInstanceManager(configs);
+	public void run(MDTManager manager) throws Exception {
+		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
 		
-		SubmodelRegistry registry = mdtClient.getSubmodelRegistry();
+		SubmodelRegistry registry = manager.getSubmodelRegistry();
 		
 		HttpMDTInstanceClient inst;
 		SubmodelDescriptor simulationSubmodelDesc;
@@ -110,7 +98,7 @@ public class StartSimulationCommand extends MDTCommand {
 			// 인자로 주어진 식별자에 해당하는 Submodel이 존재하지 않는 경우에는
 			// 식별자에 해당하는 MDTInstance를 검색하여 해당 MDTInstance에 포함된
 			// Simulation Submodel의 갯수가 1개 인 경우에는 이것을 사용한다.
-			inst = mdtClient.getInstance(m_targetId);
+			inst = client.getInstance(m_targetId);
 			List<SubmodelDescriptor> simulations 
 					= Funcs.filter(inst.getAllSubmodelDescriptors(),
 									desc -> Simulation.SEMANTIC_ID.equals(desc.getSemanticId()));
@@ -138,13 +126,13 @@ public class StartSimulationCommand extends MDTCommand {
 			System.exit(-1);
 		}
 		
-		HttpSimulationClient client = new HttpSimulationClient(mdtClient.getHttpClient(), endpoint);
-		client.setLogger(getLogger());
+		HttpSimulationClient simClient = new HttpSimulationClient(client.getHttpClient(), endpoint);
+		simClient.setLogger(getLogger());
 		
 		Instant started = Instant.now();
 		OperationStatusResponse<Void> resp = (m_useEndpoint)
-								? client.startSimulationWithEndpoint(simulationSubmodelEndpoint)
-								: client.startSimulationWithSumodelId(simulationSubmodelDesc.getId());
+								? simClient.startSimulationWithEndpoint(simulationSubmodelEndpoint)
+								: simClient.startSimulationWithSumodelId(simulationSubmodelDesc.getId());
 		
 		if ( m_nowait ) {
 			String loc = resp.getOperationLocation();
@@ -163,11 +151,11 @@ public class StartSimulationCommand extends MDTCommand {
 			}
 			TimeUnit.MILLISECONDS.sleep(m_pollInterval.toMillis());
 			
-			resp = client.statusSimulation(opHandle);
+			resp = simClient.statusSimulation(opHandle);
 			if ( m_timeout != null && resp.getStatus() == OperationStatus.RUNNING ) {
 				if ( m_timeout.minus(Duration.between(started, Instant.now())).isNegative() ) {
 					System.out.println();
-					client.cancelSimulation(opHandle);
+					simClient.cancelSimulation(opHandle);
 					
 					System.out.printf("Simulation is cancelled: id=%s, cause=%s%n",
 										m_targetId, resp.getMessage());

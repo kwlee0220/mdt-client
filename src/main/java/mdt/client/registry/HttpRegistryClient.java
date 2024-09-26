@@ -10,8 +10,8 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
 import mdt.client.MDTClientException;
+import mdt.model.MDTExceptionEntity;
 import mdt.model.registry.RegistryException;
-import mdt.model.registry.RegistryExceptionEntity;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -111,9 +111,10 @@ class HttpRegistryClient {
 	}
 	
 	private void throwErrorResponse(String respBody) throws RegistryException, MDTClientException {
-		RegistryExceptionEntity msg = null;
+		MDTExceptionEntity msg = null;
 		try {
-			msg = m_deser.read(respBody, RegistryExceptionEntity.class);
+			msg = m_deser.read(respBody, MDTExceptionEntity.class);
+			@SuppressWarnings("unchecked")
 			Class<? extends Throwable> cls = (Class<? extends Throwable>) Class.forName(msg.getCode());
 			Constructor<? extends Throwable> ctor = cls.getConstructor(String.class);
 			throw (RuntimeException)ctor.newInstance(msg.getText());

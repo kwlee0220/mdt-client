@@ -38,13 +38,13 @@ public class HttpServiceFactory implements ServiceFactory {
 	}
 
 	@Override
-	public HttpAASRepositoryClient getAssetAdministrationShellRepository(String url) {
-		return new HttpAASRepositoryClient(m_httpClient, url);
+	public HttpAASRepositoryClient getAssetAdministrationShellRepository(String endpoint) {
+		return new HttpAASRepositoryClient(m_httpClient, endpoint);
 	}
 
 	@Override
-	public HttpSubmodelRepositoryClient getSubmodelRepository(String url) {
-		return new HttpSubmodelRepositoryClient(m_httpClient, url);
+	public HttpSubmodelRepositoryClient getSubmodelRepository(String endpoint) {
+		return new HttpSubmodelRepositoryClient(m_httpClient, endpoint);
 	}
 
 	@Override

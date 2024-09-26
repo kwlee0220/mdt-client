@@ -21,14 +21,16 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import utils.InternalException;
+import utils.KeyValue;
 import utils.async.AbstractThreadedExecution;
 import utils.async.CancellableWork;
 import utils.async.Guard;
-import utils.func.KeyValue;
 import utils.stream.FStream;
 
+import mdt.client.HttpClientProxy;
 import mdt.client.HttpRESTfulClient;
 import mdt.client.MDTClientException;
+import mdt.model.AASUtils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -39,14 +41,14 @@ import okhttp3.Response;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpOperationClient extends AbstractThreadedExecution<JsonNode> implements CancellableWork {
+public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
+									implements HttpClientProxy, CancellableWork {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpOperationClient.class);
 	private static final TypeReference<OperationStatusResponse<JsonNode>> RESPONSE_TYPE_REF
 													= new TypeReference<OperationStatusResponse<JsonNode>>(){};
-	public static final JsonMapper MAPPER = new JsonMapper();
+	private static final JsonMapper MAPPER = AASUtils.getJsonMapper();
 	
 	private final HttpRESTfulClient m_restClient;
-	private final String m_endpoint;
 	private final String m_requestBodyJson;
 	private final Duration m_pollInterval;
 	private final Duration m_timeout;
@@ -55,11 +57,22 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode> imp
 	@GuardedBy("m_guard") private Thread m_workerThread = null;
 	
 	private HttpOperationClient(Builder builder) {
-		m_restClient = builder.m_restClient;
-		m_endpoint = builder.m_endpoint;
+		m_restClient = new HttpRESTfulClient(builder.m_httpClient, builder.m_endpoint);
 		m_requestBodyJson = builder.m_requestBodyJson;
 		m_pollInterval = builder.m_pollInterval;
 		m_timeout = builder.m_timeout;
+		
+		setLogger(s_logger);
+	}
+	
+	@Override
+	public OkHttpClient getHttpClient() {
+		return m_restClient.getHttpClient();
+	}
+
+	@Override
+	public String getEndpoint() {
+		return m_restClient.getEndpoint();
 	}
 
 	@Override
@@ -133,10 +146,10 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode> imp
 	private OperationStatusResponse<JsonNode> start(String requestBody) {
 		RequestBody body = m_restClient.createRequestBody(requestBody);
 		
-		if ( s_logger.isDebugEnabled() ) {
-			s_logger.debug("sending start request: url={}, body={}", m_endpoint, requestBody);
+		if ( getLogger().isDebugEnabled() ) {
+			getLogger().debug("sending start request: url={}, body={}", getEndpoint(), requestBody);
 		}
-		Request req = new Request.Builder().url(m_endpoint).post(body).build();
+		Request req = new Request.Builder().url(getEndpoint()).post(body).build();
 		
 		try {
 			Response resp =  m_restClient.getHttpClient().newCall(req).execute();
@@ -151,20 +164,20 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode> imp
 	
 	private OperationStatusResponse<JsonNode> getStatus(String opId) {
 		opId = opId.trim();
-		String url = (opId.length() > 0) ? String.format("%s/%s", m_endpoint, opId) : m_endpoint;
+		String url = (opId.length() > 0) ? String.format("%s/%s", getEndpoint(), opId) : getEndpoint();
 
-		if ( s_logger.isDebugEnabled() ) {
-			s_logger.debug("sending: (GET) {}", url);
+		if ( getLogger().isDebugEnabled() ) {
+			getLogger().debug("sending: (GET) {}", url);
 		}
 		Request req = new Request.Builder().url(url).get().build();
 		return m_restClient.call(req, RESPONSE_TYPE_REF);
 	}
 	
 	private OperationStatusResponse<JsonNode> cancel(String opId) {
-		String url = String.format("%s/%s", m_endpoint, opId);
+		String url = String.format("%s/%s", getEndpoint(), opId);
 
-		if ( s_logger.isDebugEnabled() ) {
-			s_logger.debug("sending: (DELETE) {}", url);
+		if ( getLogger().isDebugEnabled() ) {
+			getLogger().debug("sending: (DELETE) {}", url);
 		}
 		Request req = new Request.Builder().url(url).delete().build();
 		return m_restClient.call(req, RESPONSE_TYPE_REF);
@@ -180,8 +193,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode> imp
 						.fold(MAPPER.createObjectNode(), (on,kv) -> on.set(kv.key(), kv.value()));
 	}
 	private static JsonNode toJsonNode(Object obj) {
-		String str = (obj instanceof String s) ? s : "" + obj;
-		str = str.trim();
+		String str = ("" + obj).trim();
 		if ( str.startsWith("{") ) {
 			try {
 				return MAPPER.readTree(str);
@@ -223,7 +235,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode> imp
 		return new Builder();
 	}
 	public static final class Builder {
-		private HttpRESTfulClient m_restClient;
+		private OkHttpClient m_httpClient;
 		private String m_endpoint;
 		private String m_requestBodyJson;
 		private Duration m_pollInterval = Duration.ofSeconds(3);
@@ -234,7 +246,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode> imp
 		}
 		
 		public Builder setHttpClient(OkHttpClient http) {
-			m_restClient = new HttpRESTfulClient(http);
+			m_httpClient = http;
 			return this;
 		}
 		

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import utils.LoggerSettable;
 import utils.func.FOption;
 
+import mdt.client.HttpClientProxy;
 import mdt.client.HttpRESTfulClient;
 import mdt.client.MDTClientException;
 import okhttp3.MediaType;
@@ -22,29 +23,37 @@ import okhttp3.Response;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpSimulationClient implements LoggerSettable {
+public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpSimulationClient.class);
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 	private static final TypeReference<OperationStatusResponse<Void>> RESPONSE_TYPE_REF
 													= new TypeReference<OperationStatusResponse<Void>>(){};
 	
 	private final HttpRESTfulClient m_restClient;
-	private final String m_endpoint;
 	private Logger m_logger;
 	
 	public HttpSimulationClient(OkHttpClient client, String endpoint) {
-		m_restClient = new HttpRESTfulClient(client);
-		m_endpoint = endpoint;
+		m_restClient = new HttpRESTfulClient(client, endpoint);
 		
 		m_restClient.setLogger(getLogger());
+	}
+
+	@Override
+	public OkHttpClient getHttpClient() {
+		return m_restClient.getHttpClient();
+	}
+
+	@Override
+	public String getEndpoint() {
+		return m_restClient.getEndpoint();
 	}
 	
 	public OperationStatusResponse<Void> startSimulation(String paramtersJson) {
 		RequestBody body = RequestBody.create(paramtersJson, JSON);
-		Request req = new Request.Builder().url(m_endpoint).post(body).build();
+		Request req = new Request.Builder().url(getEndpoint()).post(body).build();
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("sending Simulation start request: url={}, method={}, body={}",
-							m_endpoint, req.method(), paramtersJson);
+							getEndpoint(), req.method(), paramtersJson);
 		}
 		try {
 			Response resp =  m_restClient.getHttpClient().newCall(req).execute();
@@ -71,8 +80,8 @@ public class HttpSimulationClient implements LoggerSettable {
 	}
 	
 	public OperationStatusResponse<Void> statusSimulation(String simulationHandle) {
-		String loc = FOption.map(simulationHandle, String::trim, "");
-		String url = (loc.length() > 0) ?  String.format("%s/%s", m_endpoint, loc) : m_endpoint;
+		String loc = FOption.mapOrElse(simulationHandle, String::trim, "");
+		String url = (loc.length() > 0) ?  String.format("%s/%s", getEndpoint(), loc) : getEndpoint();
 
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("sending: (GET) {}", url);
@@ -82,7 +91,7 @@ public class HttpSimulationClient implements LoggerSettable {
 	}
 	
 	public OperationStatusResponse<Void> cancelSimulation(String simulationId) {
-		String url = String.format("%s/%s", m_endpoint, simulationId);
+		String url = String.format("%s/%s", getEndpoint(), simulationId);
 
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("sending: (DELETE) {}", url);

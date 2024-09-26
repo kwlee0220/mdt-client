@@ -10,7 +10,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import mdt.ksx9101.model.Data;
 import mdt.ksx9101.model.InformationModel;
@@ -30,8 +29,8 @@ public class ForEach {
 		OUTPUT_DIR.mkdirs();
 		
 		Stream.of(MODEL_DIR.listFiles())
-				.filter(file -> file.getName().startsWith("conf_KR"))
-				.forEach(ForEach::changeIdShort);
+				.filter(file -> file.getName().startsWith("conf_"))
+				.forEach(ForEach::removeJpaConfig);
 	}
 	
 //	private static void addCertificateConfig(File confFile) {
@@ -59,14 +58,30 @@ public class ForEach {
 //		}
 //	}
 	
-	private static void changeIdShort(File confFile) {
+//	private static void changeIdShort(File confFile) {
+//		try ( InputStream is = new FileInputStream(confFile) ) {
+//			JsonNode root = MAPPER.readTree(confFile);
+//			
+//			ObjectNode entity = (ObjectNode)root.at("/persistence/entities/0");
+//			entity.put("idShort", "Equipment");
+//			
+//			File dir = confFile.getParentFile();
+//			File toModelFile = new File(OUTPUT_DIR, confFile.getName());
+//			MAPPER.writerWithDefaultPrettyPrinter()
+//					.writeValue(toModelFile, root);
+//		}
+//		catch ( Exception e ) {
+//			e.printStackTrace();
+//		}
+//	}
+	
+	private static void removeJpaConfig(File confFile) {
 		try ( InputStream is = new FileInputStream(confFile) ) {
 			JsonNode root = MAPPER.readTree(confFile);
 			
-			ObjectNode entity = (ObjectNode)root.at("/persistence/entities/0");
-			entity.put("idShort", "Equipment");
+			ObjectNode persistence = (ObjectNode)root.at("/persistence");
+			persistence.remove("jpa");
 			
-			File dir = confFile.getParentFile();
 			File toModelFile = new File(OUTPUT_DIR, confFile.getName());
 			MAPPER.writerWithDefaultPrettyPrinter()
 					.writeValue(toModelFile, root);
@@ -124,13 +139,14 @@ public class ForEach {
 //		}
 //	}
 	
+	@SuppressWarnings("unused")
 	private static void doOnSubmodel(Submodel sm) {
 		switch ( sm.getIdShort() ) {
 			case "Data":
-				sm.setSemanticId(Data.SEMANTIC_ID);
+				sm.setSemanticId(Data.SEMANTIC_ID_REFERENCE);
 				break;
 			case "InformationModel":
-				sm.setSemanticId(InformationModel.SEMANTIC_ID);
+				sm.setSemanticId(InformationModel.SEMANTIC_ID_REFERENCE);
 				break;
 			default:
 				break;

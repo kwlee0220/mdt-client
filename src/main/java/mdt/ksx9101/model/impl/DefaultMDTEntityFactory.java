@@ -18,7 +18,7 @@ import mdt.ksx9101.model.ProductionPlannings;
 import mdt.ksx9101.model.Repairs;
 import mdt.ksx9101.model.Routings;
 import mdt.model.MDTEntityFactory;
-import mdt.model.MDTSubmodelElement;
+import mdt.model.SubmodelElementEntity;
 import mdt.model.ModelGenerationException;
 
 
@@ -27,8 +27,8 @@ import mdt.model.ModelGenerationException;
  * @author Kang-Woo Lee (ETRI)
  */
 public class DefaultMDTEntityFactory implements MDTEntityFactory {
-	private Map<String,Supplier<? extends MDTSubmodelElement>> FQCN_TO_ADAPTORS = Maps.newHashMap();
-	private Map<String,Supplier<? extends MDTSubmodelElement>> NAME_TO_ADAPTORS = Maps.newHashMap();
+	private Map<String,Supplier<? extends SubmodelElementEntity>> FQCN_TO_ADAPTORS = Maps.newHashMap();
+	private Map<String,Supplier<? extends SubmodelElementEntity>> NAME_TO_ADAPTORS = Maps.newHashMap();
 	
 	public DefaultMDTEntityFactory() {
 		FQCN_TO_ADAPTORS.put(Equipment.class.getName(), DefaultEquipment::new);
@@ -58,8 +58,8 @@ public class DefaultMDTEntityFactory implements MDTEntityFactory {
 		NAME_TO_ADAPTORS.put(Equipments.class.getSimpleName(), DefaultEquipments::new);
 	}
 	
-	public MDTSubmodelElement newInstance(String id) {
-		Supplier<? extends MDTSubmodelElement> loader = FQCN_TO_ADAPTORS.get(id);
+	public SubmodelElementEntity newInstance(String id) {
+		Supplier<? extends SubmodelElementEntity> loader = FQCN_TO_ADAPTORS.get(id);
 		if ( loader == null ) {
 			loader = NAME_TO_ADAPTORS.get(id);
 		}

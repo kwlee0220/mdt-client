@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.ProductionPlanning;
 import mdt.ksx9101.model.ProductionPlannings;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -15,14 +15,14 @@ import mdt.model.SubmodelElementListHandle;
  */
 @Getter @Setter
 public class DefaultProductionPlannings
-		extends SubmodelElementListHandle<ProductionPlanning,DefaultProductionPlanning>
+		extends SubmodelElementListEntity<ProductionPlanning,DefaultProductionPlanning>
 											implements ProductionPlannings {
 	public DefaultProductionPlannings() {
 		super("ProductionPlannings", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	protected DefaultProductionPlanning newElementHandle() {
+	protected DefaultProductionPlanning newElementEntity() {
 		return new DefaultProductionPlanning();
 	}
 }

@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Andon;
 import mdt.ksx9101.model.Andons;
-import mdt.model.SubmodelElementListHandle;
+import mdt.model.SubmodelElementListEntity;
 
 
 /**
@@ -14,13 +14,13 @@ import mdt.model.SubmodelElementListHandle;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultAndons extends SubmodelElementListHandle<Andon,DefaultAndon> implements Andons {
+public class DefaultAndons extends SubmodelElementListEntity<Andon,DefaultAndon> implements Andons {
 	public DefaultAndons() {
 		super("Andons", null, false, AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION);
 	}
 
 	@Override
-	public DefaultAndon newElementHandle() {
+	public DefaultAndon newElementEntity() {
 		return new DefaultAndon();
 	}
 }

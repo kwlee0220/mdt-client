@@ -1,0 +1,31 @@
+{
+    "modelType" : "SubmodelElementCollection",
+    "idShort" : "Inspection_CycleTime",
+    "value" : [ {
+      "modelType" : "Property",
+      "value" : "Inspection_CycleTime",
+      "valueType" : "xs:string",
+      "category" : "PARAMETER",
+      "idShort" : "InputID"
+    }, {
+      "modelType" : "Property",
+      "value" : "STRING",
+      "valueType" : "xs:string",
+      "category" : "PARAMETER",
+      "idShort" : "InputType"
+    }, {
+      "modelType" : "Property",
+      "value" : "norm:45:1.7",
+      "valueType" : "xs:string",
+      "category" : "PARAMETER",
+      "description" : [ {
+        "language" : "Korean",
+        "text" : "Quality Inspection 설비 cycle time 분포"
+      } ],
+      "displayName" : [ {
+        "language" : "Korean",
+        "text" : "Quality Inspection 설비 cycle time 분포"
+      } ],
+      "idShort" : "InputValue"
+    } ]
+  }

@@ -40,7 +40,6 @@ import utils.func.Tuple;
 import utils.stream.FStream;
 
 import lombok.experimental.UtilityClass;
-import mdt.model.registry.ResourceNotFoundException;
 import mdt.model.resource.value.MultiLanguagePropertyValue;
 
 /**
@@ -65,7 +64,7 @@ public class SubmodelUtils {
 	}
 
 	public static Property newIntProperty(String id, @Nullable int value) {
-		return newProperty(id, DataTypes.INTEGER.getTypeDefXsd(), DataTypes.INTEGER.toValueString(value));
+		return newProperty(id, DataTypes.INT.getTypeDefXsd(), DataTypes.INT.toValueString(value));
 	}
 
 	public static Property newLongProperty(String id, @Nullable Long value) {
@@ -176,11 +175,6 @@ public class SubmodelUtils {
 													.value(submodel.getSubmodelElements())
 													.build();
 		return traverse(start, idShortPath);
-//		
-//		return FStream.from(submodel.getSubmodelElements())
-//						.map(sme -> traverse(sme, idShortPath))
-//						.findFirst(sme -> sme != null)
-//						.getOrNull();
 	}
 	
 	@SuppressWarnings("unchecked")

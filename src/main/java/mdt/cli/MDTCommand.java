@@ -1,17 +1,20 @@
 package mdt.cli;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.slf4j.LoggerFactory;
 
+import utils.HomeDirPicocliCommand;
 import utils.func.FOption;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import mdt.client.MDTClientConfig;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.HttpMDTManagerClient;
+import mdt.client.MDTClientException;
+import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManagerException;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
 
 
@@ -22,23 +25,22 @@ import picocli.CommandLine.Option;
 public abstract class MDTCommand extends HomeDirPicocliCommand {
 	private static final String ENVVAR_HOME = "MDT_CLIENT_HOME";
 	private static final String ENVVAR_MDT_ENDPOINT = "MDT_ENDPOINT";
-	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
-	
-	@Option(names={"--client_conf"}, paramLabel="path", description={"MDT management configuration file path"})
-	protected String m_configPath = CLIENT_CONFIG_FILE;
 	
 	private Level m_loggerLevel = null;
 	
 	@Option(names={"--endpoint"}, paramLabel="path", description={"MDTInstanceManager's endpoint"})
 	private String m_endpoint = null;
 	
-	abstract protected void run(MDTClientConfig configs) throws Exception;
+	abstract protected void run(MDTManager manager) throws Exception;
 	
 	public MDTCommand() {
-		super(FOption.of(ENVVAR_HOME));
+		super(ENVVAR_HOME);
+		
+		setLogger(LoggerFactory.getLogger(MDTCommand.class));
 	}
 	
-	@Option(names={"--level"}, paramLabel="level", description={"Logger level: debug, info, warn, or error"})
+	@Option(names={"--logger"}, paramLabel="logger-level",
+					description={"Logger level: debug, info, warn, or error"})
 	public void setLoggerLevel(String level) {
 		switch ( level.toLowerCase() ) {
 			case "off":
@@ -64,15 +66,6 @@ public abstract class MDTCommand extends HomeDirPicocliCommand {
 		}
 	}
 	
-	protected HttpMDTInstanceManagerClient createMDTInstanceManager(MDTClientConfig config) {
-		try {
-			return HttpMDTInstanceManagerClient.connect(config);
-		}
-		catch ( Exception e ) {
-			throw new MDTInstanceManagerException("" + e);
-		}
-	}
-	
 	@Override
 	protected final void run(Path homeDir) throws Exception {
 		if ( m_loggerLevel != null ) {
@@ -80,22 +73,44 @@ public abstract class MDTCommand extends HomeDirPicocliCommand {
 			root.setLevel(m_loggerLevel);
 		}
 		
-		Path configPath = Paths.get(m_configPath);
-		if ( !configPath.isAbsolute() ) {
-			configPath = homeDir.resolve(configPath);
+		String endpoint = FOption.getOrElse(m_endpoint, () -> System.getenv(ENVVAR_MDT_ENDPOINT));
+		if ( endpoint == null ) {
+			throw new IllegalStateException("MDTInstanceManager's endpoint is missing");
+		}
+		if ( getLogger().isDebugEnabled() ) {
+			getLogger().debug("connecting to MDTInstanceManager {}", endpoint);
 		}
 		
-		MDTClientConfig config = MDTClientConfig.load(configPath);
-		if ( m_endpoint != null ) {
-			config.setEndpoint(m_endpoint);
+		try {
+			HttpMDTManagerClient manager = HttpMDTManagerClient.connect(endpoint);
+			run(manager);
 		}
-		else if ( config.getEndpoint() == null ) {
-			String endpoint = System.getenv(ENVVAR_MDT_ENDPOINT);
-			if ( endpoint != null ) {
-				config.setEndpoint(endpoint);
+		catch ( MDTClientException e ) {
+			throw e;
+		}
+		catch ( RuntimeException e ) {
+			throw e;
+		}
+		catch ( Exception e ) {
+			throw new MDTInstanceManagerException("" + e);
+		}
+	}
+
+	protected static final void main(MDTCommand cmd, String... args) throws Exception {
+		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
+		try {
+			commandLine.parseArgs(args);
+
+			if ( commandLine.isUsageHelpRequested() ) {
+				commandLine.usage(System.out, Ansi.OFF);
+			}
+			else {
+				cmd.run();
 			}
 		}
-		
-		run(config);
+		catch ( Throwable e ) {
+			System.err.println(e);
+			commandLine.usage(System.out, Ansi.OFF);
+		}
 	}
 }

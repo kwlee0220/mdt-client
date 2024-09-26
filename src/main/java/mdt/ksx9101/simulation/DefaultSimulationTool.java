@@ -4,7 +4,7 @@ import java.time.Duration;
 
 import lombok.Getter;
 import lombok.Setter;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -13,7 +13,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultSimulationTool extends AbstractMDTSubmodelElementCollection implements SimulationTool {
+public class DefaultSimulationTool extends SubmodelElementCollectionEntity implements SimulationTool {
 	@PropertyField(idShort="SimToolName")
 	private String simToolName;
 	

@@ -13,8 +13,6 @@ import mdt.model.DataType;
 public abstract class PropertyValue<T> implements SubmodelElementValue, Supplier<T> {
 	private final DataType<T> m_type;
 	private T m_value;
-	
-	abstract public void setString(String str);
 
 	protected PropertyValue(DataType<T> type) {
 		this.m_type = type;
@@ -24,6 +22,10 @@ public abstract class PropertyValue<T> implements SubmodelElementValue, Supplier
 	protected PropertyValue(DataType<T> type, T value) {
 		this.m_type = type;
 		this.m_value = value;
+	}
+	
+	public DataType<T> getDataType() {
+		return m_type;
 	}
 
 	@Override
@@ -38,6 +40,10 @@ public abstract class PropertyValue<T> implements SubmodelElementValue, Supplier
 	@Override
 	public Object toJsonObject() {
 		return  m_type.toValueString(m_value);
+	}
+
+	public void setString(String str) {
+		set(getDataType().parseValueString(str));
 	}
 	
 	@Override

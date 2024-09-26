@@ -13,14 +13,14 @@ import utils.stream.FStream;
 
 import mdt.ksx9101.TopLevelEntity;
 import mdt.ksx9101.model.DataInfo;
-import mdt.model.MDTSubmodelElement;
+import mdt.model.SubmodelElementEntity;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class DefaultDataInfo implements DataInfo, MDTSubmodelElement {
+public class DefaultDataInfo implements DataInfo, SubmodelElementEntity {
 	private static final String ENTITY_IDSHORT = "DataInfo";
 	
 	private static final DefaultMDTEntityFactory FACTORY = new DefaultMDTEntityFactory();
@@ -53,7 +53,7 @@ public class DefaultDataInfo implements DataInfo, MDTSubmodelElement {
 		m_entities = Lists.newArrayList();
 		for ( SubmodelElement member: ((SubmodelElementCollection)model).getValue() ) {
 			String id = member.getIdShort();
-			MDTSubmodelElement adaptor = FACTORY.newInstance(id);
+			SubmodelElementEntity adaptor = FACTORY.newInstance(id);
 			adaptor.fromAasModel(member);
 			if ( adaptor instanceof TopLevelEntity entity ) {
 				m_entities.add(entity);
@@ -67,7 +67,7 @@ public class DefaultDataInfo implements DataInfo, MDTSubmodelElement {
 	}
 	
 	private SubmodelElement toSubmodelElement(TopLevelEntity entity) {
-		if ( entity instanceof MDTSubmodelElement adaptor ) {
+		if ( entity instanceof SubmodelElementEntity adaptor ) {
 			return adaptor.toAasModel();
 		}
 		else {

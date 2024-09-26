@@ -20,7 +20,7 @@ import com.google.common.collect.Lists;
 
 import lombok.Getter;
 import lombok.Setter;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.SubmodelUtils;
 import mdt.model.resource.value.MultiLanguagePropertyValue;
 
@@ -31,7 +31,7 @@ import mdt.model.resource.value.MultiLanguagePropertyValue;
  */
 @Getter
 @Setter
-public class Segment extends AbstractMDTSubmodelElementCollection {
+public class Segment extends SubmodelElementCollectionEntity {
 	private static final Reference SEMANTIC_ID
 		= new DefaultReference.Builder()
 				.type(ReferenceTypes.EXTERNAL_REFERENCE)
@@ -58,7 +58,7 @@ public class Segment extends AbstractMDTSubmodelElementCollection {
 	public void fromAasModel(SubmodelElement model) {
 		Preconditions.checkArgument(model instanceof SubmodelElementCollection);
 		
-		SubmodelElementCollection smc = (SubmodelElementCollection)model;
+//		SubmodelElementCollection smc = (SubmodelElementCollection)model;
 	}
 
 	@Override

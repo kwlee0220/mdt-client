@@ -8,14 +8,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 
 import utils.stream.FStream;
 
-import lombok.experimental.Delegate;
 import mdt.ksx9101.model.Data;
 import mdt.ksx9101.model.InformationModel;
 import mdt.ksx9101.model.impl.DefaultData;
 import mdt.ksx9101.model.impl.DefaultInformationModel;
 import mdt.ksx9101.model.impl.DefaultMDTEntityFactory;
-import mdt.model.MDTSubmodelElement;
+import mdt.model.SubmodelElementEntity;
 import mdt.model.service.SubmodelService;
+
+import lombok.experimental.Delegate;
 
 
 /**
@@ -23,9 +24,10 @@ import mdt.model.service.SubmodelService;
  * @author Kang-Woo Lee (ETRI)
  */
 public class KSX9101SubmodelService implements SubmodelService {
+	private static final DefaultMDTEntityFactory FACTORY = new DefaultMDTEntityFactory();
+	
 	@Delegate private final SubmodelService m_service;
 	private final String m_mountPointIdShortPath;
-	private static final DefaultMDTEntityFactory FACTORY = new DefaultMDTEntityFactory();
 	
 	public KSX9101SubmodelService(SubmodelService service, String mountPointIdShortPath) {
 		m_service = service;
@@ -77,11 +79,12 @@ public class KSX9101SubmodelService implements SubmodelService {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <T extends TopLevelEntity> T getEntity(Class<T> entityClass) {
 		String idShortPath = String.format("%s.%s", m_mountPointIdShortPath, entityClass.getSimpleName());
 		SubmodelElement model = m_service.getSubmodelElementByPath(idShortPath);
 		
-		MDTSubmodelElement adaptor = FACTORY.newInstance(entityClass.getName());
+		SubmodelElementEntity adaptor = FACTORY.newInstance(entityClass.getName());
 		adaptor.fromAasModel(model);
 		
 		return (T)adaptor;

@@ -6,7 +6,7 @@ import com.google.common.collect.Lists;
 
 import lombok.Getter;
 import lombok.Setter;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.SMCField;
 import mdt.model.SMLField;
 
@@ -16,7 +16,7 @@ import mdt.model.SMLField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultSimulationInfo extends AbstractMDTSubmodelElementCollection
+public class DefaultSimulationInfo extends SubmodelElementCollectionEntity
 										implements SimulationInfo {
 	@SMCField(idShort="SimulationTool", adaptorClass=DefaultSimulationTool.class)
 	private SimulationTool simulationTool;

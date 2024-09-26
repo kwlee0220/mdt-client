@@ -5,6 +5,7 @@ import java.util.List;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetInformation;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+import org.eclipse.digitaltwin.aas4j.v3.model.Resource;
 
 /**
  *
@@ -20,4 +21,8 @@ public interface AssetAdministrationShellService {
 	
 	public AssetInformation getAssetInformation();
 	public AssetInformation putAssetInformation(AssetInformation assetInfo);
+	
+	public Resource getThumbnail();
+	public Resource putThumbnail(Resource thumbnail);
+	public void deleteThumbnail();
 }

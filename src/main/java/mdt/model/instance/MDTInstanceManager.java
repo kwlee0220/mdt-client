@@ -2,11 +2,11 @@ package mdt.model.instance;
 
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import utils.InternalException;
 
-import mdt.model.registry.ResourceNotFoundException;
+import mdt.model.MDTService;
+import mdt.model.ResourceNotFoundException;
 
 
 /**
@@ -14,11 +14,12 @@ import mdt.model.registry.ResourceNotFoundException;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface MDTInstanceManager {
-	public static final String CANONICAL_FA3ST_JAR_FILE = "faaast.starter-all.jar";
-	public static final String CANONICAL_MODEL_FILE = "model.json";
-	public static final String CANONICAL_CONF_FILE = "conf.json";
-	public static final String CANONICAL_CERT_FILE = "mdt_cert.p12";
+public interface MDTInstanceManager extends MDTService {
+	public static final String FA3ST_JAR_FILE_NAME = "faaast.starter-all.jar";
+	public static final String MODEL_FILE_NAME = "model.json";
+	public static final String CONF_FILE_NAME = "conf.json";
+	public static final String CERT_FILE_NAME = "mdt_cert.p12";
+	public static final String GLOBAL_CONF_FILE_NAME = "mdt_global_config.json";
 	
 	/**
 	 * 등록된 MDTInstance의 갯수를 반환한다.
@@ -149,6 +150,54 @@ public interface MDTInstanceManager {
 
 	/**
 	 * 주어진 filter 조건을 만족하는 {@link MDTInstance} 객체를 반환한다.
+	 * <p>
+	 * Filter 조건에서 사용할 수 있는 속성 정보는 다음과 같다.
+	 * <table border="1">
+	 * 	<tr>
+	 * 		<td>id</td>
+	 * 		<td>MDTInstance 고유 식별자</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>status</td>
+	 * 		<td>동작 상태 정보. STOPPED, STARTING, RUNNING, FAILED 중 하나</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>baseEndpoint</td>
+	 * 		<td>기본 접속 정보</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>aasId</td>
+	 * 		<td>AssetAdministrationShell의 식별자</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>aasIdShort</td>
+	 * 		<td>AssetAdministrationShell의 idShort</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>globalAssetId</td>
+	 * 		<td>자산 식별자</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>assetType</td>
+	 * 		<td>자산 타입. Line, Process, Machine 중 하나</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>assetKind</td>
+	 * 		<td>자산 종류. Template, Instance 중 하나</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>submodel.id</td>
+	 * 		<td>서브모델 식별자</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>submodel.idShort</td>
+	 * 		<td>서브모델 idshort</td>
+	 * 	</tr>
+	 * 	<tr>
+	 * 		<td>submodel.semanticId</td>
+	 * 		<td>서브 모델 의미 식별자</td>
+	 * 	</tr>
+	 * </table>
 	 * 
 	 * @param filterExpr	검색에 사용할 조건 표현식.
 	 * @return		검색 조건에 해당하는 {@link MDTInstance} 객체 리스트.

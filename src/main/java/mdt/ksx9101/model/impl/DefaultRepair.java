@@ -3,7 +3,7 @@ package mdt.ksx9101.model.impl;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Repair;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -12,7 +12,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultRepair extends AbstractMDTSubmodelElementCollection implements Repair {
+public class DefaultRepair extends SubmodelElementCollectionEntity implements Repair {
 	@PropertyField(idShort="RepairID") private Long repairID;
 	@PropertyField(idShort="GroupID") private String groupID;
 	@PropertyField(idShort="DefectRegOperationID") private String defectRegOperationID;

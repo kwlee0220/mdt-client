@@ -40,7 +40,7 @@ public class DefaultData implements Data {
 		return new DefaultSubmodel.Builder()
 					.id(this.id)
 					.idShort(IDSHORT)
-					.semanticId(SEMANTIC_ID)
+					.semanticId(SEMANTIC_ID_REFERENCE)
 					.submodelElements(subElements)
 					.build();
 	}

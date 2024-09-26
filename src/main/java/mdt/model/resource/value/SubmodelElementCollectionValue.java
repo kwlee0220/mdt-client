@@ -14,19 +14,16 @@ import utils.stream.FStream;
  */
 public class SubmodelElementCollectionValue implements SubmodelElementValue,
 															Supplier< Map<String,SubmodelElementValue>> {
-	private String m_idShort;
+	private final String m_idShort;
 	private Map<String,SubmodelElementValue> m_elementValues;
 
-	public SubmodelElementCollectionValue() {
+	public SubmodelElementCollectionValue(String idShort) {
+		m_idShort = idShort;
 		this.m_elementValues = Maps.newHashMap();
 	}
 	
 	public String getIdShort() {
 		return m_idShort;
-	}
-	
-	public void setIdShort(String id) {
-		m_idShort = id;
 	}
 	
 	public Map<String,SubmodelElementValue> get() {

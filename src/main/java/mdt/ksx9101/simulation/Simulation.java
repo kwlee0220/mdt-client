@@ -9,14 +9,14 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
 import mdt.ksx9101.model.SubModelInfo;
-import mdt.model.MDTAASModel;
+import mdt.model.AASModelEntity;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface Simulation extends MDTAASModel<Submodel> {
+public interface Simulation extends AASModelEntity<Submodel> {
 	public static final String IDSHORT_PATH_ENDPOINT = "SimulationInfo.SimulationTool.SimulatorEndpoint";
 	public static final String IDSHORT_PATH_TIMEOUT = "SimulationInfo.SimulationTool.SimulationTimeout";
 	public static final String IDSHORT_PATH_SESSION_TIMEOUT = "SimulationInfo.SimulationTool.SessionRetainTimeout";

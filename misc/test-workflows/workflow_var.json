@@ -1,0 +1,77 @@
+{
+  "id": "InnerCaseForming1",
+  "name": "내함 성형 최적화 공정",
+  "description": "본 워크플로우는 여러 설비로 구성된 내함 성형 공정 과정을 최적화를 시뮬레이션한다.",
+  "parameters": [
+    { "name": "simulation-twin", "description": "내함 성형 공정 트윈 식별자" },
+    { "name": "simulation-submodel", "description": "내함 성형 공정의 시뮬레이션 Submodel의 idShort" }
+  ],
+  "tasks": [ {
+    "id":  "build-heater-cycletime",
+    "template": "build-cycletime",
+    "arguments": [{ "name": "equipment-twin", "value": "KRCW-01ELIF027" }]
+  }, {
+    "id":  "copy-heater-cycletime",
+    "template": "copy-cycletime",
+    "arguments": [
+      { "name": "simulation-input-index", "value": "0" },
+      { "name": "input-holder-task", "value": "build-heater-cycletime" }
+    ],
+    "dependencies": [ "build-heater-cycletime" ]
+  } ],
+  "taskTemplates": [
+    {
+      "id": "build-cycletime",
+      "name": "Cycle time 데이터 생성",
+      "type": "mdt.task.builtin.JsltTask",
+      "parameters": [{ "name": "equipment-twin", "description": "설비 트윈 식별자" }],
+      "options": [ {
+        "name": "expr",
+        "value": "{\n  \"MachineId\": get-value-by-path(., \"AssetID\"),\n  \"MachineName\": get-value-by-path(., \"AssetName\"),\n  \"MachineType\": get-value-by-path(., \"AssetType\"),\n}"
+      } ],
+      "inputPorts": [ {
+        "name": "information",
+        "valueReference": {
+          "referenceType" : "mdt",
+          "valueOnly": false,
+          "mdtId": "${equipment-twin}",
+          "submodelIdShort": "InformationModel",
+          "smeIdShortPath" : "MDTInfo"
+        }
+      } ],
+      "outputPorts": [ {
+        "name": "output",
+        "valueReference": {
+          "referenceType" : "var",
+          "valueOnly": true
+        }
+      } ]
+    },
+    {
+      "id": "copy-cycletime",
+      "name": "Cycle time 데이터 준비",
+      "type": "mdt.task.builtin.CopyTask",
+      "description": "Process optimization task 수행을 위한 설비의 cycletime 데이터 복사",
+      "parameters": [
+        { "name": "simulation-input-index", "description": "시뮬레이션 공정의 입력 SME 위치 prefix" },
+        { "name": "input-holder-task", "description": "입력 variable 소유 태스크 식별자." }
+      ],
+      "inputPorts": [ {
+        "name": "input",
+        "valueReference": {
+          "referenceType" : "var",
+          "name": "output",
+          "holderTask": "${input-holder-task}",
+          "valueOnly": true
+        }
+      } ],
+      "outputPorts": [ {
+        "name": "output",
+        "valueReference": {
+          "referenceType" : "stdout",
+          "valueOnly": true
+        }
+      } ]
+    }
+  ]
+}

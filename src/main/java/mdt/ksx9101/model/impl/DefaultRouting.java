@@ -3,7 +3,7 @@ package mdt.ksx9101.model.impl;
 import lombok.Getter;
 import lombok.Setter;
 import mdt.ksx9101.model.Routing;
-import mdt.model.AbstractMDTSubmodelElementCollection;
+import mdt.model.SubmodelElementCollectionEntity;
 import mdt.model.PropertyField;
 
 
@@ -12,7 +12,7 @@ import mdt.model.PropertyField;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultRouting extends AbstractMDTSubmodelElementCollection implements Routing {
+public class DefaultRouting extends SubmodelElementCollectionEntity implements Routing {
 	@PropertyField(idShort="RoutingID") private String routingID;
 	@PropertyField(idShort="RoutingName") private String routingName;
 	@PropertyField(idShort="ItemID") private String itemID;

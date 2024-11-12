@@ -3,7 +3,7 @@ package mdt.client.operation;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -13,92 +13,115 @@ import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.base.Preconditions;
 
-import utils.InternalException;
-import utils.KeyValue;
 import utils.async.AbstractThreadedExecution;
 import utils.async.CancellableWork;
 import utils.async.Guard;
-import utils.stream.FStream;
+import utils.http.HttpClientProxy;
+import utils.http.HttpRESTfulClient;
+import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
+import utils.http.JacksonErrorEntityDeserializer;
 
-import mdt.client.HttpClientProxy;
-import mdt.client.HttpRESTfulClient;
-import mdt.client.MDTClientException;
 import mdt.model.AASUtils;
+import mdt.model.MDTModelSerDe;
+import mdt.task.Parameter;
+
+import okhttp3.Headers;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
+public class HttpOperationClient extends AbstractThreadedExecution<List<Parameter>>
 									implements HttpClientProxy, CancellableWork {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpOperationClient.class);
-	private static final TypeReference<OperationStatusResponse<JsonNode>> RESPONSE_TYPE_REF
-													= new TypeReference<OperationStatusResponse<JsonNode>>(){};
-	private static final JsonMapper MAPPER = AASUtils.getJsonMapper();
+	private static final JsonMapper MAPPER = MDTModelSerDe.getJsonMapper();
 	
-	private final HttpRESTfulClient m_restClient;
-	private final String m_requestBodyJson;
+	private final OkHttpClient m_httpClient;
+	private final String m_endpoint;
+	private final String m_startUrl;
+	private final OperationRequestBody m_request;
 	private final Duration m_pollInterval;
 	private final Duration m_timeout;
+	
+	private final HttpRESTfulClient m_restfulStatusClient;
 	
 	private final Guard m_guard = Guard.create();
 	@GuardedBy("m_guard") private Thread m_workerThread = null;
 	
 	private HttpOperationClient(Builder builder) {
-		m_restClient = new HttpRESTfulClient(builder.m_httpClient, builder.m_endpoint);
-		m_requestBodyJson = builder.m_requestBodyJson;
+		Preconditions.checkNotNull(builder.m_httpClient);
+		Preconditions.checkNotNull(builder.m_endpoint);
+		Preconditions.checkNotNull(builder.m_startUrl);
+		
+		m_httpClient = builder.m_httpClient;
+		m_endpoint = builder.m_endpoint;
+		m_startUrl = builder.m_startUrl;
+		m_request = builder.m_requestBody;
 		m_pollInterval = builder.m_pollInterval;
 		m_timeout = builder.m_timeout;
+		
+		m_restfulStatusClient = HttpRESTfulClient.builder()
+												.httpClient(builder.m_httpClient)
+												.endpoint(m_endpoint)
+												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
+												.jsonMapper(MAPPER)
+												.build();
 		
 		setLogger(s_logger);
 	}
 	
 	@Override
 	public OkHttpClient getHttpClient() {
-		return m_restClient.getHttpClient();
+		return m_httpClient;
 	}
 
 	@Override
 	public String getEndpoint() {
-		return m_restClient.getEndpoint();
+		return m_endpoint;
 	}
 
 	@Override
-	protected JsonNode executeWork() throws InterruptedException, CancellationException, TimeoutException,
-											Exception {
+	protected List<Parameter> executeWork() throws InterruptedException, CancellationException,
+																			Exception {
 		m_guard.run(() -> m_workerThread = Thread.currentThread());
 		
 		Instant started = Instant.now();
-		OperationStatusResponse<JsonNode> resp = start(m_requestBodyJson);
+		OperationResponse resp = start(m_request);
+		if ( getLogger().isInfoEnabled() ) {
+			getLogger().info("received from HTTPOperationServer: {}", resp);
+		}
 		
-		String location = resp.getOperationLocation();
+		String encodedSessionId = AASUtils.encodeBase64UrlSafe(resp.getSession());
+		
+		boolean isFirst = true;
+		String statusUrl = String.format("%s/sessions/%s", m_endpoint, encodedSessionId);
 		while ( resp.getStatus() == OperationStatus.RUNNING ) {
-			if ( location == null ) {
-				m_guard.run(() -> m_workerThread = null);
-				throw new Exception("Protocol mismatch: 'Location' is missing");
-			}
 			if ( isCancelRequested() ) {
-				resp = cancel(location);
+				resp = cancel();
 			}
 			else {
 				try {
-					TimeUnit.MILLISECONDS.sleep(m_pollInterval.toMillis());
-					resp = getStatus(location);
+					if ( !isFirst ) {
+						TimeUnit.MILLISECONDS.sleep(m_pollInterval.toMillis());
+					}
+					else {
+						isFirst = false;
+					}
+					
+					resp = m_restfulStatusClient.get(statusUrl, m_opRespDeser);
+					if ( getLogger().isInfoEnabled() ) {
+						getLogger().info("received from HTTPOperationServer: {}", resp);
+					}
 				}
 				catch ( InterruptedException e ) {
-					resp = cancel(location);
+					resp = cancel();
 				}
 			}
 			
@@ -106,9 +129,9 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
 			// TimeoutException 예외를 발생시킨다.
 			if ( m_timeout != null && resp.getStatus() == OperationStatus.RUNNING ) {
 				if ( m_timeout.minus(Duration.between(started, Instant.now())).isNegative() ) {
-					resp = cancel(location);
+					resp = cancel();
 					if ( resp.getStatus() == OperationStatus.CANCELLED ) {
-						String msg = String.format("id=%s, timeout=%s", location, m_timeout);
+						String msg = String.format("timeout=%s", m_timeout);
 						throw new TimeoutException(msg);
 					}
 				}
@@ -119,12 +142,11 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
 		String msg;
 		switch ( resp.getStatus() ) {
 			case COMPLETED:
-				return resp.getResult();
+				return resp.getOutputValues();
 			case FAILED:
-				msg = String.format("OperationServer failed: id=%s, cause=%s%n", location, resp.getMessage());
-				throw new MDTClientException(msg);
+				throw (Exception)resp.toJavaException();
 			case CANCELLED:
-				msg = String.format("id=%s, cause=%s%n", location, resp.getMessage());
+				msg = String.format("cause=%s%n", resp.getMessage());
 				throw new CancellationException(msg);
 			default:
 				throw new AssertionError();
@@ -143,92 +165,22 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
 		});
 	}
 	
-	private OperationStatusResponse<JsonNode> start(String requestBody) {
-		RequestBody body = m_restClient.createRequestBody(requestBody);
+	private OperationResponse start(OperationRequestBody request) {
+		HttpRESTfulClient client = HttpRESTfulClient.builder()
+												.httpClient(m_httpClient)
+												.endpoint(m_endpoint)
+												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
+												.jsonMapper(MAPPER)
+												.build();
 		
-		if ( getLogger().isDebugEnabled() ) {
-			getLogger().debug("sending start request: url={}, body={}", getEndpoint(), requestBody);
-		}
-		Request req = new Request.Builder().url(getEndpoint()).post(body).build();
-		
-		try {
-			Response resp =  m_restClient.getHttpClient().newCall(req).execute();
-			OperationStatusResponse<JsonNode> opStatus = m_restClient.parseResponse(resp, RESPONSE_TYPE_REF);
-			opStatus.setOperationLocation(resp.header("Location"));
-			return opStatus;
-		}
-		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
-		}
+		String requestJson = MDTModelSerDe.toJsonString(request);
+		RequestBody reqBody = RequestBody.create(requestJson, HttpRESTfulClient.MEDIA_TYPE_JSON);
+		return client.post(m_startUrl, reqBody, m_opRespDeser);
 	}
 	
-	private OperationStatusResponse<JsonNode> getStatus(String opId) {
-		opId = opId.trim();
-		String url = (opId.length() > 0) ? String.format("%s/%s", getEndpoint(), opId) : getEndpoint();
-
-		if ( getLogger().isDebugEnabled() ) {
-			getLogger().debug("sending: (GET) {}", url);
-		}
-		Request req = new Request.Builder().url(url).get().build();
-		return m_restClient.call(req, RESPONSE_TYPE_REF);
-	}
-	
-	private OperationStatusResponse<JsonNode> cancel(String opId) {
-		String url = String.format("%s/%s", getEndpoint(), opId);
-
-		if ( getLogger().isDebugEnabled() ) {
-			getLogger().debug("sending: (DELETE) {}", url);
-		}
-		Request req = new Request.Builder().url(url).delete().build();
-		return m_restClient.call(req, RESPONSE_TYPE_REF);
-	}
-
-	public static String buildParametersJsonString(Map<String,Object> parameters)
-		throws JsonProcessingException {
-		return MAPPER.writeValueAsString(buildParametersJson(parameters));
-	}
-	public static ObjectNode buildParametersJson(Map<String,?> parameters) {
-		return FStream.from(parameters)
-						.mapValue(HttpOperationClient::toJsonNode)
-						.fold(MAPPER.createObjectNode(), (on,kv) -> on.set(kv.key(), kv.value()));
-	}
-	private static JsonNode toJsonNode(Object obj) {
-		String str = ("" + obj).trim();
-		if ( str.startsWith("{") ) {
-			try {
-				return MAPPER.readTree(str);
-			}
-			catch ( Exception e ) {
-				throw new IllegalArgumentException("Failed to parse Json: " + str);
-			}
-		}
-		else {
-			return new TextNode(str);
-		}
-	}
-	
-	public static Map<String,String> parseParametersJson(String parametersJson) {
-		try {
-			return FStream.from(MAPPER.readTree(parametersJson).properties())
-								.map(ent -> toParameter(ent.getKey(), ent.getValue()))
-								.toMap(KeyValue::key, KeyValue::value);
-		}
-		catch ( Exception e ) {
-			throw new IllegalArgumentException("invalid Json: " + parametersJson + ", cause=" + e);
-		}
-	}
-	private static KeyValue<String,String> toParameter(String paramName, JsonNode paramValue) {
-		if ( paramValue.isObject() ) {
-			try {
-				return KeyValue.of(paramName, MAPPER.writeValueAsString(paramValue));
-			}
-			catch ( JsonProcessingException e ) {
-				throw new InternalException("" + e);
-			}
-		}
-		else {
-			return KeyValue.of(paramName, paramValue.asText());
-		}
+	private OperationResponse cancel() {
+		String url = getEndpoint();
+		return m_restfulStatusClient.delete(url, m_opRespDeser);
 	}
 	
 	public static Builder builder() {
@@ -237,11 +189,13 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
 	public static final class Builder {
 		private OkHttpClient m_httpClient;
 		private String m_endpoint;
-		private String m_requestBodyJson;
+		private String m_startUrl;
+		private OperationRequestBody m_requestBody;
 		private Duration m_pollInterval = Duration.ofSeconds(3);
 		private Duration m_timeout;
 		
 		public HttpOperationClient build() {
+			
 			return new HttpOperationClient(this);
 		}
 		
@@ -255,8 +209,13 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
 			return this;
 		}
 		
-		public Builder setRequestBodyJson(String json) {
-			m_requestBodyJson = json;
+		public Builder setStartUrl(String url) {
+			m_startUrl = url;
+			return this;
+		}
+		
+		public Builder setRequestBody(OperationRequestBody body) {
+			m_requestBody = body;
 			return this;
 		}
 		
@@ -270,4 +229,13 @@ public class HttpOperationClient extends AbstractThreadedExecution<JsonNode>
 			return this;
 		}
 	}
+
+	private static final TypeReference<OperationResponse> RESPONSE_TYPE_REF
+													= new TypeReference<OperationResponse>(){};
+	private ResponseBodyDeserializer<OperationResponse> m_opRespDeser = new ResponseBodyDeserializer<>() {
+		@Override
+		public OperationResponse deserialize(Headers headers, String respBody) throws IOException {
+			return MAPPER.readValue(respBody, RESPONSE_TYPE_REF);
+		}
+	};
 }

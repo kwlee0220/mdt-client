@@ -6,11 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.cli.MDTCommand;
-import mdt.client.workflow.HttpWorkflowManagerClient;
+import mdt.client.workflow.HttpWorkflowManagerProxy;
 import mdt.model.AASUtils;
 import mdt.model.MDTManager;
 import mdt.model.ResourceAlreadyExistsException;
-import mdt.model.workflow.descriptor.WorkflowDescriptor;
+import mdt.workflow.model.WorkflowDescriptor;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -45,7 +45,7 @@ public class AddWorkflowDescriptorCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerClient client = (HttpWorkflowManagerClient)manager.getWorkflowManager();
+		HttpWorkflowManagerProxy client = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
 		
 		WorkflowDescriptor wfDesc = WorkflowDescriptor.parseJsonFile(m_file);
 		while ( true ) {

@@ -1,0 +1,37 @@
+{
+  "id" : "simulation",
+  "type" : "mdt.task.builtin.JsltTask",
+  "dependencies" : [ "set-expected", "set-sleeptime", "copy-data2", "copy-data1" ],
+  "variables" : [ {
+    "name" : "Data1",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[0].InputValue"
+    }
+  }, {
+    "name" : "Data2",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[1].InputValue"
+    }
+  }, {
+    "name" : "Result",
+    "kind" : "OUTPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Outputs[0].OutputValue"
+    }
+  } ],
+  "options" : [ {
+    "name" : "expr",
+    "optionType" : "multiline",
+    "lines" : "\t{\n\t  \"MachineId\": get-value-by-path(., \"EquipmentID\"),\n\t  \"MachineName\": get-value-by-path(., \"EquipmentName\"),\n\t  \"TaktTimeDist\": get-parameter-value(., \"TaktTimeEstimatedResult\")\n\t}\n"
+  } ],
+  "labels" : [ ]
+}
+

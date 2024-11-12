@@ -9,10 +9,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import utils.LoggerSettable;
 import utils.func.FOption;
+import utils.http.HttpClientProxy;
+import utils.http.RESTfulRemoteException;
 
-import mdt.client.HttpClientProxy;
-import mdt.client.HttpRESTfulClient;
-import mdt.client.MDTClientException;
+import mdt.client.HttpRESTfulClientOld;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -29,11 +29,11 @@ public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 	private static final TypeReference<OperationStatusResponse<Void>> RESPONSE_TYPE_REF
 													= new TypeReference<OperationStatusResponse<Void>>(){};
 	
-	private final HttpRESTfulClient m_restClient;
+	private final HttpRESTfulClientOld m_restClient;
 	private Logger m_logger;
 	
 	public HttpSimulationClient(OkHttpClient client, String endpoint) {
-		m_restClient = new HttpRESTfulClient(client, endpoint);
+		m_restClient = new HttpRESTfulClientOld(client, endpoint);
 		
 		m_restClient.setLogger(getLogger());
 	}
@@ -65,7 +65,7 @@ public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 			return statusResp;
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 	

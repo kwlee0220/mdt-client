@@ -1,0 +1,21 @@
+{
+  "id" : "set-sleeptime",
+  "type" : "mdt.task.builtin.SetTask",
+  "dependencies" : [ ],
+  "variables" : [ {
+    "name" : "to",
+    "kind" : "OUTPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[2].InputValue"
+    }
+  } ],
+  "options" : [ {
+    "name" : "value",
+    "optionType" : "string",
+    "value" : "2"
+  } ],
+  "labels" : [ ]
+}
+

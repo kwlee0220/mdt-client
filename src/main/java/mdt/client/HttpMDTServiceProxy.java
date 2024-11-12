@@ -1,5 +1,7 @@
 package mdt.client;
 
+import utils.http.HttpClientProxy;
+
 import mdt.model.MDTService;
 
 /**

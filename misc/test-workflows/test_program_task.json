@@ -1,0 +1,45 @@
+{
+  "id" : "simulation",
+  "type" : "mdt.task.builtin.ProgramTask",
+  "dependencies" : [ "copy-data1", "copy-data2", "set-sleeptime", "set-expected" ],
+  "variables" : [ {
+    "name" : "Data1",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[0].InputValue"
+    }
+  }, {
+    "name" : "Data2",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[1].InputValue"
+    }
+  }, {
+    "name" : "Result",
+    "kind" : "OUTPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Outputs[0].OutputValue"
+    }
+  } ],
+  "options" : [ {
+    "name" : "command",
+    "optionType" : "array",
+    "values" : [ "python3", "print_all_arguments.py", "--arg1_value", "${Data1:value}", "--arg2_file", "${Data2:path}", "--sleep", "3", "--output_value", "777", "--output", "${Result:path}" ]
+  }, {
+    "name" : "workingDirectory",
+    "optionType" : "string",
+    "value" : "${MDT_HOME}/operation-server/test"
+  }, {
+    "name" : "timeout",
+    "optionType" : "string",
+    "value" : "5m"
+  } ],
+  "labels" : [ ]
+}
+

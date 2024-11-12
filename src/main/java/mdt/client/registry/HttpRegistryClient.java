@@ -9,9 +9,10 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
-import mdt.client.MDTClientException;
-import mdt.model.MDTExceptionEntity;
-import mdt.model.registry.RegistryException;
+import utils.http.RESTfulRemoteException;
+
+import mdt.client.Fa3stMessage;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -50,7 +51,7 @@ class HttpRegistryClient {
 			return parseResponse(resp, resultCls);
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 	
@@ -60,7 +61,7 @@ class HttpRegistryClient {
 			return parseResponseToList(resp, resultCls);
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 
@@ -72,12 +73,12 @@ class HttpRegistryClient {
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 	
 	private <T> T parseResponse(Response resp, Class<T> valueType)
-		throws RegistryException, MDTClientException {
+		throws RESTfulRemoteException {
 		try {
 			String respBody = resp.body().string();
 			if ( resp.isSuccessful() ) {
@@ -89,12 +90,12 @@ class HttpRegistryClient {
 			}
 		}
 		catch ( IOException | DeserializationException e ) {
-			throw new MDTClientException(resp.toString());
+			throw new RESTfulRemoteException(resp.toString());
 		}
 	}
 	
 	private <T> List<T> parseResponseToList(Response resp, Class<T> valueType)
-		throws RegistryException, MDTClientException {
+		throws RESTfulRemoteException {
 		try {
 			String respBody = resp.body().string();
 			if ( resp.isSuccessful() ) {
@@ -106,26 +107,25 @@ class HttpRegistryClient {
 			}
 		}
 		catch ( IOException | DeserializationException e ) {
-			throw new MDTClientException(resp.toString());
+			throw new RESTfulRemoteException(resp.toString());
 		}
 	}
 	
-	private void throwErrorResponse(String respBody) throws RegistryException, MDTClientException {
-		MDTExceptionEntity msg = null;
+	private void throwErrorResponse(String respBody) throws RESTfulRemoteException {
+		Fa3stMessage msg = null;
 		try {
-			msg = m_deser.read(respBody, MDTExceptionEntity.class);
+			msg = m_deser.read(respBody, Fa3stMessage.class);
 			@SuppressWarnings("unchecked")
 			Class<? extends Throwable> cls = (Class<? extends Throwable>) Class.forName(msg.getCode());
 			Constructor<? extends Throwable> ctor = cls.getConstructor(String.class);
 			throw (RuntimeException)ctor.newInstance(msg.getText());
 		}
-		catch ( RegistryException e ) { throw e; }
-		catch ( MDTClientException e ) { throw e; }
+		catch ( RESTfulRemoteException e ) { throw e; }
 		catch ( Exception e ) {
 			String details = ( msg != null )
 							? msg.getCode() + ": " + msg.getText() + ", ts=" + msg.getTimestamp()
 							: respBody;
-			throw new MDTClientException(details);
+			throw new RESTfulRemoteException(details);
 		}
 	}
 }

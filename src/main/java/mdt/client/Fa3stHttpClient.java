@@ -2,25 +2,30 @@ package mdt.client;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.List;
-
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import utils.func.Tuple;
+import utils.http.HttpClientProxy;
+import utils.http.RESTfulIOException;
+import utils.http.RESTfulRemoteException;
 
-import mdt.model.AASUtils;
-import mdt.model.MDTExceptionEntity;
+import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.registry.RegistryException;
+import mdt.model.sm.DefaultMDTFile;
+import mdt.model.sm.MDTFile;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 
 /**
@@ -47,8 +52,8 @@ public class Fa3stHttpClient implements HttpClientProxy {
 		return m_endpoint;
 	}
 	
-	protected RequestBody createRequestBody(Object desc) throws SerializationException {
-		return RequestBody.create(AASUtils.writeJson(desc), JSON);
+	protected RequestBody createRequestBody(Object desc) throws IOException {
+		return RequestBody.create(MDTModelSerDe.toJsonString(desc), JSON);
 	}
 
 	protected <T> T call(Request req, Class<T> resultCls) {
@@ -56,8 +61,11 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			Response resp =  m_client.newCall(req).execute();
 			return parseResponse(resp, resultCls);
 		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + m_endpoint, e);
+		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulIOException("" + e);
 		}
 	}
 
@@ -73,7 +81,7 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulIOException("" + e);
 		}
 	}
 	
@@ -83,7 +91,7 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			return parseResponseToList(resp, resultCls);
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulIOException("" + e);
 		}
 	}
 
@@ -95,21 +103,40 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulIOException("" + e);
 		}
 	}
 	
-	private <T> T parseResponse(Response resp, Class<T> valueType)
-		throws RegistryException, MDTClientException {
+	private <T> T parseResponse(Response resp, Class<T> valueType) throws RESTfulIOException {
 		try {
 			if ( resp.isSuccessful() ) {
 				if ( resp.code() != 204 ) {
-					String respBody = resp.body().string();
-					if ( respBody.length() > 0 ) {
-						return AASUtils.readJson(respBody, valueType);
-					}
-					else {
-						return null;
+					try ( ResponseBody respBody = resp.body() ) {
+						if ( void.class == valueType ) {
+							Messages msgs = MDTModelSerDe.readValue(respBody.string(), Messages.class);
+							Fa3stMessage msg = msgs.m_messages.get(0);
+							if ( !msg.getText().equals("OK") ) {
+								throw new RESTfulRemoteException("No exception raised but not OK");
+							}
+							return null;
+						}
+						else if ( byte[].class == valueType ) {
+							return (T)respBody.bytes();
+						}
+						else if ( MDTFile.class.isAssignableFrom(valueType) ) {
+							DefaultMDTFile mdtFile = new DefaultMDTFile();
+							mdtFile.setContentType(resp.body().contentType().toString());
+							mdtFile.setContent(respBody.bytes());
+							return (T)mdtFile;
+						}
+						
+						String respBodyStr = respBody.string();
+						if ( respBodyStr.length() > 0 ) {
+							return MDTModelSerDe.readValue(respBodyStr, valueType);
+						}
+						else {
+							return null;
+						}
 					}
 				}
 				else {
@@ -117,25 +144,27 @@ public class Fa3stHttpClient implements HttpClientProxy {
 				}
 			}
 			else {
-				String respBody = resp.body().string();
-				throwErrorResponse(resp, respBody);
-				throw new AssertionError();
+				try ( ResponseBody respBody = resp.body() ) {
+					String respBodyStr = respBody.string();
+					throwErrorResponse(resp, respBodyStr);
+					throw new AssertionError();
+				}
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException(e.toString());
+			throw new RESTfulIOException(e.toString());
 		}
 	}
 	
 	private <T> List<T> parseResponseToList(Response resp, Class<T> valueType)
-		throws RegistryException, MDTClientException {
+		throws RESTfulIOException {
 		try {
 			String respBody = resp.body().string();
 			if ( resp.isSuccessful() ) {
 				JsonMapper mapper = JsonMapper.builder().build();
 				JsonNode root = mapper.readTree(respBody);
 				JsonNode result = root.path("result");
-				return AASUtils.readListJson(result, valueType);
+				return MDTModelSerDe.readValueList(result, valueType);
 			}
 			else {
 				throwErrorResponse(resp, respBody);
@@ -143,25 +172,27 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException(resp.toString());
+			throw new RESTfulIOException(resp.toString());
 		}
 	}
 	
 	public static final class Messages {
 		@JsonProperty("messages") 
-		private List<MDTExceptionEntity> m_messages;
+		private List<Fa3stMessage> m_messages;
 	}
 	
-	private void throwErrorResponse(Response resp, String respBody)
-		throws RegistryException, MDTClientException {
-		MDTExceptionEntity msg = null;
+	private void throwErrorResponse(Response resp, String respBody) {
+		Fa3stMessage msg = null;
 		
 		try {
-			Messages msgs = AASUtils.readJson(respBody, Messages.class);
+			Messages msgs = MDTModelSerDe.getJsonMapper().readValue(respBody, Messages.class);
 			msg = msgs.m_messages.get(0);
 			if ( msg.getCode().length() == 0 ) {
 				if ( resp.code() == 404 ) {
 					throw new ResourceNotFoundException(msg.getText());
+				}
+				else if ( resp.code() >= 500 && resp.code() < 600 ) {
+					throw new RESTfulRemoteException(msg.getText());
 				}
 			}
 			
@@ -170,13 +201,12 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			Constructor<? extends Throwable> ctor = cls.getConstructor(String.class);
 			throw (RuntimeException)ctor.newInstance(msg.getText());
 		}
-		catch ( RegistryException e ) { throw e; }
-		catch ( MDTClientException e ) { throw e; }
-		catch ( Exception e ) {
+		catch ( IOException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException
+				| IllegalAccessException | InstantiationException e ) {
 			String details = ( msg != null )
 							? msg.getCode() + ": " + msg.getText() + ", ts=" + msg.getTimestamp()
 							: respBody;
-			throw new MDTClientException(details);
+			throw new RESTfulIOException(details);
 		}
 	}
 }

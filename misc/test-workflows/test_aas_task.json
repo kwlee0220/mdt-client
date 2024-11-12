@@ -1,0 +1,23 @@
+{
+  "id" : "simulation",
+  "type" : "mdt.task.builtin.AASOperationTask",
+  "dependencies" : [ "copy-data2", "set-sleeptime", "set-expected", "copy-data1" ],
+  "variables" : [ ],
+  "options" : [ {
+    "name" : "operation",
+    "optionType" : "sme_ref",
+    "twinId" : "Test",
+    "submodelIdShort" : "Simulation",
+    "smePath" : "SimulationOperation"
+  }, {
+    "name" : "async",
+    "optionType" : "bool",
+    "value" : true
+  }, {
+    "name" : "timeout",
+    "optionType" : "string",
+    "value" : "5m"
+  } ],
+  "labels" : [ ]
+}
+

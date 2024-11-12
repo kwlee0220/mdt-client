@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature;
 
-import mdt.model.workflow.argo.ArgoWorkflowDescriptor;
-import mdt.model.workflow.descriptor.WorkflowDescriptor;
+import mdt.workflow.model.WorkflowDescriptor;
+import mdt.workflow.model.argo.ArgoWorkflowDescriptor;
 
 
 /**
@@ -27,7 +27,7 @@ public class TestArgoTaskDescriptor {
 											"http://129.254.91.75:12987/operations/test-operation");
 		ArgoWorkflowDescriptor argoWfDesc = new ArgoWorkflowDescriptor(wfDesc,
 																"http://129.254.91.75:12985",
-																arguments);
+																"kwlee0220/mdt-client");
 		YAMLFactory yamlFact = new YAMLFactory().disable(Feature.WRITE_DOC_START_MARKER)
 												.enable(Feature.MINIMIZE_QUOTES);
 		ObjectMapper mapper = new ObjectMapper(yamlFact);

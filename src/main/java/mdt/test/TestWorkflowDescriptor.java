@@ -3,8 +3,8 @@ package mdt.test;
 import java.io.File;
 import java.io.IOException;
 
-import mdt.client.workflow.HttpWorkflowManagerClient;
-import mdt.model.workflow.descriptor.WorkflowDescriptor;
+import mdt.client.workflow.HttpWorkflowManagerProxy;
+import mdt.workflow.model.WorkflowDescriptor;
 
 /**
  *
@@ -12,7 +12,7 @@ import mdt.model.workflow.descriptor.WorkflowDescriptor;
  */
 public class TestWorkflowDescriptor {
 	public static final void main(String... args) throws Exception {
-		loadWfDesc(new File("misc/test-workflows/workflow_test.json"));
+		loadWfDesc(new File("misc/test-workflows/workflow.json"));
 		
 //		HttpMDTManagerClient manager = HttpMDTManagerClient.connect("http://localhost:12985");
 //		HttpWorkflowManagerClient wfManager = manager.getWorkflowManager();
@@ -37,7 +37,7 @@ public class TestWorkflowDescriptor {
 		wfDesc = WorkflowDescriptor.parseJsonString(json);
 	}
 	
-	public static void list(HttpWorkflowManagerClient wfManager) {
+	public static void list(HttpWorkflowManagerProxy wfManager) {
 		for ( WorkflowDescriptor wfDesc: wfManager.getWorkflowDescriptorAll() ) {
 			System.out.println(wfDesc);
 		}

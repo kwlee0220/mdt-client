@@ -7,10 +7,12 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
+import utils.InternalException;
+
+import mdt.aas.SubmodelRegistry;
 import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
-import mdt.model.registry.RegistryException;
-import mdt.model.registry.SubmodelRegistry;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -30,8 +32,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	}
 
 	@Override
-	public List<SubmodelDescriptor> getAllSubmodelDescriptors()
-		throws RegistryException {
+	public List<SubmodelDescriptor> getAllSubmodelDescriptors() {
 		String url = String.format("%s/submodel-descriptors", m_endpoint);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -40,7 +41,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public List<SubmodelDescriptor>
-	getAllSubmodelDescriptorsByIdShort(String idShort) throws RegistryException {
+	getAllSubmodelDescriptorsByIdShort(String idShort) {
 		String url = String.format("%s/submodel-descriptors?idShort=%s", m_endpoint, idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -65,7 +66,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 			return call(req, SubmodelDescriptor.class);
 		}
 		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -79,7 +80,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 			return call(req, SubmodelDescriptor.class);
 		}
 		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+			throw new InternalException("" + e);
 		}
 	}
 

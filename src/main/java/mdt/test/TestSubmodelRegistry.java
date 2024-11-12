@@ -3,9 +3,9 @@ package mdt.test;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
+import mdt.aas.SubmodelRegistry;
 import mdt.client.HttpMDTManagerClient;
 import mdt.model.MDTManager;
-import mdt.model.registry.SubmodelRegistry;
 
 /**
  *

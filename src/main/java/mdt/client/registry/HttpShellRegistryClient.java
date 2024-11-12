@@ -7,11 +7,13 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 
+import utils.InternalException;
+
+import mdt.aas.AASRegistry;
 import mdt.client.HttpMDTServiceProxy;
 import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
-import mdt.model.registry.AASRegistry;
-import mdt.model.registry.RegistryException;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -44,8 +46,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 	}
 
 	@Override
-	public List<AssetAdministrationShellDescriptor> getAllAssetAdministrationShellDescriptors()
-		throws RegistryException {
+	public List<AssetAdministrationShellDescriptor> getAllAssetAdministrationShellDescriptors() {
 		String url = String.format("%s/shell-descriptors", m_endpoint);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -54,7 +55,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 
 	@Override
 	public List<AssetAdministrationShellDescriptor>
-	getAllAssetAdministrationShellDescriptorsByIdShort(String idShort) throws RegistryException {
+	getAllAssetAdministrationShellDescriptorsByIdShort(String idShort) {
 		String url = String.format("%s/shell-descriptors?idShort=%s", m_endpoint, idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -63,7 +64,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 
 	@Override
 	public List<AssetAdministrationShellDescriptor>
-	getAssetAdministrationShellDescriptorByGlobalAssetId(String assetId) throws RegistryException {
+	getAssetAdministrationShellDescriptorByGlobalAssetId(String assetId) {
 		String url = String.format("%s/shell-descriptors?assetId=%s", m_endpoint, assetId);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -81,7 +82,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 			return call(req, AssetAdministrationShellDescriptor.class);
 		}
 		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -96,7 +97,7 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements AASRe
 			return call(req, AssetAdministrationShellDescriptor.class);
 		}
 		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+			throw new InternalException("" + e);
 		}
 	}
 

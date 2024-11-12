@@ -3,7 +3,6 @@ plugins {
 	id 'application'
 	id 'eclipse'
 	id 'com.github.johnrengelman.shadow' version '8.1.1'
-	id 'com.google.cloud.tools.jib' version '3.4.3'
 }
 
 group = 'etri'
@@ -16,6 +15,15 @@ java {
 	
 	withSourcesJar()
 	withJavadocJar()
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs 'src/main/api'
+			srcDirs 'src/main/impl'
+		}
+	}
 }
 	
 [compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
@@ -47,10 +55,13 @@ dependencies {
 	
 	// Apache libraries
 	implementation "org.apache.commons:commons-text:${commons_text_version}"
+	implementation 'org.apache.poi:poi:5.3.0'
+	
 	
 	// AAS model
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"
+	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-parent:${aas4j_version}"
 	
 	implementation "commons-beanutils:commons-beanutils:${commons_beanutils_version}"
 		
@@ -60,12 +71,19 @@ dependencies {
 	// jackson 
 	implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
 	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson_version}"
+	
+	// Tika
+//	implementation "org.apache.tika:tika-parsers-standard-package:${tika_version}"
+	implementation "org.apache.tika:tika-core:${tika_version}"
 
 	// JSLT2
 	implementation "com.github.tonysparks.jslt2:jslt2:${jslt2_version}"
 		
 	// picocli command line parser
 	implementation "info.picocli:picocli:${picocli_version}"
+	
+	// MQTT
+	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"
 	
 	implementation "org.nocrala.tools.texttablefmt:text-table-formatter:${text_table_version}"
 	implementation "org.barfuin.texttree:text-tree:${text_tree_version}"
@@ -79,14 +97,14 @@ test {
 	useJUnitPlatform()
 }
 
-javadoc {
-	options.encoding = 'UTF-8'
-	options.links("https://docs.oracle.com/javase/8/docs/api/")
-	options.links("https://google.github.io/guava/releases/23.0/api/docs/")
-	options.links("http://reactivex.io/RxJava/javadoc/")
+ javadoc {
+ 	options.encoding = 'UTF-8'
+ 	options.links("https://docs.oracle.com/javase/8/docs/api/")
+ 	options.links("https://google.github.io/guava/releases/23.0/api/docs/")
+ 	options.links("http://reactivex.io/RxJava/javadoc/")
 	
-	options.addStringOption('Xdoclint:none', '-quiet')
-}
+ 	options.addStringOption('Xdoclint:none', '-quiet')
+ }
 
 shadowJar {
 	mergeServiceFiles()
@@ -94,18 +112,6 @@ shadowJar {
 	exclude 'META-INF/*.SF'
 	exclude 'META-INF/*.DSA'
 	exclude 'META-INF/*.RSA'
-}
-
-jib {
-	from {
-		image = 'eclipse-temurin:17-jre-alpine'
-	}
-	to {
-		image = 'mdt-client'
-	}
-	container {
-		mainClass = 'mdt.cli.MDTCommandsMain'
-	}
 }
 
 eclipse {

@@ -10,14 +10,16 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
-import mdt.model.MDTExceptionEntity;
+import utils.InternalException;
+import utils.func.Lazy;
+import utils.http.HttpClientProxy;
+import utils.http.RESTfulRemoteException;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import utils.InternalException;
-import utils.func.Lazy;
 
 
 /**
@@ -69,11 +71,12 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 		}
 		catch ( IOException e ) {
 			if ( e instanceof SocketTimeoutException ) {
-				String msg = String.format("Failed to connect to RESTful Server: endpoint=%s", m_endpoint);
-				throw new MDTClientException(msg, e);
+				String msg = String.format("Failed to connect to RESTful Server: endpoint=%s, cause=%s",
+											m_endpoint, e);
+				throw new RESTfulRemoteException(msg);
 			}
 			else {
-				throw new MDTClientException("" + e);
+				throw new RESTfulRemoteException("" + e);
 			}
 		}
 	}
@@ -83,7 +86,7 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 			return parseListResponse(resp, responseCls);
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 
@@ -95,28 +98,28 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
 	private <T> T parseResponse(Response resp, Class<T> responseCls)
-		throws MDTClientException, RuntimeException {
+		throws RESTfulRemoteException, RuntimeException {
 		try {
 			String respBody = resp.body().string();
 			if ( resp.isSuccessful() ) {
+				if ( String.class.isAssignableFrom(responseCls)  ) {
+					return (T)respBody;
+				}
 				if ( respBody.length() == 0 ) {
 					return null;
-				}
-				else if ( String.class.isAssignableFrom(responseCls)  ) {
-					return (T)respBody;
 				}
 				try {
 					return parseJson(respBody, responseCls);
 				}
 				catch ( DeserializationException e ) {
 					String details = String.format("JSON-deserialization error, body=%s", respBody);
-					throw new MDTClientException(details);
+					throw new RESTfulRemoteException(details);
 				}
 			}
 			else {
@@ -125,11 +128,11 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 	private <T> List<T> parseListResponse(Response resp, Class<T> responseCls)
-		throws MDTClientException, RuntimeException {
+		throws RESTfulRemoteException, RuntimeException {
 		try {
 			String respBody = resp.body().string();
 			if ( resp.isSuccessful() ) {
@@ -141,7 +144,7 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 				}
 				catch ( DeserializationException e ) {
 					String.format("JSON-deserialization error, body=%s", respBody);
-					throw new MDTClientException(resp.toString());
+					throw new RESTfulRemoteException(resp.toString());
 				}
 			}
 			else {
@@ -150,15 +153,15 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 			}
 		}
 		catch ( IOException e ) {
-			throw new MDTClientException("" + e);
+			throw new RESTfulRemoteException("" + e);
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void throwErrorResponse(String respBody) throws MDTClientException, RuntimeException {
-		MDTExceptionEntity entity = null;
+	private void throwErrorResponse(String respBody) throws RESTfulRemoteException, RuntimeException {
+		Fa3stMessage entity = null;
 		try {
-			entity = parseJson(respBody, MDTExceptionEntity.class);
+			entity = parseJson(respBody, Fa3stMessage.class);
 		}
 		catch ( Exception e ) {
 			throw new InternalException("failed to parse ExceptionMessage: " + respBody);
@@ -180,7 +183,7 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 		}
 	}
 	
-	private RuntimeException createException(MDTExceptionEntity entity,
+	private RuntimeException createException(Fa3stMessage entity,
 											Class<? extends RuntimeException> entityCls, String details) {
 		try {
 			Constructor<? extends RuntimeException> ctor = entityCls.getConstructor(String.class);
@@ -191,7 +194,7 @@ public class HttpAASRESTfulClient implements HttpClientProxy {
 		}
 	}
 	
-	private RuntimeException createException(MDTExceptionEntity entity,
+	private RuntimeException createException(Fa3stMessage entity,
 												Class<? extends RuntimeException> entityCls) {
 		try {
 			Constructor<? extends RuntimeException> ctor = entityCls.getConstructor();

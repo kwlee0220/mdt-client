@@ -3,9 +3,10 @@ package mdt.client;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
+import utils.http.OkHttpClientUtils;
+
 import mdt.client.registry.HttpShellRegistryClient;
 import mdt.client.registry.HttpSubmodelRegistryClient;
-import mdt.client.repository.HttpAASRepositoryClient;
 import mdt.client.repository.HttpSubmodelRepositoryClient;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
@@ -20,7 +21,7 @@ public class HttpServiceFactory implements ServiceFactory {
 	private final OkHttpClient m_httpClient;
 	
 	public HttpServiceFactory() throws KeyManagementException, NoSuchAlgorithmException {
-		m_httpClient = SSLUtils.newTrustAllOkHttpClientBuilder().build();
+		m_httpClient = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
 	}
 	
 	public OkHttpClient getHttpClient() {
@@ -35,11 +36,6 @@ public class HttpServiceFactory implements ServiceFactory {
 	@Override
 	public HttpSubmodelRegistryClient getSubmodelRegistry(String endpoint) {
 		return new HttpSubmodelRegistryClient(m_httpClient, endpoint);
-	}
-
-	@Override
-	public HttpAASRepositoryClient getAssetAdministrationShellRepository(String endpoint) {
-		return new HttpAASRepositoryClient(m_httpClient, endpoint);
 	}
 
 	@Override

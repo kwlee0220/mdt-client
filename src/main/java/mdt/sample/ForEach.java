@@ -11,8 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import mdt.ksx9101.model.Data;
-import mdt.ksx9101.model.InformationModel;
+import mdt.model.sm.data.Data;
+import mdt.model.sm.info.InformationModel;
 
 
 /**

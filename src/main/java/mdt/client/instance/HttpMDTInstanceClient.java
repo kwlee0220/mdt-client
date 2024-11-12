@@ -1,5 +1,6 @@
 package mdt.client.instance;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -14,20 +15,35 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
 import utils.StateChangePoller;
+import utils.func.FOption;
+import utils.func.Funcs;
+import utils.http.HttpClientProxy;
+import utils.http.HttpRESTfulClient;
+import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
+import utils.http.JacksonErrorEntityDeserializer;
 import utils.stream.FStream;
 
-import mdt.client.HttpAASRESTfulClient;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.DescriptorUtils;
 import mdt.model.InvalidResourceStatusException;
+import mdt.model.MDTModelSerDe;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.instance.MDTInstanceStatus;
+import mdt.model.service.MDTInstance;
 import mdt.model.service.SubmodelService;
-import okhttp3.Request;
+import mdt.model.sm.data.Data;
+import mdt.model.sm.data.DefaultData;
+import mdt.model.sm.info.DefaultInformationModel;
+import mdt.model.sm.info.InformationModel;
+import mdt.model.sm.simulation.DefaultSimulation;
+import mdt.model.sm.simulation.Simulation;
+
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 
 
@@ -37,17 +53,27 @@ import okhttp3.RequestBody;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTInstance {
+public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	private static final RequestBody EMPTY_BODY = RequestBody.create("", null);
 	
 	private final HttpMDTInstanceManagerClient m_manager;
+	private final HttpRESTfulClient m_restfulClient;
 	private AtomicReference<InstanceDescriptor> m_desc;
+	private final AtomicReference<InformationModel> m_infoModel = new AtomicReference<>();
+	private final AtomicReference<Data> m_data = new AtomicReference<>();
+	private final AtomicReference<List<Simulation>> m_simulationList = new AtomicReference<>();
 	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
 	
 	HttpMDTInstanceClient(HttpMDTInstanceManagerClient manager, InstanceDescriptor desc) {
-		super(manager.getHttpClient(), String.format("%s/instances/%s", manager.getEndpoint(), desc.getId()));
-		
 		m_manager = manager;
+		
+		String endpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
+		m_restfulClient = HttpRESTfulClient.builder()
+										.httpClient(manager.getHttpClient())
+										.endpoint(endpoint)
+										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(InstanceDescriptorSerDe.MAPPER))
+										.build();
+		
 		m_desc = new AtomicReference<>(desc);
 	}
 	
@@ -63,7 +89,15 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 
 	@Override
 	public String getBaseEndpoint() {
-		return m_desc.get().getBaseEndpoint();
+//		return m_desc.get().getBaseEndpoint();
+		String endpoint = m_desc.get().getBaseEndpoint();
+		if ( endpoint == null ) {
+			reload();
+			return m_desc.get().getBaseEndpoint();
+		}
+		else {
+			return endpoint;
+		}
 	}
 	
 	@Override
@@ -106,6 +140,10 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 		m_desc.set(desc);
 		
 		return this;
+	}
+	
+	void setInstanceDescriptor(InstanceDescriptor desc) {
+		m_desc.set(desc);
 	}
 
 	@Override
@@ -197,15 +235,51 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	}
 
 	@Override
-	public SubmodelService getSubmodelServiceBySemanticId(String semanticId) {
-		InstanceSubmodelDescriptor desc = getInstanceSubmodelDescriptorBySemanticId(semanticId);
-		return toSubmodelService(desc.getId());
+	public List<SubmodelService> getAllSubmodelServiceBySemanticId(String semanticId) {
+		return FStream.from(getAllInstanceSubmodelDescriptorBySemanticId(semanticId))
+						.map(isd -> toSubmodelService(isd.getId()))
+						.toList();
 	}
 
 	@Override
-	public List<InstanceSubmodelDescriptor> getAllInstanceSubmodelDescriptors() {
-		return FStream.from(m_desc.get().getInstanceSubmodelDescriptors())
-						.cast(InstanceSubmodelDescriptor.class)
+	public InformationModel getInformationModel() throws ResourceNotFoundException {
+		return m_infoModel.updateAndGet(p -> FOption.getOrElse(p, this::loadInformationModel));
+	}
+	private InformationModel loadInformationModel() throws ResourceNotFoundException {
+		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(InformationModel.SEMANTIC_ID);
+		SubmodelService svc = Funcs.getFirst(found).getOrThrow(() -> new ResourceNotFoundException("InformationModel",
+																		"semanticId=" + InformationModel.SEMANTIC_ID));
+		DefaultInformationModel infoModel = new DefaultInformationModel();
+		infoModel.updateFromAasModel(svc.getSubmodel());
+		return infoModel;
+	}
+
+	@Override
+	public Data getData() throws ResourceNotFoundException {
+		return m_data.updateAndGet(p -> FOption.getOrElseThrow(p, this::loadData));
+	}
+	private Data loadData() throws ResourceNotFoundException {
+		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(Data.SEMANTIC_ID);
+		SubmodelService dataSvc = Funcs.getFirst(found)
+										.getOrThrow(() -> new ResourceNotFoundException("DataSubmodel",
+																				"semanticId=" + Data.SEMANTIC_ID));
+		DefaultData data = new DefaultData();
+		data.updateFromAasModel(dataSvc.getSubmodel());
+		return data;
+	}
+
+	@Override
+	public List<Simulation> getAllSimulations() {
+		return m_simulationList.updateAndGet(lst -> FOption.getOrElseThrow(lst, this::loadAllSimulations));
+	}
+	private List<Simulation> loadAllSimulations() {
+		return FStream.from(getAllSubmodelServiceBySemanticId(Simulation.SEMANTIC_ID))
+						.map(SubmodelService::getSubmodel)
+						.map(submodel -> {
+							DefaultSimulation sim = new DefaultSimulation();
+							sim.updateFromAasModel(submodel);
+							return (Simulation)sim;
+						})
 						.toList();
 	}
 	
@@ -214,18 +288,31 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 	@Override
 	public AssetAdministrationShellDescriptor getAASDescriptor() {
 		String url = String.format("%s/aas_descriptor", getEndpoint());
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return call(req, AssetAdministrationShellDescriptor.class);
+		return m_restfulClient.get(url, m_aasDeser);
 	}
 
     // @GetMapping({"instances/{id}/submodel_descriptors"})
 	@Override
 	public List<SubmodelDescriptor> getAllSubmodelDescriptors() {
 		String url = String.format("%s/submodel_descriptors", getEndpoint());
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return callList(req, SubmodelDescriptor.class);
+		return m_restfulClient.get(url, m_smListDeser);
+	}
+
+    // @GetMapping({"instances/{id}/log"})
+	@Override
+	public String getOutputLog() throws IOException {
+		String url = String.format("%s/log", getEndpoint());
+		return m_restfulClient.get(url, HttpRESTfulClient.STRING_DESER);
+	}
+
+	@Override
+	public OkHttpClient getHttpClient() {
+		return m_restfulClient.getHttpClient();
+	}
+
+	@Override
+	public String getEndpoint() {
+		return m_restfulClient.getEndpoint();
 	}
 	
 	public void waitWhileStatus(Predicate<MDTInstanceStatus> waitCond, Duration pollInterval, Duration timeout)
@@ -249,19 +336,15 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
     // @PutMapping({"instance-manager/instances/{id}/start"})
 	private InstanceDescriptor sendStartRequest() {
 		String url = String.format("%s/start", getEndpoint());
-		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
 		
-		String descJson = call(req, String.class);
-		return m_serde.readInstanceDescriptor(descJson);
+		return m_restfulClient.put(url, EMPTY_BODY, m_descDeser);
 	}
 
     // @PutMapping({"instance-manager/instances/{id}/stop"})
 	private InstanceDescriptor sendStopRequest() {
 		String url = String.format("%s/stop", getEndpoint());
-		Request req = new Request.Builder().url(url).put(EMPTY_BODY).build();
 		
-		String descJson = call(req, String.class);
-		return  m_serde.readInstanceDescriptor(descJson);
+		return m_restfulClient.put(url, EMPTY_BODY, m_descDeser);
 	}
 	
 	private SubmodelService toSubmodelService(String id) {
@@ -273,4 +356,24 @@ public class HttpMDTInstanceClient extends HttpAASRESTfulClient implements MDTIn
 		String smEp = DescriptorUtils.toSubmodelServiceEndpointString(baseEndpoint, id);
 		return new HttpSubmodelServiceClient(getHttpClient(), smEp);
 	}
+	
+	private ResponseBodyDeserializer<AssetAdministrationShellDescriptor> m_aasDeser = new ResponseBodyDeserializer<>() {
+		@Override
+		public AssetAdministrationShellDescriptor deserialize(Headers headers, String respBody) throws IOException {
+			return MDTModelSerDe.readValue(respBody, AssetAdministrationShellDescriptor.class);
+		}
+	};
+	private ResponseBodyDeserializer<List<SubmodelDescriptor>> m_smListDeser = new ResponseBodyDeserializer<>() {
+		@Override
+		public List<SubmodelDescriptor> deserialize(Headers headers, String respBody) throws IOException {
+			return MDTModelSerDe.readValueList(respBody, SubmodelDescriptor.class);
+		}
+	};
+	
+	private ResponseBodyDeserializer<InstanceDescriptor> m_descDeser = new ResponseBodyDeserializer<>() {
+		@Override
+		public InstanceDescriptor deserialize(Headers headers, String respBody) throws IOException {
+			return m_serde.readInstanceDescriptor(respBody);
+		}
+	};
 }

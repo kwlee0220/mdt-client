@@ -7,9 +7,9 @@ import com.google.common.base.Preconditions;
 
 import lombok.experimental.Delegate;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.SubmodelUtils;
-import mdt.model.resource.value.PropertyValues.StringValue;
 import mdt.model.service.SubmodelService;
+import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.value.PropertyValue;
 
 /**
  *
@@ -37,7 +37,7 @@ public class ExtendedSubmodelService implements SubmodelService {
 		
 		SubmodelElement sme = getSubmodelElementByPath(idShortPath);
 		if ( sme instanceof Property ) {
-			patchSubmodelElementValueByPath(idShortPath, new StringValue(value));
+			patchSubmodelElementValueByPath(idShortPath, new PropertyValue(value));
 		}
 		else {
 			throw new ResourceNotFoundException("Property", "path=" + idShortPath);

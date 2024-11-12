@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.task.builtin.HttpTaskCommand;
-
 import picocli.CommandLine.Command;
 
 
@@ -26,9 +25,5 @@ public class HttpTaskLauncher extends HttpTaskCommand {
 		super();
 		
 		setLogger(s_logger);
-	}
-
-	public static final void main(String... args) throws Exception {
-		main(new HttpTaskLauncher(), args);
 	}
 }

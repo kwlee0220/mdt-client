@@ -1,32 +1,41 @@
 package mdt.client.resource;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import javax.xml.datatype.Duration;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.BaseOperationResult;
+import org.eclipse.digitaltwin.aas4j.v3.model.ExecutionState;
+import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationHandle;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationRequest;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationResult;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
+import utils.InternalException;
 import utils.func.Tuple;
+import utils.http.OkHttpClientUtils;
+import utils.http.RESTfulIOException;
 
+import lombok.Data;
 import mdt.client.Fa3stHttpClient;
-import mdt.client.MDTClientException;
-import mdt.client.SSLUtils;
+import mdt.model.MDTOperationHandle;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.registry.RegistryException;
-import mdt.model.resource.MDTOperationHandle;
-import mdt.model.resource.value.SubmodelElementValue;
 import mdt.model.service.SubmodelService;
+import mdt.model.sm.MDTFile;
+import mdt.model.sm.value.SubmodelElementValue;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -37,18 +46,18 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpSubmodelServiceClient extends Fa3stHttpClient implements SubmodelService {
-	public HttpSubmodelServiceClient(OkHttpClient client, String endpoint) {
-		super(client, endpoint);
-	}
-	
 	public static HttpSubmodelServiceClient newTrustAllSubmodelServiceClient(String url) {
 		try {
-			OkHttpClient client = SSLUtils.newTrustAllOkHttpClientBuilder().build();
+			OkHttpClient client = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
 			return new HttpSubmodelServiceClient(client, url);
 		}
 		catch ( Exception e ) {
-			throw new MDTClientException("Failed to create a trust-all client", e);
+			throw new RESTfulIOException("Failed to create a trust-all client", e);
 		}
+	}
+	
+	public HttpSubmodelServiceClient(OkHttpClient client, String endpoint) {
+		super(client, endpoint);
 	}
 	
 	@Override
@@ -65,8 +74,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(getEndpoint()).put(reqBody).build();
 			return call(req, Submodel.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -96,8 +105,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(url).post(reqBody).build();
 			return call(req, SubmodelElement.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -110,8 +119,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(url).post(reqBody).build();
 			return call(req, SubmodelElement.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -124,8 +133,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(url).put(reqBody).build();
 			return call(req, SubmodelElement.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -140,8 +149,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(url).patch(reqBody).build();
 			send(req);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -150,13 +159,13 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		try {
 			String url = String.format("%s/submodel-elements/%s/$value",
 										getEndpoint(), encodeIdShortPath(idShortPath));
-			RequestBody reqBody = createRequestBody(value.toJsonObject());
+			RequestBody reqBody = createRequestBody(value);
 			
 			Request req = new Request.Builder().url(url).patch(reqBody).build();
 			send(req);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -166,6 +175,48 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
+	}
+
+//	@Override
+//	public byte[] getFileByPath(String idShortPath) {
+//		String url = String.format("%s/submodel-elements/%s/attachment",
+//									getEndpoint(), encodeIdShortPath(idShortPath));
+//		
+//		Request req = new Request.Builder().url(url).get().build();
+//		return call(req, byte[].class);
+//	}
+//
+//	@Override
+//	public void putFileByPath(String idShortPath, byte[] payload) {
+//		try {
+//			String url = String.format("%s/submodel-elements/%s/attachment",
+//										getEndpoint(), encodeIdShortPath(idShortPath));
+//			RequestBody reqBody = createRequestBody(payload);
+//			
+//			Request req = new Request.Builder().url(url).put(reqBody).build();
+//			send(req);
+//		}
+//		catch ( IOException e ) {
+//			throw new InternalException("" + e);
+//		}
+//	}
+//
+//	@Override
+//	public void deleteFileByPath(String idShortPath) {
+//		String url = String.format("%s/submodel-elements/%s/attachment",
+//									getEndpoint(), encodeIdShortPath(idShortPath));
+//		Request req = new Request.Builder().url(url).delete().build();
+//		send(req);
+//	}
+	
+	@Data
+	@JsonInclude(Include.NON_NULL)
+	public static class OperationResultResponse {
+		private List<OperationVariable> inoutputArguments = Lists.newArrayList();
+		private List<OperationVariable> outputArguments = Lists.newArrayList();
+		private ExecutionState executionState;
+		private boolean success;
+		private List<String> messages;
 	}
 
 	@Override
@@ -182,10 +233,20 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			RequestBody reqBody = createRequestBody(request);
 			
 			Request req = new Request.Builder().url(url).post(reqBody).build();
-			return call(req, OperationResult.class);
+			OperationResultResponse resp = call(req, OperationResultResponse.class);
+			
+			if ( resp.success ) {
+				return new DefaultOperationResult.Builder()
+												.inoutputArguments(resp.inoutputArguments)
+												.outputArguments(resp.outputArguments)
+												.build();
+			}
+			else {
+				throw new RuntimeException("Operation invocation failed: idShortPath=" + idShortPath);
+			}
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -207,8 +268,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			
 			return new MDTOperationHandle(encodeIdShortPath(idShortPath), ret._1);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -234,6 +295,52 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, BaseOperationResult.class);
+	}
+
+	@Override
+	public MDTFile getFileByPath(String idShortPath) {
+		String url = String.format("%s/submodel-elements/%s/attachment",
+									getEndpoint(), encodeIdShortPath(idShortPath));
+		Request req = new Request.Builder().url(url).get().build();
+		MDTFile mdtFile = call(req, MDTFile.class);
+		
+		File aasFile = (File)getSubmodelElementByPath(idShortPath);
+		mdtFile.setPath(aasFile.getValue());
+		
+		return mdtFile;
+	}
+
+	@Override
+	public byte[] getFileContentByPath(String idShortPath) {
+		String url = String.format("%s/submodel-elements/%s/attachment",
+									getEndpoint(), encodeIdShortPath(idShortPath));
+		Request req = new Request.Builder().url(url).get().build();
+		return call(req, byte[].class);
+	}
+
+	@Override
+	public void putFileByPath(String idShortPath, MDTFile mdtFile) {
+		MultipartBody.Builder builder
+			= new MultipartBody.Builder()
+								.setType(MultipartBody.FORM)
+								.addFormDataPart("fileName", mdtFile.getPath())
+								.addFormDataPart("contentType", mdtFile.getContentType())
+								.addFormDataPart("content", null,
+												RequestBody.create(mdtFile.getContent(), mdtFile.getMediaType()));
+
+		String url = String.format("%s/submodel-elements/%s/attachment",
+									getEndpoint(), encodeIdShortPath(idShortPath));
+		RequestBody reqBody = builder.build();
+		Request req = new Request.Builder().url(url).put(reqBody).build();
+		call(req, void.class);
+	}
+
+	@Override
+	public void deleteFileByPath(String idShortPath) {
+		String url = String.format("%s/submodel-elements/%s/attachment",
+									getEndpoint(), encodeIdShortPath(idShortPath));
+		Request req = new Request.Builder().url(url).delete().build();
+		call(req, void.class);
 	}
 	
 	private String encodeIdShortPath(String idShortPath) {

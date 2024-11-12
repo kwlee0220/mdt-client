@@ -1,0 +1,61 @@
+{
+  "id" : "simulation",
+  "type" : "mdt.task.builtin.HttpTask",
+  "dependencies" : [ "set-sleeptime", "copy-data2", "copy-data1", "set-expected" ],
+  "variables" : [ {
+    "name" : "Data1",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[0].InputValue"
+    }
+  }, {
+    "name" : "Data2",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[1].InputValue"
+    }
+  }, {
+    "name" : "SleepTime",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[2].InputValue"
+    }
+  }, {
+    "name" : "ExpectedOperationResult",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[3].InputValue"
+    }
+  }, {
+    "name" : "Result",
+    "kind" : "OUTPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Outputs[0].OutputValue"
+    }
+  } ],
+  "options" : [ {
+    "name" : "url",
+    "optionType" : "string",
+    "value" : "http://129.254.91.134:12987/operations/test"
+  }, {
+    "name" : "timeout",
+    "optionType" : "string",
+    "value" : "5m"
+  }, {
+    "name" : "logger",
+    "optionType" : "string",
+    "value" : "info"
+  } ],
+  "labels" : [ ]
+}
+

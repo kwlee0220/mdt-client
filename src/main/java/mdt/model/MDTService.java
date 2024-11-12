@@ -1,7 +1,7 @@
 package mdt.model;
 
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.workflow.MDTWorkflowManager;
+import mdt.workflow.model.MDTWorkflowManager;
 
 /**
  *

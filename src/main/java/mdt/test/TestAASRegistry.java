@@ -3,8 +3,8 @@ package mdt.test;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 
+import mdt.aas.AASRegistry;
 import mdt.client.HttpMDTManagerClient;
-import mdt.model.registry.AASRegistry;
 
 /**
  *

@@ -1,16 +1,17 @@
 package mdt.sample;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import utils.async.AsyncResult;
+import utils.http.OkHttpClientUtils;
 
 import mdt.client.HttpMDTManagerClient;
-import mdt.client.SSLUtils;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.operation.HttpOperationClient;
+import mdt.client.operation.OperationRequestBody;
+import mdt.task.Parameter;
 import okhttp3.OkHttpClient;
 
 /**
@@ -25,17 +26,20 @@ public class SampleRunHttpOperation {
 		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT)
 																	.getInstanceManager();
 		
-		OkHttpClient http = SSLUtils.newTrustAllOkHttpClientBuilder().build();
-		String request = "{ \"submodelEndpoint\": \"https://localhost:10502/api/v3.0/submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMv64K07ZWoX-yEse2YlS9zbS9TaW11bGF0aW9uL1Byb2Nlc3NPcHRpbWl6YXRpb24=\" }";
+		OkHttpClient http = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
+		
+		OperationRequestBody req = new OperationRequestBody();
+		req.setSubmodelEndpoint("https://localhost:10502/api/v3.0/submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMv64K07ZWoX-yEse2YlS9zbS9TaW11bGF0aW9uL1Byb2Nlc3NPcHRpbWl6YXRpb24=");
+		
 		HttpOperationClient opClient = HttpOperationClient.builder()
 														.setHttpClient(http)
 														.setEndpoint("http://localhost:12987/simulator")
-														.setRequestBodyJson(request)
+														.setRequestBody(req)
 														.setPollInterval(Duration.ofSeconds(1))
 														.setTimeout(Duration.ofSeconds(10))
 														.build();
 		opClient.start();
-		AsyncResult<JsonNode> result = opClient.waitForFinished(5, TimeUnit.SECONDS);
+		AsyncResult<List<Parameter>> result = opClient.waitForFinished(5, TimeUnit.SECONDS);
 		if ( result.isRunning() ) {
 			System.out.println("Cancelling...");
 			opClient.cancel(true);

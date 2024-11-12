@@ -18,10 +18,11 @@ import com.google.common.collect.Maps;
 
 import mdt.cli.MDTCommand;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.client.workflow.HttpWorkflowManagerClient;
+import mdt.client.workflow.HttpWorkflowManagerProxy;
 import mdt.model.MDTManager;
-import mdt.model.workflow.argo.ArgoWorkflowDescriptor;
-import mdt.model.workflow.descriptor.WorkflowDescriptor;
+import mdt.workflow.model.WorkflowDescriptor;
+import mdt.workflow.model.argo.ArgoWorkflowDescriptor;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -44,6 +45,9 @@ public class ConvertWorkflowDescriptorCommand extends MDTCommand {
 	@Parameters(index="0", paramLabel="id", description="Workflow id to get")
 	private String m_wfId;
 
+	@Option(names={"--client-image"}, paramLabel="name", required=true, description="MDTClient docker image name")
+	private String m_clientImage;
+
 	@Option(names={"--output", "-o"}, paramLabel="path", required=false, description="output file")
 	private File m_outFile;
 	
@@ -60,7 +64,7 @@ public class ConvertWorkflowDescriptorCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerClient client = (HttpWorkflowManagerClient)manager.getWorkflowManager();
+		HttpWorkflowManagerProxy client = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
 		
 		String mdtInstMgrEndpoint = ((HttpMDTInstanceManagerClient)manager.getInstanceManager()).getEndpoint();
 		
@@ -75,7 +79,7 @@ public class ConvertWorkflowDescriptorCommand extends MDTCommand {
 			}
 		}
 		
-		ArgoWorkflowDescriptor argoWfDesc = new ArgoWorkflowDescriptor(wfDesc, mdtInstMgrEndpoint, arguments);
+		ArgoWorkflowDescriptor argoWfDesc = new ArgoWorkflowDescriptor(wfDesc, mdtInstMgrEndpoint, m_clientImage);
 		
 		if ( m_outFile != null ) {
 			m_outFile.getParentFile().mkdirs();

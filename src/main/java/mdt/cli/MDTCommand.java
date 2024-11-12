@@ -1,18 +1,22 @@
 package mdt.cli;
 
+import java.io.File;
 import java.nio.file.Path;
 
 import org.slf4j.LoggerFactory;
 
 import utils.HomeDirPicocliCommand;
-import utils.func.FOption;
+import utils.http.RESTfulIOException;
+import utils.http.RESTfulRemoteException;
+
+import mdt.client.HttpMDTManagerClient;
+import mdt.client.MDTClientConfig;
+import mdt.model.MDTManager;
+import mdt.model.instance.MDTInstanceManagerException;
+import mdt.task.TaskException;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.MDTClientException;
-import mdt.model.MDTManager;
-import mdt.model.instance.MDTInstanceManagerException;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Option;
@@ -24,14 +28,17 @@ import picocli.CommandLine.Option;
  */
 public abstract class MDTCommand extends HomeDirPicocliCommand {
 	private static final String ENVVAR_HOME = "MDT_CLIENT_HOME";
-	private static final String ENVVAR_MDT_ENDPOINT = "MDT_ENDPOINT";
 	
 	private Level m_loggerLevel = null;
 	
-	@Option(names={"--endpoint"}, paramLabel="path", description={"MDTInstanceManager's endpoint"})
-	private String m_endpoint = null;
+	@Option(names={"--client_conf"}, paramLabel="path", required=false,
+			description={"MDTManager configuration file path"})
+	protected File m_clientConfigFile;
 	
-	abstract protected void run(MDTManager manager) throws Exception;
+	@Option(names={"--endpoint"}, paramLabel="path", required=false, description={"MDTInstanceManager's endpoint"})
+	protected String m_endpoint = null;
+	
+	abstract protected void run(MDTManager mdt) throws Exception;
 	
 	public MDTCommand() {
 		super(ENVVAR_HOME);
@@ -39,7 +46,7 @@ public abstract class MDTCommand extends HomeDirPicocliCommand {
 		setLogger(LoggerFactory.getLogger(MDTCommand.class));
 	}
 	
-	@Option(names={"--logger"}, paramLabel="logger-level",
+	@Option(names={"--loglevel"}, paramLabel="logger-level",
 					description={"Logger level: debug, info, warn, or error"})
 	public void setLoggerLevel(String level) {
 		switch ( level.toLowerCase() ) {
@@ -67,37 +74,50 @@ public abstract class MDTCommand extends HomeDirPicocliCommand {
 	}
 	
 	@Override
-	protected final void run(Path homeDir) throws Exception {
+	protected void run(Path homeDir) throws Exception {
 		if ( m_loggerLevel != null ) {
 			Logger root = (Logger)LoggerFactory.getLogger("mdt");
 			root.setLevel(m_loggerLevel);
 		}
-		
-		String endpoint = FOption.getOrElse(m_endpoint, () -> System.getenv(ENVVAR_MDT_ENDPOINT));
-		if ( endpoint == null ) {
-			throw new IllegalStateException("MDTInstanceManager's endpoint is missing");
+
+		HttpMDTManagerClient mdt;
+
+		// 사용자가 명시적으로 endpoint를 지정한 경우에는 이를 통해 MDT Manager에 접속한다.
+		if ( m_endpoint != null ) {
+			mdt = HttpMDTManagerClient.connect(m_endpoint);
+		}
+		// 사용자가 명시적으로 client 설정 정보를 지정한 경우에는 이를 통해 MDT Manager에 접속한다.
+		else if ( m_clientConfigFile != null ) {
+			MDTClientConfig config = MDTClientConfig.load(m_clientConfigFile);
+			mdt = HttpMDTManagerClient.connect(config);
+		}
+		// 그렇지 않은 경우는 설정 정보를 사용하거나 환경 변수를 활용하여 MDT Manager에 접속한다.
+		else {
+			mdt = HttpMDTManagerClient.connectWithDefault();
 		}
 		if ( getLogger().isDebugEnabled() ) {
-			getLogger().debug("connecting to MDTInstanceManager {}", endpoint);
+			getLogger().debug("connecting to MDTInstanceManager {}", mdt.getEndpoint());
 		}
 		
 		try {
-			HttpMDTManagerClient manager = HttpMDTManagerClient.connect(endpoint);
-			run(manager);
+			run(mdt);
 		}
-		catch ( MDTClientException e ) {
+		catch ( TaskException e ) {
+			throw e;
+		}
+		catch ( RESTfulRemoteException | RESTfulIOException e ) {
 			throw e;
 		}
 		catch ( RuntimeException e ) {
 			throw e;
 		}
 		catch ( Exception e ) {
-			throw new MDTInstanceManagerException("" + e);
+			throw new MDTInstanceManagerException(e);
 		}
 	}
 
 	protected static final void main(MDTCommand cmd, String... args) throws Exception {
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(100);
+		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(110);
 		try {
 			commandLine.parseArgs(args);
 

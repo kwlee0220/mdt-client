@@ -2,21 +2,11 @@ package mdt.cli;
 
 import utils.UsageHelp;
 
-import mdt.cli.MDTCommandsMain.AASCommands;
-import mdt.cli.MDTCommandsMain.GetCommands;
-import mdt.cli.MDTCommandsMain.KSX9101Commands;
-import mdt.cli.MDTCommandsMain.MDTInstanceCommands;
-import mdt.cli.MDTCommandsMain.SubmodelCommands;
+import mdt.cli.MDTCommandsMain.SimulationCommands;
 import mdt.cli.MDTCommandsMain.TaskCommands;
 import mdt.cli.MDTCommandsMain.WorkflowCommands;
-import mdt.cli.instance.AddMDTInstanceCommand;
-import mdt.cli.instance.GetKSX9101Command;
-import mdt.cli.instance.GetMDTInstanceCommand;
-import mdt.cli.instance.GetPropertyCommand;
-import mdt.cli.instance.ListMDTInstanceAllCommand;
-import mdt.cli.instance.RemoveMDTInstanceCommand;
-import mdt.cli.instance.StartMDTInstanceCommand;
-import mdt.cli.instance.StopMDTInstanceCommand;
+import mdt.cli.get.GetCommands;
+import mdt.cli.list.ListCommands;
 import mdt.cli.task.AASOperationTaskLauncher;
 import mdt.cli.task.CopyTaskLauncher;
 import mdt.cli.task.HttpTaskLauncher;
@@ -46,18 +36,14 @@ import picocli.CommandLine.Spec;
 	mixinStandardHelpOptions = true,
 	description="%nManufactoring DigitalTwin (MDT) related commands.",
 	subcommands = {
-		ListMDTInstanceAllCommand.class,
+		EndpointCommand.class,
+		ListCommands.class,
 		GetCommands.class,
-		AddMDTInstanceCommand.class,
-		RemoveMDTInstanceCommand.class,
+		AddMDTInstanceCommand.class,	
+		RemoveMDTInstanceCommand.class,	
 		StartMDTInstanceCommand.class,
 		StopMDTInstanceCommand.class,
-		ShutdownManagerCommand.class,
-		
-		MDTInstanceCommands.class,
-		AASCommands.class,
-		SubmodelCommands.class,
-		KSX9101Commands.class,
+		SimulationCommands.class,
 		TaskCommands.class,
 		WorkflowCommands.class,
 	})
@@ -71,41 +57,15 @@ public class MDTCommandsMain implements Runnable {
 	}
 
 	public static final void main(String... args) throws Exception {
-		new CommandLine(new MDTCommandsMain())
-			.setCaseInsensitiveEnumValuesAllowed(true)
-			.setAbbreviatedSubcommandsAllowed(true)
-			.execute(args);
+		CommandLine cmdLine = new CommandLine(new MDTCommandsMain())
+									.setCaseInsensitiveEnumValuesAllowed(true)
+									.setAbbreviatedSubcommandsAllowed(true)
+									.setAbbreviatedOptionsAllowed(true)
+									.setUsageHelpWidth(110);
+		cmdLine.execute(args);
 		
 		System.exit(0);
 	}
-	
-	@Command(
-		name="get",
-		parameterListHeading = "Parameters:%n",
-		optionListHeading = "Options:%n",
-		mixinStandardHelpOptions = true,
-		description="MDT property related commands",
-		subcommands= {
-			GetMDTInstanceCommand.class,
-			GetPropertyCommand.class,
-		})
-	public static class GetCommands extends CommandCollection {}
-	
-	@Command(
-		name="instance",
-		parameterListHeading = "Parameters:%n",
-		optionListHeading = "Options:%n",
-		mixinStandardHelpOptions = true,
-		description="MDT Instance related commands",
-		subcommands= {
-			ListMDTInstanceAllCommand.class,
-			GetCommands.class,
-			AddMDTInstanceCommand.class,
-			RemoveMDTInstanceCommand.class,
-			StartMDTInstanceCommand.class,
-			StopMDTInstanceCommand.class,
-		})
-	public static class MDTInstanceCommands extends CommandCollection {}
 	
 	@Command(
 		name="task",
@@ -139,60 +99,13 @@ public class MDTCommandsMain implements Runnable {
 	public static class WorkflowCommands extends CommandCollection {}
 	
 	@Command(
-		name="aas",
-		parameterListHeading = "Parameters:%n",
-		optionListHeading = "Options:%n",
-		mixinStandardHelpOptions = true,
-		description="AssetAdministrationShell related commands",
-		subcommands= {
-			ListAASAllCommand.class,
-			GetAASCommand.class,
-		})
-	public static class AASCommands extends CommandCollection {}
-	
-	@Command(
-		name="submodel",
-		parameterListHeading = "Parameters:%n",
-		optionListHeading = "Options:%n",
-		mixinStandardHelpOptions = true,
-		description="AAS Submodel related commands",
-		subcommands= {
-			ListSubmodelAllCommand.class,
-			GetSubmodelCommand.class,
-		})
-	public static class SubmodelCommands extends CommandCollection {}
-	
-//	@Command(
-//		name="property",
-//		parameterListHeading = "Parameters:%n",
-//		optionListHeading = "Options:%n",
-//		mixinStandardHelpOptions = true,
-//		description="MDT property related commands",
-//		subcommands= {
-//			GetPropertyCommand.class,
-//		})
-//	public static class PropertyCommands extends CommandCollection {}
-	
-	@Command(
-		name="ksx9101",
-		parameterListHeading = "Parameters:%n",
-		optionListHeading = "Options:%n",
-		mixinStandardHelpOptions = true,
-		description="MDT property related commands",
-		subcommands= {
-			GetKSX9101Command.class,
-		})
-	public static class KSX9101Commands extends CommandCollection {}
-	
-	@Command(
 		name="simulation",
 		parameterListHeading = "Parameters:%n",
 		optionListHeading = "Options:%n",
 		mixinStandardHelpOptions = true,
 		description="Simulation related commands",
 		subcommands= {
-			StartSimulationCommand.class,
-			StopSimulationCommand.class,
+			StartSkkuSimulationCommand.class,
 		})
 	public static class SimulationCommands extends CommandCollection {}
 	

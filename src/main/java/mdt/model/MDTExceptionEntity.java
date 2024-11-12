@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import mdt.client.MDTClientException;
+import utils.http.RESTfulRemoteException;
 
 
 /**
@@ -34,7 +34,7 @@ public class MDTExceptionEntity {
 	@Nullable @JsonProperty("timestamp")
 	private String m_timestamp;
 	
-	public static MDTExceptionEntity from(Exception e) {
+	public static MDTExceptionEntity from(Throwable e) {
 		MDTExceptionEntity entity = new MDTExceptionEntity();
 		entity.m_messageType = MessageTypeEnum.Exception;
 		entity.m_text = e.getMessage();
@@ -88,12 +88,12 @@ public class MDTExceptionEntity {
 		m_timestamp = ts;
 	}
 	
-	public MDTClientException toClientException() {
+	public RESTfulRemoteException toClientException() {
 		if ( m_text != null ) {
-			throw new MDTClientException("code=" + m_code + ", details=" + m_text);
+			throw new RESTfulRemoteException("code=" + m_code + ", details=" + m_text);
 		}
 		else {
-			throw new MDTClientException("code=" + m_code);
+			throw new RESTfulRemoteException("code=" + m_code);
 		}
 	}
 	
@@ -106,7 +106,7 @@ public class MDTExceptionEntity {
 					return ctor.newInstance(m_text);
 				}
 				else {
-					return new MDTClientException(m_text);
+					return new RESTfulRemoteException(m_text);
 				}
 			}
 			else {
@@ -115,16 +115,16 @@ public class MDTExceptionEntity {
 					return ctor.newInstance();
 				}
 				else {
-					return new MDTClientException("code=" + m_code);
+					return new RESTfulRemoteException("code=" + m_code);
 				}
 			}
 		}
 		catch ( Exception e ) {
 			if ( m_text != null ) {
-				throw new MDTClientException("code=" + m_code + ", details=" + m_text);
+				throw new RESTfulRemoteException("code=" + m_code + ", details=" + m_text);
 			}
 			else {
-				throw new MDTClientException("code=" + m_code);
+				throw new RESTfulRemoteException("code=" + m_code);
 			}
 		}
 	}
@@ -155,7 +155,7 @@ public class MDTExceptionEntity {
 			return (Class<? extends Throwable>)Class.forName(m_code);
 		}
 		catch ( ClassNotFoundException e ) {
-			return MDTClientException.class;
+			return RESTfulRemoteException.class;
 		}
 	}
 }

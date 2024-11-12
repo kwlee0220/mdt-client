@@ -1,20 +1,41 @@
 package mdt.test;
 
+import java.io.File;
+
+import mdt.model.MDTModelSerDe;
+import mdt.workflow.model.TaskDescriptor;
+
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestTaskDescriptor {
 	public static final void main(String... args) throws Exception {
-
-//		File descJsonFile = new File("misc/task_template_descriptor.json");
-//		File descJsonFile = new File("misc/task_instance_descriptor.json");
-//		
-//		List<TaskDescriptor> taskDescList = TaskDescriptor.MAPPER.readValue(descJsonFile,
-//															new TypeReference<List<TaskDescriptor>>() {});
-//		System.out.println(taskDescList);
+		File descJsonFile;
+		TaskDescriptor taskDesc;
 		
-//		WorkflowDescriptor wfDesc = WorkflowDescriptor.parseJsonDescriptor(new File("misc/workflow_descriptor.json"));
-//		System.out.println(wfDesc);
+		descJsonFile = new File("misc/test-workflows/test_set_task.json");
+		taskDesc = MDTModelSerDe.readValue(descJsonFile, TaskDescriptor.class);
+		System.out.println(taskDesc);
+		
+		descJsonFile = new File("misc/test-workflows/test_copy_task.json");
+		taskDesc = MDTModelSerDe.readValue(descJsonFile, TaskDescriptor.class);
+		System.out.println(taskDesc);
+		
+		descJsonFile = new File("misc/test-workflows/test_program_task.json");
+		taskDesc = MDTModelSerDe.readValue(descJsonFile, TaskDescriptor.class);
+		System.out.println(taskDesc);
+		
+		descJsonFile = new File("misc/test-workflows/test_http_task.json");
+		taskDesc = MDTModelSerDe.readValue(descJsonFile, TaskDescriptor.class);
+		System.out.println(taskDesc);
+		
+		descJsonFile = new File("misc/test-workflows/test_aas_task.json");
+		taskDesc = MDTModelSerDe.readValue(descJsonFile, TaskDescriptor.class);
+		System.out.println(taskDesc);
+		
+		descJsonFile = new File("misc/test-workflows/test_jslt_task.json");
+		taskDesc = MDTModelSerDe.readValue(descJsonFile, TaskDescriptor.class);
+		System.out.println(taskDesc);
 	}
 }

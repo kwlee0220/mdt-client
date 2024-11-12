@@ -7,10 +7,10 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.model.AASUtils;
+import mdt.model.MDTModelSerDe;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.instance.MDTInstance;
 import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.service.MDTInstance;
 
 /**
  *
@@ -53,7 +53,7 @@ public class SampleGetInstance {
 		System.out.println("asset type: " + assetType);
 		
 		for ( Reference ref: aasSvc.getAllSubmodelReferences() ) {
-			System.out.println(AASUtils.writeJson(ref));
+			System.out.println(MDTModelSerDe.toJsonString(ref));
 		}
 		
 		inst.stop(Duration.ofSeconds(1), null);

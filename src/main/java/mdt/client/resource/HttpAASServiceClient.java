@@ -1,16 +1,17 @@
 package mdt.client.resource;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetInformation;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.Resource;
 
+import utils.InternalException;
+
 import mdt.client.Fa3stHttpClient;
 import mdt.model.AASUtils;
-import mdt.model.registry.RegistryException;
 import mdt.model.service.AssetAdministrationShellService;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -44,8 +45,8 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 			Request req = new Request.Builder().url(getEndpoint()).put(reqBody).build();
 			return call(req, AssetAdministrationShell.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -66,8 +67,8 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 			Request req = new Request.Builder().url(url).post(reqBody).build();
 			return call(req, Reference.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -97,8 +98,8 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 			Request req = new Request.Builder().url(url).put(reqBody).build();
 			return call(req, AssetInformation.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -119,8 +120,8 @@ public class HttpAASServiceClient extends Fa3stHttpClient implements AssetAdmini
 			Request req = new Request.Builder().url(url).put(reqBody).build();
 			return call(req, Resource.class);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 

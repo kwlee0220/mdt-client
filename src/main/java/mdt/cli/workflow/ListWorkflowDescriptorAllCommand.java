@@ -17,9 +17,9 @@ import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.cli.MDTCommand;
-import mdt.client.workflow.HttpWorkflowManagerClient;
+import mdt.client.workflow.HttpWorkflowManagerProxy;
 import mdt.model.MDTManager;
-import mdt.model.workflow.descriptor.WorkflowDescriptor;
+import mdt.workflow.model.WorkflowDescriptor;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -55,7 +55,7 @@ public class ListWorkflowDescriptorAllCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerClient client = (HttpWorkflowManagerClient)manager.getWorkflowManager();
+		HttpWorkflowManagerProxy client = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
 		
 		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
 		while ( true ) {

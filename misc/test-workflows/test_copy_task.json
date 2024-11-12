@@ -1,0 +1,25 @@
+{
+  "id" : "copy-data1",
+  "type" : "mdt.task.builtin.CopyTask",
+  "dependencies" : [ ],
+  "variables" : [ {
+    "name" : "from",
+    "kind" : "INPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Data",
+      "idShortPath" : "DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue"
+    }
+  }, {
+    "name" : "to",
+    "kind" : "OUTPUT",
+    "valueReference" : {
+      "twinId" : "Test",
+      "submodelIdShort" : "Simulation",
+      "idShortPath" : "SimulationInfo.Inputs[0].InputValue"
+    }
+  } ],
+  "options" : [ ],
+  "labels" : [ ]
+}
+

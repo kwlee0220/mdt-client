@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.cli.MDTCommand;
-import mdt.client.workflow.HttpWorkflowManagerClient;
+import mdt.client.workflow.HttpWorkflowManagerProxy;
 import mdt.model.MDTManager;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -43,7 +43,7 @@ public class RemoveWorkflowDescriptorCommand extends MDTCommand {
 
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerClient client = (HttpWorkflowManagerClient)manager.getWorkflowManager();
+		HttpWorkflowManagerProxy client = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
 
 		if ( m_removeAll ) {
 			client.removeWorkflowDescriptorAll();

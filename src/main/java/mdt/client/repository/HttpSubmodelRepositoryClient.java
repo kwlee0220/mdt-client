@@ -1,20 +1,21 @@
 package mdt.client.repository;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
 import com.google.common.base.Preconditions;
 
+import utils.InternalException;
 import utils.stream.FStream;
 
+import mdt.aas.SubmodelRepository;
 import mdt.client.Fa3stHttpClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.registry.RegistryException;
-import mdt.model.repository.SubmodelRepository;
 import mdt.model.service.SubmodelService;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -86,8 +87,8 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 			submodel = call(req, Submodel.class);
 			return toService(submodel);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 	
@@ -103,8 +104,8 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 			submodel = call(req, Submodel.class);
 			return toService(submodel);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 	

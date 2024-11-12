@@ -1,18 +1,19 @@
 package mdt.client.repository;
 
+import java.io.IOException;
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 
+import utils.InternalException;
 import utils.stream.FStream;
 
+import mdt.aas.AssetAdministrationShellRepository;
 import mdt.client.Fa3stHttpClient;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.registry.RegistryException;
-import mdt.model.repository.AssetAdministrationShellRepository;
 import mdt.model.service.AssetAdministrationShellService;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -82,8 +83,8 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 			aas = call(req, AssetAdministrationShell.class);
 			return toService(aas);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 
@@ -97,8 +98,8 @@ public class HttpAASRepositoryClient extends Fa3stHttpClient
 			aas = call(req, AssetAdministrationShell.class);
 			return toService(aas);
 		}
-		catch ( SerializationException e ) {
-			throw new RegistryException("" + e);
+		catch ( IOException e ) {
+			throw new InternalException("" + e);
 		}
 	}
 

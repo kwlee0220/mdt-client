@@ -8,11 +8,12 @@ import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatusResponse;
-import mdt.ksx9101.simulation.Simulation;
 import mdt.model.MDTManager;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.SubmodelUtils;
 import mdt.model.service.SubmodelService;
+import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.simulation.Simulation;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 

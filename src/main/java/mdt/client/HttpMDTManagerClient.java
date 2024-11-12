@@ -1,42 +1,135 @@
 package mdt.client;
 
+import java.io.File;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.util.UUID;
+
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.eventbus.EventBus;
 
+import utils.InternalException;
+import utils.Utilities;
 import utils.func.FOption;
+import utils.http.HttpClientProxy;
+import utils.http.HttpRESTfulClient;
+import utils.http.JacksonErrorEntityDeserializer;
+import utils.http.OkHttpClientUtils;
+import utils.io.FileUtils;
 
+import mdt.aas.AASRegistry;
+import mdt.aas.SubmodelRegistry;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.registry.HttpShellRegistryClient;
 import mdt.client.registry.HttpSubmodelRegistryClient;
-import mdt.client.workflow.HttpWorkflowManagerClient;
-import mdt.model.AASUtils;
+import mdt.client.workflow.HttpWorkflowManagerProxy;
 import mdt.model.MDTManager;
+import mdt.model.MDTModelSerDe;
 import mdt.model.MDTService;
-import mdt.model.registry.AASRegistry;
-import mdt.model.registry.SubmodelRegistry;
-import mdt.model.workflow.MDTWorkflowManagerException;
+
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpMDTManagerClient extends HttpRESTfulClient implements MDTManager, HttpClientProxy {
+public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
+	private static final Logger s_logger = LoggerFactory.getLogger(HttpMDTManagerClient.class);
+
+//	private static final String RESTFUL_API_VERSION = "/api/v1.0";
+	private static final String RESTFUL_API_VERSION = "";
+	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
 	private static final String INSTANCE_MANAGER_SUFFIX = "/instance-manager";
 	private static final String WORKFLOW_MANAGER_SUFFIX = "/workflow-manager";
 	private static final String AAS_REGISTRY_SUFFIX = "/shell-registry";
 	public static final String SUBMODEL_REGISTRY_SUFFIX = "/submodel-registry";
 	
+	private final HttpRESTfulClient m_restfulClient;
+	private MqttClient m_mqttClient = null;
+	
 	private HttpMDTManagerClient(Builder builder) {
-		super(builder.m_httpClient, builder.m_endpoint, builder.m_mapper);
+		m_restfulClient = HttpRESTfulClient.builder()
+										.httpClient(builder.m_httpClient)
+										.endpoint(builder.m_endpoint)
+										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(builder.m_mapper))
+										.build();
+		
+		if ( builder.m_mqttEndpoint != null ) {
+			subscribeMqttBroker(builder.m_mqttEndpoint);
+		}
+	}
+
+	@Override
+	public OkHttpClient getHttpClient() {
+		return m_restfulClient.getHttpClient();
+	}
+
+	@Override
+	public String getEndpoint() {
+		return m_restfulClient.getEndpoint();
+	}
+	
+	public static HttpMDTManagerClient connectWithDefault() {
+		// 환경변수 MDT_CLIENT_HOME이 설정된 경우 해당 디렉토리에 'mdt_client_config.yaml' 파일이
+		// 존재하면 이를 통해 MDTManager에 접속한다.
+		// 환경변수 MDT_CLIENT_HOME가 존재하지 않는 경우에는 현재 working 디렉토리에서
+		// 'mdt_client_config.yaml' 파일을 확인한다.
+
+		File clientHomeDir = Utilities.getEnvironmentVariableFile("MDT_CLIENT_HOME")
+										.getOrElse(FileUtils.getCurrentWorkingDirectory());
+		File clientConfigFile = FileUtils.path(clientHomeDir, CLIENT_CONFIG_FILE);
+		if ( clientConfigFile.canRead() ) {
+			try {
+				MDTClientConfig config = MDTClientConfig.load(clientConfigFile);
+				return connect(config);
+			}
+			catch ( Throwable expected ) {
+				s_logger.warn("Failed to read client-config-file ({}), try to use MDT_ENDPOINT", clientConfigFile);
+			}
+		}
+		
+		// client config file이 존재하지 않는 경우에는 환경변수 MDT_ENDPOINT에 기록된
+		// endpoint 정보를 사용하여 접속을 시도한다.
+		String endpoint = System.getenv("MDT_ENDPOINT");
+		if ( endpoint == null ) {
+			throw new IllegalStateException("MDTInstanceManager's endpoint is missing");
+		}
+		
+		return connect(endpoint);
 	}
 	
 	public static HttpMDTManagerClient connect(String endpoint) {
 		return HttpMDTManagerClient.builder()
 									.endpoint(endpoint)
-									.jsonMapper(AASUtils.getJsonMapper())
+									.readTimeout(Duration.ofSeconds(30))
+									.jsonMapper(MDTModelSerDe.getJsonMapper())
 									.build();
+	}
+	
+	public static HttpMDTManagerClient connect(MDTClientConfig clientConfig) {
+		HttpMDTManagerClient.Builder builder = HttpMDTManagerClient.builder()
+																	.endpoint(clientConfig.getEndpoint())
+																	.jsonMapper(MDTModelSerDe.getJsonMapper());
+		if ( clientConfig.getConnectTimeout() != null ) {
+			builder = builder.connectTimeout(clientConfig.getConnectTimeout());
+		}
+		if ( clientConfig.getReadTimeout() != null ) {
+			builder = builder.readTimeout(clientConfig.getReadTimeout());
+		}
+		if ( clientConfig.getMqttEndpoint() != null ) {
+			builder = builder.mqttEndpoint(clientConfig.getMqttEndpoint());
+		}
+		
+		return builder.build();
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -45,7 +138,7 @@ public class HttpMDTManagerClient extends HttpRESTfulClient implements MDTManage
 		if ( svcClass.isAssignableFrom(HttpMDTInstanceManagerClient.class) ) {
 			return (T)getInstanceManager();
 		}
-		else if ( svcClass.isAssignableFrom(HttpWorkflowManagerClient.class) ) {
+		else if ( svcClass.isAssignableFrom(HttpWorkflowManagerProxy.class) ) {
 			return (T)getWorkflowManager();
 		}
 		else if ( svcClass.isAssignableFrom(HttpShellRegistryClient.class) ) {
@@ -87,27 +180,29 @@ public class HttpMDTManagerClient extends HttpRESTfulClient implements MDTManage
 											.build();
 	}
 	
-	public HttpWorkflowManagerClient getWorkflowManager() {
+	public HttpWorkflowManagerProxy getWorkflowManager() {
 		String endpoint = String.format("%s%s", getEndpoint(), WORKFLOW_MANAGER_SUFFIX);
-		return HttpWorkflowManagerClient.builder()
+		return HttpWorkflowManagerProxy.builder()
 										.httpClient(getHttpClient())
 										.endpoint(endpoint)
-										.jsonMapper(AASUtils.getJsonMapper())
+										.jsonMapper(MDTModelSerDe.getJsonMapper())
 										.build();
+	}
+	
+	public static void register(Object subscriber) {
+		EVENT_BUS.register(subscriber);
 	}
 
     // @GetMapping({"/ping"})
 	public void ping() {
 		String url = String.format("%s/ping", getEndpoint());
-		Request req = new Request.Builder().url(url).delete().build();
-		send(req);
+		m_restfulClient.get(url);
 	}
 
-    // @GetMapping({"/shutdown"})
+    // @DeleteMapping({"/shutdown"})
 	public void shutdown() {
 		String url = String.format("%s/shutdown", getEndpoint());
-		Request req = new Request.Builder().url(url).delete().build();
-		send(req);
+		m_restfulClient.delete(url);
 	}
 
 	public static Builder builder() {
@@ -116,39 +211,82 @@ public class HttpMDTManagerClient extends HttpRESTfulClient implements MDTManage
 	public static class Builder {
 		private OkHttpClient m_httpClient;
 		private String m_endpoint;
+		private Duration m_connectTimeout;
+		private Duration m_readTimeout;
+		private String m_mqttEndpoint;
 		private JsonMapper m_mapper;
 		
 		private Builder() { }
 		
 		public HttpMDTManagerClient build() {
 			Preconditions.checkState(m_endpoint != null, "MDTManager endpoint has not been set");
-			
-			if ( m_httpClient == null ) {
-				try {
-					m_httpClient = SSLUtils.newTrustAllOkHttpClientBuilder().build();
+
+			try {
+				OkHttpClient.Builder builder = OkHttpClientUtils.newTrustAllOkHttpClientBuilder();
+				if ( m_connectTimeout != null ) {
+					builder = builder.connectTimeout(m_connectTimeout);
 				}
-				catch ( Exception e ) {
-					throw new MDTWorkflowManagerException("" + e);
+				if ( m_readTimeout != null ) {
+					builder = builder.readTimeout(m_readTimeout);
 				}
+				m_httpClient = builder.build();
+				m_mapper = FOption.getOrElse(m_mapper, MDTModelSerDe::getJsonMapper);
 			}
-			m_mapper = FOption.getOrElse(m_mapper, AASUtils::getJsonMapper);
+			catch ( KeyManagementException | NoSuchAlgorithmException e ) {
+				throw new InternalException("Failed to create HttpClient", e);
+			}
 			
 			return new HttpMDTManagerClient(this);
 		}
 		
-		public Builder httpClient(OkHttpClient client) {
-			m_httpClient = client;
+		public Builder endpoint(String endpoint) {
+			if ( !endpoint.contains("/api/v") ) {
+				endpoint = endpoint + RESTFUL_API_VERSION;
+			}
+			
+			m_endpoint = endpoint;
 			return this;
 		}
 		
-		public Builder endpoint(String endpoint) {
-			m_endpoint = endpoint;
+		public Builder connectTimeout(Duration to) {
+			m_connectTimeout = to;
+			return this;
+		}
+		
+		public Builder readTimeout(Duration to) {
+			m_readTimeout = to;
+			return this;
+		}
+		
+		public Builder mqttEndpoint(String endpoint) {
+			m_mqttEndpoint = endpoint;
 			return this;
 		}
 		
 		public Builder jsonMapper(JsonMapper mapper) {
 			m_mapper = mapper;
 			return this;
+		}
+	}
+
+	private static final String TOPIC_PATTERN = "/mdt/manager/instances/#";
+	private static EventBus EVENT_BUS = new EventBus();
+	
+	private void subscribeMqttBroker(String endpoint) {
+		try {
+			MqttConnectOptions opts = new MqttConnectOptions();
+			int qos = 0;
+			
+			String clientId = UUID.randomUUID().toString();
+			m_mqttClient = new MqttClient(endpoint, clientId, new MemoryPersistence());
+			m_mqttClient.connect(opts);
+			
+			m_mqttClient.subscribe(TOPIC_PATTERN, qos, (topic, msg) -> {
+				EVENT_BUS.post(new MDTManagerMqttMessage(topic, msg));
+			});
+		}
+		catch ( MqttException ignored ) {
+			s_logger.warn("Failed to open an MQTT connection", ignored);
 		}
 	}
 }

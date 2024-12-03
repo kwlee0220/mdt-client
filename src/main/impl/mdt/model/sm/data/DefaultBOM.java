@@ -2,6 +2,7 @@ package mdt.model.sm.data;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 

@@ -16,9 +16,10 @@ import utils.UnitUtils;
 import utils.func.FOption;
 import utils.stream.FStream;
 
-import mdt.cli.MDTCommand;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
+import mdt.cli.AbstractMDTCommand;
+import mdt.client.HttpMDTManagerClient;
 import mdt.model.MDTManager;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.WorkflowDescriptor;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -34,7 +35,7 @@ import picocli.CommandLine.Option;
 	mixinStandardHelpOptions = true,
 	description = "List all MDT Workflow Descriptors."
 )
-public class ListWorkflowDescriptorAllCommand extends MDTCommand {
+public class ListWorkflowDescriptorAllCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListWorkflowDescriptorAllCommand.class);
 	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
 	
@@ -44,6 +45,9 @@ public class ListWorkflowDescriptorAllCommand extends MDTCommand {
 	@Option(names={"--repeat", "-r"}, paramLabel="interval",
 			description="repeat interval (e.g. \"1s\", \"500ms\"")
 	private String m_repeat = null;
+	
+	@Option(names={"-v"}, description="verbose")
+	private boolean m_verbose = false;
 
 	public static final void main(String... args) throws Exception {
 		main(new ListWorkflowDescriptorAllCommand(), args);
@@ -54,21 +58,21 @@ public class ListWorkflowDescriptorAllCommand extends MDTCommand {
 	}
 
 	@Override
-	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerProxy client = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
+	public void run(MDTManager mdt) throws Exception {
+		WorkflowDescriptorService svc = ((HttpMDTManagerClient)mdt).createClient(WorkflowDescriptorService.class);
 		
 		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
 		while ( true ) {
 			StopWatch watch = StopWatch.start();
 			
 			try {
-				List<WorkflowDescriptor> wfDescList = client.getWorkflowDescriptorAll();
+				List<WorkflowDescriptor> wfDescList = svc.getWorkflowDescriptorAll();
 				
 				String outputString = buildOutputString(wfDescList);
 				if ( repeatInterval != null ) {
 					System.out.print(CLEAR_CONSOLE_CONTROL);
 				}
-				System.out.println(outputString);
+				System.out.print(outputString);
 			}
 			catch ( Exception e ) {
 				if ( repeatInterval != null ) {
@@ -76,7 +80,9 @@ public class ListWorkflowDescriptorAllCommand extends MDTCommand {
 				}
 				System.out.println("" + e);
 			}
-			System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
+			if ( m_verbose ) {
+				System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
+			}
 			
 			if ( repeatInterval == null ) {
 				break;

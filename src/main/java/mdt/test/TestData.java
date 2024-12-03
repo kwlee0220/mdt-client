@@ -8,6 +8,8 @@ import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
 import mdt.model.sm.data.DataInfo;
 import mdt.model.sm.data.DefaultData;
+import mdt.model.sm.data.Operation;
+import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.entity.SubmodelElementEntity;
 
 /**
@@ -18,13 +20,13 @@ public class TestData {
 	public static final void main(String... args) throws Exception {
 //		JsonSerializer ser = new JsonSerializer();
 
-//		int port = 10117;
-//		String assetId = "KRCW-02ER1A101";
-//		String submodelId = String.format("https://example.com/ids/%s/sm/Data", assetId);
+		int port = 20307;
+		String assetId = "CRF";
+		String submodelId = String.format("https://example.com/ids/%s/sm/Data", assetId);
 
-		int port = 19001;
-		String assetId = "Welder";
-		String submodelId = String.format("https://www.samcheon.com/mdt/%s/sm/Data", assetId);
+//		int port = 20307;
+//		String assetId = "Welder";
+//		String submodelId = String.format("https://www.samcheon.com/mdt/%s/sm/Data", assetId);
 		
 		String url = String.format("https://localhost:%d/api/v3.0/submodels/%s", port,
 									AASUtils.encodeBase64UrlSafe(submodelId));
@@ -40,6 +42,11 @@ public class TestData {
 		
 		for ( SubmodelElementEntity entity: info.getSubmodelElementEntityAll() ) {
 			System.out.println("Top-level Entity: " + entity);
+			if ( entity instanceof Operation op ) {
+				for ( ParameterValue pv: op.getParameterValueList() ) {
+					System.out.println(pv.getParameterId() + ": " +  pv.getParameterValue());
+				}
+			}
 		}
 		
 		TreeOptions opts = new TreeOptions();

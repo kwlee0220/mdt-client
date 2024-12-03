@@ -1,7 +1,5 @@
 package mdt.cli;
 
-import utils.UsageHelp;
-
 import mdt.cli.MDTCommandsMain.SimulationCommands;
 import mdt.cli.MDTCommandsMain.TaskCommands;
 import mdt.cli.MDTCommandsMain.WorkflowCommands;
@@ -14,17 +12,12 @@ import mdt.cli.task.JsltTaskLauncher;
 import mdt.cli.task.ProgramTaskLauncher;
 import mdt.cli.task.SetTaskLauncher;
 import mdt.cli.workflow.AddWorkflowDescriptorCommand;
-import mdt.cli.workflow.ConvertWorkflowDescriptorCommand;
 import mdt.cli.workflow.GetWorkflowDescriptorCommand;
 import mdt.cli.workflow.ListWorkflowDescriptorAllCommand;
 import mdt.cli.workflow.RemoveWorkflowDescriptorCommand;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help.Ansi;
-import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Spec;
 
 /**
  * 
@@ -43,39 +36,29 @@ import picocli.CommandLine.Spec;
 		RemoveMDTInstanceCommand.class,	
 		StartMDTInstanceCommand.class,
 		StopMDTInstanceCommand.class,
-		SimulationCommands.class,
+		SetTaskLauncher.class,
+		CopyTaskLauncher.class,
 		TaskCommands.class,
 		WorkflowCommands.class,
+		SimulationCommands.class,
 	})
-public class MDTCommandsMain implements Runnable {
-	@Spec private CommandSpec m_spec;
-	@Mixin private UsageHelp m_help;
-	
-	@Override
-	public void run() {
-		m_spec.commandLine().usage(System.out, Ansi.OFF);
-	}
-
+public class MDTCommandsMain {
 	public static final void main(String... args) throws Exception {
 		CommandLine cmdLine = new CommandLine(new MDTCommandsMain())
 									.setCaseInsensitiveEnumValuesAllowed(true)
 									.setAbbreviatedSubcommandsAllowed(true)
 									.setAbbreviatedOptionsAllowed(true)
 									.setUsageHelpWidth(110);
-		cmdLine.execute(args);
-		
-		System.exit(0);
+		System.exit(cmdLine.execute(args));
 	}
 	
 	@Command(
-		name="task",
+		name="run",
 		parameterListHeading = "Parameters:%n",
 		optionListHeading = "Options:%n",
 		mixinStandardHelpOptions = true,
 		description="MDT Task related commands",
 		subcommands= {
-			SetTaskLauncher.class,
-			CopyTaskLauncher.class,
 			AASOperationTaskLauncher.class,
 			ProgramTaskLauncher.class,
 			HttpTaskLauncher.class,
@@ -94,7 +77,6 @@ public class MDTCommandsMain implements Runnable {
 			GetWorkflowDescriptorCommand.class,
 			AddWorkflowDescriptorCommand.class,
 			RemoveWorkflowDescriptorCommand.class,
-			ConvertWorkflowDescriptorCommand.class,
 		})
 	public static class WorkflowCommands extends CommandCollection {}
 	

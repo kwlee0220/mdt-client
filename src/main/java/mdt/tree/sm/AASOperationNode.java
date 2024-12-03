@@ -1,21 +1,16 @@
 package mdt.tree.sm;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.barfuin.texttree.api.Node;
 import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Lists;
 
-import utils.InternalException;
 import utils.stream.FStream;
-
-import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
-import mdt.tree.TextNode;
 
 
 /**
@@ -43,9 +38,31 @@ public final class AASOperationNode implements Node {
 		
 		return children;
 	}
+	
+	public static class VariableNode implements Node {
+		private final String m_prefix;
+		private final OperationVariable m_opv;
+		
+		public VariableNode(String prefix, OperationVariable opv) {
+			m_prefix = prefix;
+			m_opv = opv;
+		}
 
-	public static final JsonMapper MAPPER = new JsonMapper();
-	private static class VariableListNode implements Node {
+		@Override
+		public String getText() {
+			SubmodelElement val = m_opv.getValue();
+//			String name = (val != null) ? val.getIdShort() : null;
+			String text = (val != null) ? SubmodelElementNodeFactory.toNode("", val).getText() : null;
+			return String.format("%s%s", m_prefix, text);
+		}
+
+		@Override
+		public Iterable<? extends Node> getChildren() {
+			return Collections.emptyList();
+		}
+	}
+
+	public static class VariableListNode implements Node {
 		private final String m_title;
 		private final List<OperationVariable> m_vars;
 		
@@ -63,20 +80,9 @@ public final class AASOperationNode implements Node {
 		public Iterable<? extends Node> getChildren() {
 			return FStream.from(m_vars)
 							.zipWithIndex(0)
-							.map(t -> new TextNode(String.format("[%02d] %s: %s",
-																t.index(), t.value().getValue().getIdShort(),
-																toVariableValue(t.value()))))
+							.map(t -> new VariableNode(String.format("[#%02d] ", t.index()),
+																t.value()))
 							.toList();
-		}
-		
-		private String toVariableValue(OperationVariable var) {
-			SubmodelElementValue smev = ElementValues.getValue(var.getValue());
-			try {
-				return MAPPER.writeValueAsString(smev);
-			}
-			catch ( JsonProcessingException e ) {
-				throw new InternalException("Failed to write Json for SubmodelElementValue: " + smev);
-			}
 		}
 	}
 }

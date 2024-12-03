@@ -47,7 +47,7 @@ public class SubmodelElementReferences {
 		}
 	}
 	
-	public static SubmodelElementReference parseString(String expr) {
+	public static SubmodelElementReference parseString(String expr) throws IOException {
 		if ( expr.equalsIgnoreCase(SubmodelElementReferenceType.STDOUT.name().toLowerCase()) ) {
 			return new StdoutSMEReference();
 		}
@@ -60,6 +60,8 @@ public class SubmodelElementReferences {
 			case PARAMETER -> MDTParameterReference.parseString(refStrExpr);
 			case FILE -> FileSMEReference.parseString(refStrExpr);
 			case OPERATION_VARIABLE -> OperationVariableReference.parseString(refStrExpr);
+			case ARGUMENT -> OperationArgumentReference.parseString(refStrExpr);
+			case IN_MEMORY -> InMemorySMEReference.parseString(refStrExpr);
 			case LITERAL -> LiteralSMEReference.parseString(refStrExpr);
 			default -> throw new IllegalArgumentException("Invalid SubmodelElementReference expression: " + expr);
 		};
@@ -124,6 +126,7 @@ public class SubmodelElementReferences {
 			return switch ( type ) {
 				case DEFAULT -> DefaultSubmodelElementReference.parseJson(root);
 				case PARAMETER -> MDTParameterReference.parseJson(root);
+				case ARGUMENT -> OperationArgumentReference.parseJson(root);
 				case FILE -> FileSMEReference.parseJson(root);
 				case LITERAL -> LiteralSMEReference.parseJson(root);
 				case STDOUT -> StdoutSMEReference.parseJson(root);

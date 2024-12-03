@@ -4,6 +4,7 @@ import com.google.common.base.Objects;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
@@ -25,6 +26,10 @@ public class DefaultOperationParameter extends SubmodelElementCollectionEntity
 	@PropertyField(idShort="USL") private String USL;
 	@PropertyField(idShort="PeriodicDataCollectionIndicator") private String periodicDataCollectionIndicator;
 	@PropertyField(idShort="DataCollectionPeriod")private String dataCollectionPeriod;
+	
+	public DefaultOperationParameter() {
+		setSemanticId(SEMANTIC_ID_REFERENCE);
+	}
 	
 	@Override
 	public String getIdShort() {

@@ -6,13 +6,14 @@ import org.slf4j.LoggerFactory;
 import utils.func.Funcs;
 import utils.stream.FStream;
 
-import mdt.cli.MDTCommand;
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
 import mdt.model.service.SubmodelService;
 import mdt.model.sm.info.DefaultInformationModel;
 import mdt.model.sm.info.InformationModel;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParentCommand;
@@ -28,7 +29,7 @@ import picocli.CommandLine.ParentCommand;
 	mixinStandardHelpOptions = true,
 	description = "Get composition items of an instance"
 )
-public class GetInstanceCompositionDependenciesCommand extends MDTCommand {
+public class GetInstanceCompositionDependenciesCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceCompositionDependenciesCommand.class);
 	
 	@ParentCommand GetMDTInstanceCommand m_parent;

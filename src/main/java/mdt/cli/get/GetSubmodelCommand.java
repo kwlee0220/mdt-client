@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import utils.stream.FStream;
 
 import mdt.aas.DefaultSubmodelReference;
-import mdt.cli.MDTCommand;
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.DescriptorUtils;
 import mdt.model.Input;
@@ -52,7 +52,7 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Get Submodel information."
 )
-public class GetSubmodelCommand extends MDTCommand {
+public class GetSubmodelCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelCommand.class);
 
 	@Parameters(index="0", arity="0..1", paramLabel="ref",

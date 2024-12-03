@@ -18,4 +18,6 @@ public interface DataType<T> {
 	
 	public String toValueString(T value);
 	public T parseValueString(String str);
+	
+	public Object toJdbcObject(T value);
 }

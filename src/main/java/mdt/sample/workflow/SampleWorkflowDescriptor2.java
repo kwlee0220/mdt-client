@@ -1,9 +1,8 @@
 package mdt.sample.workflow;
 
 import mdt.client.HttpMDTManagerClient;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
-import mdt.model.MDTModelSerDe;
 import mdt.model.workflow.WorkflowDescriptors;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.WorkflowDescriptor;
 
@@ -28,27 +27,25 @@ public class SampleWorkflowDescriptor2 {
 
 		TaskDescriptor taskDesc;
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-data1",
-												"Test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
-												"Test/Simulation/SimulationInfo.Inputs[0].InputValue");
+		taskDesc = WorkflowDescriptors.newCopyTask("copy-data",
+												"test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
+												"test/Simulation/SimulationInfo.Inputs[0].InputValue");
 		wfDesc.getTasks().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-data2",
-												"Test/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
-												"Test/Simulation/SimulationInfo.Inputs[1].InputValue");
+		taskDesc = WorkflowDescriptors.newCopyTask("copy-inc-amount",
+												"test/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
+												"test/Simulation/SimulationInfo.Inputs[1].InputValue");
 		wfDesc.getTasks().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newSetTask("set-sleeptime", "2",
-												"Test/Simulation/SimulationInfo.Inputs[2].InputValue");
+		taskDesc = WorkflowDescriptors.newSetTask("set-sleep-time", "3",
+												"test/Simulation/SimulationInfo.Inputs[2].InputValue");
 		wfDesc.getTasks().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newSetTask("set-expected", "77",
-												"Test/Simulation/SimulationInfo.Inputs[3].InputValue");
-		wfDesc.getTasks().add(taskDesc);
+//		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 		
-		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
+		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
+		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
 		
-		HttpWorkflowManagerProxy wfManager = mdt.getWorkflowManager();
-		wfManager.addWorkflowDescriptor(wfDesc);
+		System.out.println("Workflow id: " + wfId);
 	}
 }

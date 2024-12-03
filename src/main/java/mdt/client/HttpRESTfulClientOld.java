@@ -17,6 +17,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
+import lombok.Data;
+
 import utils.InternalException;
 import utils.LoggerSettable;
 import utils.func.FOption;
@@ -25,9 +27,9 @@ import utils.http.HttpClientProxy;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 
-import lombok.Data;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.model.MDTExceptionEntity;
+
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;

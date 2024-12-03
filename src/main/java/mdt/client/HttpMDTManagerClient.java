@@ -26,15 +26,15 @@ import utils.http.JacksonErrorEntityDeserializer;
 import utils.http.OkHttpClientUtils;
 import utils.io.FileUtils;
 
-import mdt.aas.AASRegistry;
+import mdt.aas.ShellRegistry;
 import mdt.aas.SubmodelRegistry;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.client.registry.HttpShellRegistryClient;
 import mdt.client.registry.HttpSubmodelRegistryClient;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
+import mdt.client.workflow.HttpServiceClientFactoryRegistry;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
-import mdt.model.MDTService;
+import mdt.workflow.WorkflowDescriptorService;
 
 import okhttp3.OkHttpClient;
 
@@ -50,22 +50,31 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
 	private static final String INSTANCE_MANAGER_SUFFIX = "/instance-manager";
 	private static final String WORKFLOW_MANAGER_SUFFIX = "/workflow-manager";
-	private static final String AAS_REGISTRY_SUFFIX = "/shell-registry";
+	private static final String SHELL_REGISTRY_SUFFIX = "/shell-registry";
 	public static final String SUBMODEL_REGISTRY_SUFFIX = "/submodel-registry";
 	
+	private final HttpServiceClientFactoryRegistry m_serviceFactoryRegistry;
+	
+	private final String m_endpoint;
 	private final HttpRESTfulClient m_restfulClient;
 	private MqttClient m_mqttClient = null;
 	
 	private HttpMDTManagerClient(Builder builder) {
+		m_endpoint = builder.m_endpoint;
 		m_restfulClient = HttpRESTfulClient.builder()
 										.httpClient(builder.m_httpClient)
-										.endpoint(builder.m_endpoint)
+										.jsonMapper(MDTModelSerDe.getJsonMapper())
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(builder.m_mapper))
 										.build();
 		
 		if ( builder.m_mqttEndpoint != null ) {
 			subscribeMqttBroker(builder.m_mqttEndpoint);
 		}
+		
+		m_serviceFactoryRegistry = new HttpServiceClientFactoryRegistry(builder.m_httpClient);
+		m_serviceFactoryRegistry.register(ShellRegistry.class, m_endpoint + SHELL_REGISTRY_SUFFIX);
+		m_serviceFactoryRegistry.register(SubmodelRegistry.class, m_endpoint + SUBMODEL_REGISTRY_SUFFIX);
+		m_serviceFactoryRegistry.register(WorkflowDescriptorService.class, m_endpoint + WORKFLOW_MANAGER_SUFFIX);
 	}
 
 	@Override
@@ -75,7 +84,7 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 
 	@Override
 	public String getEndpoint() {
-		return m_restfulClient.getEndpoint();
+		return m_endpoint;
 	}
 	
 	public static HttpMDTManagerClient connectWithDefault() {
@@ -134,12 +143,9 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends MDTService> T getService(Class<T> svcClass) {
+	public <T> T getService(Class<T> svcClass) {
 		if ( svcClass.isAssignableFrom(HttpMDTInstanceManagerClient.class) ) {
 			return (T)getInstanceManager();
-		}
-		else if ( svcClass.isAssignableFrom(HttpWorkflowManagerProxy.class) ) {
-			return (T)getWorkflowManager();
 		}
 		else if ( svcClass.isAssignableFrom(HttpShellRegistryClient.class) ) {
 			return (T)getAssetAdministrationShellRegistry();
@@ -153,12 +159,12 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 	}
 
 	/**
-	 * MDTManager가 사용하는 {@link AASRegistry} proxy 객체를 반환한다.
+	 * MDTManager가 사용하는 {@link ShellRegistry} proxy 객체를 반환한다.
 	 * 
-	 * @return	{@link AASRegistry} proxy 객체
+	 * @return	{@link ShellRegistry} proxy 객체
 	 */
 	public HttpShellRegistryClient getAssetAdministrationShellRegistry() {
-		String endpoint = String.format("%s%s", getEndpoint(), AAS_REGISTRY_SUFFIX);
+		String endpoint = String.format("%s%s", getEndpoint(), SHELL_REGISTRY_SUFFIX);
 		return new HttpShellRegistryClient(getHttpClient(), endpoint);
 	}
 
@@ -167,9 +173,8 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 	 * 
 	 * @return	{@link SubmodelRegistry} proxy 객체
 	 */
-	public HttpSubmodelRegistryClient getSubmodelRegistry() {
-		String endpoint = String.format("%s%s", getEndpoint(), SUBMODEL_REGISTRY_SUFFIX);
-		return new HttpSubmodelRegistryClient(getHttpClient(), endpoint);
+	public SubmodelRegistry getSubmodelRegistry() {
+		return createClient(SubmodelRegistry.class);
 	}
 	
 	public HttpMDTInstanceManagerClient getInstanceManager() {
@@ -180,13 +185,12 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 											.build();
 	}
 	
-	public HttpWorkflowManagerProxy getWorkflowManager() {
-		String endpoint = String.format("%s%s", getEndpoint(), WORKFLOW_MANAGER_SUFFIX);
-		return HttpWorkflowManagerProxy.builder()
-										.httpClient(getHttpClient())
-										.endpoint(endpoint)
-										.jsonMapper(MDTModelSerDe.getJsonMapper())
-										.build();
+	public WorkflowDescriptorService getWorkflowDescriptorService() {
+		return createClient(WorkflowDescriptorService.class);
+	}
+	
+	public <T> T createClient(Class<T> serviceClass) {
+		return m_serviceFactoryRegistry.createClient(serviceClass);
 	}
 	
 	public static void register(Object subscriber) {
@@ -201,8 +205,8 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 
     // @DeleteMapping({"/shutdown"})
 	public void shutdown() {
-		String url = String.format("%s/shutdown", getEndpoint());
-		m_restfulClient.delete(url);
+//		String url = String.format("%s/shutdown", getEndpoint());
+//		m_restfulClient.delete(url);
 	}
 
 	public static Builder builder() {
@@ -275,10 +279,13 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 	private void subscribeMqttBroker(String endpoint) {
 		try {
 			MqttConnectOptions opts = new MqttConnectOptions();
+			opts.setCleanSession(true);
+			opts.setKeepAliveInterval(30);
 			int qos = 0;
 			
 			String clientId = UUID.randomUUID().toString();
 			m_mqttClient = new MqttClient(endpoint, clientId, new MemoryPersistence());
+			m_mqttClient.setCallback(null);
 			m_mqttClient.connect(opts);
 			
 			m_mqttClient.subscribe(TOPIC_PATTERN, qos, (topic, msg) -> {

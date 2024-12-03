@@ -2,7 +2,9 @@ package mdt.client.instance;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -12,11 +14,15 @@ import javax.annotation.Nullable;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
+import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
+import utils.InternalException;
 import utils.StateChangePoller;
+import utils.Throwables;
 import utils.func.FOption;
 import utils.func.Funcs;
+import utils.func.Try;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
@@ -31,17 +37,17 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.service.MDTInstance;
 import mdt.model.service.SubmodelService;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.DefaultData;
+import mdt.model.sm.info.ComponentItem;
 import mdt.model.sm.info.DefaultInformationModel;
 import mdt.model.sm.info.InformationModel;
+import mdt.model.sm.info.TwinComposition;
 import mdt.model.sm.simulation.DefaultSimulation;
 import mdt.model.sm.simulation.Simulation;
-
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -56,6 +62,7 @@ import okhttp3.RequestBody;
 public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	private static final RequestBody EMPTY_BODY = RequestBody.create("", null);
 	
+	private final String m_endpoint;
 	private final HttpMDTInstanceManagerClient m_manager;
 	private final HttpRESTfulClient m_restfulClient;
 	private AtomicReference<InstanceDescriptor> m_desc;
@@ -67,10 +74,9 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	HttpMDTInstanceClient(HttpMDTInstanceManagerClient manager, InstanceDescriptor desc) {
 		m_manager = manager;
 		
-		String endpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
+		m_endpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
 		m_restfulClient = HttpRESTfulClient.builder()
 										.httpClient(manager.getHttpClient())
-										.endpoint(endpoint)
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(InstanceDescriptorSerDe.MAPPER))
 										.build();
 		
@@ -148,7 +154,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
 	@Override
 	public void start(@Nullable Duration pollInterval, @Nullable Duration timeout)
-		throws MDTInstanceManagerException, TimeoutException, InterruptedException, InvalidResourceStatusException {
+		throws TimeoutException, InterruptedException, InvalidResourceStatusException {
 		MDTInstanceStatus status = m_desc.get().getStatus(); 
 		if ( status != MDTInstanceStatus.STOPPED && status != MDTInstanceStatus.FAILED ) {
 			throw new InvalidResourceStatusException("MDTInstance", getId(), status);
@@ -161,12 +167,15 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 			case RUNNING:
 				return;
 			case STARTING:
+				// pollInterval 값이 null인 경우는 MDTInstance의 시작 요청만 내린 상태에서 바로 반환한다.
 				if ( pollInterval != null ) {
 					try {
 						waitWhileStatus(state -> state == MDTInstanceStatus.STARTING, pollInterval, timeout);
 					}
 					catch ( ExecutionException e ) {
-						throw new MDTInstanceManagerException(e.getCause());
+						// 상태 체크만 하던 과정에서 오류가 발생할 경우가 거의(?) 없기 때문에
+						// 이 경우는 InternalException을 발생시킨다. 
+						throw new InternalException(Throwables.unwrapThrowable(e));
 					}
 				}
 				break;
@@ -177,7 +186,12 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
 	@Override
 	public void stop(@Nullable Duration pollInterval, @Nullable Duration timeout)
-		throws MDTInstanceManagerException, TimeoutException, InterruptedException, InvalidResourceStatusException {
+		throws TimeoutException, InterruptedException, InvalidResourceStatusException, ExecutionException {
+		Instant due = null;
+		if ( timeout != null ) {
+			due = Instant.now().plus(timeout);
+		}
+		
 		MDTInstanceStatus status = m_desc.get().getStatus(); 
 		if ( status != MDTInstanceStatus.RUNNING) {
 			throw new InvalidResourceStatusException("MDTInstance", getId(), status);
@@ -191,12 +205,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 				return;
 			case STOPPING:
 				if ( pollInterval != null ) {
-					try {
-						waitWhileStatus(state -> state == MDTInstanceStatus.STOPPING, pollInterval, timeout);
-					}
-					catch ( ExecutionException e ) {
-						throw new MDTInstanceManagerException(e.getCause());
-					}
+					waitWhileStatus(state -> state == MDTInstanceStatus.STOPPING, pollInterval, due);
 				}
 				break;
 			default:
@@ -274,8 +283,8 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 	private List<Simulation> loadAllSimulations() {
 		return FStream.from(getAllSubmodelServiceBySemanticId(Simulation.SEMANTIC_ID))
-						.map(SubmodelService::getSubmodel)
-						.map(submodel -> {
+						.map(smSvc -> {
+							Submodel submodel = smSvc.getSubmodel();
 							DefaultSimulation sim = new DefaultSimulation();
 							sim.updateFromAasModel(submodel);
 							return (Simulation)sim;
@@ -312,16 +321,73 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
 	@Override
 	public String getEndpoint() {
-		return m_restfulClient.getEndpoint();
+		return m_endpoint;
 	}
 	
-	public void waitWhileStatus(Predicate<MDTInstanceStatus> waitCond, Duration pollInterval, Duration timeout)
+	public void waitWhileStatus(Predicate<MDTInstanceStatus> waitCond, Duration pollInterval, Instant due)
 		throws TimeoutException, InterruptedException, ExecutionException {
 		StateChangePoller.pollWhile(() -> waitCond.test(reload().getStatus()))
-						.interval(pollInterval)
-						.timeout(timeout)
+						.pollInterval(pollInterval)
+						.due(due)
 						.build()
 						.run();
+	}
+	public void waitWhileStatus(Predicate<MDTInstanceStatus> waitCond, Duration pollInterval, Duration timeout)
+			throws TimeoutException, InterruptedException, ExecutionException {
+			StateChangePoller.pollWhile(() -> waitCond.test(reload().getStatus()))
+							.pollInterval(pollInterval)
+							.timeout(timeout)
+							.build()
+							.run();
+		}
+	
+	public static void waitWhileStatus(List<HttpMDTInstanceClient> instances, Predicate<MDTInstance> pred,
+										Duration pollInterval, Duration timeout)
+		throws TimeoutException, InterruptedException, ExecutionException {
+		StateChangePoller.pollWhile(() -> {
+			for ( HttpMDTInstanceClient inst: instances ) {
+				if ( !pred.test(inst) ) {
+					instances.remove(inst);
+				}
+			}
+			return instances.size() > 0;
+		})
+		.pollInterval(pollInterval)
+		.timeout(timeout)
+		.build()
+		.run();
+	}
+	
+	public List<HttpMDTInstanceClient> getAllComponents() {
+		return getAllTargetInstances("contain");
+	}
+	
+	public List<HttpMDTInstanceClient> getAllTargetInstances(String depType) {
+		TwinComposition tcomp = getInformationModel().getTwinComposition();
+		String myId = tcomp.getCompositionID();
+
+		Map<String,ComponentItem> itemMap = FStream.from(tcomp.getComponentItems())
+													.toMap(item -> item.getID());
+		return FStream.from(tcomp.getCompositionDependencies())
+						.filter(dep -> dep.getDependencyType().equals(depType) && dep.getSource().equals(myId))
+						.flatMapNullable(dep -> itemMap.get(dep.getTarget()))
+						.map(ComponentItem::getReference)
+						.flatMapTry(aasId -> Try.get(() -> m_manager.getInstanceByAasId(aasId)))
+						.toList();
+	}
+	
+	public List<HttpMDTInstanceClient> getAllSourceInstances(String depType) {
+		TwinComposition tcomp = getInformationModel().getTwinComposition();
+		String myId = tcomp.getCompositionID();
+
+		Map<String,ComponentItem> itemMap = FStream.from(tcomp.getComponentItems())
+													.toMap(item -> item.getID());
+		return FStream.from(tcomp.getCompositionDependencies())
+						.filter(dep -> dep.getDependencyType().equals(depType) && dep.getTarget().equals(myId))
+						.flatMapNullable(dep -> itemMap.get(dep.getTarget()))
+						.map(ComponentItem::getReference)
+						.flatMapTry(aasId -> Try.get(() -> m_manager.getInstanceByAasId(aasId)))
+						.toList();
 	}
 	
 	@Override

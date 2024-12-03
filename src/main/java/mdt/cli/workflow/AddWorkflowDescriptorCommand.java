@@ -5,11 +5,11 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mdt.cli.MDTCommand;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
-import mdt.model.AASUtils;
+import mdt.cli.AbstractMDTCommand;
+import mdt.client.HttpMDTManagerClient;
 import mdt.model.MDTManager;
 import mdt.model.ResourceAlreadyExistsException;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.WorkflowDescriptor;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -26,7 +26,7 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Add an MDT Workflow Descriptor."
 )
-public class AddWorkflowDescriptorCommand extends MDTCommand {
+public class AddWorkflowDescriptorCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(AddWorkflowDescriptorCommand.class);
 	
 	@Parameters(index="0", paramLabel="path", description="The file path to add.")
@@ -44,18 +44,18 @@ public class AddWorkflowDescriptorCommand extends MDTCommand {
 	}
 
 	@Override
-	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerProxy client = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
+	public void run(MDTManager mdt) throws Exception {
+		WorkflowDescriptorService svc = ((HttpMDTManagerClient)mdt).createClient(WorkflowDescriptorService.class);
 		
 		WorkflowDescriptor wfDesc = WorkflowDescriptor.parseJsonFile(m_file);
 		while ( true ) {
 			try {
-				client.addWorkflowDescriptor(wfDesc);
+				svc.addWorkflowDescriptor(wfDesc);
 				break;
 			}
 			catch ( ResourceAlreadyExistsException e ) {
 				if ( m_force ) {
-					client.removeWorkflowDescriptor(wfDesc.getId());
+					svc.removeWorkflowDescriptor(wfDesc.getId());
 				}
 				else {
 					throw e;

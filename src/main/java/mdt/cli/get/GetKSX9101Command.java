@@ -16,7 +16,7 @@ import utils.StopWatch;
 import utils.UnitUtils;
 import utils.stream.FStream;
 
-import mdt.cli.MDTCommand;
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
@@ -26,6 +26,7 @@ import mdt.model.sm.data.DefaultData;
 import mdt.model.sm.info.DefaultInformationModel;
 import mdt.model.sm.simulation.DefaultSimulation;
 import mdt.tree.MDTInstanceNode;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -42,7 +43,7 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Get KSX-9101 Properties information."
 )
-public class GetKSX9101Command extends MDTCommand {
+public class GetKSX9101Command extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetKSX9101Command.class);
 
 	@Parameters(index="0", paramLabel="id", description="MDTInstance id")
@@ -53,7 +54,7 @@ public class GetKSX9101Command extends MDTCommand {
 	private String m_repeat = null;
 
 	public static final void main(String... args) throws Exception {
-		runCommand(new GetKSX9101Command(), args);
+		main(new GetKSX9101Command(), args);
 	}
 	
 	public GetKSX9101Command() {

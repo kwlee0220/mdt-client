@@ -11,10 +11,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import utils.http.RESTfulRemoteException;
-
 import lombok.Getter;
 import lombok.Setter;
+
+import utils.http.RESTfulRemoteException;
+
 import mdt.model.MessageTypeEnum;
 
 /**

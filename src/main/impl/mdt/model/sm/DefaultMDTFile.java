@@ -7,11 +7,11 @@ import org.apache.tika.Tika;
 
 import com.google.common.io.Files;
 
-import utils.UnitUtils;
-import utils.func.FOption;
-
 import lombok.Getter;
 import lombok.Setter;
+
+import utils.UnitUtils;
+import utils.func.FOption;
 
 
 /**

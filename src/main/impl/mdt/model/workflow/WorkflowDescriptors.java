@@ -1,6 +1,7 @@
 package mdt.model.workflow;
 
 import lombok.experimental.UtilityClass;
+
 import mdt.aas.DefaultSubmodelReference;
 import mdt.model.Input;
 import mdt.model.Output;
@@ -13,7 +14,6 @@ import mdt.task.builtin.SetTask;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.ValueReferenceDescriptor;
 import mdt.workflow.model.VariableDescriptor;
-import mdt.workflow.model.VariableDescriptor.Kind;
 
 /**
  *
@@ -28,9 +28,9 @@ public class WorkflowDescriptors {
 		
 		set.getOptions().add(new StringOption("value", value));
 
-		VariableDescriptor to = VariableDescriptor.declare("to", Kind.OUTPUT);
+		VariableDescriptor to = VariableDescriptor.declare("to");
 		to.setValueReference(ValueReferenceDescriptor.parseString(toRefString));
-		set.getVariables().add(to);
+		set.getOutputVariables().add(to);
 		
 		return set;
 	}
@@ -40,13 +40,13 @@ public class WorkflowDescriptors {
 		copy.setId(id);
 		copy.setType(CopyTask.class.getName());
 		
-		VariableDescriptor from = VariableDescriptor.declare("from", Kind.INPUT);
+		VariableDescriptor from = VariableDescriptor.declare("from");
 		from.setValueReference(ValueReferenceDescriptor.parseString(fromRefString));
-		copy.getVariables().add(from);
+		copy.getInputVariables().add(from);
 
-		VariableDescriptor to = VariableDescriptor.declare("to", Kind.OUTPUT);
+		VariableDescriptor to = VariableDescriptor.declare("to");
 		to.setValueReference(ValueReferenceDescriptor.parseString(toRefString));
-		copy.getVariables().add(to);
+		copy.getOutputVariables().add(to);
 		
 		return copy;
 	}
@@ -56,28 +56,28 @@ public class WorkflowDescriptors {
 		
 		int idx = 0;
 		for ( Input input: simulation.getSimulationInfo().getInputs() ) {
-			VariableDescriptor var = VariableDescriptor.declare(input.getInputID(), Kind.INPUT);
+			VariableDescriptor var = VariableDescriptor.declare(input.getInputID());
 			
 			ValueReferenceDescriptor valDesc = new ValueReferenceDescriptor();
 			valDesc.setTwinId(ref.getInstanceId());
 			valDesc.setSubmodelIdShort(ref.getSubmodelIdShort());
 			valDesc.setIdShortPath(String.format("SimulationInfo.Inputs[%d].InputValue", idx));
 			var.setValueReference(valDesc);
-			task.getVariables().add(var);
+			task.getInputVariables().add(var);
 			
 			++idx;
 		}
 		
 		idx = 0;
 		for ( Output input: simulation.getSimulationInfo().getOutputs() ) {
-			VariableDescriptor var = VariableDescriptor.declare(input.getOutputID(), Kind.OUTPUT);
+			VariableDescriptor var = VariableDescriptor.declare(input.getOutputID());
 			
 			ValueReferenceDescriptor valDesc = new ValueReferenceDescriptor();
 			valDesc.setTwinId(ref.getInstanceId());
 			valDesc.setSubmodelIdShort(ref.getSubmodelIdShort());
 			valDesc.setIdShortPath(String.format("SimulationInfo.Outputs[%d].OutputValue", idx));
 			var.setValueReference(valDesc);
-			task.getVariables().add(var);
+			task.getOutputVariables().add(var);
 			
 			++idx;
 		}
@@ -88,28 +88,28 @@ public class WorkflowDescriptors {
 		
 		int idx = 0;
 		for ( Input input: ai.getAIInfo().getInputs() ) {
-			VariableDescriptor var = VariableDescriptor.declare(input.getInputID(), Kind.INPUT);
+			VariableDescriptor var = VariableDescriptor.declare(input.getInputID());
 			
 			ValueReferenceDescriptor valDesc = new ValueReferenceDescriptor();
 			valDesc.setTwinId(ref.getInstanceId());
 			valDesc.setSubmodelIdShort(ref.getSubmodelIdShort());
 			valDesc.setIdShortPath(String.format("AIInfo.Inputs[%d].InputValue", idx));
 			var.setValueReference(valDesc);
-			task.getVariables().add(var);
+			task.getInputVariables().add(var);
 			
 			++idx;
 		}
 		
 		idx = 0;
 		for ( Output input: ai.getAIInfo().getOutputs() ) {
-			VariableDescriptor var = VariableDescriptor.declare(input.getOutputID(), Kind.OUTPUT);
+			VariableDescriptor var = VariableDescriptor.declare(input.getOutputID());
 			
 			ValueReferenceDescriptor valDesc = new ValueReferenceDescriptor();
 			valDesc.setTwinId(ref.getInstanceId());
 			valDesc.setSubmodelIdShort(ref.getSubmodelIdShort());
 			valDesc.setIdShortPath(String.format("AIInfo.Outputs[%d].OutputValue", idx));
 			var.setValueReference(valDesc);
-			task.getVariables().add(var);
+			task.getOutputVariables().add(var);
 			
 			++idx;
 		}

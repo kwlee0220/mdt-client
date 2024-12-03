@@ -6,7 +6,9 @@ import com.google.common.base.Objects;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.model.sm.entity.PropertyField;
+import mdt.model.sm.entity.SMElementField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
@@ -19,9 +21,13 @@ public class DefaultOperationParameterValue extends SubmodelElementCollectionEnt
 											implements OperationParameterValue {
 	@PropertyField(idShort="OperationID") private String operationId;
 	@PropertyField(idShort="ParameterID") private String parameterId;
-	private SubmodelElement parameterValue;
+	@SMElementField(idShort="ParameterValue") private SubmodelElement parameterValue;
 	@PropertyField(idShort="EventDateTime") private String eventDateTime;
 	@PropertyField(idShort="ValidationResultCode") private String validationResultCode;
+	
+	public DefaultOperationParameterValue() {
+		setSemanticId(SEMANTIC_ID_REFERENCE);
+	}
 	
 	@Override
 	public String getIdShort() {

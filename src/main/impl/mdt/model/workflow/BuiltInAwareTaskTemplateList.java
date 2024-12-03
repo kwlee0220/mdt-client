@@ -62,7 +62,7 @@ public class BuiltInAwareTaskTemplateList extends KeyedValueList<String, TaskDes
 	}
 
 	@Override
-	public boolean removeOfKey(String key) {
+	public TaskDescriptor removeOfKey(String key) {
 		if ( BuiltInTaskTemplates.getIdSet().contains(key) ) {
 			throw new IllegalArgumentException("Cannot remove builtin TaskTemplate: id=" + key);
 		}

@@ -5,26 +5,27 @@ package mdt.model.sm;
  * @author Kang-Woo Lee (ETRI)
  */
 public enum SubmodelElementReferenceType {
-	DEFAULT,
-	PARAMETER,
-	OPERATION_VARIABLE,
-	FILE,
-	LITERAL,
-	STDOUT;
+	DEFAULT("default"),
+	PARAMETER("parameter"),
+	OPERATION_VARIABLE("opvar"),
+	ARGUMENT("argument"),
+	IN_MEMORY("memory"),
+	FILE("file"),
+	LITERAL("literal"),
+	STDOUT("stdout");
+	
+	private final String m_code;
+	
+	SubmodelElementReferenceType(String code) {
+		m_code = code;
+	}
 	
 	public static SubmodelElementReferenceType fromName(String name) {
+		name = name.toLowerCase();
 		for ( SubmodelElementReferenceType refType: values() ) {
-			if ( refType.name().equalsIgnoreCase(name) ) {
+			if ( refType.m_code.startsWith(name) ) {
 				return refType;
 			}
-		}
-		for ( SubmodelElementReferenceType refType: values() ) {
-			if ( refType.name().toLowerCase().startsWith(name.toLowerCase()) ) {
-				return refType;
-			}
-		}
-		if ( name.toLowerCase().startsWith("opv") ) {
-			return SubmodelElementReferenceType.OPERATION_VARIABLE;
 		}
 		
 		throw new IllegalArgumentException("Invalid SubmodelElementReferenceType type=" + name);

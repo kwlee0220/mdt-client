@@ -6,14 +6,14 @@ import java.util.Map;
 
 import com.google.common.base.Preconditions;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 import utils.Indexed;
 import utils.stream.FStream;
 
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 /**
  *

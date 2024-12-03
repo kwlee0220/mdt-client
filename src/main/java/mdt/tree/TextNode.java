@@ -9,7 +9,7 @@ import org.barfuin.texttree.api.Node;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class TextNode implements Node {
+public class TextNode implements Node {
 	private String m_text;
 	
 	public TextNode(String text) {

@@ -1,8 +1,5 @@
 package mdt.task;
 
-import utils.func.FOption;
-
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)
@@ -23,7 +20,11 @@ public class TaskException extends Exception {
 	
 	@Override
 	public String getMessage() {
-		String causeStr = FOption.mapOrElse(getCause(), c -> ", cause=" + c, "");
-		return String.format("%s%s", super.getMessage(), causeStr);
+		if ( getCause() != null ) {
+			return String.format("%s, cause=%s", getClass().getName(), getCause());
+		}
+		else {
+			return getClass().getName();
+		}
 	}
 }

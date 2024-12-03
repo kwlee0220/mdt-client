@@ -3,6 +3,7 @@ package mdt.model.service;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nullable;
@@ -155,11 +156,11 @@ public interface MDTInstance {
 	 * @throws TimeoutException		대기 제한 시간을 경과하도록 시작이 완료되지 않은 경우.
 	 * @throws InterruptedException	대기 중 쓰레드가 중단된 경우.
 	 * @throws InvalidResourceStatusException	MDTInstance가 이미 동작 중인 경우.
-	 * @throws MDTInstanceManagerException	기타 다른 이유로 MDTInstance 시작이 실패한 경우.
+	 * @throws ExecutionException 		MDTInstance 시작 과정에서 다른 이유로 실패한 경우.
 	 */
 	public void start(@Nullable Duration pollInterval, @Nullable Duration timeout)
 		throws TimeoutException, InterruptedException, InvalidResourceStatusException,
-				MDTInstanceManagerException;
+				ExecutionException;
 	
 	/**
 	 * 동작 중인 MDTInstance를 종료시킨다.
@@ -179,11 +180,11 @@ public interface MDTInstance {
 	 * @throws TimeoutException		대기 제한 시간을 경과하도록 종료가 완료되지 않은 경우.
 	 * @throws InterruptedException	대기 중 쓰레드가 중단된 경우.
 	 * @throws InvalidResourceStatusException	MDTInstance가 이미 동작 중인 경우.
-	 * @throws MDTInstanceManagerException	기타 다른 이유로 MDTInstance 종료가 실패한 경우.
+	 * @throws ExecutionException		기타 다른 이유로 MDTInstance 종료가 실패한 경우.
 	 */
 	public void stop(@Nullable Duration pollInterval, @Nullable Duration timeout)
 		throws TimeoutException, InterruptedException, InvalidResourceStatusException,
-				MDTInstanceManagerException;
+				ExecutionException;
 	
 	/**
 	 * MDTInstance가 포함한 AssetAdministrationShell (AAS)의 서비스 객체

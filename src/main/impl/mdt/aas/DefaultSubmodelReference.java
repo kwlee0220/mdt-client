@@ -143,7 +143,7 @@ public final class DefaultSubmodelReference implements MDTSubmodelReference, MDT
 
 	public static DefaultSubmodelReference newInstance(MDTInstanceManager manager, Reference ref)
 		throws ResourceNotFoundException {
-		Tuple<String,List<String>> info = SubmodelUtils.parseModelReference(ref);
+		Tuple<String,List<String>> info = SubmodelUtils.parseSubmodelReference(ref);
 		
 		String smId = info._1;
 		String idShortPath = FStream.from(info._2).join('.');

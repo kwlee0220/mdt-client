@@ -41,7 +41,7 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Start a simulation."
 )
-public class StartSkkuSimulationCommand extends MDTCommand {
+public class StartSkkuSimulationCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(StartSkkuSimulationCommand.class);
 	private static final Duration DEFAULT_POLL_TIMEOUT = Duration.ofSeconds(3);
 	

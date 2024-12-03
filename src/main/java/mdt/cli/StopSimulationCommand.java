@@ -28,7 +28,7 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Stop a simulation."
 )
-public class StopSimulationCommand extends MDTCommand {
+public class StopSimulationCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(StopSimulationCommand.class);
 	
 	@Parameters(index="0", paramLabel="id", description="target Simulation Submodel (or MDTInstance) id")

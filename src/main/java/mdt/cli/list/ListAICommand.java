@@ -21,7 +21,6 @@ import mdt.model.service.AISubmodelService;
 import mdt.model.service.MDTInstance;
 import mdt.model.service.SubmodelService;
 import mdt.model.sm.ai.AI;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -65,6 +64,11 @@ public class ListAICommand extends AbstractListCommand {
 		table.addCell(" ENDPOINT ");
 		
 		return collect(new TableCollector(table));
+	}
+
+	@Override
+	public String buildTreeString() {
+		throw new UnsupportedOperationException();
 	}
 	
 	private String collect(ListCollector collector) {

@@ -4,6 +4,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.model.sm.entity.SMCollectionField;
 import mdt.model.sm.entity.SubmodelEntity;
 

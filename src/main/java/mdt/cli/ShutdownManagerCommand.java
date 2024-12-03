@@ -19,7 +19,7 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description = "Stop the running MDTInstanceManager."
 )
-public class ShutdownManagerCommand extends MDTCommand {
+public class ShutdownManagerCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ShutdownManagerCommand.class);
 
 	public static final void main(String... args) throws Exception {

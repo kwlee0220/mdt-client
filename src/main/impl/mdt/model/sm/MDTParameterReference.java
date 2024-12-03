@@ -177,7 +177,7 @@ public class MDTParameterReference extends AbstractSubmodelElementReference
 	
 	@Override
 	public String toString() {
-		return String.format("%s/%s", m_instanceId, m_parameterId);
+		return String.format("param:%s/%s", m_instanceId, m_parameterId);
 	}
 	
 	public static MDTParameterReference newInstance(String instanceId, String parameterId) {

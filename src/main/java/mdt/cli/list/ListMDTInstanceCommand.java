@@ -1,20 +1,30 @@
 package mdt.cli.list;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.barfuin.texttree.api.TextTree;
+import org.barfuin.texttree.api.TreeOptions;
+import org.barfuin.texttree.api.style.TreeStyle;
+import org.barfuin.texttree.api.style.TreeStyles;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
+import utils.Utilities;
 import utils.stream.FStream;
 
 import mdt.cli.IdPair;
 import mdt.cli.list.ListCommands.ListCollector;
 import mdt.cli.list.ListCommands.SimpleListCollector;
 import mdt.cli.list.ListCommands.TableCollector;
+import mdt.cli.list.Nodes.InstanceNode;
+import mdt.cli.list.Nodes.RootNode;
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.service.MDTInstance;
 import mdt.model.sm.SubmodelUtils;
 
@@ -38,6 +48,9 @@ public class ListMDTInstanceCommand extends AbstractListCommand {
 	@Option(names={"--filter", "-f"}, paramLabel="filter-expr", description="instance filter.")
 	private String m_filter = null;
 	
+	@Option(names={"--show-endpoint"}, description="show endpoint for running MDT instances")
+	private boolean m_showEndpoint = false;
+	
 	public ListMDTInstanceCommand() {
 		setLogger(s_logger);
 	}
@@ -45,6 +58,52 @@ public class ListMDTInstanceCommand extends AbstractListCommand {
 	@Override
 	public String buildListString() {
 		return collect(new SimpleListCollector());
+	}
+
+	@Override
+	public String buildTreeString() {
+		Nodes.s_showEndpoint = m_showEndpoint;
+		
+		List<? extends MDTInstance> instances = (m_filter != null)
+												? getMDTInstanceManager().getAllInstancesByFilter(m_filter)
+												: getMDTInstanceManager().getAllInstances();
+		
+		// take a snapshot
+		Map<String,InstanceNode> nodes = FStream.from(instances)
+												.castSafely(HttpMDTInstanceClient.class)
+												.map(InstanceNode::new)
+												.toMap(InstanceNode::getId);
+
+		// 초기 구조를 구축한다.
+		RootNode root = new RootNode();
+		List<InstanceNode> runningNodes = Lists.newArrayList();
+		for ( InstanceNode node: nodes.values() ) {
+			if ( node.getStatus() == MDTInstanceStatus.RUNNING ) {
+				runningNodes.add(node);
+			}
+			root.addChild(node);
+		}
+//		for ( StatusGroupNode group: root.m_statusGroupNodes.values() ) {
+//			System.out.println(group);
+//		}
+//		System.out.println("*********************************************");
+		
+		FStream.from(runningNodes)
+				.forEach(node -> {
+					for ( HttpMDTInstanceClient comp: node.getInstance().getAllTargetInstances("contain") ) {
+						InstanceNode depNode = nodes.get(comp.getId());
+						if ( depNode != null && depNode.getStatus() == MDTInstanceStatus.RUNNING ) {
+							node.addChild(depNode);
+							root.removeChild(depNode);
+						}
+					}
+				});
+
+		TreeOptions opts = new TreeOptions();
+		TreeStyle style = Utilities.isWindowsOS() ? TreeStyles.WIN_TREE : TreeStyles.UNICODE_ROUNDED;
+		opts.setStyle(style);
+		opts.setMaxDepth(5);
+		return TextTree.newInstance(opts).render(root);
 	}
 
 	@Override
@@ -100,4 +159,19 @@ public class ListMDTInstanceCommand extends AbstractListCommand {
 			serviceEndpoint
 		};
 	}
+	
+//	private static int getKorCnt(String kor) {
+//		int cnt = 0;
+//		for ( int i =0; i < kor.length(); ++i ) {
+//			if ( kor.charAt(i) >= '가' && kor.charAt(i) <= '힇' ) {
+//				++cnt;
+//			}
+//		}
+//		return cnt;
+//	}
+//	
+//	public static String convert(String word, int size) {
+//		String formatter = String.format("%%%ds",  size - getKorCnt(word));
+//		return String.format(formatter, word);
+//	}
 }

@@ -5,13 +5,12 @@ import java.util.Set;
 import mdt.aas.DefaultSubmodelReference;
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
-import mdt.model.MDTModelSerDe;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.workflow.StringOption;
 import mdt.model.workflow.WorkflowDescriptors;
 import mdt.task.builtin.HttpTask;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.WorkflowDescriptor;
 
@@ -23,6 +22,7 @@ import mdt.workflow.model.WorkflowDescriptor;
 public class SampleWorkflowDescriptor4 {
 //	private static final String ENDPOINT = "http://129.254.91.134:12985";
 	private static final String ENDPOINT = "http://localhost:12985";
+	private static final String HTTP_OP_SERVER_ENDPOINT = "http://129.254.91.134:12987";
 	
 	public static final void main(String... args) throws Exception {
 		HttpMDTManagerClient mdt = HttpMDTManagerClient.connect(ENDPOINT);
@@ -37,39 +37,36 @@ public class SampleWorkflowDescriptor4 {
 
 		TaskDescriptor taskDesc;
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-data1",
-												"Test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
-												"Test/Simulation/SimulationInfo.Inputs[0].InputValue");
+		taskDesc = WorkflowDescriptors.newCopyTask("copy-data",
+												"test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
+												"test/Simulation/SimulationInfo.Inputs[0].InputValue");
 		wfDesc.getTasks().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-data2",
-												"Test/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
-												"Test/Simulation/SimulationInfo.Inputs[1].InputValue");
+		taskDesc = WorkflowDescriptors.newCopyTask("copy-inc-amount",
+												"test/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
+												"test/Simulation/SimulationInfo.Inputs[1].InputValue");
 		wfDesc.getTasks().add(taskDesc);
 		
 		taskDesc = WorkflowDescriptors.newSetTask("set-sleeptime", "2",
-												"Test/Simulation/SimulationInfo.Inputs[2].InputValue");
-		wfDesc.getTasks().add(taskDesc);
-		
-		taskDesc = WorkflowDescriptors.newSetTask("set-expected", "77",
-												"Test/Simulation/SimulationInfo.Inputs[3].InputValue");
+												"test/Simulation/SimulationInfo.Inputs[2].InputValue");
 		wfDesc.getTasks().add(taskDesc);
 		
 		taskDesc = newHttpTask(manager, "simulation");
-		taskDesc.setDependencies(Set.of("copy-data1", "copy-data2", "set-sleeptime", "set-expected"));
+		taskDesc.setDependencies(Set.of("copy-data", "copy-inc-amount", "set-sleeptime"));
 		wfDesc.getTasks().add(taskDesc);
-		System.out.println(MDTModelSerDe.toJsonString(taskDesc));
 		
 		taskDesc = WorkflowDescriptors.newCopyTask("copy-result",
-												"Test/Simulation/SimulationInfo.Outputs[0].OutputValue",
-												"Test/Data/DataInfo.Equipment.EquipmentParameterValues[4].ParameterValue");
+												"test/Simulation/SimulationInfo.Outputs[0].OutputValue",
+												"test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue");
 		taskDesc.setDependencies(Set.of("simulation"));
 		wfDesc.getTasks().add(taskDesc);
 		
-		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
+//		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 		
-		HttpWorkflowManagerProxy wfManager = mdt.getWorkflowManager();
-		wfManager.addWorkflowDescriptor(wfDesc);
+		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
+		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
+		
+		System.out.println("Workflow id: " + wfId);
 	}
 	
 	private static TaskDescriptor newHttpTask(MDTInstanceManager manager, String id) {
@@ -77,13 +74,15 @@ public class SampleWorkflowDescriptor4 {
 		
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
+
+		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
+		task.getOptions().add(new StringOption("id", "test/Simulation"));
+		task.getOptions().add(new StringOption("timeout", "1m"));
+		task.getOptions().add(new StringOption("loglevel", "info"));
+//		task.getOptions().add(new SubmodelRefOption("submodel", "test", "Simulation"));
+		task.getLabels().add(NameValue.of("mdt-submodel", "test/Simulation"));
 		
-		task.getOptions().add(new StringOption("url", "http://129.254.91.134:12987/operations/test"));
-		task.getOptions().add(new StringOption("timeout", "5m"));
-		task.getOptions().add(new StringOption("logger", "info"));
-		task.getLabels().add(NameValue.of("mdt-submodel", "Test/Simulation"));
-		
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("Test", "Simulation");
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("test", "Simulation");
 		smRef.activate(manager);
 		
 		WorkflowDescriptors.addSimulationInputOutputVariables(task, smRef);

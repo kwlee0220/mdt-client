@@ -17,8 +17,9 @@ import picocli.CommandLine.Command;
 	subcommands= {
 		GetMDTInstanceCommand.class,
 		GetSubmodelElementCommand.class,
-		GetAASCommand.class,
+		GetShellCommand.class,
 		GetSubmodelCommand.class,
 		GetKSX9101Command.class,
 	})
-public class GetCommands extends CommandCollection {}
+public class GetCommands extends CommandCollection { }
+

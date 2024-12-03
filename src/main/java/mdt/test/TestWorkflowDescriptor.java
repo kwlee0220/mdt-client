@@ -3,7 +3,6 @@ package mdt.test;
 import java.io.File;
 import java.io.IOException;
 
-import mdt.client.workflow.HttpWorkflowManagerProxy;
 import mdt.workflow.model.WorkflowDescriptor;
 
 /**
@@ -35,11 +34,5 @@ public class TestWorkflowDescriptor {
 		String json = wfDesc.toJsonString();
 		System.out.println(json);
 		wfDesc = WorkflowDescriptor.parseJsonString(json);
-	}
-	
-	public static void list(HttpWorkflowManagerProxy wfManager) {
-		for ( WorkflowDescriptor wfDesc: wfManager.getWorkflowDescriptorAll() ) {
-			System.out.println(wfDesc);
-		}
 	}
 }

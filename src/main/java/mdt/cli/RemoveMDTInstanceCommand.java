@@ -8,6 +8,7 @@ import utils.LoggerNameBuilder;
 
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -23,7 +24,7 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Remove the MDT instance."
 )
-public class RemoveMDTInstanceCommand extends MDTCommand {
+public class RemoveMDTInstanceCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerNameBuilder.from(RemoveMDTInstanceCommand.class).dropSuffix(2)
 															.append("unregister.mdt_instances").getLogger();
 	
@@ -32,6 +33,9 @@ public class RemoveMDTInstanceCommand extends MDTCommand {
 	
 	@Option(names={"--all", "-a"}, description="remove all MDTInstances")
 	private boolean m_removeAll;
+	
+	@Option(names={"--force", "-f"}, description="force to remove MDTInstances (eventhough they are running)")
+	private boolean m_force;
 
 	public static final void main(String... args) throws Exception {
 		main(new RemoveMDTInstanceCommand(), args);
@@ -42,15 +46,15 @@ public class RemoveMDTInstanceCommand extends MDTCommand {
 	}
 
 	@Override
-	public void run(MDTManager manager) throws Exception {
-		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
+	public void run(MDTManager mdt) throws Exception {
+		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
 		
 		if ( m_removeAll ) {
-			client.removeAllInstances();
+			manager.removeAllInstances();
 		}
 		else {
 			for ( String instId: m_instanceIds ) {
-				client.removeInstance(instId);
+				manager.removeInstance(instId);
 			}
 		}
 	}

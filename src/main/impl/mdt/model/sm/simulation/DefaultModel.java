@@ -4,6 +4,7 @@ import java.time.Duration;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SMCollectionField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;

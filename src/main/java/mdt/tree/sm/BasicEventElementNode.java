@@ -7,10 +7,10 @@ import org.eclipse.digitaltwin.aas4j.v3.model.BasicEventElement;
 
 import com.google.common.collect.Lists;
 
-import mdt.client.Utils;
-import mdt.tree.TextNode;
-
 import utils.stream.FStream;
+
+import mdt.client.support.Utils;
+import mdt.tree.TextNode;
 
 
 /**

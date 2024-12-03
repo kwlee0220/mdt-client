@@ -28,7 +28,6 @@ import utils.http.JacksonErrorEntityDeserializer;
 import mdt.model.AASUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.task.Parameter;
-
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -69,7 +68,6 @@ public class HttpOperationClient extends AbstractThreadedExecution<List<Paramete
 		
 		m_restfulStatusClient = HttpRESTfulClient.builder()
 												.httpClient(builder.m_httpClient)
-												.endpoint(m_endpoint)
 												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
 												.jsonMapper(MAPPER)
 												.build();
@@ -168,7 +166,6 @@ public class HttpOperationClient extends AbstractThreadedExecution<List<Paramete
 	private OperationResponse start(OperationRequestBody request) {
 		HttpRESTfulClient client = HttpRESTfulClient.builder()
 												.httpClient(m_httpClient)
-												.endpoint(m_endpoint)
 												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
 												.jsonMapper(MAPPER)
 												.build();

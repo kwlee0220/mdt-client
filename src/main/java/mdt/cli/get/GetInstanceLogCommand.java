@@ -3,10 +3,11 @@ package mdt.cli.get;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mdt.cli.MDTCommand;
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ParentCommand;
 
@@ -21,7 +22,7 @@ import picocli.CommandLine.ParentCommand;
 	mixinStandardHelpOptions = true,
 	description = "Get instance log data."
 )
-public class GetInstanceLogCommand extends MDTCommand {
+public class GetInstanceLogCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceLogCommand.class);
 
 	@ParentCommand GetMDTInstanceCommand m_parent;

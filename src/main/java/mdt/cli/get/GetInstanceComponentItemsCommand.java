@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import utils.func.Funcs;
 
-import mdt.cli.MDTCommand;
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
@@ -15,9 +15,7 @@ import mdt.model.service.SubmodelService;
 import mdt.model.sm.info.ComponentItem;
 import mdt.model.sm.info.DefaultTwinComposition;
 import mdt.model.sm.info.InformationModel;
-
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.ParentCommand;
 
 /**
@@ -31,14 +29,10 @@ import picocli.CommandLine.ParentCommand;
 	mixinStandardHelpOptions = true,
 	description = "Get composition items of an instance"
 )
-public class GetInstanceComponentItemsCommand extends MDTCommand {
+public class GetInstanceComponentItemsCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceComponentItemsCommand.class);
 	
 	@ParentCommand GetMDTInstanceCommand m_parent;
-
-	@Option(names={"--type"}, paramLabel="dependency-type",
-					description="CompositionDependency type")
-	private String m_type;
 
 	public static final void main(String... args) throws Exception {
 		main(new GetInstanceComponentItemsCommand(), args);
@@ -64,7 +58,7 @@ public class GetInstanceComponentItemsCommand extends MDTCommand {
 			System.err.println("Cannot find TwinComposition");
 			System.exit(-1);
 		}
-		if ( sme instanceof SubmodelElementCollection smc ) {
+		if ( sme instanceof SubmodelElementCollection ) {
 			DefaultTwinComposition tc = new DefaultTwinComposition();
 			tc.updateFromAasModel(sme);
 			

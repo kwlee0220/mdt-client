@@ -2,10 +2,17 @@ package mdt.model.sm;
 
 import java.io.IOException;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import utils.func.FOption;
 
+import mdt.model.MDTModelSerDe;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.SubmodelElementValue;
 
@@ -70,5 +77,30 @@ public class InMemorySMEReference extends AbstractSubmodelElementReference imple
 		catch ( IOException e ) {
 			throw new AssertionError();
 		}
+	}
+	
+	public static InMemorySMEReference parseJson(ObjectNode topNode) throws IOException {
+		SubmodelElement value = MDTModelSerDe.readValue(topNode, SubmodelElement.class);
+		return InMemorySMEReference.of(value);
+	}
+	
+	public static InMemorySMEReference parseString(String refExpr) throws IOException {
+		SubmodelElement value;
+		if ( !refExpr.trim().startsWith("{") ) {
+			value = new DefaultProperty.Builder()
+										.value(refExpr)
+										.valueType(DataTypeDefXsd.STRING)
+										.build();
+		}
+		else {
+			value = MDTModelSerDe.readValue(refExpr, SubmodelElement.class);
+		}
+		
+		return InMemorySMEReference.of(value);
+	}
+
+	@Override
+	public void serialize(JsonGenerator gen) throws IOException, JsonProcessingException {
+		gen.writeObject(m_value);
 	}
 }

@@ -18,7 +18,6 @@ import mdt.cli.list.ListCommands.TableCollector;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.service.MDTInstance;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -65,6 +64,11 @@ public class ListAASCommand extends AbstractListCommand {
 		table.addCell(" SUBMODELS ");
 		
 		return collect(new TableCollector(table));
+	}
+
+	@Override
+	public String buildTreeString() {
+		throw new UnsupportedOperationException();
 	}
 	
 	private String collect(ListCollector collector) {

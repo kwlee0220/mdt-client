@@ -2,6 +2,7 @@ package mdt.model;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -14,7 +15,9 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
@@ -94,6 +97,14 @@ public class AASUtils {
 		}
 		catch ( DeserializationException e ) {
 			throw new MDTInstanceManagerException("failed to parse Environment: file=" + aasEnvFile);
+		}
+	}
+	
+	public static void writeEnvironment(File aasEnvFile, Environment env)
+		throws IOException, SerializationException {
+		JsonSerializer ser = new JsonSerializer();
+		try ( FileOutputStream fos = new FileOutputStream(aasEnvFile) ) {
+			ser.write(fos, env);
 		}
 	}
 	

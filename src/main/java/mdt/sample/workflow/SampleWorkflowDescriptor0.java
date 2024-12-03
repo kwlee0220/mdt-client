@@ -1,9 +1,8 @@
 package mdt.sample.workflow;
 
 import mdt.client.HttpMDTManagerClient;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
-import mdt.model.MDTModelSerDe;
 import mdt.model.workflow.WorkflowDescriptors;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.WorkflowDescriptor;
 
@@ -29,12 +28,14 @@ public class SampleWorkflowDescriptor0 {
 		TaskDescriptor taskDesc;
 		
 		taskDesc = WorkflowDescriptors.newCopyTask("copy-data1",
-												"Test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
-												"Test/Simulation/SimulationInfo.Inputs[0].InputValue");
+												"test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
+												"test/Simulation/SimulationInfo.Inputs[0].InputValue");
 		wfDesc.getTasks().add(taskDesc);
-		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
+//		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 		
-		HttpWorkflowManagerProxy wfManager = mdt.getWorkflowManager();
-		wfManager.addWorkflowDescriptor(wfDesc);
+		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
+		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
+		
+		System.out.println("Workflow id: " + wfId);
 	}
 }

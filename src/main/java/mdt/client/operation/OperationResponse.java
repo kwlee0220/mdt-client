@@ -11,13 +11,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.Builder;
-import lombok.Getter;
-
 import utils.InternalException;
 import utils.func.Try;
 import utils.stream.FStream;
 
+import lombok.Builder;
+import lombok.Getter;
 import mdt.model.MDTModelSerDe;
 import mdt.task.Parameter;
 
@@ -71,6 +70,7 @@ public class OperationResponse {
 		String details = this.message.substring(idx+1);
 		
 		try {
+			@SuppressWarnings("unchecked")
 			Class<? extends Throwable> errorCls = Try.get(() -> (Class<? extends Throwable>)Class.forName(code)).get();
 			Constructor<? extends Throwable> ctor1 = Try.get(() -> errorCls.getDeclaredConstructor(String.class)).getOrNull();
 			if ( ctor1 != null ) {

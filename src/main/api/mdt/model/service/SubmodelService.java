@@ -14,6 +14,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import utils.http.RESTfulRemoteException;
 import utils.stream.FStream;
 
 import mdt.model.AASUtils;
@@ -54,13 +55,15 @@ public interface SubmodelService {
 												javax.xml.datatype.Duration timeout);
 	public OperationResult getOperationAsyncResult(OperationHandle handleId);
 	public BaseOperationResult getOperationAsyncStatus(OperationHandle handleId);
-	
+
 	public default OperationResult runOperation(String operationPath,
 													List<OperationVariable> inputArguments,
 													List<OperationVariable> inoutputArguments,
 													Duration timeout, Duration pollInterval)
 		throws InterruptedException, CancellationException, TimeoutException, ExecutionException {
-		javax.xml.datatype.Duration jtimeout = AASUtils.DATATYPE_FACTORY.newDuration(timeout.toMillis());
+		javax.xml.datatype.Duration jtimeout = (timeout != null)
+											? AASUtils.DATATYPE_FACTORY.newDuration(timeout.toMillis())
+											: AASUtils.DATATYPE_FACTORY.newDuration("P7D");
 		
 		OperationHandle handle = invokeOperationAsync(operationPath, inputArguments, inoutputArguments, jtimeout);
 		boolean finished = false;
@@ -82,8 +85,9 @@ public interface SubmodelService {
 				return true;
 			case FAILED:
 				String fullMsg = FStream.from(opStatus.getMessages())
+										.map(msg -> msg.getText())
 										.join(System.lineSeparator());
-				throw new ExecutionException(new Exception("Operation failed: msg=" + fullMsg));
+				throw new ExecutionException(new RESTfulRemoteException("Operation failed: msg=" + fullMsg));
 			case TIMEOUT:
 				throw new TimeoutException();
 			case CANCELED:

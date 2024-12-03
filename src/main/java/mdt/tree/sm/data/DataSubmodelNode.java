@@ -66,7 +66,7 @@ public final class DataSubmodelNode implements Node {
 			return new EquipmentNode("", (Equipment)entity);
 		}
 		else if ( Operation.class.isAssignableFrom(entityClass) ) {
-			return new OperationNode((Operation)entity);
+			return new ProcessNode((Operation)entity);
 		}
 		else if ( ProductionPlannings.class.isAssignableFrom(entityClass) ) {
 			List<? extends ProductionPlanning> plannings = ((ProductionPlannings)entity).getMemberList();

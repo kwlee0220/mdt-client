@@ -8,10 +8,11 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 
+import lombok.ToString;
+
 import utils.Named;
 import utils.func.FOption;
 
-import lombok.ToString;
 import mdt.model.NameValue;
 
 

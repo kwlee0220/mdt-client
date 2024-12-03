@@ -9,10 +9,10 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
-import lombok.experimental.UtilityClass;
-
 import utils.CSV;
 import utils.stream.FStream;
+
+import lombok.experimental.UtilityClass;
 
 /**
  *

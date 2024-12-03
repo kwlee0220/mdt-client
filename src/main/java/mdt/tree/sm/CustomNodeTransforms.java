@@ -4,6 +4,7 @@ import org.barfuin.texttree.api.Node;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import lombok.experimental.UtilityClass;
+
 import mdt.model.DefaultInput;
 import mdt.model.DefaultOutput;
 import mdt.model.sm.info.DefaultComponentItem;
@@ -24,8 +25,7 @@ public final class CustomNodeTransforms {
 			DefaultInput input = new DefaultInput();
 			input.updateFromAasModel(sme);
 			
-			return new TextNode(String.format("%s%s (%s): %s",
-											prefix, input.getInputID(), input.getInputType(), input.getInputValue()));
+			return SubmodelElementNodeFactory.toNode(prefix, input.getInputID(), input.getInputValue());
 		}
 	}
 
@@ -35,8 +35,7 @@ public final class CustomNodeTransforms {
 			DefaultOutput output = new DefaultOutput();
 			output.updateFromAasModel(sme);
 			
-			return new TextNode(String.format("%s%s (%s): %s",
-									prefix, output.getOutputID(), output.getOutputType(), output.getOutputValue()));
+			return SubmodelElementNodeFactory.toNode(prefix, output.getOutputID(), output.getOutputValue());
 		}
 	}
 	

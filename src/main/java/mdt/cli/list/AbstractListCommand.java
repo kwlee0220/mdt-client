@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import utils.StopWatch;
 import utils.UnitUtils;
 
-import mdt.cli.MDTCommand;
+import mdt.cli.AbstractMDTCommand;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
 
@@ -19,7 +19,7 @@ import picocli.CommandLine.Option;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class AbstractListCommand extends MDTCommand {
+public abstract class AbstractListCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(AbstractListCommand.class);
 	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
 	
@@ -27,6 +27,9 @@ public abstract class AbstractListCommand extends MDTCommand {
 	
 	@Option(names={"--table", "-t" }, description="display instances in a table format.")
 	private boolean m_tableFormat = false;
+	
+	@Option(names={"--tree", "-T" }, description="display instances in a table format.")
+	private boolean m_showAsTree = false;
 
 	@Option(names={"--repeat", "-r"}, paramLabel="interval",
 			description="repeat interval (e.g. \"1s\", \"500ms\"")
@@ -37,6 +40,7 @@ public abstract class AbstractListCommand extends MDTCommand {
 	
 	abstract public String buildTableString();
 	abstract public String buildListString();
+	abstract public String buildTreeString();
 	
 	protected AbstractListCommand() {
 		setLogger(s_logger);
@@ -55,18 +59,23 @@ public abstract class AbstractListCommand extends MDTCommand {
 			StopWatch watch = StopWatch.start();
 			
 			try {
+				String listStr;
+				if ( m_showAsTree ) {
+					listStr = buildTreeString();
+				}
+				else if ( m_tableFormat ) {
+					listStr = buildTableString();
+				}
+				else {
+					listStr = buildListString();
+				}
+				
 				if ( repeatInterval != null ) {
 					System.out.print(CLEAR_CONSOLE_CONTROL);
 				}
-				if 
-				( m_tableFormat ) {
-					String listStr = buildTableString();
-					System.out.print(listStr);
+				System.out.print(listStr);
+				if ( m_tableFormat ) {
 					System.out.println();
-				}
-				else {
-					String listStr = buildListString();
-					System.out.print(listStr);
 				}
 			}
 			catch ( Exception e ) {
@@ -83,9 +92,9 @@ public abstract class AbstractListCommand extends MDTCommand {
 				break;
 			}
 			
-			Duration remains = repeatInterval.minus(watch.getElapsed());
-			if ( !(remains.isNegative() || remains.isZero()) ) {
-				TimeUnit.MILLISECONDS.sleep(remains.toMillis());
+			long remainMillis = repeatInterval.minus(watch.getElapsed()).toMillis();
+			if ( remainMillis > 0 ) {
+				TimeUnit.MILLISECONDS.sleep(remainMillis);
 			}
 		}
 	}

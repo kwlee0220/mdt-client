@@ -2,10 +2,16 @@ package mdt.aas;
 
 import java.math.BigDecimal;
 import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -18,6 +24,9 @@ import com.fasterxml.jackson.core.io.BigDecimalParser;
 import com.google.common.collect.Maps;
 
 import lombok.experimental.UtilityClass;
+
+import utils.func.FOption;
+import utils.func.Try;
 
 import mdt.model.ModelGenerationException;
 
@@ -92,9 +101,17 @@ public class DataTypes {
 		public Boolean parseValueString(String str) {
 			return (str != null) ? Boolean.parseBoolean(str) : null;
 		}
+
+		@Override
+		public Boolean toJdbcObject(Boolean value) {
+			return value;
+		}
 	}
 
 	public static class DateTimeType extends AbstractDataType<Instant> implements DataType<Instant> {
+		private static final DateTimeFormatter DT_FORMATTER1 = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+																			.withZone(ZoneOffset.systemDefault());
+		
 		private DateTimeType() {
 			super("xs:dateTime", DataTypeDefXsd.DATE_TIME, Instant.class);
 		}
@@ -106,7 +123,17 @@ public class DataTypes {
 	
 		@Override
 		public Instant parseValueString(String str) {
-			return (str != null) ? Instant.parse(str) : null;
+			if ( str == null ) {
+				return null;
+			}
+			return Try.get(() -> Instant.parse(str))
+						.recover(() -> ZonedDateTime.parse(str, DT_FORMATTER1).toInstant())
+						.get();
+		}
+
+		@Override
+		public Timestamp toJdbcObject(Instant value) {
+			return FOption.map(value, Timestamp::from);
 		}
 	}
 
@@ -131,6 +158,11 @@ public class DataTypes {
 				throw new IllegalArgumentException("Invalid string (not xs:date string): " + str);
 			}
 		}
+
+		@Override
+		public java.sql.Date toJdbcObject(Date value) {
+			return FOption.map(value, v -> new java.sql.Date(v.getTime()));
+		}
 	}
 
 	public static class DoubleType extends AbstractDataType<Double> implements DataType<Double> {
@@ -146,6 +178,11 @@ public class DataTypes {
 		@Override
 		public Double parseValueString(String str) {
 			return (str != null) ? Double.parseDouble(str) : null;
+		}
+
+		@Override
+		public Double toJdbcObject(Double value) {
+			return value;
 		}
 	}
 
@@ -167,6 +204,11 @@ public class DataTypes {
 		public Duration parseValueString(String str) {
 			return (str != null && str.trim().length() > 0) ? Duration.parse(str) : null;
 		}
+
+		@Override
+		public Long toJdbcObject(Duration value) {
+			return FOption.map(value, Duration::toMillis);
+		}
 	}
 
 	public static class FloatType extends AbstractDataType<Float> implements DataType<Float> {
@@ -182,6 +224,11 @@ public class DataTypes {
 		@Override
 		public Float parseValueString(String str) {
 			return (str != null) ? Float.parseFloat(str) : null;
+		}
+
+		@Override
+		public Float toJdbcObject(Float value) {
+			return value;
 		}
 	}
 
@@ -199,6 +246,11 @@ public class DataTypes {
 		public Integer parseValueString(String str) {
 			return (str != null) ? Integer.parseInt(str) : null;
 		}
+
+		@Override
+		public Integer toJdbcObject(Integer value) {
+			return value;
+		}
 	}
 
 	public static class LongType extends AbstractDataType<Long> implements DataType<Long> {
@@ -214,6 +266,11 @@ public class DataTypes {
 		@Override
 		public Long parseValueString(String str) {
 			return (str != null) ? Long.parseLong(str) : null;
+		}
+
+		@Override
+		public Long toJdbcObject(Long value) {
+			return value;
 		}
 	}
 
@@ -231,6 +288,11 @@ public class DataTypes {
 		public Short parseValueString(String str) {
 			return (str != null) ? Short.parseShort(str) : null;
 		}
+
+		@Override
+		public Short toJdbcObject(Short value) {
+			return value;
+		}
 	}
 
 	public static class StringType extends AbstractDataType<String> implements DataType<String> {
@@ -247,28 +309,38 @@ public class DataTypes {
 		public String parseValueString(String str) {
 			return str;
 		}
+
+		@Override
+		public String toJdbcObject(String value) {
+			return value;
+		}
 	}
 
-	public static class TimeType extends AbstractDataType<Time> implements DataType<Time> {
-		private static final SimpleDateFormat TIME_FORMATTER = new SimpleDateFormat("hh-mm-ss");
+	public static class TimeType extends AbstractDataType<LocalTime> implements DataType<LocalTime> {
+		private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("hh-mm-ss");
 		
 		private TimeType() {
-			super("xs:duration", DataTypeDefXsd.DURATION, Time.class);
+			super("xs:time", DataTypeDefXsd.TIME, LocalTime.class);
 		}
 	
 		@Override
-		public String toValueString(Time value) {
+		public String toValueString(LocalTime value) {
 			return (value != null) ? TIME_FORMATTER.format(value) : null;
 		}
 	
 		@Override
-		public Time parseValueString(String str) {
+		public LocalTime parseValueString(String str) {
 			try {
-				return (str != null) ? new Time(TIME_FORMATTER.parse(str).getTime()) : null;
+				return (str != null) ? LocalTime.parse(str, TIME_FORMATTER) : null;
 			}
-			catch ( ParseException e ) {
+			catch ( DateTimeParseException e ) {
 				throw new IllegalArgumentException("Invalid string (not xs:time string): " + str);
 			}
+		}
+
+		@Override
+		public java.sql.Time toJdbcObject(LocalTime value) {
+			return FOption.map(value, Time::valueOf);
 		}
 	}
 
@@ -285,6 +357,11 @@ public class DataTypes {
 		@Override
 		public BigDecimal parseValueString(String str) {
 			return (str != null) ? BigDecimalParser.parse(str) : null;
+		}
+
+		@Override
+		public BigDecimal toJdbcObject(BigDecimal value) {
+			return value;
 		}
 	}
 }

@@ -89,11 +89,12 @@ public class ElementValues {
 		}
 	}
 
-	public static String toExternalString(SubmodelElement sme) throws IOException {
-		return toExternalString(getValue(sme));
+	public static String toExternalString(SubmodelElement sme) {
+		SubmodelElementValue smev = FOption.map(sme, ElementValues::getValue);
+		return toExternalString(smev);
 	}
 
-	public static String toExternalString(SubmodelElementValue smev) throws IOException {
+	public static String toExternalString(SubmodelElementValue smev) {
 		if ( smev != null ) {
 			return ( smev instanceof PropertyValue propv )
 					? FOption.getOrElse(propv.getValue(), "")

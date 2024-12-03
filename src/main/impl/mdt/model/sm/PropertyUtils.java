@@ -49,6 +49,13 @@ public class PropertyUtils {
 	public static Property LONG(String id, @Nullable Long value) {
 		return newProperty(id, DataTypes.LONG.getTypeDefXsd(), DataTypes.LONG.toValueString(value));
 	}
+	
+	public static Property FLOAT(String id, @Nullable Float value) {
+		return newProperty(id, DataTypes.FLOAT.getTypeDefXsd(), DataTypes.FLOAT.toValueString(value));
+	}
+	public static Property DOUBLE(String id, @Nullable Double value) {
+		return newProperty(id, DataTypes.DOUBLE.getTypeDefXsd(), DataTypes.DOUBLE.toValueString(value));
+	}
 
 	public static Property DATE_TIME(String id, @Nullable Instant value) {
 		return newProperty(id, DataTypes.DATE_TIME.getTypeDefXsd(), DataTypes.DATE_TIME.toValueString(value));

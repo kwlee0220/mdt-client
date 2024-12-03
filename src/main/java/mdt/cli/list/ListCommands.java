@@ -5,11 +5,11 @@ import java.io.PrintWriter;
 
 import org.nocrala.tools.texttablefmt.Table;
 
+import utils.func.FOption;
 import utils.func.Try;
 import utils.stream.FStream;
 
 import mdt.cli.CommandCollection;
-
 import picocli.CommandLine.Command;
 
 /**
@@ -47,7 +47,9 @@ public class ListCommands extends CommandCollection {
 	
 		@Override
 		public void collectLine(Object[] cols) {
-			m_writer.println(FStream.of(cols).join('|'));
+			m_writer.println(FStream.of(cols)
+									.map(c -> FOption.getOrElse(c,""))
+									.join('|'));
 		}
 		
 		void addLine(String line) {

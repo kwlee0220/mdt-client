@@ -25,6 +25,10 @@ public interface Parameter {
 	
 	public String getEntityId();
 	public void setEntityId(String containerId);
+	
+	public default Reference getSemanticId() {
+		return SEMANTIC_ID_REFERENCE;
+	}
 
 	/**
 	 * 파라미터의 식별자를 반환한다.

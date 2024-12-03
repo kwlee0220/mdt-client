@@ -3,14 +3,12 @@ package mdt.sample.workflow;
 import mdt.aas.DefaultSubmodelReference;
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
-import mdt.model.MDTModelSerDe;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.workflow.StringOption;
-import mdt.model.workflow.SubmodelRefOption;
 import mdt.model.workflow.WorkflowDescriptors;
 import mdt.task.builtin.HttpTask;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.WorkflowDescriptor;
 
@@ -22,6 +20,7 @@ import mdt.workflow.model.WorkflowDescriptor;
 public class SampleWorkflowDescriptor5 {
 //	private static final String ENDPOINT = "http://129.254.91.134:12985";
 	private static final String ENDPOINT = "http://localhost:12985";
+	private static final String HTTP_OP_SERVER_ENDPOINT = "http://129.254.91.134:12987";
 	
 	public static final void main(String... args) throws Exception {
 		HttpMDTManagerClient mdt = HttpMDTManagerClient.connect(ENDPOINT);
@@ -37,8 +36,8 @@ public class SampleWorkflowDescriptor5 {
 		TaskDescriptor taskDesc;
 		
 		taskDesc = WorkflowDescriptors.newCopyTask("copy-image",
-											"surface/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
-											"surface/표면결함진단/AIInfo.Inputs[0].InputValue");
+											"ktech_inspector/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
+											"ktech_inspector/SurfaceErrorDetection/AIInfo.Inputs[0].InputValue");
 		wfDesc.getTasks().add(taskDesc);
 
 		taskDesc = newHttpTask(manager, "detect-surface-error");
@@ -46,15 +45,17 @@ public class SampleWorkflowDescriptor5 {
 		wfDesc.getTasks().add(taskDesc);
 		
 		taskDesc = WorkflowDescriptors.newCopyTask("copy-result",
-											"surface/표면결함진단/AIInfo.Outputs[0].OutputValue",
-											"surface/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue");
+											"ktech_inspector/SurfaceErrorDetection/AIInfo.Outputs[0].OutputValue",
+											"ktech_inspector/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue");
 		taskDesc.getDependencies().add("detect-surface-error");
 		wfDesc.getTasks().add(taskDesc);
 		
-		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
+//		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 		
-		HttpWorkflowManagerProxy wfManager = mdt.getWorkflowManager();
-		wfManager.addWorkflowDescriptor(wfDesc);
+		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
+		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
+		
+		System.out.println("Workflow id: " + wfId);
 	}
 	
 	private static TaskDescriptor newHttpTask(MDTInstanceManager manager, String id) {
@@ -62,14 +63,14 @@ public class SampleWorkflowDescriptor5 {
 		
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
+
+		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
+		task.getOptions().add(new StringOption("id", "ktech_inspector/SurfaceErrorDetection"));
+		task.getOptions().add(new StringOption("timeout", "1m"));
+		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.getLabels().add(NameValue.of("mdt-submodel", "ktech_inspector/SurfaceErrorDetection"));
 		
-		task.getOptions().add(new StringOption("url", "http://129.254.91.134:12987/operations/surface_error_detection"));
-		task.getOptions().add(new StringOption("timeout", "5m"));
-		task.getOptions().add(new StringOption("logger", "info"));
-		task.getOptions().add(new SubmodelRefOption("submodel", "surface", "표면결함진단"));
-		task.getLabels().add(NameValue.of("mdt-submodel", "surface/표면결함진단"));
-		
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("surface", "표면결함진단");
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("ktech_inspector", "SurfaceErrorDetection");
 		smRef.activate(manager);
 		
 		WorkflowDescriptors.addAIInputOutputVariables(task, smRef);

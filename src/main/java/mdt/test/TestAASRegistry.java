@@ -1,9 +1,8 @@
 package mdt.test;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 
-import mdt.aas.AASRegistry;
+import mdt.aas.ShellRegistry;
 import mdt.client.HttpMDTManagerClient;
 
 /**
@@ -12,22 +11,25 @@ import mdt.client.HttpMDTManagerClient;
  */
 public class TestAASRegistry {
 	public static final void main(String... args) throws Exception {
-		JsonSerializer ser = new JsonSerializer();
-
 		HttpMDTManagerClient mdtClient = HttpMDTManagerClient.connect("http://localhost:12985");
 		
-		AASRegistry registry = mdtClient.getAssetAdministrationShellRegistry();
+		ShellRegistry registry = mdtClient.getAssetAdministrationShellRegistry();
 		for ( AssetAdministrationShellDescriptor aasDesc: registry.getAllAssetAdministrationShellDescriptors() ) {
 			System.out.println(aasDesc);
 		}
 		
 		AssetAdministrationShellDescriptor desc
-			= registry.getAssetAdministrationShellDescriptorById("https://example.com/ids/aas/KR3");
-		System.out.println(ser.write(desc));
+			= registry.getAssetAdministrationShellDescriptorById("https://www.samcheon.com/mdt/Test");
+		System.out.println("Found Shell: " + desc.getId());
 		
 		for ( AssetAdministrationShellDescriptor aasDesc:
-						registry.getAllAssetAdministrationShellDescriptorsByIdShort("KRCW-01ECEM003") ) {
-			System.out.println(aasDesc);
+						registry.getAllAssetAdministrationShellDescriptorsByIdShort("Heater") ) {
+			System.out.println("Found Shell: " + aasDesc.getId());
+		}
+		
+		for ( AssetAdministrationShellDescriptor aasDesc:
+			registry.getAllAssetAdministrationShellDescriptorByAssetId("QualityInspectionEquipment") ) {
+			System.out.println("Found Shell: " + aasDesc.getId());
 		}
 	}
 }

@@ -12,9 +12,8 @@ mainClassName = 'mdt.cli.MDTCommandsMain'
 java {
 	sourceCompatibility = JavaVersion.VERSION_17
 	targetCompatibility = JavaVersion.VERSION_17
-	
-	withSourcesJar()
-	withJavadocJar()
+//	withSourcesJar()
+//	withJavadocJar()
 }
 
 sourceSets {
@@ -27,6 +26,9 @@ sourceSets {
 }
 	
 [compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
+compileJava {
+	options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
+}
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
@@ -55,15 +57,18 @@ dependencies {
 	
 	// Apache libraries
 	implementation "org.apache.commons:commons-text:${commons_text_version}"
-	implementation 'org.apache.poi:poi:5.3.0'
 	
+	// Spring boot
+	implementation "org.springframework.boot:spring-boot-starter-web:${spring_boot_version}"
 	
 	// AAS model
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-parent:${aas4j_version}"
 	
-	implementation "commons-beanutils:commons-beanutils:${commons_beanutils_version}"
+	implementation ("commons-beanutils:commons-beanutils:${commons_beanutils_version}") {
+		exclude group: 'commons-logging', module: 'commons-logging'
+	}
 		
 	// HTTP Client
 	implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: "${okhttp_version}"
@@ -81,6 +86,9 @@ dependencies {
 		
 	// picocli command line parser
 	implementation "info.picocli:picocli:${picocli_version}"
+	annotationProcessor "info.picocli:picocli-codegen:${picocli_version}"
+//	implementation "info.picocli:picocli-shell-jline3:${picocli_version}"
+	implementation "org.fusesource.jansi:jansi:${jansi_version}"
 	
 	// MQTT
 	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"
@@ -89,22 +97,22 @@ dependencies {
 	implementation "org.barfuin.texttree:text-tree:${text_tree_version}"
 }
 
-task sourceJar(type: Jar) {
-	from sourceSets.main.allSource
-}
+//task sourceJar(type: Jar) {
+//	from sourceSets.main.allSource
+//}
 
 test {
 	useJUnitPlatform()
 }
 
- javadoc {
- 	options.encoding = 'UTF-8'
- 	options.links("https://docs.oracle.com/javase/8/docs/api/")
- 	options.links("https://google.github.io/guava/releases/23.0/api/docs/")
- 	options.links("http://reactivex.io/RxJava/javadoc/")
-	
- 	options.addStringOption('Xdoclint:none', '-quiet')
- }
+// javadoc {
+// 	options.encoding = 'UTF-8'
+// 	options.links("https://docs.oracle.com/javase/8/docs/api/")
+// 	options.links("https://google.github.io/guava/releases/23.0/api/docs/")
+// 	options.links("http://reactivex.io/RxJava/javadoc/")
+
+// 	options.addStringOption('Xdoclint:none', '-quiet')
+// }
 
 shadowJar {
 	mergeServiceFiles()

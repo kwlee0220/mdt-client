@@ -107,6 +107,7 @@ public class Fa3stHttpClient implements HttpClientProxy {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private <T> T parseResponse(Response resp, Class<T> valueType) throws RESTfulIOException {
 		try {
 			if ( resp.isSuccessful() ) {

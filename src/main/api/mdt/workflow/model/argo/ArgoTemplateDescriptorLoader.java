@@ -85,14 +85,12 @@ public class ArgoTemplateDescriptorLoader {
 			addCopyTaskOptions(task, args);
 		}
 		else {
-			for ( VariableDescriptor var: task.getVariables() ) {
-				String dir = switch ( var.getKind() ) {
-					case INPUT -> "in";
-					case OUTPUT -> "out";
-					default -> throw new AssertionError();
-				};
-				
-				args.add(String.format("--%s.%s", dir, var.getName()));
+			for ( VariableDescriptor var: task.getInputVariables() ) {
+				args.add(String.format("--in.%s", var.getName()));
+				args.add(var.getValueReference().toStringExpr());
+			}
+			for ( VariableDescriptor var: task.getOutputVariables() ) {
+				args.add(String.format("--out.%s", var.getName()));
 				args.add(var.getValueReference().toStringExpr());
 			}
 		}
@@ -105,16 +103,16 @@ public class ArgoTemplateDescriptorLoader {
 	}
 	
 	private void addSetTaskParameters(TaskDescriptor task, List<String> args) {
-		VariableDescriptor to = task.getVariables().getOfKey("to");
+		VariableDescriptor to = task.getOutputVariables().getOfKey("to");
 		args.add(to.getValueReference().toStringExpr());
 	}
 	private void addSetTaskOptions(TaskDescriptor task, List<String> args) { }
 	
 	private void addCopyTaskParameters(TaskDescriptor task, List<String> args) {
-		VariableDescriptor from = task.getVariables().getOfKey("from");
+		VariableDescriptor from = task.getInputVariables().getOfKey("from");
 		args.add(from.getValueReference().toStringExpr());
 		
-		VariableDescriptor to = task.getVariables().getOfKey("to");
+		VariableDescriptor to = task.getOutputVariables().getOfKey("to");
 		args.add(to.getValueReference().toStringExpr());
 	}
 	private void addCopyTaskOptions(TaskDescriptor task, List<String> args) { }

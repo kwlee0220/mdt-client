@@ -10,12 +10,12 @@ import org.slf4j.LoggerFactory;
 
 import utils.io.FileUtils;
 
-import mdt.cli.MDTCommand;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
+import mdt.cli.AbstractMDTCommand;
+import mdt.client.HttpMDTManagerClient;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.WorkflowDescriptor;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -32,8 +32,9 @@ import picocli.CommandLine.Parameters;
 	description = "Get an MDT Workflow Descriptor.",
 	subcommands = {
 		GetArgoWorkflowScriptCommand.class,
-	})
-public class GetWorkflowDescriptorCommand extends MDTCommand {
+	}
+	)
+public class GetWorkflowDescriptorCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetWorkflowDescriptorCommand.class);
 	
 	@Parameters(index="0", paramLabel="id", description="Workflow id to get")
@@ -55,10 +56,10 @@ public class GetWorkflowDescriptorCommand extends MDTCommand {
 	}
 
 	@Override
-	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerProxy client = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
+	public void run(MDTManager mdt) throws Exception {
+		WorkflowDescriptorService svc = ((HttpMDTManagerClient)mdt).createClient(WorkflowDescriptorService.class);
 		
-		WorkflowDescriptor wfDesc = client.getWorkflowDescriptor(m_wfId);
+		WorkflowDescriptor wfDesc = svc.getWorkflowDescriptor(m_wfId);
 		
 		if ( m_outFile != null ) {
 			m_outFile = m_outFile.getAbsoluteFile();

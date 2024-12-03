@@ -1,7 +1,6 @@
 package mdt.cli;
 
 import java.io.File;
-import java.nio.file.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,7 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description = "Get the endpoint for the client."
 )
-public class EndpointCommand extends MDTCommand {
+public class EndpointCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(EndpointCommand.class);
 	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
 
@@ -38,18 +37,15 @@ public class EndpointCommand extends MDTCommand {
 	}
 	
 	@Override
-	protected final void run(Path homeDir) throws Exception {
+	public final void run() {
 		// 사용자가 명시적으로 client 설정 정보를 지정한 경우에는 이를 통해 MDT Manager에 접속한다.
 		if ( m_clientConfigFile != null ) {
-			MDTClientConfig config = MDTClientConfig.load(m_clientConfigFile);
-			System.out.println(config.getEndpoint() + " (from option '--client_conf'");
-			System.exit(0);
-		}
-		
-		// 사용자가 명시적으로 endpoint를 지정한 경우에는 이를 통해 MDT Manager에 접속한다.
-		if ( m_endpoint != null ) {
-			System.out.println(m_endpoint + " (from option '--endpoint')");
-			System.exit(0);
+			try {
+				MDTClientConfig config = MDTClientConfig.load(m_clientConfigFile);
+				System.out.println(config.getEndpoint() + " (from option '--client_conf')");
+				return;
+			}
+			catch ( Throwable expected ) { }
 		}
 		
 		// 그렇지 않은 경우는 설정 정보를 사용하거나 환경 변수를 활용하여 MDT Manager에 접속한다.
@@ -61,7 +57,7 @@ public class EndpointCommand extends MDTCommand {
 				MDTClientConfig config = MDTClientConfig.load(clientConfigFile);
 				System.out.println(config.getEndpoint()
 									+ " (from configuration file: " + clientConfigFile.getAbsolutePath() + ")");
-				System.exit(0);
+				return;
 			}
 			catch ( Throwable expected ) { }
 		}
@@ -71,11 +67,10 @@ public class EndpointCommand extends MDTCommand {
 		String endpoint = System.getenv("MDT_ENDPOINT");
 		if ( endpoint == null ) {
 			System.out.println(endpoint + " (from environment variable 'MDT_ENDPOINT')");
-			System.exit(0);
+			return;
 		}
 		
 		System.err.println("Cannot get MDTManager's endpoint");
-		System.exit(-1);
 	}
 
 	@Override

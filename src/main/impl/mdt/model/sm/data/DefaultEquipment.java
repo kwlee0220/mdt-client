@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SMListField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;

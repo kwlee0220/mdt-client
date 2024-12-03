@@ -1,17 +1,15 @@
 package mdt.model.sm.data;
 
-import org.barfuin.texttree.api.Node;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.google.common.base.Objects;
 
 import lombok.Getter;
 import lombok.Setter;
+
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SMElementField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
-import mdt.tree.CustomNodeTransform;
-import mdt.tree.sm.data.ParameterValueNode;
 
 
 /**

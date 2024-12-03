@@ -15,18 +15,22 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.io.Files;
 
 import utils.async.Guard;
 import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
+import utils.io.ZipFile;
 import utils.stream.FStream;
 
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.HttpMDTServiceProxy;
 import mdt.client.MDTManagerMqttMessage;
 import mdt.model.InvalidResourceStatusException;
+import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceStatusChangeEvent;
@@ -53,7 +57,9 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 	private static final JsonMapper MAPPER = JsonMapper.builder().findAndAddModules().build();
 	private static final String TOPIC_PREFIX = "/mdt/manager/instances/";
 	private static final int TOPIC_PREFIX_LENGTH = TOPIC_PREFIX.length();
+	public static EventBus EVENT_BUS = new EventBus();
 	
+	private final String m_endpoint;
 	private final HttpRESTfulClient m_restfulClient;
 	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
 	
@@ -61,9 +67,10 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 	@GuardedBy("m_guard") private final Map<String,HttpMDTInstanceClient> m_instances = Maps.newHashMap();
 	
 	private HttpMDTInstanceManagerClient(Builder builder) {
+		m_endpoint = builder.m_endpoint;
 		m_restfulClient = HttpRESTfulClient.builder()
 										.httpClient(builder.m_httpClient)
-										.endpoint(builder.m_endpoint)
+										.jsonMapper(MDTModelSerDe.getJsonMapper())
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(InstanceDescriptorSerDe.MAPPER))
 										.build();
 		
@@ -87,7 +94,7 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 
 			String payload = new String(msg.getMessage().getPayload(), StandardCharsets.UTF_8);
 			InstanceStatusChangeEvent event = MAPPER.readValue(payload, InstanceStatusChangeEvent.class);
-			switch ( event.getStatus() ) {
+			switch ( event.getInstanceStatus() ) {
 				case RUNNING:
 				case STOPPED:
 					inst.reload();
@@ -109,7 +116,7 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 
 	@Override
 	public String getEndpoint() {
-		return m_restfulClient.getEndpoint();
+		return m_endpoint;
 	}
 
     // @GetMapping({"instances/{id}"})
@@ -170,6 +177,7 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 	
 	private static final MediaType OCTET_TYPE = MediaType.parse("application/octet-stream");
 	private static final MediaType JSON_TYPE = MediaType.parse("text/json");
+	private static final MediaType ZIP_TYPE = MediaType.parse("application/zip");
     // @PostMapping({"/instances"})
 	public HttpMDTInstanceClient addInstance(String id, int port, File jarFile, File modelFile, File confFile)
 		throws MDTInstanceManagerException {
@@ -205,6 +213,57 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 	}
 	public HttpMDTInstanceClient addInstance(String id, File jarFile, File modelFile, File confFile) {
 		return addInstance(id, -1, jarFile, modelFile, confFile);
+	}
+	
+	public HttpMDTInstanceClient addInstance(String id, int port, File instanceDir)
+		throws MDTInstanceManagerException {
+		Preconditions.checkNotNull(id);
+		Preconditions.checkNotNull(instanceDir);
+		Preconditions.checkArgument(instanceDir.isDirectory());
+		
+		MultipartBody.Builder builder = new MultipartBody.Builder()
+											.setType(MultipartBody.FORM)
+											.addFormDataPart("id", id)
+											.addFormDataPart("port", ""+port);
+
+		File zippedFile = new File(instanceDir.getParentFile(), id + ".zip");
+		try {
+			// 주어진 디렉토리를 zip 파일로 만들어서 upload 시킨다.
+			ZipFile.zipDirectory(zippedFile.toPath(), instanceDir.toPath());
+			builder.addFormDataPart("bundle", id + ".zip", RequestBody.create(zippedFile, ZIP_TYPE));
+
+			String url = String.format("%s/instances", getEndpoint());
+			RequestBody reqBody = builder.build();
+			InstanceDescriptor desc = m_restfulClient.post(url, reqBody, m_descDeser);
+			
+			return getOrCreateInstance(desc);
+		}
+		catch ( IOException e ) {
+			throw new MDTInstanceManagerException("Failed to add an instance: dir=" + instanceDir, e);
+		}
+		finally {
+			zippedFile.delete();
+		}
+	}
+	
+	public HttpMDTInstanceClient addZippedInstance(String id, int port, File zippedInstanceDir) {
+		Preconditions.checkNotNull(id);
+		Preconditions.checkNotNull(zippedInstanceDir);
+		Preconditions.checkArgument(Files.getFileExtension(zippedInstanceDir.getAbsolutePath()).equals("zip"));
+		
+		MultipartBody.Builder builder = new MultipartBody.Builder()
+											.setType(MultipartBody.FORM)
+											.addFormDataPart("id", id)
+											.addFormDataPart("port", ""+port);
+		
+		// 주어진 디렉토리를 zip 파일로 만들어서 upload 시킨다.
+		builder.addFormDataPart("bundle", id + ".zip", RequestBody.create(zippedInstanceDir, ZIP_TYPE));
+
+		String url = String.format("%s/instances", getEndpoint());
+		RequestBody reqBody = builder.build();
+		InstanceDescriptor desc = m_restfulClient.post(url, reqBody, m_descDeser);
+		
+		return getOrCreateInstance(desc);
 	}
 	
 	private HttpMDTInstanceClient getOrCreateInstance(InstanceDescriptor desc) {

@@ -5,9 +5,9 @@ import java.util.Map;
 
 import org.apache.commons.text.StringSubstitutor;
 
-import utils.stream.FStream;
-
 import lombok.experimental.UtilityClass;
+
+import utils.stream.FStream;
 
 
 /**

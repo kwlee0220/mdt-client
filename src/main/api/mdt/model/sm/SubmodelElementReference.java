@@ -20,7 +20,7 @@ import mdt.model.sm.value.SubmodelElementValue;
 @JsonDeserialize(using = SubmodelElementReferences.Deserializer.class)
 public interface SubmodelElementReference {
 	/**
-	 * SME 저장소에서 {@link SubmodelElement}을 읽는다.
+	 * SME 참조에 해당하는 {@link SubmodelElement}을 읽는다.
 	 * 
 	 * @return	{@link SubmodelElement} 객체.
 	 * @throws	IOException	읽는 과정에서 예외가 발생한 경우.
@@ -28,7 +28,7 @@ public interface SubmodelElementReference {
 	public SubmodelElement read() throws IOException;
 
 	/**
-	 * SME 저장소에서 {@link SubmodelElementValue}을 읽는다.
+	 * SME 참조에 해당하는 {@link SubmodelElement}을 읽어서 value-only serialization 값을 반환한다.
 	 * 
 	 * @return	{@link SubmodelElementValue} 객체.
 	 * @throws	IOException	읽는 과정에서 예외가 발생한 경우.
@@ -36,7 +36,7 @@ public interface SubmodelElementReference {
 	public SubmodelElementValue readValue() throws IOException;
 	
 	/**
-	 * 주어진 SubmodelElement 값으로 대상 SubmodelElement를 overwrite한다.
+	 * 주어진 SubmodelElement으로 SME 참조에 해당하는 SubmodelElement을 overwrite 시킨다. 
 	 *
 	 * @param newElm	갱신할 새 값.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.

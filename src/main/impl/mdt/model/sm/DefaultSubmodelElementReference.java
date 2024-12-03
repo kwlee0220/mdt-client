@@ -174,7 +174,7 @@ public class DefaultSubmodelElementReference extends AbstractSubmodelElementRefe
 
 	public static DefaultSubmodelElementReference newInstance(MDTInstanceManager manager, Reference ref)
 		throws ResourceNotFoundException {
-		Tuple<String,List<String>> info = SubmodelUtils.parseModelReference(ref);
+		Tuple<String,List<String>> info = SubmodelUtils.parseSubmodelReference(ref);
 
 		MDTInstance inst = manager.getInstanceBySubmodelId(info._1);
 		String submodelIdShort = inst.getInstanceSubmodelDescriptorById(info._1).getIdShort();

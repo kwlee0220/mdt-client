@@ -1,7 +1,6 @@
 package mdt.test;
 
 import java.io.File;
-import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -21,10 +20,10 @@ public class TestArgoTaskDescriptor {
 
 //		Map<String,String> arguments = Map.of("simulation-twin", "QC",
 //											"simulation-submodel", "Simulation");
-		Map<String,String> arguments = Map.of("simulation-twin", "QC",
-											"simulation-submodel", "Simulation",
-											"simulation-server-endpoint",
-											"http://129.254.91.75:12987/operations/test-operation");
+//		Map<String,String> arguments = Map.of("simulation-twin", "QC",
+//											"simulation-submodel", "Simulation",
+//											"simulation-server-endpoint",
+//											"http://129.254.91.75:12987/operations/test-operation");
 		ArgoWorkflowDescriptor argoWfDesc = new ArgoWorkflowDescriptor(wfDesc,
 																"http://129.254.91.75:12985",
 																"kwlee0220/mdt-client");

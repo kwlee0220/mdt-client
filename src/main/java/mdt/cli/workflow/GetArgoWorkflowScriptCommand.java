@@ -10,9 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import utils.io.FileUtils;
 
-import mdt.cli.MDTCommand;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
+import mdt.cli.AbstractMDTCommand;
+import mdt.client.HttpMDTManagerClient;
 import mdt.model.MDTManager;
+import mdt.workflow.WorkflowDescriptorService;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -29,7 +30,7 @@ import picocli.CommandLine.ParentCommand;
 	mixinStandardHelpOptions = true,
 	description = "Get an Argo Workflow Descriptor."
 )
-public class GetArgoWorkflowScriptCommand extends MDTCommand {
+public class GetArgoWorkflowScriptCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetArgoWorkflowScriptCommand.class);
 	
 	@ParentCommand GetWorkflowDescriptorCommand m_parent;
@@ -49,19 +50,18 @@ public class GetArgoWorkflowScriptCommand extends MDTCommand {
 	}
 
 	@Override
-	public void run(MDTManager manager) throws Exception {
-		HttpWorkflowManagerProxy wfMgr = (HttpWorkflowManagerProxy)manager.getWorkflowManager();
+	public void run(MDTManager mdt) throws Exception {
+		WorkflowDescriptorService svc = ((HttpMDTManagerClient)mdt).createClient(WorkflowDescriptorService.class);
 		
 		String wfId = m_parent.getWorkflowDescriptorId();
+		String scriptYaml = svc.getArgoWorkflowDescriptor(wfId, m_clientImage);
 		
-		String argoScript = wfMgr.getArgoWorkflowDescriptor(wfId, m_clientImage);
 		if ( m_outFile != null && m_outFile.getParentFile() != null ) {
 			FileUtils.createDirectories(m_outFile.getParentFile());
 		}
-		
 		try ( OutputStream os = (m_outFile != null) ? new FileOutputStream(m_outFile) : System.out;
 				PrintWriter pw = new PrintWriter(os) ) {
-			pw.print(argoScript);
+			pw.print(scriptYaml);
 		}
 	}
 }

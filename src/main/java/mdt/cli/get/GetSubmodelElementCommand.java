@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import utils.StopWatch;
 import utils.UnitUtils;
 
-import mdt.cli.MDTCommand;
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
@@ -24,6 +24,7 @@ import mdt.model.sm.SubmodelElementReferences;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.SubmodelElementValue;
 import mdt.tree.sm.SubmodelElementNodeFactory;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -34,13 +35,12 @@ import picocli.CommandLine.Parameters;
  */
 @Command(
 	name = "element",
-	aliases = {"property", "sme"},
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "Get Submodel's Property information."
+	description = "Get SubmodelElement information."
 )
-public class GetSubmodelElementCommand extends MDTCommand {
+public class GetSubmodelElementCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelElementCommand.class);
 	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
 
@@ -55,6 +55,9 @@ public class GetSubmodelElementCommand extends MDTCommand {
 	@Option(names={"--repeat", "-r"}, paramLabel="interval",
 			description="repeat interval (e.g. \"1s\", \"500ms\"")
 	private String m_repeat = null;
+	
+	@Option(names={"-v"}, description="verbose")
+	private boolean m_verbose = false;
 
 	public static final void main(String... args) throws Exception {
 		main(new GetSubmodelElementCommand(), args);
@@ -93,11 +96,12 @@ public class GetSubmodelElementCommand extends MDTCommand {
 				if ( repeatInterval != null ) {
 					System.out.print(CLEAR_CONSOLE_CONTROL);
 				}
-				System.out.println(outputString);
-				System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
+				System.out.print(outputString);
+				if ( m_verbose ) {
+					System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
+				}
 			}
 			catch ( Exception e ) {
-//				System.out.print(CLEAR_CONSOLE_CONTROL);
 				System.out.println("" + e);
 			}
 			

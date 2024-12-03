@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import utils.stream.FStream;
 
+import mdt.cli.AbstractMDTCommand;
 import mdt.cli.IdPair;
-import mdt.cli.MDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
@@ -24,7 +24,6 @@ import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.service.MDTInstance;
 import mdt.model.service.SubmodelService;
 import mdt.model.sm.SubmodelUtils;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -45,14 +44,14 @@ import picocli.CommandLine.Parameters;
 		GetInstanceLogCommand.class,
 	}
 )
-public class GetMDTInstanceCommand extends MDTCommand {
+public class GetMDTInstanceCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetMDTInstanceCommand.class);
 	
-	@Parameters(index="0", paramLabel="id", description="MDTInstance id to show")
+	@Parameters(index="0", paramLabel="id", description="MDTInstance id to show.")
 	private String m_instanceId;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: 'table', 'json', or 'env')")
+			description="output type (candidnates: 'table' or 'json')")
 	private String m_output = "table";
 
 	public static final void main(String... args) throws Exception {
@@ -68,32 +67,21 @@ public class GetMDTInstanceCommand extends MDTCommand {
 	}
 
 	@Override
-	public void run(MDTManager manager) throws Exception {
-		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
-		HttpMDTInstanceClient instance = client.getInstance(m_instanceId);
+	public void run(MDTManager mdt) throws Exception {
+		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
+		HttpMDTInstanceClient instance = manager.getInstance(m_instanceId);
 		
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
 			displayAsTable(instance);
 		}
 		else if ( m_output.startsWith("json") ) {
-			displayAsJson(instance);
-		}
-		else if ( m_output.equalsIgnoreCase("env") ) {
 			displayEnvironment(instance);
 		}
 		else {
 			System.err.println("Unsupported output: " + m_output);
 			System.exit(-1);
 		}
-	}
-	
-	private void displayAsJson(MDTInstance instance) throws SerializationException {
-		AssetAdministrationShellDescriptor desc = instance.getAASDescriptor();
-		
-		JsonSerializer ser = new JsonSerializer();
-		String jsonStr = ser.write(desc);
-		System.out.println(jsonStr);
 	}
 	
 	private void displayAsTable(HttpMDTInstanceClient instance) {

@@ -3,14 +3,12 @@ package mdt.sample.workflow;
 import mdt.aas.DefaultSubmodelReference;
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.client.workflow.HttpWorkflowManagerProxy;
-import mdt.model.MDTModelSerDe;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.workflow.StringOption;
-import mdt.model.workflow.SubmodelRefOption;
 import mdt.model.workflow.WorkflowDescriptors;
 import mdt.task.builtin.HttpTask;
+import mdt.workflow.WorkflowDescriptorService;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.WorkflowDescriptor;
 
@@ -68,10 +66,12 @@ public class WfThicknessDefectInspection {
 		taskDesc.getDependencies().add("update-defect-list");
 		wfDesc.getTasks().add(taskDesc);
 		
-		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
+//		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 		
-		HttpWorkflowManagerProxy wfManager = mdt.getWorkflowManager();
-		wfManager.addWorkflowDescriptor(wfDesc);
+		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
+		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
+		
+		System.out.println("Workflow id: " + wfId);
 	}
 	
 	private static TaskDescriptor inspectSurfaceThickness(MDTInstanceManager manager, String id) {
@@ -82,8 +82,7 @@ public class WfThicknessDefectInspection {
 		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
 		task.getOptions().add(new StringOption("id", "inspector/ThicknessInspection"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("logger", "info"));
-		task.getOptions().add(new SubmodelRefOption("submodel", "inspector", "ThicknessInspection"));
+		task.getOptions().add(new StringOption("loglevel", "info"));
 		task.getLabels().add(NameValue.of("mdt-submodel", "inspector/ThicknessInspection"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("inspector", "ThicknessInspection");
@@ -102,8 +101,7 @@ public class WfThicknessDefectInspection {
 		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
 		task.getOptions().add(new StringOption("id", "inspector/UpdateDefectList"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("logger", "info"));
-		task.getOptions().add(new SubmodelRefOption("submodel", "inspector", "UpdateDefectList"));
+		task.getOptions().add(new StringOption("loglevel", "info"));
 		task.getLabels().add(NameValue.of("mdt-submodel", "inspector/UpdateDefectList"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("inspector", "UpdateDefectList");

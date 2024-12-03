@@ -4,7 +4,6 @@ import java.util.List;
 
 import utils.InternalException;
 
-import mdt.model.MDTService;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.service.MDTInstance;
 
@@ -14,7 +13,7 @@ import mdt.model.service.MDTInstance;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface MDTInstanceManager extends MDTService {
+public interface MDTInstanceManager {
 	public static final String FA3ST_JAR_FILE_NAME = "faaast-starter-all.jar";
 	public static final String MODEL_FILE_NAME = "model.json";
 	public static final String MODEL_AASX_NAME = "model.aasx";

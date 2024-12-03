@@ -25,14 +25,16 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import lombok.experimental.UtilityClass;
-
 import utils.CSV;
+import utils.Indexed;
 import utils.InternalException;
+import utils.func.FOption;
+import utils.func.Funcs;
 import utils.func.Try;
 import utils.func.Tuple;
 import utils.stream.FStream;
 
+import lombok.experimental.UtilityClass;
 import mdt.aas.DataTypes;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.ai.AI;
@@ -49,6 +51,22 @@ public class SubmodelUtils {
 	public static FStream<String> parseIdShortPath(String idShortPath) {
 		return CSV.parseCsv(idShortPath, '.')
 					.flatMapIterable(seg -> parsePathSegment(seg));
+	}
+	private static final Pattern PATTERN = Pattern.compile("(\\w*)(\\[(d+)\\])?");
+	private static List<String> parsePathSegment(String idShort) {
+		Matcher matcher = PATTERN.matcher(idShort);
+		List<String> matches = Lists.newArrayList();
+		while ( matcher.find() ) {
+			matches.add(matcher.group());
+		}
+		
+		return switch ( matches.size() ) {
+			case 0 -> matches;
+			case 2 -> List.of(matches.get(0));
+			case 4 -> List.of(matches.get(1));
+			case 5 -> List.of(matches.get(0), matches.get(2));
+			default -> throw new AssertionError();
+		};
 	}
 	
 	public static String buildIdShortPath(Iterable<String> segList) {
@@ -117,6 +135,13 @@ public class SubmodelUtils {
 		return current;
 	}
 	
+	/**
+	 * Submodel의 루트에서 시작하여 주어진 idShortPath에 해당하는 SubmodelElement을 탐색한다.
+	 * 
+	 *  @param submodel		탐색 대상 Submodel 객체.
+	 *  @param idShortPath	탐색 경로명.
+	 *  @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 */
 	public static SubmodelElement traverse(Submodel submodel, String idShortPath) throws ResourceNotFoundException {
 		Preconditions.checkNotNull(submodel, "Submodel was null");
 		Preconditions.checkNotNull(idShortPath, "idShortPath was null");
@@ -137,53 +162,52 @@ public class SubmodelUtils {
 		}
 	}
 	
-	public static Tuple<String,List<String>> parseModelReference(Reference ref) {
-		if ( ref.getType() == ReferenceTypes.MODEL_REFERENCE ) {
-			List<Key> keys = ref.getKeys();
-			if ( keys.get(0).getType() != KeyTypes.SUBMODEL ) {
-				String msg = String.format("Unexpected type for the first key: type=%s", keys.get(0).getType());
-				throw new IllegalArgumentException(msg);
-			}
-			
-			ArrayList<String> pathSegs = Lists.newArrayList();
-			for ( int i =0; i < keys.size(); ++i ) {
-				Key key = keys.get(i);
-				switch ( key.getType() ) {
-					case ASSET_ADMINISTRATION_SHELL:
-					case IDENTIFIABLE:
-					case MULTI_LANGUAGE_PROPERTY:
-					case REFERABLE:
-					case SUBMODEL:
-						String msg = String.format("Unexpected type: type=%s", key.getType());
-						throw new IllegalArgumentException(msg);
-					default:
-						try {
-							int idx = Integer.parseInt(key.getValue());
-							if ( i > 1 ) {
-								if ( keys.get(i).getType() == KeyTypes.SUBMODEL_ELEMENT_LIST ) {
-									String last = pathSegs.remove(pathSegs.size()-1);
-									last = String.format("%s[%d]", last, idx);
-									pathSegs.add(last);
-								}
-							}
-							else {
-								String msg2 = String.format("Invalid reference key=%s", key.getValue());
-								throw new IllegalArgumentException(msg2);
-							}
-						}
-						catch ( NumberFormatException e ) {
-							pathSegs.add(key.getValue());
-						}
-						break;
-				}
-			}
-			
-			return Tuple.of(keys.get(0).getValue(), pathSegs);
-		}
-		else {
+	public static Tuple<String,List<String>> parseSubmodelReference(Reference ref) {
+		if ( ref.getType() != ReferenceTypes.MODEL_REFERENCE ) {
 			String msg = String.format("Not ModelReference: type=%s", ref.getType());
 			throw new IllegalArgumentException(msg);
 		}
+		
+		List<Key> keys = ref.getKeys();
+		if ( keys.get(0).getType() != KeyTypes.SUBMODEL ) {
+			String msg = String.format("Not Submodel Reference: first-key type=%s", keys.get(0).getType());
+			throw new IllegalArgumentException(msg);
+		}
+		
+		ArrayList<String> pathSegs = Lists.newArrayList();
+		for ( int i =0; i < keys.size(); ++i ) {
+			Key key = keys.get(i);
+			switch ( key.getType() ) {
+				case ASSET_ADMINISTRATION_SHELL:
+				case IDENTIFIABLE:
+				case MULTI_LANGUAGE_PROPERTY:
+				case REFERABLE:
+				case SUBMODEL:
+					String msg = String.format("Unexpected type: type=%s", key.getType());
+					throw new IllegalArgumentException(msg);
+				default:
+					try {
+						int idx = Integer.parseInt(key.getValue());
+						if ( i > 1 ) {
+							if ( keys.get(i).getType() == KeyTypes.SUBMODEL_ELEMENT_LIST ) {
+								String last = pathSegs.remove(pathSegs.size()-1);
+								last = String.format("%s[%d]", last, idx);
+								pathSegs.add(last);
+							}
+						}
+						else {
+							String msg2 = String.format("Invalid reference key=%s", key.getValue());
+							throw new IllegalArgumentException(msg2);
+						}
+					}
+					catch ( NumberFormatException e ) {
+						pathSegs.add(key.getValue());
+					}
+					break;
+			}
+		}
+		
+		return Tuple.of(keys.get(0).getValue(), pathSegs);
 	}
 	
 	public static String getShortSubmodelSemanticId(String semanticIdStr) {
@@ -194,6 +218,38 @@ public class SubmodelUtils {
 			case AI.SEMANTIC_ID -> "AI";
 			default -> throw new InternalException("unknown Submodel " + semanticIdStr);
 		};
+	}
+	
+	public static FOption<Indexed<SubmodelElement>> findFieldById(SubmodelElementCollection smc, String fieldName) {
+		return Funcs.findFirstIndexed(smc.getValue(), field -> field.getIdShort().equals(fieldName));
+	}
+	public static Indexed<SubmodelElement> getFieldById(SubmodelElementCollection smc, String fieldName)
+			throws IllegalArgumentException {
+		return findFieldById(smc, fieldName)
+					.getOrThrow(() -> {
+					String fieldNames = FStream.from(smc.getValue())
+												.map(SubmodelElement::getIdShort)
+												.join(", ");
+					String msg = String.format("Failed to find the field '%s' from %s{%s}",
+												fieldName, smc.getIdShort(), fieldNames);
+					return new IllegalArgumentException(msg);
+				});
+	}
+
+	public static FOption<Indexed<SubmodelElement>> findFieldById(SubmodelElementList sml, String fieldName) {
+		return Funcs.findFirstIndexed(sml.getValue(), field -> field.getIdShort().equals(fieldName));
+	}
+	public static Indexed<SubmodelElement> getFieldById(SubmodelElementList sml, String fieldName)
+		throws IllegalArgumentException {
+		return findFieldById(sml, fieldName)
+				.getOrThrow(() -> {
+					String fieldNames = FStream.from(sml.getValue())
+												.map(SubmodelElement::getIdShort)
+												.join(", ");
+					String msg = String.format("Failed to find the field '%s' from %s{%s}",
+												fieldName, sml.getIdShort(), fieldNames);
+					return new IllegalArgumentException(msg);
+				});
 	}
 	
 
@@ -295,23 +351,6 @@ public class SubmodelUtils {
 		
 		KeyTypes type = KEY_TYPES_MAP.get(matcher.group(1));
 		return new DefaultKey.Builder().type(type).value(matcher.group(2)).build();
-	}
-
-	private static final Pattern PATTERN = Pattern.compile("(\\w*)(\\[(d+)\\])?");
-	private static List<String> parsePathSegment(String idShort) {
-		Matcher matcher = PATTERN.matcher(idShort);
-		List<String> matches = Lists.newArrayList();
-		while ( matcher.find() ) {
-			matches.add(matcher.group());
-		}
-		
-		return switch ( matches.size() ) {
-			case 0 -> matches;
-			case 2 -> List.of(matches.get(0));
-			case 4 -> List.of(matches.get(1));
-			case 5 -> List.of(matches.get(0), matches.get(2));
-			default -> throw new AssertionError();
-		};
 	}
 	
 	private static final Map<String,KeyTypes> KEY_TYPES_MAP = Maps.newHashMap();

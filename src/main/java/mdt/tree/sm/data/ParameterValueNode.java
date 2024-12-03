@@ -10,7 +10,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
 import utils.func.FOption;
 
-import mdt.model.MDTModelSerDe;
 import mdt.model.sm.data.DefaultEquipmentParameterValue;
 import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.value.ElementValues;
@@ -43,11 +42,14 @@ public final class ParameterValueNode implements Node {
 	public String getText() {
 		String idStr = m_paramValue.getParameterId();
 		SubmodelElement valueSme = m_paramValue.getParameterValue();
-		String valueStr = MDTModelSerDe.toJsonString(ElementValues.getValue(valueSme));
+		String valueStr = ElementValues.toExternalString(valueSme);
 		String tsStr = m_paramValue.getEventDateTime();
-		tsStr = FOption.mapOrElse(tsStr, t -> String.format(" (%s)", t), "");
+		tsStr = (tsStr != null && tsStr.length() > 0) ? String.format(" (%s)", tsStr) : "";
 		
-		if ( valueSme instanceof Property prop ) {
+		if ( valueSme == null ) {
+			return String.format("%s%s (unknown): null", m_prefix, idStr);
+		}
+		else if ( valueSme instanceof Property prop ) {
 			valueStr = FOption.getOrElse(valueStr, "N/A");
 			return String.format("%s%s (%s): %s%s", m_prefix, idStr, prop.getValueType(), valueStr, tsStr);
 		}
@@ -61,7 +63,7 @@ public final class ParameterValueNode implements Node {
 			return String.format("%s%s (SML):%s", m_prefix, idStr, tsStr);
 		}
 		else {
-			return m_prefix + "unknown";
+			return String.format("%s%s (unknown): unknown", m_prefix, idStr);
 		}
 	}
 

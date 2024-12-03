@@ -19,8 +19,9 @@ import mdt.model.sm.data.Equipment;
 import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.info.ComponentItem;
 import mdt.model.sm.info.CompositionDependency;
+import mdt.model.sm.value.ElementValues;
 import mdt.tree.CustomNodeTransform;
-import mdt.tree.FileNode;
+import mdt.tree.TextNode;
 import mdt.tree.sm.CustomNodeTransforms.ComponentItemTransform;
 import mdt.tree.sm.CustomNodeTransforms.CompositionDependencyTransform;
 import mdt.tree.sm.CustomNodeTransforms.InputTransform;
@@ -45,9 +46,15 @@ public class SubmodelElementNodeFactory {
 	}
 	
 	public static Node toNode(String prefix, SubmodelElement smElm) {
+		return toNode(prefix, smElm.getIdShort(), smElm);
+	}
+	
+	public static Node toNode(String prefix, String id, SubmodelElement smElm) {
 		if ( smElm instanceof Property p ) {
-			String value = p.getValue() != null ?  p.getValue().trim() : null;
-			return (value == null || value.length() == 0) ? null : new PropertyNode(prefix, p);
+			return DataElementNodes.fromProperty(prefix, id, p);
+		}
+		else if ( smElm instanceof File file ) {
+			return DataElementNodes.fromFile(prefix, id, file);
 		}
 		else if ( smElm instanceof SubmodelElementCollection smc) {
 			String semanticIdStr = ReferenceUtils.getSemanticIdStringOrNull(smc.getSemanticId());
@@ -65,10 +72,8 @@ public class SubmodelElementNodeFactory {
 		else if ( smElm instanceof Operation op) {
 			return new AASOperationNode(op);
 		}
-		else if ( smElm instanceof File file) {
-			return new FileNode(file);
+		else {
+			return new TextNode(ElementValues.toExternalString(smElm));
 		}
-
-		return null;
 	}
 }

@@ -1,0 +1,127 @@
+package mdt.cli;
+
+import java.io.File;
+
+import org.slf4j.LoggerFactory;
+
+import utils.LoggerSettable;
+import utils.Throwables;
+import utils.func.FOption;
+
+import mdt.client.HttpMDTManagerClient;
+import mdt.client.MDTClientConfig;
+import mdt.model.MDTManager;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
+import picocli.CommandLine.Option;
+
+
+/**
+ *
+ * @author Kang-Woo Lee (ETRI)
+ */
+public abstract class AbstractMDTCommand implements Runnable, LoggerSettable {
+	private org.slf4j.Logger m_logger;
+	private Level m_logLevel = null;
+	
+	@Option(names={"--client_conf"}, paramLabel="path", required=false,
+			description={"MDTManager configuration file path"})
+	protected File m_clientConfigFile;
+	
+	abstract protected void run(MDTManager mdt) throws Exception;
+	
+	public AbstractMDTCommand() {
+		setLogger(LoggerFactory.getLogger(AbstractMDTCommand.class));
+	}
+	
+	@Option(names={"--loglevel"}, paramLabel="logger-level",
+					description={"Logger level: debug, info, warn, or error"})
+	public void setLoggerLevel(String level) {
+		switch ( level.toLowerCase() ) {
+			case "off":
+				m_logLevel = Level.OFF;
+				break;
+			case "trace":
+				m_logLevel = Level.TRACE;
+				break;
+			case "debug":
+				m_logLevel = Level.DEBUG;
+				break;
+			case "info":
+				m_logLevel = Level.INFO;
+				break;
+			case "warn":
+				m_logLevel = Level.WARN;
+				break;
+			case "error":
+				m_logLevel = Level.ERROR;
+				break;
+			default:
+				throw new IllegalArgumentException("invalid logger level: " + level);
+		}
+	}
+
+	@Override
+	public org.slf4j.Logger getLogger() {
+		return m_logger;
+	}
+
+	@Override
+	public void setLogger(org.slf4j.Logger logger) {
+		m_logger = FOption.getOrElse(logger, () -> LoggerFactory.getLogger(AbstractMDTCommand.class));
+	}
+	
+	@Override
+	public void run() {
+		if ( m_logLevel != null ) {
+			Logger root = (Logger)LoggerFactory.getLogger("mdt");
+			root.setLevel(m_logLevel);
+		}
+
+		HttpMDTManagerClient mdt;
+		
+		try {
+			// 사용자가 명시적으로 client 설정 정보를 지정한 경우에는 이를 통해 MDT Manager에 접속한다.
+			if ( m_clientConfigFile != null ) {
+				MDTClientConfig config = MDTClientConfig.load(m_clientConfigFile);
+				mdt = HttpMDTManagerClient.connect(config);
+			}
+			// 그렇지 않은 경우는 설정 정보를 사용하거나 환경 변수를 활용하여 MDT Manager에 접속한다.
+			else {
+				mdt = HttpMDTManagerClient.connectWithDefault();
+			}
+			if ( getLogger().isDebugEnabled() ) {
+				getLogger().debug("connecting to MDTInstanceManager {}", mdt.getEndpoint());
+			}
+			
+			run(mdt);
+		}
+		catch ( Throwable e ) {
+			Throwable cause = Throwables.unwrapThrowable(e);
+			
+			System.err.printf("failed: %s%n", cause);
+			System.exit(-1);
+		}
+	}
+
+	protected static final void main(AbstractMDTCommand cmd, String... args) throws Exception {
+		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(110);
+		try {
+			commandLine.parseArgs(args);
+
+			if ( commandLine.isUsageHelpRequested() ) {
+				commandLine.usage(System.out, Ansi.OFF);
+			}
+			else {
+				cmd.run();
+			}
+		}
+		catch ( Throwable e ) {
+			System.err.println(e);
+			commandLine.usage(System.out, Ansi.OFF);
+		}
+	}
+}

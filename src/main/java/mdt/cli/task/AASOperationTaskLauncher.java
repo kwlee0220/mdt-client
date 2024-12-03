@@ -13,7 +13,7 @@ import picocli.CommandLine.Command;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "aas",
+	name = "operation",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,

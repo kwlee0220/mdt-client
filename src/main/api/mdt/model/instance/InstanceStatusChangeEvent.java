@@ -3,10 +3,12 @@ package mdt.model.instance;
 import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import utils.InternalException;
 import utils.func.FOption;
 
 import mdt.model.MDTManagerEvent;
@@ -19,28 +21,28 @@ import mdt.model.MDTManagerEvent;
 @JsonInclude(Include.NON_NULL)
 public class InstanceStatusChangeEvent extends MDTManagerEvent {
 	private final String m_instanceId;
-	private final MDTInstanceStatus m_status;
+	private final String m_statusChange;
 	@Nullable private final String m_serviceEndpoint;
 	
 	@JsonCreator
 	private InstanceStatusChangeEvent(@JsonProperty("eventType") String eventType,
 										@JsonProperty("instanceId") String instanceId,
-										@JsonProperty("status") MDTInstanceStatus status,
+										@JsonProperty("statusChange") String status,
 										@JsonProperty("serviceEndpoint") String ep) {
 		super(eventType);
 		
 		m_instanceId = instanceId;
-		m_status = status;
+		m_statusChange = status;
 		m_serviceEndpoint = ep;
 	}
 
 	private InstanceStatusChangeEvent(@JsonProperty("instanceId") String instanceId,
-										@JsonProperty("status") MDTInstanceStatus status,
+										@JsonProperty("statusChange") String status,
 										@JsonProperty("serviceEndpoint") String ep) {
 		super(InstanceStatusChangeEvent.class.getName());
 		
 		m_instanceId = instanceId;
-		m_status = status;
+		m_statusChange = status;
 		m_serviceEndpoint = ep;
 	}
 	
@@ -49,9 +51,9 @@ public class InstanceStatusChangeEvent extends MDTManagerEvent {
 		return m_instanceId;
 	}
 	
-	@JsonProperty("status")
-	public MDTInstanceStatus getStatus() {
-		return m_status;
+	@JsonProperty("statusChange")
+	public String getStatusChange() {
+		return m_statusChange;
 	}
 	
 	@JsonProperty("serviceEndpoint")
@@ -59,38 +61,52 @@ public class InstanceStatusChangeEvent extends MDTManagerEvent {
 		return m_serviceEndpoint;
 	}
 	
+	@JsonIgnore
+	public MDTInstanceStatus getInstanceStatus() {
+		try {
+			return MDTInstanceStatus.valueOf(m_statusChange);
+		}
+		catch ( Exception e ) {
+			return switch ( m_statusChange ) {
+				case "ADD_FAILED" -> MDTInstanceStatus.REMOVED;
+				case "ADDED" -> MDTInstanceStatus.STOPPED;
+				default -> throw new InternalException("Invalid statuc-change: " + m_statusChange);
+			};
+		}
+	}
+	
 	@Override
 	public String toString() {
 		String epStr = FOption.mapOrElse(this.m_serviceEndpoint, ep -> String.format(", endpoint=%s", ep), ""); 
-		return String.format("InstanceStatusChangeEvent(instanceId=%s, status=%s%s)",
-							this.m_instanceId, this.m_status, epStr);
+		return String.format("InstanceStatusChangeEvent(instanceId=%s, statusChange=%s%s)",
+							this.m_instanceId, this.m_statusChange, epStr);
 	}
 
 	public static InstanceStatusChangeEvent ADDING(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.ADDING, null);
+		return new InstanceStatusChangeEvent(instanceId, "ADDING", null);
 	}
 	public static InstanceStatusChangeEvent ADD_FAILED(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.REMOVED, null);
+		return new InstanceStatusChangeEvent(instanceId, "ADD_FAILED", null);
 	}
 	public static InstanceStatusChangeEvent ADDED(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.STOPPED, null);
+		return new InstanceStatusChangeEvent(instanceId, "ADDED", null);
 	}
 	public static InstanceStatusChangeEvent STOPPED(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.STOPPED, null);
+		return new InstanceStatusChangeEvent(instanceId, "STOPPED", null);
 	}
 	public static InstanceStatusChangeEvent STARTING(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.STARTING, null);
+		return new InstanceStatusChangeEvent(instanceId, "STARTING", null);
 	}
 	public static InstanceStatusChangeEvent RUNNING(String instanceId, String svcEp) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.RUNNING, svcEp);
+		return new InstanceStatusChangeEvent(instanceId, "RUNNING", svcEp);
 	}
 	public static InstanceStatusChangeEvent STOPPING(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.STOPPING, null);
+		return new InstanceStatusChangeEvent(instanceId, "STOPPING", null);
 	}
 	public static InstanceStatusChangeEvent FAILED(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.FAILED, null);
+		return new InstanceStatusChangeEvent(instanceId, "FAILED", null);
 	}
 	public static InstanceStatusChangeEvent REMOVED(String instanceId) {
-		return new InstanceStatusChangeEvent(instanceId, MDTInstanceStatus.REMOVED, null);
+		return new InstanceStatusChangeEvent(instanceId, "REMOVED", null);
 	}
 }

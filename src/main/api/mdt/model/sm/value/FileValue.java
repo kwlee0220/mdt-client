@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import lombok.Data;
 
+import utils.func.FOption;
+
 /**
  *
  * @author Kang-Woo Lee (ETRI)
@@ -26,5 +28,10 @@ public final class FileValue implements DataElementValue {
 		gen.writeStringField("contentType", this.contentType);
 		gen.writeStringField("value", this.value);
 		gen.writeEndObject();
+	}
+	
+	@Override
+	public String toString() {
+		return String.format("%s (%s)", FOption.getOrElse(this.value, "None"), this.contentType);
 	}
 }

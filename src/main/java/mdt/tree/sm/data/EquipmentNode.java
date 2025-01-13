@@ -8,15 +8,15 @@ import utils.func.FOption;
 import mdt.model.sm.data.DefaultEquipment;
 import mdt.model.sm.data.Equipment;
 import mdt.tree.CustomNodeTransform;
+import mdt.tree.TitleUpdatableNode;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class EquipmentNode extends ParameterCollectionNode {
-	private final String m_prefix;
-	private final Equipment m_equipment;
+public final class EquipmentNode extends ParameterCollectionNode implements TitleUpdatableNode {
+	private String m_title;
 	
 	public static class Transform implements CustomNodeTransform {
 		@Override
@@ -29,14 +29,18 @@ public final class EquipmentNode extends ParameterCollectionNode {
 	
 	public EquipmentNode(String prefix, Equipment equipment) {
 		super(equipment);
-		
-		m_prefix = prefix;
-		m_equipment = equipment;
+
+		String nameStr = FOption.getOrElse(equipment.getEquipmentName(), equipment.getEquipmentId());
+		m_title = String.format("%sEquipment (%s)", prefix, nameStr);
 	}
 
 	@Override
-	public String getText() {
-		String nameStr = FOption.getOrElse(m_equipment.getEquipmentName(), m_equipment.getEquipmentId());
-		return String.format("%sEquipment (%s)", m_prefix, nameStr);
+	public String getTitle() {
+		return m_title;
+	}
+
+	@Override
+	public void setTitle(String title) {
+		m_title = title;
 	}
 }

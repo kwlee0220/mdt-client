@@ -3,6 +3,7 @@ package mdt.task.builtin;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -11,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +42,7 @@ import mdt.task.TaskException;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpTask extends AbstractThreadedExecution<List<Parameter>> implements MDTTask {
+public class HttpTask extends AbstractThreadedExecution<Map<String,SubmodelElement>> implements MDTTask {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpTask.class);
 	private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 
@@ -69,7 +71,7 @@ public class HttpTask extends AbstractThreadedExecution<List<Parameter>> impleme
 	}
 
 	@Override
-	protected List<Parameter> executeWork() throws InterruptedException, CancellationException,
+	protected Map<String,SubmodelElement> executeWork() throws InterruptedException, CancellationException,
 													TimeoutException, Exception {
 		try {
 			OperationRequestBody reqBody = buildParametersBody();
@@ -88,7 +90,7 @@ public class HttpTask extends AbstractThreadedExecution<List<Parameter>> impleme
 												.build();
 			});
 			
-			List<Parameter> outputValues = m_httpOp.run();
+			Map<String,SubmodelElement> outputValues = m_httpOp.run();
 			if ( s_logger.isInfoEnabled() ) {
 				s_logger.info("HttpTask terminates");
 			}
@@ -119,6 +121,7 @@ public class HttpTask extends AbstractThreadedExecution<List<Parameter>> impleme
 			Throwable cause = Throwables.unwrapThrowable(e);
 			
 			Throwables.throwIfInstanceOf(cause, TimeoutException.class);
+			Throwables.throwIfInstanceOf(cause, TaskException.class);
 			throw new TaskException(cause);
 		}
 		catch ( Throwable e ) {

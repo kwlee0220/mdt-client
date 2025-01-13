@@ -35,7 +35,6 @@ import mdt.client.workflow.HttpServiceClientFactoryRegistry;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.workflow.WorkflowDescriptorService;
-
 import okhttp3.OkHttpClient;
 
 /**
@@ -174,7 +173,10 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 	 * @return	{@link SubmodelRegistry} proxy 객체
 	 */
 	public SubmodelRegistry getSubmodelRegistry() {
-		return createClient(SubmodelRegistry.class);
+		String endpoint = String.format("%s%s", getEndpoint(), SUBMODEL_REGISTRY_SUFFIX);
+		return new HttpSubmodelRegistryClient(m_restfulClient.getHttpClient(), endpoint);
+//		return createClient(SubmodelRegistry.class);
+		
 	}
 	
 	public HttpMDTInstanceManagerClient getInstanceManager() {
@@ -186,6 +188,8 @@ public class HttpMDTManagerClient implements MDTManager, HttpClientProxy {
 	}
 	
 	public WorkflowDescriptorService getWorkflowDescriptorService() {
+//		String endpoint = String.format("%s%s", getEndpoint(), SUBMODEL_REGISTRY_SUFFIX);
+//		return new HttpSubmodelRegistryClient(m_restfulClient.getHttpClient(), endpoint);
 		return createClient(WorkflowDescriptorService.class);
 	}
 	

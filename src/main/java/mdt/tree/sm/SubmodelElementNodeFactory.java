@@ -73,7 +73,7 @@ public class SubmodelElementNodeFactory {
 			return new AASOperationNode(op);
 		}
 		else {
-			return new TextNode(ElementValues.toExternalString(smElm));
+			return new TextNode(ElementValues.toRawString(smElm));
 		}
 	}
 }

@@ -42,7 +42,7 @@ public final class ParameterValueNode implements Node {
 	public String getText() {
 		String idStr = m_paramValue.getParameterId();
 		SubmodelElement valueSme = m_paramValue.getParameterValue();
-		String valueStr = ElementValues.toExternalString(valueSme);
+		String valueStr = ElementValues.toRawString(valueSme);
 		String tsStr = m_paramValue.getEventDateTime();
 		tsStr = (tsStr != null && tsStr.length() > 0) ? String.format(" (%s)", tsStr) : "";
 		

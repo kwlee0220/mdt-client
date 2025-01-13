@@ -1,6 +1,6 @@
 package mdt.task;
 
-import mdt.model.sm.SubmodelReference;
+import mdt.model.sm.ref.SubmodelReference;
 
 /**
  *

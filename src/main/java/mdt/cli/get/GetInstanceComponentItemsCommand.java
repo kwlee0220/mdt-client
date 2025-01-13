@@ -32,7 +32,7 @@ import picocli.CommandLine.ParentCommand;
 public class GetInstanceComponentItemsCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceComponentItemsCommand.class);
 	
-	@ParentCommand GetMDTInstanceCommand m_parent;
+	@ParentCommand GetInstanceCommand m_parent;
 
 	public static final void main(String... args) throws Exception {
 		main(new GetInstanceComponentItemsCommand(), args);

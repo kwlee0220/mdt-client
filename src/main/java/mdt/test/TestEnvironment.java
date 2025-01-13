@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 
+import utils.io.FileUtils;
+
 import mdt.model.MDTModelSerDe;
 
 /**
@@ -16,7 +18,8 @@ public class TestEnvironment {
 	public static final void main(String... args) throws Exception {
 		JsonDeserializer deser = MDTModelSerDe.getJsonDeserializer();
 
-		try ( FileInputStream fis = new FileInputStream(new File("C:\\Temp\\mdt\\mdt-instances\\내함_성형_\\model.json")) ) {
+		File modelFile = FileUtils.path(System.getenv("MDT_HOME"), "models", "innercase", "inspector", "model.json");
+		try ( FileInputStream fis = new FileInputStream(modelFile) ) {
 			Environment env = deser.read(fis, Environment.class);
 			System.out.println(env);
 		}

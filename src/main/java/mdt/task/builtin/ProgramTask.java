@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -20,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import utils.InternalException;
 import utils.KeyValue;
@@ -29,8 +28,8 @@ import utils.Throwables;
 import utils.async.AbstractThreadedExecution;
 import utils.async.CancellableWork;
 import utils.async.CommandExecution;
-import utils.async.CommandExecution.FileVariable;
-import utils.async.CommandExecution.Variable;
+import utils.async.CommandVariable;
+import utils.async.CommandVariable.FileVariable;
 import utils.async.Guard;
 import utils.func.FOption;
 import utils.io.FileUtils;
@@ -38,14 +37,13 @@ import utils.io.IOUtils;
 import utils.stream.FStream;
 
 import mdt.aas.DataTypes;
-import mdt.aas.DefaultSubmodelReference;
 import mdt.client.operation.OperationUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.MDTFile;
-import mdt.model.sm.MDTInstanceManagerAwareReference;
-import mdt.model.sm.MDTSubmodelElementReference;
-import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.AASFile;
+import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.ref.MDTInstanceManagerAwareReference;
 import mdt.model.sm.value.PropertyValue;
 import mdt.task.MDTTask;
 import mdt.task.OperationExecutionContext;
@@ -54,15 +52,20 @@ import mdt.task.TaskException;
 
 
 /**
+ * 실행 파일 프로그램을 실행하는 태스크.
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> implements MDTTask, CancellableWork  {
+public class ProgramTask extends AbstractThreadedExecution<Map<String,SubmodelElement>>
+							implements MDTTask, CancellableWork  {
 	private static final Logger s_logger = LoggerFactory.getLogger(ProgramTask.class);
 
 	private volatile MDTInstanceManager m_manager;
 	private final ProgramOperationDescriptor m_descriptor;
-	private List<Parameter> m_outputValues;
+	
+	private final Map<String,Parameter> m_inputParameters;
+	private final Map<String,Parameter> m_outputParameters;
+	private Map<String,SubmodelElement> m_outputValues;
 	
 	private final Guard m_guard = Guard.create();
 	@GuardedBy("m_guard") private CommandExecution m_cmdExec;
@@ -71,6 +74,10 @@ public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> impl
 		Preconditions.checkNotNull(descriptor);
 
 		m_descriptor = descriptor;
+		m_inputParameters = FStream.from(m_descriptor.getInputParameters())
+                                    .toMap(Parameter::getName);
+		m_outputParameters = FStream.from(m_descriptor.getOutputParameters())
+				                    .toMap(Parameter::getName);	
 	}
 	
 	public void setMDTInstanceManager(MDTInstanceManager manager) {
@@ -86,6 +93,14 @@ public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> impl
 		m_descriptor.setWorkingDirectory(dir);
 	}
 	
+	public Map<String,Parameter> getInputParameters() {
+        return m_inputParameters;
+	}
+	
+	public Map<String, Parameter> getOutputParameters() {
+		return m_outputParameters;
+	}
+	
 	public void addOrReplaceInputParameter(Parameter param) {
 		m_descriptor.getInputParameters().addOrReplace(param);
 	}
@@ -94,7 +109,7 @@ public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> impl
 		m_descriptor.getOutputParameters().addOrReplace(param);
 	}
 	
-	public List<Parameter> getOutputValues() {
+	public Map<String,SubmodelElement> getOutputValues() {
 		Preconditions.checkState(m_outputValues != null, "Task has not been completed");
 		
 		return m_outputValues;
@@ -137,8 +152,8 @@ public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> impl
 	}
 
 	@Override
-	protected List<Parameter> executeWork() throws InterruptedException, CancellationException,
-													TimeoutException, Exception {
+	protected Map<String,SubmodelElement> executeWork() throws InterruptedException, CancellationException,
+																TimeoutException, Exception {
 		Instant started = Instant.now();
 
 		OperationExecutionContext context = buildContext(m_manager);
@@ -153,29 +168,25 @@ public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> impl
 		try {
 			m_cmdExec.executeWork();
 	
-			Map<String,Variable> cmdVarMap = m_cmdExec.getVariableMap();
-			List<Parameter> outputValues = Lists.newArrayList();
+			Map<String,CommandVariable> cmdVarMap = m_cmdExec.getVariableMap();
+			Map<String,SubmodelElement> outputValues = Maps.newHashMap();
 			
 			// CommandVariable들 중에서 output parameter의 이름과 동일한 varaible의
-			// 값을 해당 parameter의 SubmodelElement에 반영시킨다.
+			// 값을 해당 parameter의 SubmodelElement을 갱신시킨다.
 			FStream.from(context.getOutputParameters())
 					.innerJoin(FStream.from(cmdVarMap), Parameter::getName, KeyValue::key)
 					.forEach(match -> {
 						Parameter target = match._1;
-						Variable cmdVar = match._2.value();
+						CommandVariable cmdVar = match._2.value();
 
 						try {
-							if ( target.getReference() != null ) {
-								target.getReference().updateWithExternalString(cmdVar.getValue());
-								if ( s_logger.isInfoEnabled() ) {
-									s_logger.info("update output parameter[{}]: {}",
-													target.getName(), cmdVar.getValue());
-								}
+							SubmodelElement updated = target.getReference().updateWithRawString(cmdVar.getValue());
+							if ( s_logger.isInfoEnabled() ) {
+								s_logger.info("update output parameter[{}]: {}",
+												target.getName(), cmdVar.getValue());
 							}
-							else {
-								ElementValues.updateWithExternalString(target.getReference().read(), cmdVar.getValue());
-								outputValues.add(target);
-							}
+							
+							outputValues.put(target.getName(), updated);
 						}
 						catch ( IOException e ) {
 							s_logger.error("Failed to update output parameter[{}]: {}, cause={}",
@@ -224,6 +235,12 @@ public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> impl
 			if ( param.getReference() instanceof MDTInstanceManagerAwareReference aware ) {
 				aware.activate(manager);
 			}
+			
+			// 만일 output parameter와 동일한 이름의 parameter가 input parameter에도 존재하는 경우에는
+			// 'output' parameter가 input parameter도 포함하기 때문에 같이 갱신한다.
+			if ( execContext.getInputParameters().containsKey(param.getName()) ) {
+				execContext.getInputParameters().addOrReplace(param);
+			}
 			execContext.getOutputParameters().addOrReplace(param);
 		}
 		
@@ -261,8 +278,8 @@ public class ProgramTask extends AbstractThreadedExecution<List<Parameter>> impl
 			SubmodelElement data = param.getReference().read();
 			
 			if ( data instanceof org.eclipse.digitaltwin.aas4j.v3.model.File ) {
-				MDTSubmodelElementReference dref = (MDTSubmodelElementReference)param.getReference();
-				MDTFile mdtFile = dref.getSubmodelService().getFileByPath(dref.getElementIdShortPath());
+				MDTElementReference dref = (MDTElementReference)param.getReference();
+				AASFile mdtFile = dref.getSubmodelService().getFileByPath(dref.getElementPath());
 				
 				String fileName = String.format("%s.%s", param.getName(),
 														FilenameUtils.getExtension(mdtFile.getPath()));

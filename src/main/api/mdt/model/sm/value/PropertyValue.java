@@ -21,4 +21,9 @@ public class PropertyValue implements DataElementValue {
 	public void serialize(JsonGenerator gen) throws IOException {
 		gen.writeString(value);
 	}
+	
+	@Override
+	public String toString() {
+		return value;
+	}
 }

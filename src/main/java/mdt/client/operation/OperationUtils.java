@@ -28,23 +28,23 @@ import utils.func.FOption;
 import utils.io.IOUtils;
 import utils.stream.FStream;
 
-import mdt.aas.DefaultSubmodelReference;
 import mdt.model.Input;
 import mdt.model.MDTModelSerDe;
 import mdt.model.Output;
 import mdt.model.ReferenceUtils;
 import mdt.model.service.SubmodelService;
-import mdt.model.sm.DefaultSubmodelElementReference;
-import mdt.model.sm.MDTFile;
-import mdt.model.sm.MDTSubmodelElementReference;
-import mdt.model.sm.MDTSubmodelReference;
-import mdt.model.sm.SubmodelElementReference;
+import mdt.model.sm.AASFile;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.DefaultEquipment;
 import mdt.model.sm.data.DefaultOperation;
 import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.info.DefaultMDTInfo;
+import mdt.model.sm.ref.DefaultElementReference;
+import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.simulation.DefaultSimulationInfo;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.ElementValues;
@@ -96,16 +96,16 @@ public class OperationUtils {
 		
 		if ( sme instanceof Property ) {
 			File paramFile = new File(dir, param.getName());
-			IOUtils.toFile(ElementValues.toExternalString(sme), StandardCharsets.UTF_8, paramFile);
+			IOUtils.toFile(ElementValues.toRawString(sme), StandardCharsets.UTF_8, paramFile);
 			return paramFile;
 		}
 		else if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File ) {
-			Preconditions.checkArgument(param.getReference() instanceof MDTSubmodelElementReference,
+			Preconditions.checkArgument(param.getReference() instanceof MDTElementReference,
 										"Parameter should contains MDTSubmodelElementReference, but {}",
 										param.getReference().getClass());
 			
-			MDTSubmodelElementReference dref = (MDTSubmodelElementReference)param.getReference();
-			MDTFile mdtFile = dref.getSubmodelService().getFileByPath(dref.getElementIdShortPath());
+			MDTElementReference dref = (MDTElementReference)param.getReference();
+			AASFile mdtFile = dref.getSubmodelService().getFileByPath(dref.getElementPath());
 			File paramFile = new File(dir, FilenameUtils.getName(mdtFile.getPath()));
 			
 			if ( s_logger.isInfoEnabled() ) {
@@ -173,7 +173,7 @@ public class OperationUtils {
 						.map(idxed -> {
 							Input input = idxed.value();
 							String path = String.format("SimulationInfo.Inputs[%d].InputValue", idxed.index());
-							SubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+							ElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 							return Parameter.of(input.getInputID(), valRef);
 						})
 						.toList();
@@ -185,13 +185,13 @@ public class OperationUtils {
 						.map(idxed -> {
 							Output output = idxed.value();
 							String path = String.format("SimulationInfo.Outputs[%d].OutputValue", idxed.index());
-							SubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+							ElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 							return Parameter.of(output.getOutputID(), valRef);
 						})
 						.toList();
 		opContext.setOutputParameters(outParams);
 		
-		opContext.setLastExecutionTimeReference(DefaultSubmodelElementReference.newInstance(smRef,
+		opContext.setLastExecutionTimeReference(DefaultElementReference.newInstance(smRef,
 																			"SimulationInfo.Model.LastExecutionTime"));
 		
 		return opContext;
@@ -209,7 +209,7 @@ public class OperationUtils {
 					.map(idxed -> {
 						Input input = idxed.value();
 						String path = String.format("AIInfo.Inputs[%d].InputValue", idxed.index());
-						SubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+						ElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 						return Parameter.of(input.getInputID(), valRef);
 					})
 					.toList();
@@ -221,14 +221,14 @@ public class OperationUtils {
 						.map(idxed -> {
 							Output output = idxed.value();
 							String path = String.format("AIInfo.Outputs[%d].OutputValue", idxed.index());
-							SubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+							ElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 							
 							return Parameter.of(output.getOutputID(), valRef);
 						})
 						.toList();
 		opParams.setOutputParameters(outParams);
 
-		opParams.setLastExecutionTimeReference(DefaultSubmodelElementReference.newInstance(smRef,
+		opParams.setLastExecutionTimeReference(DefaultElementReference.newInstance(smRef,
 																				"AIInfo.Model.LastExecutionTime"));
 		
 		return opParams;
@@ -262,7 +262,7 @@ public class OperationUtils {
 						.map(idxed -> {
 							ParameterValue pv = idxed.value();
 							String path = String.format(EQUIP_PARAM_PATTERN, idxed.index());
-							SubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+							ElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 							return Parameter.of(pv.getParameterId(), valRef);
 						})
 						.collect(KeyedValueList.newInstance(Parameter::getName), KeyedValueList::add);
@@ -278,7 +278,7 @@ public class OperationUtils {
 						.map(idxed -> {
 							ParameterValue pv = idxed.value();
 							String path = String.format(OP_PARAM_PATTERN, idxed.index());
-							SubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+							ElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 							return Parameter.of(pv.getParameterId(), valRef);
 						})
 						.collect(KeyedValueList.newInstance(Parameter::getName), KeyedValueList::add);

@@ -8,12 +8,12 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 
 import com.google.common.collect.Lists;
 
+import utils.stream.FStream;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import utils.stream.FStream;
 
 /**
  *
@@ -42,7 +42,7 @@ public class DefaultInstanceDescriptor implements InstanceDescriptor {
 						.toList();
 	}
 
-	public void setSubmodels(List<InstanceSubmodelDescriptor> smDescs) {
+	public void setSubmodels(List<? extends InstanceSubmodelDescriptor> smDescs) {
 		submodels = FStream.from(smDescs)
 							.cast(DefaultInstanceSubmodelDescriptor.class)
 							.toList();

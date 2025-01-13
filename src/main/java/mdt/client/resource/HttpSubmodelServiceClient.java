@@ -34,7 +34,7 @@ import mdt.client.Fa3stHttpClient;
 import mdt.model.MDTOperationHandle;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.service.SubmodelService;
-import mdt.model.sm.MDTFile;
+import mdt.model.sm.AASFile;
 import mdt.model.sm.value.SubmodelElementValue;
 
 import okhttp3.MultipartBody;
@@ -300,11 +300,11 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public MDTFile getFileByPath(String idShortPath) {
+	public AASFile getFileByPath(String idShortPath) {
 		String url = String.format("%s/submodel-elements/%s/attachment",
 									getEndpoint(), encodeIdShortPath(idShortPath));
 		Request req = new Request.Builder().url(url).get().build();
-		MDTFile mdtFile = call(req, MDTFile.class);
+		AASFile mdtFile = call(req, AASFile.class);
 		
 		File aasFile = (File)getSubmodelElementByPath(idShortPath);
 		mdtFile.setPath(aasFile.getValue());
@@ -321,7 +321,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void putFileByPath(String idShortPath, MDTFile mdtFile) {
+	public void putFileByPath(String idShortPath, AASFile mdtFile) {
 		MultipartBody.Builder builder
 			= new MultipartBody.Builder()
 								.setType(MultipartBody.FORM)

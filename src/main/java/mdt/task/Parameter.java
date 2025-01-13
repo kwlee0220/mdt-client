@@ -10,9 +10,9 @@ import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.MDTInstanceManagerAwareReference;
-import mdt.model.sm.InMemorySMEReference;
-import mdt.model.sm.SubmodelElementReference;
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.InMemoryElementReference;
+import mdt.model.sm.ref.MDTInstanceManagerAwareReference;
 
 
 /**
@@ -22,19 +22,19 @@ import mdt.model.sm.SubmodelElementReference;
 @JsonInclude(Include.NON_NULL)
 public final class Parameter {
 	@JsonProperty("name") private final String m_name;
-	@JsonProperty("reference") private final SubmodelElementReference m_reference;
+	@JsonProperty("reference") private final ElementReference m_reference;
 	
-	public static Parameter of(String name, SubmodelElementReference ref) {
+	public static Parameter of(String name, ElementReference ref) {
 		return new Parameter(name, ref);
 	}
 	
 	public static Parameter of(String name, SubmodelElement element) {
-		return new Parameter(name, InMemorySMEReference.of(element));
+		return new Parameter(name, InMemoryElementReference.of(element));
 	}
 
 	@JsonCreator
 	public Parameter(@JsonProperty("name") String name,
-					@JsonProperty("reference") SubmodelElementReference reference) {
+					@JsonProperty("reference") ElementReference reference) {
 		Preconditions.checkNotNull(name);
 		Preconditions.checkNotNull(reference);
 		
@@ -46,7 +46,7 @@ public final class Parameter {
 		return m_name;
 	}
 	
-	public SubmodelElementReference getReference() {
+	public ElementReference getReference() {
 		Preconditions.checkState(m_reference != null);
 		
 		return m_reference;

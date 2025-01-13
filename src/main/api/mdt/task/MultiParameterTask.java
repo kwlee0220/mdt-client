@@ -11,14 +11,14 @@ import utils.LoggerSettable;
 import utils.func.FOption;
 import utils.stream.FStream;
 
-import mdt.aas.DefaultSubmodelReference;
 import mdt.model.Input;
 import mdt.model.Output;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.service.AISubmodelService;
 import mdt.model.service.SimulationSubmodelService;
-import mdt.model.sm.DefaultSubmodelElementReference;
 import mdt.model.sm.ai.AI;
+import mdt.model.sm.ref.DefaultElementReference;
+import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 
 
@@ -68,7 +68,7 @@ public abstract class MultiParameterTask implements MDTTask, LoggerSettable {
 				.forEach(idxed -> {
 					Input input = idxed.value();
 					String path = String.format("SimulationInfo.Inputs[%d].InputValue", idxed.index());
-					DefaultSubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+					DefaultElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 					valRef.activate(manager);
 					
 					m_parameters.addIfAbscent(Parameter.of(input.getInputID(), valRef));
@@ -79,7 +79,7 @@ public abstract class MultiParameterTask implements MDTTask, LoggerSettable {
 				.forEach(idxed -> {
 					Output output = idxed.value();
 					String path = String.format("SimulationInfo.Outputs[%d].OutputValue", idxed.index());
-					DefaultSubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+					DefaultElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 					valRef.activate(manager);
 					
 					m_parameters.addIfAbscent(Parameter.of(output.getOutputID(), valRef));
@@ -98,7 +98,7 @@ public abstract class MultiParameterTask implements MDTTask, LoggerSettable {
 				.forEach(idxed -> {
 					Input input = idxed.value();
 					String path = String.format("AIInfo.Inputs[%d].InputValue", idxed.index());
-					DefaultSubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+					DefaultElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 					valRef.activate(manager);
 					
 					m_parameters.addIfAbscent(Parameter.of(input.getInputID(), valRef));
@@ -109,7 +109,7 @@ public abstract class MultiParameterTask implements MDTTask, LoggerSettable {
 				.forEach(idxed -> {
 					Output output = idxed.value();
 					String path = String.format("AIInfo.Outputs[%d].OutputValue", idxed.index());
-					DefaultSubmodelElementReference valRef = DefaultSubmodelElementReference.newInstance(smRef, path);
+					DefaultElementReference valRef = DefaultElementReference.newInstance(smRef, path);
 					valRef.activate(manager);
 					
 					m_parameters.addIfAbscent(Parameter.of(output.getOutputID(), valRef));

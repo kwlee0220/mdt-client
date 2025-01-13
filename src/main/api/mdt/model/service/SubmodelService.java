@@ -19,7 +19,7 @@ import utils.stream.FStream;
 
 import mdt.model.AASUtils;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.sm.MDTFile;
+import mdt.model.sm.AASFile;
 import mdt.model.sm.value.SubmodelElementValue;
 
 /**
@@ -42,9 +42,9 @@ public interface SubmodelService {
 		throws ResourceNotFoundException;
 	public void deleteSubmodelElementByPath(String idShortPath);
 	
-	public MDTFile getFileByPath(String idShortPath) throws ResourceNotFoundException;
+	public AASFile getFileByPath(String idShortPath) throws ResourceNotFoundException;
 	public byte[] getFileContentByPath(String idShortPath) throws ResourceNotFoundException;;
-	public void putFileByPath(String idShortPath, MDTFile file) throws ResourceNotFoundException;;
+	public void putFileByPath(String idShortPath, AASFile file) throws ResourceNotFoundException;;
 	public void deleteFileByPath(String idShortPath) throws ResourceNotFoundException;;
 	
 	public OperationResult invokeOperationSync(String idShortPath, List<OperationVariable> inputArguments,

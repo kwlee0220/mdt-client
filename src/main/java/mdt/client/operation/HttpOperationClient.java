@@ -3,13 +3,14 @@ package mdt.client.operation;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ import utils.http.JacksonErrorEntityDeserializer;
 
 import mdt.model.AASUtils;
 import mdt.model.MDTModelSerDe;
-import mdt.task.Parameter;
+
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -37,7 +38,7 @@ import okhttp3.RequestBody;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpOperationClient extends AbstractThreadedExecution<List<Parameter>>
+public class HttpOperationClient extends AbstractThreadedExecution<Map<String,SubmodelElement>>
 									implements HttpClientProxy, CancellableWork {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpOperationClient.class);
 	private static final JsonMapper MAPPER = MDTModelSerDe.getJsonMapper();
@@ -86,7 +87,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<List<Paramete
 	}
 
 	@Override
-	protected List<Parameter> executeWork() throws InterruptedException, CancellationException,
+	protected Map<String,SubmodelElement> executeWork() throws InterruptedException, CancellationException,
 																			Exception {
 		m_guard.run(() -> m_workerThread = Thread.currentThread());
 		
@@ -192,7 +193,6 @@ public class HttpOperationClient extends AbstractThreadedExecution<List<Paramete
 		private Duration m_timeout;
 		
 		public HttpOperationClient build() {
-			
 			return new HttpOperationClient(this);
 		}
 		

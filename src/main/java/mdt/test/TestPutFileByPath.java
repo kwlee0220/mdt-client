@@ -6,8 +6,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.sm.DefaultMDTFile;
-import mdt.model.sm.MDTFile;
+import mdt.model.sm.DefaultAASFile;
+import mdt.model.sm.AASFile;
 
 /**
  *
@@ -20,13 +20,13 @@ public class TestPutFileByPath {
 		
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
 		
-		DefaultMDTFile file = DefaultMDTFile.from(new File("misc/mdt_client_config.yaml"));
+		DefaultAASFile file = DefaultAASFile.from(new File("misc/mdt_client_config.yaml"));
 		svc.putFileByPath("testFile", file);
 		System.out.println(file);
 		
 		SubmodelElement sme = svc.getSubmodelElementByPath("testFile");
 		
-		MDTFile mdtFile = svc.getFileByPath("testFile");
+		AASFile mdtFile = svc.getFileByPath("testFile");
 		System.out.println(mdtFile);
 
 		System.out.println(svc.getFileContentByPath("testFile").length);

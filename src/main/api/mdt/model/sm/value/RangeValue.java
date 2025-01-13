@@ -24,4 +24,9 @@ public final class RangeValue implements DataElementValue {
 		gen.writeStringField("max", this.max);
 		gen.writeEndObject();
 	}
+	
+	@Override
+	public String toString() {
+		return String.format("%s:%s", this.min, this.max);
+	}
 }

@@ -25,7 +25,7 @@ import picocli.CommandLine.ParentCommand;
 public class GetInstanceLogCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceLogCommand.class);
 
-	@ParentCommand GetMDTInstanceCommand m_parent;
+	@ParentCommand GetInstanceCommand m_parent;
 	
 	public GetInstanceLogCommand() {
 		setLogger(s_logger);

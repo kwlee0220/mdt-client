@@ -35,6 +35,7 @@ import mdt.model.DescriptorUtils;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
+import mdt.model.instance.DefaultMDTInstanceInfo;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.instance.MDTInstanceStatus;
@@ -48,6 +49,7 @@ import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.info.TwinComposition;
 import mdt.model.sm.simulation.DefaultSimulation;
 import mdt.model.sm.simulation.Simulation;
+
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -291,7 +293,12 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 						})
 						.toList();
 	}
-	
+
+    // @GetMapping({"instances/{id}/info"})
+	public DefaultMDTInstanceInfo getInfo() {
+		String url = String.format("%s/info", getEndpoint());
+		return m_restfulClient.get(url, m_infoDeser);
+	}
 
     // @GetMapping({"instances/{id}/aas_descriptor"})
 	@Override
@@ -440,6 +447,13 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		@Override
 		public InstanceDescriptor deserialize(Headers headers, String respBody) throws IOException {
 			return m_serde.readInstanceDescriptor(respBody);
+		}
+	};
+	
+	private ResponseBodyDeserializer<DefaultMDTInstanceInfo> m_infoDeser = new ResponseBodyDeserializer<>() {
+		@Override
+		public DefaultMDTInstanceInfo deserialize(Headers headers, String respBody) throws IOException {
+			return MDTModelSerDe.readValue(respBody, DefaultMDTInstanceInfo.class);
 		}
 	};
 }

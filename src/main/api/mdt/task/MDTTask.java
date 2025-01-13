@@ -9,6 +9,10 @@ import mdt.model.instance.MDTInstanceManager;
 
 
 /**
+ * MDT 태스크를 정의하는 인터페이스.
+ * <p>
+ * MDT 태스크는 {@link MDTInstanceManager}를 통해 태스크 수행에 필요한 정보를 전달받아서 수행한다.
+ * 태스크 수행 중 제한 시간을 초과하거나, 사용자에 의해 중단될 수 있다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -16,7 +20,7 @@ public interface MDTTask extends Cancellable {
 	/**
 	 * 태스크 작업을 수행한다.
 	 * <p>
-	 * 태스크 수행에 필요한 정보는 입력 포토, 입출력 포트, 그리고 옵션을 통해 전달받는다.
+	 * 태스크 수행에 필요한 정보는 입력 파라미터, 출력 파라미터, 그리고 옵션을 통해 전달받는다.
 	 * 수행 
 	 * 제한 시간이 주어진 경우에는 태스크 수행이 그 시간을 초과한 경우에는 수행이 중단되고
 	 * {@link TimeoutException}가 발생되는 것을 요구한다.

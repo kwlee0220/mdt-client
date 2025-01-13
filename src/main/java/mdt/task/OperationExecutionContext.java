@@ -3,7 +3,7 @@ package mdt.task;
 import utils.KeyedValueList;
 import utils.stream.FStream;
 
-import mdt.model.sm.SubmodelElementReference;
+import mdt.model.sm.ref.ElementReference;
 
 
 /**
@@ -13,7 +13,7 @@ import mdt.model.sm.SubmodelElementReference;
 public class OperationExecutionContext {
 	private KeyedValueList<String,Parameter> m_inputParameters = KeyedValueList.newInstance(Parameter::getName);
 	private KeyedValueList<String,Parameter> m_outputParameters = KeyedValueList.newInstance(Parameter::getName);
-	private SubmodelElementReference m_lastExecutinTimeRef;
+	private ElementReference m_lastExecutinTimeRef;
 	
 	public KeyedValueList<String,Parameter> getInputParameters() {
 		return m_inputParameters;
@@ -33,11 +33,11 @@ public class OperationExecutionContext {
 									.collect(KeyedValueList.newInstance(Parameter::getName), KeyedValueList::add);
 	}
 	
-	public SubmodelElementReference getLastExecutionTimeReference() {
+	public ElementReference getLastExecutionTimeReference() {
 		return m_lastExecutinTimeRef;
 	}
 	
-	public void setLastExecutionTimeReference(SubmodelElementReference ref) {
+	public void setLastExecutionTimeReference(ElementReference ref) {
 		m_lastExecutinTimeRef = ref;
 	}
 	

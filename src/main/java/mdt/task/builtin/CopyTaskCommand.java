@@ -10,9 +10,9 @@ import com.google.common.base.Preconditions;
 import mdt.cli.AbstractMDTCommand;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.MDTInstanceManagerAwareReference;
-import mdt.model.sm.SubmodelElementReference;
-import mdt.model.sm.SubmodelElementReferences;
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.ElementReferenceUtils;
+import mdt.model.sm.ref.MDTInstanceManagerAwareReference;
 import mdt.task.TaskException;
 import mdt.task.builtin.CopyTask.CopyFileTask;
 import mdt.task.builtin.CopyTask.CopyPropertyTask;
@@ -36,12 +36,12 @@ public class CopyTaskCommand extends AbstractMDTCommand {
 	protected void run(MDTManager mdt) throws Exception {
 		MDTInstanceManager manager = mdt.getInstanceManager();
 		
-		SubmodelElementReference fromRef = SubmodelElementReferences.parseString(m_from);
+		ElementReference fromRef = ElementReferenceUtils.parseString(m_from);
 		if ( fromRef instanceof MDTInstanceManagerAwareReference aref ) {
 			aref.activate(manager);
 		}
 		
-		SubmodelElementReference toRef = SubmodelElementReferences.parseString(m_to);
+		ElementReference toRef = ElementReferenceUtils.parseString(m_to);
 		if ( toRef instanceof MDTInstanceManagerAwareReference aref ) {
 			aref.activate(manager);
 		}
@@ -50,7 +50,7 @@ public class CopyTaskCommand extends AbstractMDTCommand {
 		task.run(manager);
 	}
 
-	protected CopyTask newTask(SubmodelElementReference fromRef, SubmodelElementReference toRef) throws TaskException {
+	protected CopyTask newTask(ElementReference fromRef, ElementReference toRef) throws TaskException {
 		try {
 			SubmodelElement sme = fromRef.read();
 			SubmodelElement toSme = toRef.read();

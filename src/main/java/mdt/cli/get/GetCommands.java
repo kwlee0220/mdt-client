@@ -15,8 +15,8 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description="Show MDT-related entity's properties",
 	subcommands= {
-		GetMDTInstanceCommand.class,
-		GetSubmodelElementCommand.class,
+		GetInstanceCommand.class,
+		GetElementCommand.class,
 		GetShellCommand.class,
 		GetSubmodelCommand.class,
 		GetKSX9101Command.class,

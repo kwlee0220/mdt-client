@@ -1,24 +1,32 @@
 package mdt.client.operation;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.annotation.Nullable;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Maps;
+
+import lombok.Builder;
+import lombok.Getter;
 
 import utils.InternalException;
 import utils.func.Try;
 import utils.stream.FStream;
 
-import lombok.Builder;
-import lombok.Getter;
 import mdt.model.MDTModelSerDe;
-import mdt.task.Parameter;
+import mdt.model.sm.value.ElementValues;
 
 
 /**
@@ -46,14 +54,24 @@ public class OperationResponse {
 	}
 	
 	@JsonIgnore
-	public List<Parameter> getOutputValues() {
+	public Map<String,SubmodelElement> getOutputValues() {
 		try {
+			Map<String,SubmodelElement> outputValues = Maps.newHashMap();
+			
 			if ( this.outputValuesString != null ) {
-				return MDTModelSerDe.readValueList(this.outputValuesString, Parameter.class);
+				JsonNode paramMapNode = MDTModelSerDe.readJsonNode(outputValuesString);
+				Iterator<Entry<String,JsonNode>> iter = paramMapNode.fields();
+				while ( iter.hasNext() ) {
+					Entry<String,JsonNode> ent = iter.next();
+                    String key = ent.getKey();
+                    JsonNode valueNode = ent.getValue();
+                    
+                    SubmodelElement updated = MDTModelSerDe.readValue(valueNode, SubmodelElement.class);
+                    outputValues.put(key, updated);
+				}
 			}
-			else {
-				return null;
-			}
+			
+			return outputValues;
 		}
 		catch ( Exception e ) {
 			throw new InternalException(e);
@@ -90,11 +108,13 @@ public class OperationResponse {
 	
 	@Override
 	public String toString() {
-		List<Parameter> outputs = getOutputValues();
-		String resultStr = ( outputs != null && outputs.size() > 0 )
-					? String.format(", outputs=%s", FStream.from(outputs).map(Parameter::getName).join(", ")) : "";
+		Map<String,SubmodelElement> outputs = getOutputValues();
+		String valuesStr = FStream.from(outputs)
+									.mapValue(ElementValues::getValue)
+									.map(kv -> String.format("%s:%s", kv.key(), kv.value()))
+									.join(", ");
 		String msgStr = (this.message != null) ? String.format(", message=%s", this.message) : "";
-		return String.format("[%s] status=%s%s%s", this.session, this.status, resultStr, msgStr);
+		return String.format("[%s] status=%s, outputs={%s}%s", this.session, this.status, valuesStr, msgStr);
 	}
 	
 	public static <T> OperationResponse running(String sessionId, String msg) {
@@ -106,13 +126,22 @@ public class OperationResponse {
 								.build();
 	}
 	
-	public static <T> OperationResponse completed(String sessionId, List<Parameter> outputValues) {
-		String outputValuesString = MDTModelSerDe.toJsonString(outputValues);
-		return OperationResponse.builder()
-								.session(sessionId)
-								.status(OperationStatus.COMPLETED)
-								.outputValuesString(outputValuesString)
-								.build();
+	public static <T> OperationResponse completed(String sessionId, Map<String,SubmodelElement> outputValues) {
+		JsonNode root = FStream.from(outputValues)
+						        .mapValue(MDTModelSerDe::toJsonNode)
+						        .fold(MDTModelSerDe.MAPPER.createObjectNode(), (r,kv) -> r.set(kv.key(), kv.value()));
+		
+		try {
+			String outputValuesString = MDTModelSerDe.toJsonString(root);
+			return OperationResponse.builder()
+									.session(sessionId)
+									.status(OperationStatus.COMPLETED)
+									.outputValuesString(outputValuesString)
+									.build();
+		}
+		catch ( IOException e ) {
+			throw new InternalException(e);
+		}
 	}
 	
 	public static <T> OperationResponse failed(String sessionId, Throwable cause) {

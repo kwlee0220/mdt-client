@@ -12,7 +12,7 @@ import utils.stream.FStream;
 
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.DefaultSubmodelElementReference;
+import mdt.model.sm.ref.DefaultElementReference;
 import mdt.task.MultiParameterTaskCommand;
 import mdt.task.Parameter;
 
@@ -28,11 +28,11 @@ public class AASOperationTaskCommand extends MultiParameterTaskCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(AASOperationTaskCommand.class);
 	private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 
-	private DefaultSubmodelElementReference m_operationRef;
+	private DefaultElementReference m_operationRef;
 	@Parameters(index="0", arity="1", paramLabel="operation-ref",
 				description="the mdt-reference to the target operation")
 	public void setOperation(String refString) {
-		m_operationRef = DefaultSubmodelElementReference.parseString(refString);
+		m_operationRef = DefaultElementReference.parseString(refString);
 	}
 
 	@Option(names={"--async"}, description="invoke asynchronously")

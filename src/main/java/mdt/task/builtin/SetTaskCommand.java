@@ -12,9 +12,9 @@ import utils.io.IOUtils;
 import mdt.cli.AbstractMDTCommand;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.MDTInstanceManagerAwareReference;
-import mdt.model.sm.SubmodelElementReference;
-import mdt.model.sm.SubmodelElementReferences;
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.ElementReferenceUtils;
+import mdt.model.sm.ref.MDTInstanceManagerAwareReference;
 import mdt.task.TaskException;
 import mdt.task.builtin.SetTask.SetDefaultTask;
 import mdt.task.builtin.SetTask.SetFileTask;
@@ -55,7 +55,7 @@ public class SetTaskCommand extends AbstractMDTCommand {
 	protected void run(MDTManager mdt) throws Exception {
 		MDTInstanceManager manager = mdt.getInstanceManager();
 		
-		SubmodelElementReference ref = SubmodelElementReferences.parseString(m_target);
+		ElementReference ref = ElementReferenceUtils.parseString(m_target);
 		if ( ref instanceof MDTInstanceManagerAwareReference aref ) {
 			aref.activate(manager);
 		}
@@ -64,7 +64,7 @@ public class SetTaskCommand extends AbstractMDTCommand {
 		task.run(manager);
 	}
 
-	protected SetTask newTask(SubmodelElementReference ref) throws TaskException {
+	protected SetTask newTask(ElementReference ref) throws TaskException {
 		try {
 			SubmodelElement sme = ref.read();
 			 if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File ) {

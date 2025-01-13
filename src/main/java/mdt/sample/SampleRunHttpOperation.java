@@ -2,7 +2,10 @@ package mdt.sample;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import utils.async.AsyncResult;
 import utils.http.OkHttpClientUtils;
@@ -40,7 +43,7 @@ public class SampleRunHttpOperation {
 														.setTimeout(Duration.ofSeconds(10))
 														.build();
 		opClient.start();
-		AsyncResult<List<Parameter>> result = opClient.waitForFinished(5, TimeUnit.SECONDS);
+		AsyncResult<Map<String,SubmodelElement>> result = opClient.waitForFinished(5, TimeUnit.SECONDS);
 		if ( result.isRunning() ) {
 			System.out.println("Cancelling...");
 			opClient.cancel(true);

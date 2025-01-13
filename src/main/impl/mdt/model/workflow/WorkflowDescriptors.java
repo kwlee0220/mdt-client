@@ -1,13 +1,12 @@
 package mdt.model.workflow;
 
 import lombok.experimental.UtilityClass;
-
-import mdt.aas.DefaultSubmodelReference;
 import mdt.model.Input;
 import mdt.model.Output;
 import mdt.model.service.AISubmodelService;
 import mdt.model.service.SimulationSubmodelService;
 import mdt.model.sm.ai.AI;
+import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 import mdt.task.builtin.CopyTask;
 import mdt.task.builtin.SetTask;

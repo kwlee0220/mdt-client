@@ -1,5 +1,6 @@
 package mdt.model.sm;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,18 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementCollection;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementList;
 
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -40,6 +52,11 @@ import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
+import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.MDTSubmodelReference;
+import mdt.model.sm.ref.SubmodelReferenceType;
+import mdt.model.sm.ref.ElementReferenceType;
 import mdt.model.sm.simulation.Simulation;
 
 /**
@@ -110,17 +127,40 @@ public class SubmodelUtils {
 		return getPropertyValue(prop, valueClass);
 	}
 	
+	/**
+	 * Returns the relative idShort path from the ancestor to the descendant.
+	 * 
+	 * @param ancestor	Ancestor idShort path.
+	 * @param descendant	Descendant idShort path.
+	 * @return	relative idShort path from the ancestor to the descendant.
+	 * 	            If the descendant is the same as the ancestor, it returns an empty string.
+	 * 				{@code null} if the descendant is not a descendant of the ancestor.
+	 */
 	public static String toRelativeIdShortPath(String ancestor, String descendant) {
+		if ( descendant.equals(ancestor) ) {
+			return "";
+		}
 		if ( descendant.startsWith(ancestor) ) {
 			int prefixLen = ancestor.length();
-			return (descendant.length() > prefixLen) ? descendant.substring(prefixLen + 1) : "";
+			char delim = descendant.charAt(prefixLen);
+			if ( delim == '.' ) {
+				++prefixLen;
+			}
+			return (descendant.length() > prefixLen) ? descendant.substring(prefixLen) : "";
 		}
 		else {
 			return null;
 		}
 	}
 	
-	public static SubmodelElement traverse(SubmodelElement root, String idShortPath) {
+	/**
+	 * Traverse to the target SubmodelElement with the given idShort path.
+	 * 
+	 * @param root			Root SubmodelElement to start the traversal from.
+	 * @param idShortPath	idShort path to traverse.
+	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 */
+	public static SubmodelElement traverse(SubmodelElement root, String idShortPath) throws ResourceNotFoundException {
 		List<String> pathSegs = CSV.parseCsv(idShortPath, '.')
 									.flatMapIterable(seg -> parsePathSegment(seg))
 									.toList();
@@ -136,11 +176,11 @@ public class SubmodelUtils {
 	}
 	
 	/**
-	 * Submodel의 루트에서 시작하여 주어진 idShortPath에 해당하는 SubmodelElement을 탐색한다.
+	 * Traverse the Submodel starting with the given idShort path.
 	 * 
-	 *  @param submodel		탐색 대상 Submodel 객체.
-	 *  @param idShortPath	탐색 경로명.
-	 *  @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 * @param submodel		탐색 대상 Submodel 객체.
+	 * @param idShortPath	탐색 경로명.
+	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
 	 */
 	public static SubmodelElement traverse(Submodel submodel, String idShortPath) throws ResourceNotFoundException {
 		Preconditions.checkNotNull(submodel, "Submodel was null");
@@ -224,32 +264,58 @@ public class SubmodelUtils {
 		return Funcs.findFirstIndexed(smc.getValue(), field -> field.getIdShort().equals(fieldName));
 	}
 	public static Indexed<SubmodelElement> getFieldById(SubmodelElementCollection smc, String fieldName)
-			throws IllegalArgumentException {
+		throws IllegalArgumentException {
 		return findFieldById(smc, fieldName)
 					.getOrThrow(() -> {
-					String fieldNames = FStream.from(smc.getValue())
-												.map(SubmodelElement::getIdShort)
-												.join(", ");
-					String msg = String.format("Failed to find the field '%s' from %s{%s}",
-												fieldName, smc.getIdShort(), fieldNames);
-					return new IllegalArgumentException(msg);
-				});
+						String fieldNames = FStream.from(smc.getValue())
+													.map(SubmodelElement::getIdShort)
+													.join(", ");
+						String msg = String.format("Failed to find the field '%s' from %s{%s}",
+													fieldName, smc.getIdShort(), fieldNames);
+						return new IllegalArgumentException(msg);
+					});
 	}
-
-	public static FOption<Indexed<SubmodelElement>> findFieldById(SubmodelElementList sml, String fieldName) {
-		return Funcs.findFirstIndexed(sml.getValue(), field -> field.getIdShort().equals(fieldName));
+	
+	public static FOption<Indexed<SubmodelElementCollection>>
+	findFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) throws IllegalArgumentException {
+		return FStream.from(smeList)
+						.castSafely(SubmodelElementCollection.class)
+						.zipWithIndex()
+						.findFirst(idxed -> {
+							SubmodelElementCollection smc = idxed.value();
+							return findFieldById(smc, fieldName)
+									.filter(isme -> {
+										if ( isme.value() instanceof Property prop ) {
+                                            return prop.getValue().equals(value);
+                                        }
+                                        else {
+                                            return false;
+                                        }
+									})
+									.isPresent();
+						});
 	}
-	public static Indexed<SubmodelElement> getFieldById(SubmodelElementList sml, String fieldName)
-		throws IllegalArgumentException {
-		return findFieldById(sml, fieldName)
+	public static Indexed<SubmodelElementCollection>
+	getFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) throws IllegalArgumentException {
+		return findFieldSMCByIdValue(smeList, fieldName, value)
 				.getOrThrow(() -> {
-					String fieldNames = FStream.from(sml.getValue())
-												.map(SubmodelElement::getIdShort)
-												.join(", ");
-					String msg = String.format("Failed to find the field '%s' from %s{%s}",
-												fieldName, sml.getIdShort(), fieldNames);
+					String msg = String.format("Failed to find SMC of %s=%s", fieldName, value);
 					return new IllegalArgumentException(msg);
 				});
+	}
+	
+	public static DefaultSubmodelElementCollection newSubmodelElementCollection(String idShort, List<SubmodelElement> values) {
+		return new DefaultSubmodelElementCollection.Builder()
+													.idShort(idShort)
+													.value(values)
+													.build();
+	}
+	public static DefaultSubmodelElementList newSubmodelElementList(String idShort, List<SubmodelElement> values) {
+		return new DefaultSubmodelElementList.Builder()
+												.idShort(idShort)
+												.orderRelevant(true)
+												.value(values)
+												.build();
 	}
 	
 
@@ -264,7 +330,12 @@ public class SubmodelUtils {
 			// integer로의 파싱을 시도한다. 만일 숫자가 아닌 경우에는 'idx'가 -1로 설정된다.
 			int idx = Try.get(() -> Integer.parseInt(seg)).getOrElse(-1);
 			if ( idx >= 0 ) {
-				return sml.getValue().get(idx);
+				if ( sml.getValue().size() > idx ) {
+					return sml.getValue().get(idx);
+				}
+				else {
+					return null;
+				}
 			}
 			else {
 				return FStream.from(sml.getValue())
@@ -323,7 +394,7 @@ public class SubmodelUtils {
 			}
 		}
 		
-		List<Key> keyList = parparseKeyListSerialization(serialized);
+		List<Key> keyList = parseKeyListSerialization(serialized);
 		if ( refType == null ) {
 			if ( keyList.get(0).getType() == KeyTypes.GLOBAL_REFERENCE ) {
 				refType = ReferenceTypes.EXTERNAL_REFERENCE;
@@ -340,7 +411,7 @@ public class SubmodelUtils {
 									.build();
 	}
 	
-	private static List<Key> parparseKeyListSerialization(String str) {
+	private static List<Key> parseKeyListSerialization(String str) {
 		return CSV.parseCsv(str).map(keyStr -> parseKeySerialization(keyStr)).toList();
 	}
 
@@ -380,5 +451,49 @@ public class SubmodelUtils {
 		KEY_TYPES_MAP.put("SubmodelElementCollection", KeyTypes.SUBMODEL_ELEMENT_COLLECTION);
 		KEY_TYPES_MAP.put("SubmodelElementList", KeyTypes.SUBMODEL_ELEMENT_LIST);
 	}
+
+
+	@SuppressWarnings("serial")
+	public static class Deserializer extends StdDeserializer<MDTSubmodelReference> {
+		public Deserializer() {
+			this(null);
+		}
+		public Deserializer(Class<?> vc) {
+			super(vc);
+		}
 	
+		@Override
+		public MDTSubmodelReference deserialize(JsonParser parser, DeserializationContext ctxt)
+			throws IOException, JacksonException {
+			JsonNode node = parser.getCodec().readTree(parser);
+			
+			Preconditions.checkState(node instanceof ObjectNode);
+			ObjectNode root = (ObjectNode)node;
+			
+			String refType = FOption.mapOrElse(node.get(ElementReference.FIELD_REFERENCE_TYPE), JsonNode::asText,
+												ElementReferenceType.DEFAULT.name());
+			
+			SubmodelReferenceType type = SubmodelReferenceType.fromName(refType);
+			return switch ( type ) {
+				case DEFAULT -> DefaultSubmodelReference.parseJson(root);
+				default -> throw new IllegalArgumentException("Unknown SubmodelReference type: " + type);
+			};
+		}
+	}
+
+	@SuppressWarnings("serial")
+	public static class Serializer extends StdSerializer<MDTSubmodelReference> {
+		private Serializer() {
+			this(null);
+		}
+		private Serializer(Class<MDTSubmodelReference> cls) {
+			super(cls);
+		}
+		
+		@Override
+		public void serialize(MDTSubmodelReference ref, JsonGenerator gen, SerializerProvider provider)
+			throws IOException, JsonProcessingException {
+			ref.serialize(gen);
+		}
+	}
 }

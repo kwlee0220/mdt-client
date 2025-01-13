@@ -37,7 +37,7 @@ import mdt.model.instance.InstanceStatusChangeEvent;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.service.MDTInstance;
-import mdt.model.sm.DefaultSubmodelElementReference;
+import mdt.model.sm.ref.DefaultElementReference;
 
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -334,7 +334,7 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 	 */
 	public SubmodelElement getSubmodelElementByReference(Reference ref)
 		throws ResourceNotFoundException, InvalidResourceStatusException {
-		return DefaultSubmodelElementReference.newInstance(this, ref).read();
+		return DefaultElementReference.newInstance(this, ref).read();
 	}
 
 	public static Builder builder() {

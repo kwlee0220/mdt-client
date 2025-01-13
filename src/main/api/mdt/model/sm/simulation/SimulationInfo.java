@@ -1,13 +1,13 @@
 package mdt.model.sm.simulation;
 
 import mdt.model.MinResourceRequirements;
-import mdt.model.sm.OperationInfo;
+import mdt.model.sm.OperationEntity;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface SimulationInfo extends OperationInfo {
+public interface SimulationInfo extends OperationEntity {
 	public Model getModel();
 	public void setModel(Model model);
 	

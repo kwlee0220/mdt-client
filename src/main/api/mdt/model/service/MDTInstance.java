@@ -22,6 +22,7 @@ import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTInstanceInfo;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.sm.data.Data;
@@ -137,6 +138,8 @@ public interface MDTInstance {
 	public default @Nullable AssetKind getAssetKind() {
 		return getInstanceDescriptor().getAssetKind();
 	}
+	
+	public MDTInstanceInfo getInfo();
 	
 	/**
 	 * MDTInstance를 시작시킨다.
@@ -257,8 +260,9 @@ public interface MDTInstance {
 	public List<SubmodelService> getAllSubmodelServiceBySemanticId(String semanticId);
 	public default SubmodelService getInformationModelSubmodel() throws ResourceNotFoundException {
 		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(InformationModel.SEMANTIC_ID);
-		return Funcs.getFirst(found).getOrThrow(() -> new ResourceNotFoundException("InformationModel",
-																		"semanticId=" + InformationModel.SEMANTIC_ID));
+		return Funcs.getFirst(found)
+					.getOrThrow(() -> new ResourceNotFoundException("SubmodelService",
+																	"semanticId=" + InformationModel.SEMANTIC_ID));
 	}
 	public default SubmodelService getDataSubmodel() throws ResourceNotFoundException {
 		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(Data.SEMANTIC_ID);

@@ -2,7 +2,7 @@ package mdt.test;
 
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.sm.MDTFile;
+import mdt.model.sm.AASFile;
 
 /**
  *
@@ -21,7 +21,7 @@ public class TestGetFileByPath {
 //		
 //		SubmodelElement sme = svc.getSubmodelElementByPath("testFile");
 		
-		MDTFile mdtFile = svc.getFileByPath("AIInfo.Inputs[0].InputValue");
+		AASFile mdtFile = svc.getFileByPath("AIInfo.Inputs[0].InputValue");
 		System.out.println(mdtFile);
 
 		System.out.println(svc.getFileContentByPath("AIInfo.Inputs[0].InputValue").length);

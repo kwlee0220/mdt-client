@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 
 import utils.stream.FStream;
 
-import mdt.aas.DefaultSubmodelReference;
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.DescriptorUtils;
@@ -33,6 +32,7 @@ import mdt.model.sm.data.DataInfo;
 import mdt.model.sm.data.DefaultData;
 import mdt.model.sm.data.Parameter;
 import mdt.model.sm.data.ParameterValue;
+import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.simulation.DefaultSimulation;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.ElementValues;

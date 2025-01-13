@@ -25,7 +25,7 @@ import utils.stream.FStream;
 import mdt.model.AASUtils;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.service.SubmodelService;
-import mdt.model.sm.MDTSubmodelElementReference;
+import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.SubmodelElementValue;
 import mdt.task.MDTTask;
@@ -42,7 +42,7 @@ public class AASOperationTask extends AbstractThreadedExecution<Void> implements
 	private static final javax.xml.datatype.Duration INFINITE = AASUtils.DATATYPE_FACTORY.newDuration("P7D");
 
 	private MDTInstanceManager m_manager;
-	private final MDTSubmodelElementReference m_operationReference;
+	private final MDTElementReference m_operationReference;
 	private final List<Parameter> m_inputParameters;
 	private final List<Parameter> m_outputParameters;
 	private final boolean m_async;
@@ -101,7 +101,7 @@ public class AASOperationTask extends AbstractThreadedExecution<Void> implements
 			
 			Operation op = m_operationReference.getAsOperation();
 			SubmodelService svc = m_operationReference.getSubmodelService();
-			String opIdShortPath = m_operationReference.getElementIdShortPath();
+			String opIdShortPath = m_operationReference.getElementPath();
 			
 			// 명령어 인자로 parameter 값들이 설정된 경우에는, 설정된 값으로 OperationVariable을 채운다.
 			List<OperationVariable> inVars = op.getInputVariables();
@@ -184,11 +184,11 @@ public class AASOperationTask extends AbstractThreadedExecution<Void> implements
 			
 			if ( m_showOutputVariables ) {
 				for ( OperationVariable opv: result.getInoutputArguments() ) {
-					String str = ElementValues.toExternalString(opv.getValue());
+					String str = ElementValues.toRawString(opv.getValue());
 					System.out.printf("[inoutput] %s: %s%n", opv.getValue().getIdShort(), str);
 				}
 				for ( OperationVariable opv: result.getOutputArguments() ) {
-					String str = ElementValues.toExternalString(opv.getValue());
+					String str = ElementValues.toRawString(opv.getValue());
 					System.out.printf("[output  ] %s: %s%n", opv.getValue().getIdShort(), str);
 				}
 			}
@@ -209,7 +209,7 @@ public class AASOperationTask extends AbstractThreadedExecution<Void> implements
 		return new Builder();
 	}
 	public static class Builder {
-		private MDTSubmodelElementReference m_operationReference;
+		private MDTElementReference m_operationReference;
 		private KeyedValueList<String,Parameter> m_inputParameters = KeyedValueList.newInstance(Parameter::getName);
 		private KeyedValueList<String,Parameter> m_outputParameters = KeyedValueList.newInstance(Parameter::getName);
 		private boolean m_async = true;
@@ -222,7 +222,7 @@ public class AASOperationTask extends AbstractThreadedExecution<Void> implements
 			return new AASOperationTask(this);
 		}
 		
-		public Builder operationReference(MDTSubmodelElementReference ref) {
+		public Builder operationReference(MDTElementReference ref) {
 			m_operationReference = ref;
 			return this;
 		}

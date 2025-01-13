@@ -5,6 +5,7 @@ import java.util.List;
 import org.barfuin.texttree.api.Node;
 
 import utils.InternalException;
+import utils.stream.FStream;
 
 import mdt.model.sm.data.Andon;
 import mdt.model.sm.data.Andons;
@@ -71,7 +72,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( ProductionPlannings.class.isAssignableFrom(entityClass) ) {
 			List<? extends ProductionPlanning> plannings = ((ProductionPlannings)entity).getMemberList();
 			if ( plannings.size() != 1 ) {
-				return new ListNode<>("ProductionPlannings", plannings, ProductionPlanningNode::new);
+				List<ProductionPlanningNode> nodes = FStream.from(plannings)
+															.map(ProductionPlanningNode::new)
+															.toList();
+				return new ListNode("ProductionPlannings", nodes);
 			}
 			else {
 				return new ProductionPlanningNode(plannings.get(0));
@@ -80,7 +84,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( ProductionOrders.class.isAssignableFrom(entityClass) ) {
 			List<? extends ProductionOrder> orders = ((ProductionOrders)entity).getMemberList();
 			if ( orders.size() != 1 ) {
-				return new ListNode<>("ProductionOrders", orders, ProductionOrderNode::new);
+				List<ProductionOrderNode> nodes = FStream.from(orders)
+															.map(ProductionOrderNode::new)
+															.toList();
+				return new ListNode("ProductionOrders", nodes);
 			}
 			else {
 				return new ProductionOrderNode(orders.get(0));
@@ -89,7 +96,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( ProductionPerformances.class.isAssignableFrom(entityClass) ) {
 			List<? extends ProductionPerformance> perfs = ((ProductionPerformances)entity).getMemberList();
 			if ( perfs.size() != 1 ) {
-				return new ListNode<>("ProductionPerformances", perfs, ProductionPerformanceNode::new);
+				List<ProductionPerformanceNode> nodes = FStream.from(perfs)
+															.map(ProductionPerformanceNode::new)
+															.toList();
+				return new ListNode("ProductionPerformances", nodes);
 			}
 			else {
 				return new ProductionPerformanceNode(perfs.get(0));
@@ -98,7 +108,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( Repairs.class.isAssignableFrom(entityClass) ) {
 			List<? extends Repair> repairs = ((Repairs)entity).getMemberList();
 			if ( repairs.size() != 1 ) {
-				return new ListNode<>("Repairs", repairs, RepairNode::new);
+				List<RepairNode> nodes = FStream.from(repairs)
+												.map(RepairNode::new)
+												.toList();
+				return new ListNode("Repairs", nodes);
 			}
 			else {
 				return new RepairNode(repairs.get(0));
@@ -107,7 +120,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( ItemMasters.class.isAssignableFrom(entityClass) ) {
 			List<? extends ItemMaster> items = ((ItemMasters)entity).getMemberList();
 			if ( items.size() != 1 ) {
-				return new ListNode<>("ItemMasters", items, ItemMasterNode::new);
+				List<ItemMasterNode> nodes = FStream.from(items)
+												.map(ItemMasterNode::new)
+												.toList();
+				return new ListNode("ItemMasters", nodes);
 			}
 			else {
 				return new ItemMasterNode(items.get(0));
@@ -116,7 +132,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( Andons.class.isAssignableFrom(entityClass) ) {
 			List<? extends Andon> andons = ((Andons)entity).getMemberList();
 			if ( andons.size() != 1 ) {
-				return new ListNode<>("Andons", andons, AndonNode::new);
+				List<AndonNode> nodes = FStream.from(andons)
+												.map(AndonNode::new)
+												.toList();
+				return new ListNode("ItemMasters", nodes);
 			}
 			else {
 				return new AndonNode(andons.get(0));
@@ -125,7 +144,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( BOMs.class.isAssignableFrom(entityClass) ) {
 			List<? extends BOM> boms = ((BOMs)entity).getMemberList();
 			if ( boms.size() != 1 ) {
-				return new ListNode<>("BOMs", boms, BOMNode::new);
+				List<BOMNode> nodes = FStream.from(boms)
+												.map(BOMNode::new)
+												.toList();
+				return new ListNode("BOMs", nodes);
 			}
 			else {
 				return new BOMNode(boms.get(0));
@@ -134,7 +156,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( Routings.class.isAssignableFrom(entityClass) ) {
 			List<? extends Routing> routings = ((Routings)entity).getMemberList();
 			if ( routings.size() != 1 ) {
-				return new ListNode<>("Routings", routings, RoutingNode::new);
+				List<RoutingNode> nodes = FStream.from(routings)
+												.map(RoutingNode::new)
+												.toList();
+				return new ListNode("Routings", nodes);
 			}
 			else {
 				return new RoutingNode(routings.get(0));
@@ -143,7 +168,10 @@ public final class DataSubmodelNode implements Node {
 		else if ( Equipments.class.isAssignableFrom(entityClass) ) {
 			List<? extends Equipment> equipments = ((Equipments)entity).getMemberList();
 			if ( equipments.size() != 1 ) {
-				return new ListNode<>("Equipments", equipments, (equip) -> new EquipmentNode("", equip));
+				List<EquipmentNode> nodes = FStream.from(equipments)
+													.map((equip) -> new EquipmentNode("", equip))
+													.toList();
+				return new ListNode("Equipments", nodes);
 			}
 			else {
 				return new EquipmentNode("", equipments.get(0));

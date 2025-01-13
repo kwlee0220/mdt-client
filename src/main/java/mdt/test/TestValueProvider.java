@@ -4,11 +4,13 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
 import com.google.common.collect.Lists;
 
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
+import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.value.PropertyValue;
 
 /**
@@ -25,25 +27,41 @@ public class TestValueProvider {
 									AASUtils.encodeBase64UrlSafe(submodelId));
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
 		
-		String pattern = "DataInfo.Equipment.EquipmentParameterValues[%d].ParameterValue";
 		while ( true ) {
-			List<String> values = Lists.newArrayList();
-			for ( int i =0; i < 4; ++i ) {
-				String path = String.format(pattern, i);
-				SubmodelElement sme = svc.getSubmodelElementByPath(path);
-				String value = ((Property)sme).getValue();
-				values.add(value);
-			}
+			List<String> values = readRow2(svc);
 			System.out.println(values);
 			
-			float oldValue = values.get(1).equals("") ? 0.0f : Float.parseFloat(values.get(1));
-			float newValue = oldValue + 0.5f;
-			
-			String path2 = String.format(pattern, 1);
-			SubmodelElement sme = svc.getSubmodelElementByPath(path2);
-			svc.patchSubmodelElementValueByPath(path2, new PropertyValue("" + newValue));
-			
-			Thread.sleep(100);
+			update(svc, values, 1);
+//			Thread.sleep(1000);
 		}
+	}
+	
+	private static void update(HttpSubmodelServiceClient svc, List<String> values, int paramIdx) {
+		String pattern = "DataInfo.Equipment.EquipmentParameterValues[%d].ParameterValue";
+		String value = values.get(paramIdx);
+
+		float oldValue = value.equals("") ? 0.0f : Float.parseFloat(value);
+		float newValue = oldValue + 0.5f;
+		
+		String path2 = String.format(pattern, paramIdx);
+		svc.patchSubmodelElementValueByPath(path2, new PropertyValue("" + newValue));
+		
+		svc.patchSubmodelElementValueByPath("DataInfo.Equipment.EquipmentParameters[0].ParameterName",
+											new PropertyValue("xxx"));
+	}
+	
+	private static List<String> readRow2(HttpSubmodelServiceClient svc) {
+		String pattern = "DataInfo.Equipment.EquipmentParameterValues";
+		SubmodelElementList sml = (SubmodelElementList)svc.getSubmodelElementByPath(pattern);
+		
+		List<String> values = Lists.newArrayList();
+		for ( int i =0; i < 4; ++i ) {
+			String subPath = String.format("[%d].ParameterValue", i);
+			SubmodelElement sme = SubmodelUtils.traverse(sml, subPath);
+			String value = ((Property)sme).getValue();
+			values.add(value);
+		}
+		
+		return values;
 	}
 }

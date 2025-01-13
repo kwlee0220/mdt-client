@@ -18,8 +18,8 @@ import utils.http.RESTfulRemoteException;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.sm.DefaultMDTFile;
-import mdt.model.sm.MDTFile;
+import mdt.model.sm.DefaultAASFile;
+import mdt.model.sm.AASFile;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -124,8 +124,8 @@ public class Fa3stHttpClient implements HttpClientProxy {
 						else if ( byte[].class == valueType ) {
 							return (T)respBody.bytes();
 						}
-						else if ( MDTFile.class.isAssignableFrom(valueType) ) {
-							DefaultMDTFile mdtFile = new DefaultMDTFile();
+						else if ( AASFile.class.isAssignableFrom(valueType) ) {
+							DefaultAASFile mdtFile = new DefaultAASFile();
 							mdtFile.setContentType(resp.body().contentType().toString());
 							mdtFile.setContent(respBody.bytes());
 							return (T)mdtFile;

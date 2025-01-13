@@ -32,7 +32,7 @@ import picocli.CommandLine.ParentCommand;
 public class GetInstanceCompositionDependenciesCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceCompositionDependenciesCommand.class);
 	
-	@ParentCommand GetMDTInstanceCommand m_parent;
+	@ParentCommand GetInstanceCommand m_parent;
 
 	@Option(names={"--type"}, paramLabel="dependency-type",
 					description="CompositionDependency type")

@@ -13,8 +13,8 @@ import utils.LoggerSettable;
 import utils.func.FOption;
 
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.MDTSubmodelElementReference;
-import mdt.model.sm.SubmodelElementReference;
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.SubmodelElementValue;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
@@ -51,10 +51,10 @@ public abstract class CopyTask implements MDTTask, LoggerSettable {
 	public static class CopyPropertyTask extends CopyTask {
 		private static final Logger s_logger = LoggerFactory.getLogger(CopyPropertyTask.class);
 		
-		private final SubmodelElementReference m_from;
-		private final SubmodelElementReference m_to;
+		private final ElementReference m_from;
+		private final ElementReference m_to;
 		
-		public CopyPropertyTask(SubmodelElementReference from, SubmodelElementReference to) {
+		public CopyPropertyTask(ElementReference from, ElementReference to) {
 			m_from = from;
 			m_to = to;
 			
@@ -77,17 +77,17 @@ public abstract class CopyTask implements MDTTask, LoggerSettable {
 	public static class CopyFileTask extends CopyTask {
 		private static final Logger s_logger = LoggerFactory.getLogger(CopyFileTask.class);
 		
-		private final MDTSubmodelElementReference m_from;
-		private final MDTSubmodelElementReference m_to;
+		private final MDTElementReference m_from;
+		private final MDTElementReference m_to;
 		
-		public CopyFileTask(SubmodelElementReference from, SubmodelElementReference to) {
-			Preconditions.checkArgument(from instanceof MDTSubmodelElementReference,
+		public CopyFileTask(ElementReference from, ElementReference to) {
+			Preconditions.checkArgument(from instanceof MDTElementReference,
 										"Not MDTSubmodelElementReference, but {}", from.getClass());
-			Preconditions.checkArgument(to instanceof MDTSubmodelElementReference,
+			Preconditions.checkArgument(to instanceof MDTElementReference,
 										"Not MDTSubmodelElementReference, but {}", to.getClass());
 			
-			m_from = (MDTSubmodelElementReference)from;
-			m_to = (MDTSubmodelElementReference)to;
+			m_from = (MDTElementReference)from;
+			m_to = (MDTElementReference)to;
 			
 			setLogger(s_logger);
 		}

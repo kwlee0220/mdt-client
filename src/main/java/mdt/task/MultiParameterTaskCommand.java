@@ -18,9 +18,8 @@ import utils.func.Tuple;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.model.sm.SubmodelElementReference;
-import mdt.model.sm.SubmodelElementReferences;
-
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.ElementReferenceUtils;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
 
@@ -46,7 +45,13 @@ public abstract class MultiParameterTaskCommand extends AbstractMDTCommand {
 	}
 	
 	public Tuple<List<Parameter>,List<Parameter>> loadParameters() {
-		// 모든 SubmodelElement reference 및 option 정보는 unmatcheds에 포함되어 있다.
+		// Command line에서 지정된 옵션을 파싱하여 input/output parameter를 추출한다.
+		// 이때, input/output parameter 관련 정보들은 unmatcheds에 포함되어 있다.
+		// Input/output parameter는 다음과 같은 형식으로 지정된다.
+		//   --in.<parameter-name> <element-reference> (input parameter의 경우)
+		//   --out.<parameter-name> <element-reference> (output parameter의 경우)
+		//   --inout.<parameter-name> <element-reference> (input/output parameter의 경우)
+		//
 		Map<String,String> unmatchedOptions = FStream.from(m_unmatcheds)
 													.buffer(2, 2)
 													.peek(b -> {
@@ -65,9 +70,9 @@ public abstract class MultiParameterTaskCommand extends AbstractMDTCommand {
 			String kind = tup._1;
 			String varName = tup._2;
 			
-			SubmodelElementReference ref;
+			ElementReference ref;
 			try {
-				ref = SubmodelElementReferences.parseString(ent.getValue());
+				ref = ElementReferenceUtils.parseString(ent.getValue());
 			}
 			catch ( Exception e ) {
 				Throwable cause = Throwables.unwrapThrowable(e);

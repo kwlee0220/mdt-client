@@ -16,8 +16,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import utils.InternalException;
 
-import mdt.model.sm.value.SubmodelElementValue;
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)
@@ -106,8 +104,6 @@ public class MDTModelSerDe {
 	}
 
 	public static String toJsonString(Object modelObj) {
-//		Preconditions.checkArgument(!(modelObj instanceof JsonNode)
-//									&& !(modelObj instanceof SubmodelElementValue));
 		try {
 			return JSON_SERIALIZER.write(modelObj);
 		}
@@ -117,15 +113,15 @@ public class MDTModelSerDe {
 		}
 	}
 
-	public static String toJsonString(SubmodelElementValue smev) {
-		try {
-			return JSON_SERIALIZER.write(smev);
-		}
-		catch ( SerializationException e ) {
-			String msg = String.format("Failed to writeJson: value=%s, cause=%s", smev, e);
-			throw new InternalException(msg);
-		}
-	}
+//	public static String toJsonString(SubmodelElementValue smev) {
+//		try {
+//			return JSON_SERIALIZER.write(smev);
+//		}
+//		catch ( SerializationException e ) {
+//			String msg = String.format("Failed to writeJson: value=%s, cause=%s", smev, e);
+//			throw new InternalException(msg);
+//		}
+//	}
 
 	public static String toJsonString(JsonNode node) throws IOException {
 		return MAPPER.writeValueAsString(node);

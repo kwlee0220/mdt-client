@@ -2,11 +2,11 @@ package mdt.sample.workflow;
 
 import java.util.Set;
 
-import mdt.aas.DefaultSubmodelReference;
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.workflow.StringOption;
 import mdt.model.workflow.WorkflowDescriptors;
 import mdt.task.builtin.HttpTask;

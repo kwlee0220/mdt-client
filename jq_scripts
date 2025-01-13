@@ -1,0 +1,13 @@
+InformationModel 의 정보
+.submodels[] | select(.idShort == "InformationModel") | {id: .id, idShort: .idShort}
+
+Data에서 Parameter 목록
+[.submodels[] | 
+select(.idShort == "Data").submodelElements[] | 
+select(.idShort == "DataInfo").value[].value[] | 
+select(.idShort == "EquipmentParameterValues").value[] | .value |
+{
+    "idShort": map(select(.idShort == "ParameterID"))[].value,
+    "type": map(select(.idShort == "ParameterValue"))[].valueType,
+    "value": map(select(.idShort == "ParameterValue"))[].value,
+}]

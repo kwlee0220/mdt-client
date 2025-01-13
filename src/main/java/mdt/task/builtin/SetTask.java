@@ -18,9 +18,9 @@ import utils.func.FOption;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.service.SubmodelService;
-import mdt.model.sm.DefaultMDTFile;
-import mdt.model.sm.MDTSubmodelElementReference;
-import mdt.model.sm.SubmodelElementReference;
+import mdt.model.sm.DefaultAASFile;
+import mdt.model.sm.ref.ElementReference;
+import mdt.model.sm.ref.MDTElementReference;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
 
@@ -56,10 +56,10 @@ public abstract class SetTask implements MDTTask, LoggerSettable {
 	public static class SetDefaultTask extends SetTask {
 		private static final Logger s_logger = LoggerFactory.getLogger(SetDefaultTask.class);
 		
-		private final SubmodelElementReference m_target;
+		private final ElementReference m_target;
 		private final String m_valueJson;
 		
-		public SetDefaultTask(SubmodelElementReference target, String valueJson) {
+		public SetDefaultTask(ElementReference target, String valueJson) {
 			m_target = target;
 			m_valueJson = valueJson;
 			
@@ -90,14 +90,14 @@ public abstract class SetTask implements MDTTask, LoggerSettable {
 	public static class SetFileTask extends SetTask {
 		private static final Logger s_logger = LoggerFactory.getLogger(SetFileTask.class);
 		
-		private final MDTSubmodelElementReference m_target;
+		private final MDTElementReference m_target;
 		private final java.io.File m_file;
 		@Nullable private final String m_path;
 		
-		public SetFileTask(SubmodelElementReference target, java.io.File file, String path) {
-			Preconditions.checkArgument(target instanceof MDTSubmodelElementReference,
+		public SetFileTask(ElementReference target, java.io.File file, String path) {
+			Preconditions.checkArgument(target instanceof MDTElementReference,
 										"Not MDTSubmodelElementReference, but {}", target.getClass());
-			m_target = (MDTSubmodelElementReference)target;
+			m_target = (MDTElementReference)target;
 			m_file = file;
 			m_path = path;
 			
@@ -110,10 +110,10 @@ public abstract class SetTask implements MDTTask, LoggerSettable {
 			SubmodelService svc = m_target.getSubmodelService();
 			
 			try {
-				DefaultMDTFile mdtFile = (m_path != null)
-										? DefaultMDTFile.from(m_file, m_path)
-										: DefaultMDTFile.from(m_file);
-				svc.putFileByPath(m_target.getElementIdShortPath(), mdtFile);
+				DefaultAASFile mdtFile = (m_path != null)
+										? DefaultAASFile.from(m_file, m_path)
+										: DefaultAASFile.from(m_file);
+				svc.putFileByPath(m_target.getElementPath(), mdtFile);
 			}
 			catch ( IOException e ) {
 				throw new TaskException("Failed to read file", e);

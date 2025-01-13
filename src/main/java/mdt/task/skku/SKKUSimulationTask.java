@@ -16,7 +16,6 @@ import utils.UnitUtils;
 import utils.async.AsyncState;
 import utils.async.Guard;
 
-import mdt.aas.DefaultSubmodelReference;
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatus;
@@ -24,8 +23,9 @@ import mdt.client.operation.OperationStatusResponse;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.SubmodelReference;
 import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.ref.SubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;

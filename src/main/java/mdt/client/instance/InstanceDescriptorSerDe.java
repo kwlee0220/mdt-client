@@ -123,11 +123,11 @@ public class InstanceDescriptorSerDe {
 			ArrayNode submodelNodes = (ArrayNode)node.get("submodels");
 			desc.setSubmodels(FStream.from(submodelNodes.elements())
 										.map(n -> {
-											DefaultInstanceSubmodelDescriptor smDesc = new DefaultInstanceSubmodelDescriptor();
-											smDesc.setId(getStringField(n, "id"));
-											smDesc.setIdShort(getStringField(n, "idShort"));
-											smDesc.setSemanticId(getStringField(n, "semanticId"));
-											return (InstanceSubmodelDescriptor)smDesc;
+											String id = getStringField(n, "id");
+											String idShort = getStringField(n, "idShort");
+											String semanticId = getStringField(n, "semanticId");
+											
+											return new DefaultInstanceSubmodelDescriptor(id, idShort, semanticId);
 										})
 										.toList());
 			return desc;

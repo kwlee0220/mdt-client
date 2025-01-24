@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -22,11 +23,26 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Sets;
 
 import lombok.experimental.UtilityClass;
+
+import utils.http.HttpRESTfulClient;
+import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
+import utils.http.JacksonErrorEntityDeserializer;
+import utils.http.OkHttpClientUtils;
+import utils.stream.FStream;
+
+import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.instance.MDTInstanceManagerException;
+import mdt.model.service.SubmodelService;
+
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
 
 
 /**
@@ -65,10 +81,48 @@ public class AASUtils {
 			return new String(BASE64URL_DECODER.decode(src), StandardCharsets.UTF_8);
 		}
 	};
+
+	public static AssetAdministrationShell getAssetAdministrationShell(OkHttpClient httpClient, String faastUrl) {
+		JsonMapper mapper = MDTModelSerDe.getJsonMapper();
+		HttpRESTfulClient client = HttpRESTfulClient.builder()
+												.httpClient(httpClient)
+												.jsonMapper(mapper)
+												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(mapper))
+												.build();
+
+		String url = String.format("%s/shells", faastUrl);
+		List<AssetAdministrationShell> shells = client.get(url, SHELL_LIST_DESER);
+		if ( shells.size() != 1 ) {
+			throw new MDTInstanceManagerException("Not supported: Multiple AAS descriptors in the Environment");
+		}
+		return shells.get(0);
+	}
+	
+	public static SubmodelService newSubmodelService(OkHttpClient httpClient, String faastUrl, String submodelId) {
+		String url = DescriptorUtils.toSubmodelServiceEndpointString(faastUrl, submodelId);
+		return new HttpSubmodelServiceClient(httpClient, url);
+	}
+	
+	public static Environment readEnvironment(OkHttpClient httpClient, String faastUrl) {
+		AssetAdministrationShell shell = getAssetAdministrationShell(httpClient, faastUrl);
+		List<Submodel> submodels = FStream.from(shell.getSubmodels())
+										.map(ref -> {
+											String smId = ref.getKeys().get(0).getValue();
+											String smUrl = DescriptorUtils.toSubmodelServiceEndpointString(faastUrl, smId);
+											SubmodelService smSvc = new HttpSubmodelServiceClient(httpClient, smUrl);
+											return smSvc.getSubmodel();
+										})
+										.toList();
+		
+		return new DefaultEnvironment.Builder()
+									.assetAdministrationShells(shell)
+									.submodels(submodels)
+									.build();
+	}
 	
 	public static Environment readEnvironment(File aasEnvFile)
 		throws IOException, ResourceAlreadyExistsException, ResourceNotFoundException {
-		JsonDeserializer deser = new JsonDeserializer();
+		JsonDeserializer deser = MDTModelSerDe.getJsonDeserializer();
 		
 		try ( FileInputStream fis = new FileInputStream(aasEnvFile) ) {
 			Environment env = deser.read(fis, Environment.class);
@@ -89,7 +143,7 @@ public class AASUtils {
 			for ( Reference ref: aas.getSubmodels() ) {
 				String refId = ref.getKeys().get(0).getValue();
 				if ( !submodelIds.contains(refId) ) {
-					throw new ResourceNotFoundException("Submodel", refId);
+					throw new ResourceNotFoundException("Submodel", "id=" + refId);
 				}
 			}
 			
@@ -97,6 +151,10 @@ public class AASUtils {
 		}
 		catch ( DeserializationException e ) {
 			throw new MDTInstanceManagerException("failed to parse Environment: file=" + aasEnvFile);
+		}
+		catch ( Throwable e ) {
+			e.printStackTrace();
+			throw new AssertionError();
 		}
 	}
 	
@@ -108,5 +166,23 @@ public class AASUtils {
 		}
 	}
 	
+	public ResponseBodyDeserializer<List<AssetAdministrationShell>> SHELL_LIST_DESER
+		= new ResponseBodyDeserializer<>() {
+				@Override
+				public List<AssetAdministrationShell> deserialize(Headers headers, String respBody) throws IOException {
+					JsonMapper mapper = JsonMapper.builder().build();
+					JsonNode root = mapper.readTree(respBody);
+					JsonNode result = root.path("result");
+					return MDTModelSerDe.readValueList(result, AssetAdministrationShell.class);
+				}
+			};
+	
 	public static class NULLClass { }
+	
+	public static final void main(String... args) throws Exception {
+		OkHttpClient httpClient = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
+        String faastUrl = "https://129.254.91.134:19000/api/v3.0";
+        Environment env = readEnvironment(httpClient, faastUrl);
+        System.out.println(env);
+	}
 }

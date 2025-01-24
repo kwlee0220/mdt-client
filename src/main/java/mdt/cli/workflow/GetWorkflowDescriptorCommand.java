@@ -64,7 +64,7 @@ public class GetWorkflowDescriptorCommand extends AbstractMDTCommand {
 		if ( m_outFile != null ) {
 			m_outFile = m_outFile.getAbsoluteFile();
 			if ( m_outFile != null && m_outFile.getParentFile() != null ) {
-				FileUtils.createDirectories(m_outFile.getParentFile());
+				FileUtils.createDirectory(m_outFile.getParentFile());
 			}
 		}
 		

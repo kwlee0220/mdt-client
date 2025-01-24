@@ -57,7 +57,7 @@ public class GetArgoWorkflowScriptCommand extends AbstractMDTCommand {
 		String scriptYaml = svc.getArgoWorkflowDescriptor(wfId, m_clientImage);
 		
 		if ( m_outFile != null && m_outFile.getParentFile() != null ) {
-			FileUtils.createDirectories(m_outFile.getParentFile());
+			FileUtils.createDirectory(m_outFile.getParentFile());
 		}
 		try ( OutputStream os = (m_outFile != null) ? new FileOutputStream(m_outFile) : System.out;
 				PrintWriter pw = new PrintWriter(os) ) {

@@ -135,7 +135,7 @@ public class DescriptorUtils {
 	public static String toAASServiceEndpointString(String instanceServiceEndpoint, String aasId) {
 		if ( instanceServiceEndpoint != null ) {
 			String encodedAasId = AASUtils.encodeBase64UrlSafe(aasId);
-			return String.format("%s/shells/%s", instanceServiceEndpoint, encodedAasId);
+			return String.format("%s/shells", instanceServiceEndpoint, encodedAasId);
 		}
 		else {
 			return null;

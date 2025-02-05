@@ -32,7 +32,7 @@ public abstract class MultiParameterTaskCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(MultiParameterTaskCommand.class);
 	
 	protected Duration m_timeout = null;
-	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\"")
+	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\")")
 	public void setTimeout(String toStr) {
 		m_timeout = UnitUtils.parseDuration(toStr);
 	}

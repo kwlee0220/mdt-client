@@ -23,8 +23,8 @@ import utils.func.Funcs;
 import utils.stream.FStream;
 
 import mdt.model.AASUtils;
+import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.SubmodelElementValue;

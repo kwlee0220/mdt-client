@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.SubmodelElementValue;
 
@@ -35,13 +35,13 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	@Override
 	public SubmodelElement update(SubmodelElementValue smev) throws IOException {
 		SubmodelService service = getSubmodelService();
-		service.patchSubmodelElementValueByPath(getElementPath(), smev);
+		service.updateSubmodelElementValueByPath(getElementPath(), smev);
 		return service.getSubmodelElementByPath(getElementPath());
 	}
 
 	@Override
 	public void write(SubmodelElement sme) throws IOException {
-		getSubmodelService().putSubmodelElementByPath(getElementPath(), sme);
+		getSubmodelService().setSubmodelElementByPath(getElementPath(), sme);
 	}
 	
 	

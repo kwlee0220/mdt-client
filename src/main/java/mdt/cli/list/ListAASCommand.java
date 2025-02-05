@@ -17,7 +17,8 @@ import mdt.cli.list.ListCommands.SimpleListCollector;
 import mdt.cli.list.ListCommands.TableCollector;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.service.MDTInstance;
+import mdt.model.instance.MDTInstance;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -44,8 +45,8 @@ public class ListAASCommand extends AbstractListCommand {
 	}
 
 	@Override
-	public String buildListString() {
-		return collect(new SimpleListCollector());
+	public String buildListString(String delim) {
+		return collect(new SimpleListCollector(delim));
 	}
 
 	@Override
@@ -73,8 +74,8 @@ public class ListAASCommand extends AbstractListCommand {
 	
 	private String collect(ListCollector collector) {
 		List<? extends MDTInstance> instances = (m_filter != null)
-									? getMDTInstanceManager().getAllInstancesByFilter(m_filter)
-									: getMDTInstanceManager().getAllInstances();
+									? getMDTInstanceManager().getInstanceAllByFilter(m_filter)
+									: getMDTInstanceManager().getInstanceAll();
 		
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {

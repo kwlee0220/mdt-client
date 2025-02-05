@@ -6,8 +6,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
-import mdt.model.service.ParameterCollection;
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)

@@ -7,8 +7,8 @@ import org.barfuin.texttree.api.Node;
 import utils.func.Tuple;
 import utils.stream.FStream;
 
-import mdt.model.service.ParameterCollection;
 import mdt.model.sm.data.Parameter;
+import mdt.model.sm.data.ParameterCollection;
 import mdt.model.sm.data.ParameterValue;
 
 

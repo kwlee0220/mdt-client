@@ -25,14 +25,14 @@ import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.ModelValidationException;
 import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.ParameterCollection;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.Equipment;
 import mdt.model.sm.data.Operation;
+import mdt.model.sm.data.ParameterCollection;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.SubmodelElementValue;
@@ -95,7 +95,7 @@ public class MDTParameterReference extends AbstractElementReference
 		}
 		
 		SubmodelDescriptor dataSmDesc
-			= Funcs.getFirst(instance.getAllSubmodelDescriptorBySemanticId(Data.SEMANTIC_ID))
+			= Funcs.getFirst(instance.getSubmodelDescriptorAllBySemanticId(Data.SEMANTIC_ID))
 					.getOrThrow(() -> new ResourceNotFoundException("Submodel", "semanticId=" + Data.SEMANTIC_ID));
 		
 		String submodelIdShort = null;

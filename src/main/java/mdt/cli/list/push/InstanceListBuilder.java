@@ -14,8 +14,8 @@ import mdt.cli.list.push.ListCommand.ListCollector;
 import mdt.cli.list.push.ListCommand.SimpleListCollector;
 import mdt.cli.list.push.ListCommand.TableCollector;
 import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
 import mdt.model.sm.SubmodelUtils;
 
 /**
@@ -59,8 +59,8 @@ public class InstanceListBuilder implements ListBuilder {
 	
 	private String collect(ListCollector collector) {
 		List<? extends MDTInstance> instances = (m_filter != null)
-									? m_manager.getAllInstancesByFilter(m_filter)
-									: m_manager.getAllInstances();
+									? m_manager.getInstanceAllByFilter(m_filter)
+									: m_manager.getInstanceAll();
 		
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {
@@ -73,7 +73,7 @@ public class InstanceListBuilder implements ListBuilder {
 	}
 
 	private Object[] toColumns(int seqNo, MDTInstance instance) {
-		String submodelIdCsv = FStream.from(instance.getAllInstanceSubmodelDescriptors())
+		String submodelIdCsv = FStream.from(instance.getInstanceSubmodelDescriptorAll())
 										.map(InstanceSubmodelDescriptor::getSemanticId)
 										.map(SubmodelUtils::getShortSubmodelSemanticId)
 										.join(',');

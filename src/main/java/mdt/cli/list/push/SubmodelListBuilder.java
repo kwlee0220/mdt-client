@@ -16,8 +16,8 @@ import mdt.cli.list.push.ListCommand.SimpleListCollector;
 import mdt.cli.list.push.ListCommand.TableCollector;
 import mdt.model.DescriptorUtils;
 import mdt.model.ReferenceUtils;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
@@ -65,12 +65,12 @@ public class SubmodelListBuilder implements ListBuilder {
 	
 	private String collect(ListCollector collector) {
 		List<? extends MDTInstance> instances = (m_filter != null)
-									? m_manager.getAllInstancesByFilter(m_filter)
-									: m_manager.getAllInstances();
+									? m_manager.getInstanceAllByFilter(m_filter)
+									: m_manager.getInstanceAll();
 		
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {
-			for ( SubmodelDescriptor smDesc: inst.getAllSubmodelDescriptors() ) {
+			for ( SubmodelDescriptor smDesc: inst.getSubmodelDescriptorAll() ) {
 				String[] cols = toColumns(seqNo, inst, smDesc);
 				collector.collectLine(cols);
 				

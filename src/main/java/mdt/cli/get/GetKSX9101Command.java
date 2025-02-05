@@ -20,8 +20,8 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
+import mdt.model.SubmodelService;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.data.DefaultData;
 import mdt.model.sm.info.DefaultInformationModel;
 import mdt.model.sm.simulation.DefaultSimulation;
@@ -79,14 +79,14 @@ public class GetKSX9101Command extends AbstractMDTCommand {
 				// 획득한 MDTInstance가 KSX9101를 지원하는지 간략히 확인.
 				// 확인은 MDTInstance가 'InformationModel'과 'Data' idShort를 갖는
 				// Submodel을 포함하는지 여부로 판단한다.
-				Set<String> ids = FStream.from(inst.getAllInstanceSubmodelDescriptors())
+				Set<String> ids = FStream.from(inst.getInstanceSubmodelDescriptorAll())
 										.map(InstanceSubmodelDescriptor::getIdShort)
 										.toSet();
 				if ( !ids.containsAll(Set.of("InformationModel", "Data")) ) {
 					throw new IllegalArgumentException("Not KSX9101 MDTInstance: id=" + m_mdtId);
 				}
 				
-				Map<String,Submodel> submodels = FStream.from(inst.getAllSubmodelServices())
+				Map<String,Submodel> submodels = FStream.from(inst.getSubmodelServiceAll())
 														.map(SubmodelService::getSubmodel)
 														.toMap(Submodel::getIdShort);
 				

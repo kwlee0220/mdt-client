@@ -16,6 +16,8 @@ import com.google.common.util.concurrent.AbstractService;
 
 import utils.LoggerSettable;
 import utils.async.Guard;
+import utils.async.GuardedRunnable;
+import utils.async.GuardedSupplier;
 import utils.func.FOption;
 
 
@@ -53,7 +55,9 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 	}
 	
 	public MqttClient awaitMqttClient() throws InterruptedException {
-		return m_guard.awaitWhileAndGet(() -> m_mqttClient == null, () -> m_mqttClient);
+		return GuardedSupplier.from(m_guard, () -> m_mqttClient)
+								.preCondition(() -> m_mqttClient == null)
+								.get();
 	}
 
 	@Override
@@ -106,11 +110,11 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 				if ( getLogger().isInfoEnabled() ) {
 					getLogger().info("MQTT-Broker connected: server={}", m_mqttServerUri);
 				}
-				m_guard.runAnSignalAllOrThrow(() -> {
+				GuardedRunnable.from(m_guard, () -> {
 					m_mqttClient = result.getUnchecked();
 					m_mqttClient.setCallback(this);
 					m_reconnect = null;
-				});
+				}).run();
 				
 				try {
 					mqttBrokerConnected(m_mqttClient);
@@ -120,7 +124,7 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 				}
 			}
 			else {
-				m_guard.runAnSignalAllOrThrow(() -> m_reconnect = null);
+				GuardedRunnable.from(m_guard, () -> m_reconnect = null).run();
 			}
 		});
 

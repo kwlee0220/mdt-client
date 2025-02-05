@@ -44,6 +44,10 @@ public interface SubmodelRegistry {
 	@GetExchange("/submodel-descriptors")
 	public List<SubmodelDescriptor> getAllSubmodelDescriptorsByIdShort(
 											@Nullable @RequestParam(name="idShort", required=false) String idShort);
+
+	@GetExchange("/submodel-descriptors")
+	public List<SubmodelDescriptor> getAllSubmodelDescriptorsBySemanticId(
+										@Nullable @RequestParam(name="semanticId", required=false) String semanticId);
 	
 	/**
 	 * 주어진 SubmodelDescriptor를 등록시킨다.

@@ -2,14 +2,18 @@ package mdt.model.instance;
 
 import java.util.List;
 
+import com.google.common.base.Preconditions;
+
 import utils.InternalException;
 
+import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.service.MDTInstance;
 
 
 /**
  * {@link MDTInstanceManager}는 MDTInstance들을 관리하는 관리자 인터페이스를 정의한다.
+ * <p>
+ * MDTInstanceManager는 MDTInstance 객체들을 등록, 조회, 삭제하는 기능을 제공한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -47,6 +51,8 @@ public interface MDTInstanceManager {
 	 * @return	MDTInstance의 등록 여부.
 	 */
 	public default boolean existsInstance(String id) {
+		Preconditions.checkArgument(id != null, "MDTInstance id is null");
+		
 		try {
 			getInstance(id);
 			return true;
@@ -67,8 +73,10 @@ public interface MDTInstanceManager {
 	 * 				식별자에 해당하는 {@link MDTInstance} 객체가 등록되어 있지 않은 경우.
 	 */
 	public default MDTInstance getInstanceByAasId(String aasId) throws ResourceNotFoundException {
+		Preconditions.checkArgument(aasId != null, "AAS id is null");
+		
 		String filter = String.format("instance.aasId = '%s'", aasId);
-		List<? extends MDTInstance> instList = getAllInstancesByFilter(filter);
+		List<? extends MDTInstance> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 1 ) {
 			return instList.get(0);
 		}
@@ -81,27 +89,37 @@ public interface MDTInstanceManager {
 	}
 	
 	/**
-	 * AAS idShort에 해당하는 {@link MDTInstance} 객체를 반환한다.
+	 * AAS idShort에 해당하는 모든 {@link MDTInstance} 객체를 반환한다.
+	 * <p>
+	 * MDT 프레임워크에는 동일 AAS idShort를 가지는 MDTInstance가 존재할 수 있기 때문에,
+	 * 이 메소드는 검색된 모든 MDTInstance의 리스트를 반환한다.
 	 * 
 	 * @param idShort	검색 대상 AAS idShort.
 	 * @return		식별자에 해당하는 {@link MDTInstance} 객체.
 	 * 				만일 식별자에 해당하는 MDT instance가 없는 경우는 empty 리스트가 반환된다.
 	 */
-	public default List<? extends MDTInstance> getAllInstancesByAasIdShort(String idShort) {
+	public default List<? extends MDTInstance> getInstanceAllByAasIdShort(String idShort) {
+		Preconditions.checkArgument(idShort != null, "AAS idShort is null");
+		
 		String filter = String.format("instance.aasIdShort = '%s'", idShort);
-		return getAllInstancesByFilter(filter);
+		return getInstanceAllByFilter(filter);
 	}
 
 	/**
-	 * 자산 식별자에 해당하는 {@link MDTInstance} 객체를 반환한다.
+	 * Asset 식별자에 해당하는 모든 {@link MDTInstance} 객체를 반환한다.
+	 * <p>
+	 * MDT 프레임워크에는 동일 Asset 식별자를 가지는 MDTInstance가 존재할 수 있기 때문에,
+	 * 이 메소드는 검색된 모든 MDTInstance의 리스트를 반환한다.
 	 * 
 	 * @param assetId	검색 대상 자산 식별자.
 	 * @return		자산 식별자에 해당하는 {@link MDTInstance} 객체.
 	 * 				만일 자산 식별자에 해당하는 MDT instance가 없는 경우는 empty 리스트가 반환된다.
 	 */
-	public default List<? extends MDTInstance> getAllInstancesByAssetId(String assetId) {
+	public default List<? extends MDTInstance> getInstanceAllByAssetId(String assetId) {
+		Preconditions.checkArgument(assetId != null, "AssetId is null");
+		
 		String filter = String.format("instance.globalAssetId = '%s'", assetId);
-		return getAllInstancesByFilter(filter);
+		return getInstanceAllByFilter(filter);
 	}
 
 	/**
@@ -116,7 +134,7 @@ public interface MDTInstanceManager {
 	 */
 	public default MDTInstance getInstanceBySubmodelId(String submodelId) throws ResourceNotFoundException {
 		String filter = String.format("submodel.id = '%s'", submodelId);
-		List<? extends MDTInstance> instList = getAllInstancesByFilter(filter);
+		List<? extends MDTInstance> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 1 ) {
 			return instList.get(0);
 		}
@@ -130,15 +148,20 @@ public interface MDTInstanceManager {
 
 	/**
 	 * 주어진 Submodel의 idShort를 포함한 모든 {@link MDTInstance} 객체를 반환한다.
+	 * <p>
+	 * MDT 프레임워크에는 동일 Submodel idShort를 가지는 MDTInstance가 존재할 수 있기 때문에,
+	 * 이 메소드는 검색된 모든 MDTInstance의 리스트를 반환한다.
 	 * 
 	 * @param 	submodelIdShort	검색에 사용할 Submodel의 idShort.
 	 * @return		Submodel의 idShort를 포함한 {@link MDTInstance} 객체들의 리스트.
 	 * 				만일 Submodel의 idShort를 포함한 MDT instance가 없는 경우는 empty 리스트가 반환된다.
 	 */
-	public default List<? extends MDTInstance> getAllInstancesBySubmodelIdShort(String submodelIdShort)
+	public default List<? extends MDTInstance> getInstanceAllBySubmodelIdShort(String submodelIdShort)
 		throws ResourceNotFoundException {
+		Preconditions.checkArgument(submodelIdShort != null, "Submodel idShort is null");
+		
 		String filter = String.format("submodel.idShort = '%s'", submodelIdShort);
-		return getAllInstancesByFilter(filter);
+		return getInstanceAllByFilter(filter);
 	}
 	
 	/**
@@ -146,7 +169,7 @@ public interface MDTInstanceManager {
 	 * 
 	 * @return	등록된 {@link MDTInstance}들의 리스트.
 	 */
-	public List<? extends MDTInstance> getAllInstances();
+	public List<? extends MDTInstance> getInstanceAll();
 
 	/**
 	 * 주어진 filter 조건을 만족하는 {@link MDTInstance} 객체를 반환한다.
@@ -203,20 +226,24 @@ public interface MDTInstanceManager {
 	 * @return		검색 조건에 해당하는 {@link MDTInstance} 객체 리스트.
 	 * 				만일 검색 조건을 만족하는 MDT instance가 없는 경우는 empty 리스트가 반환된다.
 	 */
-	public List<? extends MDTInstance> getAllInstancesByFilter(String filterExpr);
+	public List<? extends MDTInstance> getInstanceAllByFilter(String filterExpr);
 	
 	/**
 	 * 등록된 MDT Instance을 해제시킨다.
+	 * <p>
+	 * 주어진 식별자에 해당하는 MDT Instance가 존재하지 않는 경우는
+	 * 호출이 무시된다.
 	 * 
 	 * @param id	해제시킬 MDT Instance의 식별자.
-	 * @throws MDTInstanceManagerException	등록 해제가 실패한 경우.
+	 * @throws InvalidResourceStatusException	해제시킬 MDT Instance의 상태가 'RUNNING'인 경우.
+	 * @throws MDTInstanceManagerException	등록 해제 과정에서 기타 예외가 발생된 경우.
 	 */
-	public void removeInstance(String id) throws MDTInstanceManagerException;
+	public void removeInstance(String id) throws InvalidResourceStatusException, MDTInstanceManagerException;
 
 	/**
 	 * MDT 시스템에 등록된 모든 {@link MDTInstance}를 등록 해제시킨다.
 	 * 
 	 * @throws MDTInstanceManagerException	등록 해제가 실패한 경우.
 	 */
-	public void removeAllInstances() throws MDTInstanceManagerException;
+	public void removeInstanceAll() throws MDTInstanceManagerException;
 }

@@ -33,7 +33,7 @@ public class Candidates {
 		HttpMDTInstanceManagerClient manager = mdt.getInstanceManager();
 		
 		List<HttpMDTInstanceClient> instanceList
-					= (filter != null) ? manager.getAllInstancesByFilter(filter) : manager.getAllInstances();
+					= (filter != null) ? manager.getInstanceAllByFilter(filter) : manager.getInstanceAll();
 		return FStream.from(instanceList).map(HttpMDTInstanceClient::getId).toList();
 	}
 }

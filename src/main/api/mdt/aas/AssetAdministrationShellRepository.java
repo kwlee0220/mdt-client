@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
 
-import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.AssetAdministrationShellService;
 
 /**
  *

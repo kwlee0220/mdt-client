@@ -67,7 +67,7 @@ public class StopMDTInstanceCommand extends AbstractMDTCommand {
 
 		List<HttpMDTInstanceClient> targetInstList;
 		if ( m_stopAll ) {
-			targetInstList = client.getAllInstancesByFilter("instance.status = 'RUNNING'");
+			targetInstList = client.getInstanceAllByFilter("instance.status = 'RUNNING'");
 			
 			// 전체를 stop 시키는 경우는 굳이 recursive하게 instance들을 stop 시킬 필요가 없다.
 			m_recursive = false;

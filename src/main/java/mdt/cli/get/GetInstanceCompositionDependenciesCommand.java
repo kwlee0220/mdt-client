@@ -10,7 +10,7 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 import mdt.model.sm.info.DefaultInformationModel;
 import mdt.model.sm.info.InformationModel;
 
@@ -51,7 +51,7 @@ public class GetInstanceCompositionDependenciesCommand extends AbstractMDTComman
 		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
 		HttpMDTInstanceClient instance = client.getInstance(m_parent.getInstanceId());
 		
-		SubmodelService infoSvc = Funcs.getFirstOrNull(instance.getAllSubmodelServiceBySemanticId(InformationModel.SEMANTIC_ID));
+		SubmodelService infoSvc = Funcs.getFirstOrNull(instance.getSubmodelServiceAllBySemanticId(InformationModel.SEMANTIC_ID));
 		if ( infoSvc == null ) {
 			System.out.println("InformationModel is not found");
 			System.exit(0);

@@ -28,18 +28,21 @@ public abstract class AbstractListCommand extends AbstractMDTCommand {
 	@Option(names={"--table", "-t" }, description="display instances in a table format.")
 	private boolean m_tableFormat = false;
 	
-	@Option(names={"--tree", "-T" }, description="display instances in a table format.")
+	@Option(names={"--tree", "-T" }, description="display instances in a tree format.")
 	private boolean m_showAsTree = false;
 
 	@Option(names={"--repeat", "-r"}, paramLabel="interval",
-			description="repeat interval (e.g. \"1s\", \"500ms\"")
+			description="repeat interval (e.g. \"1s\", \"500ms\")")
 	private String m_repeat = null;
+
+	@Option(names={"--delimiter", "-d"}, paramLabel="delimiter", description="delimiter.")
+	private String m_delimiter = ListCommands.DELIM;
 	
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
 	
 	abstract public String buildTableString();
-	abstract public String buildListString();
+	abstract public String buildListString(String delim);
 	abstract public String buildTreeString();
 	
 	protected AbstractListCommand() {
@@ -67,7 +70,7 @@ public abstract class AbstractListCommand extends AbstractMDTCommand {
 					listStr = buildTableString();
 				}
 				else {
-					listStr = buildListString();
+					listStr = buildListString(m_delimiter);
 				}
 				
 				if ( repeatInterval != null ) {
@@ -77,6 +80,7 @@ public abstract class AbstractListCommand extends AbstractMDTCommand {
 				if ( m_tableFormat ) {
 					System.out.println();
 				}
+				System.out.flush();
 			}
 			catch ( Exception e ) {
 				if ( repeatInterval != null ) {

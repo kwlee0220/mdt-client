@@ -34,9 +34,9 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceStatusChangeEvent;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceManagerException;
-import mdt.model.service.MDTInstance;
 import mdt.model.sm.ref.DefaultElementReference;
 
 import okhttp3.Headers;
@@ -134,14 +134,14 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 
     // @GetMapping({"/instances"})
 	@Override
-	public List<HttpMDTInstanceClient> getAllInstances() throws MDTInstanceManagerException {
+	public List<HttpMDTInstanceClient> getInstanceAll() throws MDTInstanceManagerException {
 		String url = String.format("%s/instances", getEndpoint());
 		return toInstances(m_restfulClient.get(url, m_descListDeser));
 	}
 
     // @GetMapping({"/instances?filter={filter}"})
 	@Override
-	public List<HttpMDTInstanceClient> getAllInstancesByFilter(String filter) {
+	public List<HttpMDTInstanceClient> getInstanceAllByFilter(String filter) {
 		String url = String.format("%s/instances", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
 						 		.addQueryParameter("filter", filter)
@@ -152,7 +152,7 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 	@Override
 	public HttpMDTInstanceClient getInstanceByAasId(String aasId) throws ResourceNotFoundException {
 		String filter = String.format("instance.aasId = '%s'", aasId);
-		List<HttpMDTInstanceClient> instList = getAllInstancesByFilter(filter);
+		List<HttpMDTInstanceClient> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 0 ) {
 			throw new ResourceNotFoundException("MDTInstance", "aasId=" + aasId);
 		}
@@ -162,9 +162,9 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 	}
 	
 	@Override
-	public List<HttpMDTInstanceClient> getAllInstancesByAasIdShort(String aasIdShort) {
+	public List<HttpMDTInstanceClient> getInstanceAllByAasIdShort(String aasIdShort) {
 		String filter = String.format("instance.aasIdShort = '%s'", aasIdShort);
-		return getAllInstancesByFilter(filter);
+		return getInstanceAllByFilter(filter);
 	}
 
     // @GetMapping({"/instances?aggregate=count"})
@@ -317,7 +317,7 @@ public class HttpMDTInstanceManagerClient implements MDTInstanceManager, HttpMDT
 
     // @DeleteMapping("/instances")
 	@Override
-	public void removeAllInstances() throws MDTInstanceManagerException {
+	public void removeInstanceAll() throws MDTInstanceManagerException {
 		String url = String.format("%s/instances", getEndpoint());
 		
 		m_restfulClient.delete(url);

@@ -15,9 +15,9 @@ import utils.func.Tuple;
 import utils.stream.FStream;
 
 import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.SubmodelUtils;
 
 

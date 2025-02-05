@@ -16,8 +16,8 @@ import utils.LoggerSettable;
 import utils.func.FOption;
 
 import mdt.model.MDTModelSerDe;
+import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.DefaultAASFile;
 import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.MDTElementReference;

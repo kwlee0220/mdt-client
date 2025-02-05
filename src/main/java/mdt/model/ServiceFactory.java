@@ -3,8 +3,6 @@ package mdt.model;
 import mdt.aas.ShellRegistry;
 import mdt.aas.SubmodelRegistry;
 import mdt.aas.SubmodelRepository;
-import mdt.model.service.AssetAdministrationShellService;
-import mdt.model.service.SubmodelService;
 
 
 /**

@@ -10,6 +10,7 @@ import utils.func.Try;
 import utils.stream.FStream;
 
 import mdt.cli.CommandCollection;
+
 import picocli.CommandLine.Command;
 
 /**
@@ -31,16 +32,20 @@ import picocli.CommandLine.Command;
 		ListAICommand.class,
 	})
 public class ListCommands extends CommandCollection {
+	public static final String DELIM = "|";
+	
 	public interface ListCollector {
 		public void collectLine(Object[] cols);
 		public String getFinalString();
 	}
 
 	static class SimpleListCollector implements ListCollector {
+		private final String m_delim;
 		private ByteArrayOutputStream m_baos;
 		private PrintWriter m_writer;
 		
-		SimpleListCollector() {
+		SimpleListCollector(String delim) {
+			m_delim = delim;
 			m_baos = new ByteArrayOutputStream();
 			m_writer = new PrintWriter(m_baos);
 		}
@@ -49,7 +54,7 @@ public class ListCommands extends CommandCollection {
 		public void collectLine(Object[] cols) {
 			m_writer.println(FStream.of(cols)
 									.map(c -> FOption.getOrElse(c,""))
-									.join('|'));
+									.join(m_delim));
 		}
 		
 		void addLine(String line) {

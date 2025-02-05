@@ -9,9 +9,9 @@ import utils.Utilities;
 import utils.func.Tuple;
 
 import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.value.SubmodelElementValue;
 
 
@@ -79,13 +79,13 @@ public class ParameterValueReference {
 	public void set(SubmodelElement sme) {
 		Preconditions.checkState(m_idShortPath != null, "ParameterValueReference is not activated");
 		
-		m_svc.patchSubmodelElementByPath(m_idShortPath, sme);
+		m_svc.updateSubmodelElementByPath(m_idShortPath, sme);
 	}
 	
 	public void set(SubmodelElementValue value) {
 		Preconditions.checkState(m_idShortPath != null, "ParameterValueReference is not activated");
 
-		m_svc.patchSubmodelElementValueByPath(m_idShortPath, value);
+		m_svc.updateSubmodelElementValueByPath(m_idShortPath, value);
 	}
 	
 	@Override

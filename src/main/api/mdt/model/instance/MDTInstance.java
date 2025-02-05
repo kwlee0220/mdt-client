@@ -1,4 +1,4 @@
-package mdt.model.service;
+package mdt.model.instance;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -18,13 +18,10 @@ import com.google.common.base.Preconditions;
 import utils.func.Funcs;
 
 import mdt.aas.AssetAdministrationShellRegistry;
+import mdt.model.AssetAdministrationShellService;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.instance.InstanceDescriptor;
-import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.instance.MDTInstanceInfo;
-import mdt.model.instance.MDTInstanceManagerException;
-import mdt.model.instance.MDTInstanceStatus;
+import mdt.model.SubmodelService;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.simulation.Simulation;
@@ -216,7 +213,7 @@ public interface MDTInstance {
 	 * 
 	 * @see	SubmodelService
 	 */
-	public List<SubmodelService> getAllSubmodelServices()
+	public List<SubmodelService> getSubmodelServiceAll()
 		throws ResourceNotFoundException, MDTInstanceManagerException;
 	
 	/**
@@ -257,15 +254,15 @@ public interface MDTInstance {
 	 */
 	public SubmodelService getSubmodelServiceByIdShort(String submodelIdShort) throws ResourceNotFoundException;
 	
-	public List<SubmodelService> getAllSubmodelServiceBySemanticId(String semanticId);
+	public List<SubmodelService> getSubmodelServiceAllBySemanticId(String semanticId);
 	public default SubmodelService getInformationModelSubmodel() throws ResourceNotFoundException {
-		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(InformationModel.SEMANTIC_ID);
+		List<SubmodelService> found = getSubmodelServiceAllBySemanticId(InformationModel.SEMANTIC_ID);
 		return Funcs.getFirst(found)
 					.getOrThrow(() -> new ResourceNotFoundException("SubmodelService",
 																	"semanticId=" + InformationModel.SEMANTIC_ID));
 	}
 	public default SubmodelService getDataSubmodel() throws ResourceNotFoundException {
-		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(Data.SEMANTIC_ID);
+		List<SubmodelService> found = getSubmodelServiceAllBySemanticId(Data.SEMANTIC_ID);
 		if ( found.size() == 0 ) {
 			throw new ResourceNotFoundException("SubmodelService", "semanticId=" + Data.SEMANTIC_ID);
 		}
@@ -275,7 +272,7 @@ public interface MDTInstance {
 
 	public InformationModel getInformationModel() throws ResourceNotFoundException;
 	public Data getData() throws ResourceNotFoundException;
-	public List<Simulation> getAllSimulations();
+	public List<Simulation> getSimulationAll();
 	
 	/**
 	 * MDTInstance가 포함한 AssetAdministrationShell (AAS)의 기술자를 반환한다.
@@ -304,7 +301,7 @@ public interface MDTInstance {
 	 * 
 	 * @see	SubmodelService
 	 */
-	public List<SubmodelDescriptor> getAllSubmodelDescriptors();
+	public List<SubmodelDescriptor> getSubmodelDescriptorAll();
 	
 	/**
 	 * 하위 모델 식별에 해당하는 기술자를 반환한다.
@@ -317,7 +314,7 @@ public interface MDTInstance {
 		throws ResourceNotFoundException {
 		Preconditions.checkNotNull(submodelId);
 		
-		return getAllSubmodelDescriptors().stream()
+		return getSubmodelDescriptorAll().stream()
 								.filter(desc -> desc.getId().equals(submodelId))
 								.findAny()
 								.orElseThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
@@ -330,19 +327,19 @@ public interface MDTInstance {
 	 * @return	하위 모델 식별자
 	 * @throws ResourceNotFoundException	식별자에 해당하는 하위 모델 기술자가 없는 경우.
 	 */
-	public default List<SubmodelDescriptor> getAllSubmodelDescriptorByIdShort(String submodelIdShort)
+	public default List<SubmodelDescriptor> getSubmodelDescriptorAllByIdShort(String submodelIdShort)
 		throws ResourceNotFoundException {
 		Preconditions.checkNotNull(submodelIdShort);
 		
-		return getAllSubmodelDescriptors().stream()
+		return getSubmodelDescriptorAll().stream()
 								.filter(desc -> submodelIdShort.equals(desc.getIdShort()))
 								.toList();
 	}
 	
-	public default List<SubmodelDescriptor> getAllSubmodelDescriptorBySemanticId(String semanticId) {
+	public default List<SubmodelDescriptor> getSubmodelDescriptorAllBySemanticId(String semanticId) {
 		Preconditions.checkNotNull(semanticId);
 		
-		return getAllSubmodelDescriptors().stream()
+		return getSubmodelDescriptorAll().stream()
 										.filter(desc -> {
 											Reference ref = desc.getSemanticId();
 											if ( ref != null ) {
@@ -367,7 +364,7 @@ public interface MDTInstance {
 	 * 
 	 *  @return		MDTInstance 하위 모델 기술자 리스트.
 	 */
-	public default List<InstanceSubmodelDescriptor> getAllInstanceSubmodelDescriptors() {
+	public default List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptorAll() {
 		return getInstanceDescriptor().getInstanceSubmodelDescriptors();
 	}
 	
@@ -400,7 +397,7 @@ public interface MDTInstance {
 														String.format("instance[%s].%s", getId(), idShort)));
 	}
 
-	public default List<InstanceSubmodelDescriptor> getAllInstanceSubmodelDescriptorBySemanticId(String semanticId) {
+	public default List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptorAllBySemanticId(String semanticId) {
 		return Funcs.filter(getInstanceDescriptor().getInstanceSubmodelDescriptors(),
 							isd -> isd.getSemanticId() != null &&  isd.getSemanticId().equals(semanticId));
 	}

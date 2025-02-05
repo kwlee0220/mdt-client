@@ -10,7 +10,7 @@ import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatusResponse;
 import mdt.model.MDTManager;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.simulation.Simulation;
 

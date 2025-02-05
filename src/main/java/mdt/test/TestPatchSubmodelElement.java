@@ -19,6 +19,6 @@ public class TestPatchSubmodelElement {
 									AASUtils.encodeBase64UrlSafe(submodelId));
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
 		
-		svc.patchSubmodelElementValueByPath("AIInfo.Model.LastExecutionTime", new PropertyValue("PT3S"));
+		svc.updateSubmodelElementValueByPath("AIInfo.Model.LastExecutionTime", new PropertyValue("PT3S"));
 	}
 }

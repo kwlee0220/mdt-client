@@ -6,8 +6,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import mdt.model.MDTModelSerDe;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.sm.AASFile;
 import mdt.model.sm.DefaultAASFile;
 

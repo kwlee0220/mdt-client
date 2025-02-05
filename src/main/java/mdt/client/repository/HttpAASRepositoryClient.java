@@ -12,7 +12,7 @@ import mdt.aas.AssetAdministrationShellRepository;
 import mdt.client.Fa3stHttpClient;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.service.AssetAdministrationShellService;
+import mdt.model.AssetAdministrationShellService;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

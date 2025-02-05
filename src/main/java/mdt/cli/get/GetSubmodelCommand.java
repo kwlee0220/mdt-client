@@ -24,19 +24,18 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.Output;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.ParameterCollection;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.DataInfo;
 import mdt.model.sm.data.DefaultData;
 import mdt.model.sm.data.Parameter;
+import mdt.model.sm.data.ParameterCollection;
 import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.simulation.DefaultSimulation;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.ElementValues;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -74,6 +73,12 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
 		
+		if ( m_submodelRefString == null && m_submodelId == null ) {
+			System.err.println("Either SubmodelReference ('ref') or SubmodelId ('id') "
+								+ "should be provided");
+			System.exit(-1);
+		}
+		
 		SubmodelService submodelSvc = null;
 		if ( m_submodelRefString != null ) {
 			try {
@@ -96,6 +101,11 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 				System.err.printf("Unknown Submodel id: %s", m_submodelId);
 				System.exit(-1);
 			}
+		}
+		else {
+			System.err.println("Either SubmodelReference ('ref') or SubmodelId ('id') "
+                                + "should be provided");
+            System.exit(-1);
 		}
 			
 		m_output = m_output.toLowerCase();

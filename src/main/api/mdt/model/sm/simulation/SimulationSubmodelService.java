@@ -1,4 +1,4 @@
-package mdt.model.service;
+package mdt.model.sm.simulation;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
@@ -6,8 +6,8 @@ import com.google.common.base.Preconditions;
 
 import lombok.experimental.Delegate;
 
+import mdt.model.SubmodelService;
 import mdt.model.sm.simulation.DefaultSimulation;
-import mdt.model.sm.simulation.Simulation;
 
 
 /**

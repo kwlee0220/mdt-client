@@ -19,9 +19,9 @@ import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.value.SubmodelElementValue;
 
@@ -97,13 +97,13 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	
 	@Override
 	public void write(SubmodelElement sme) throws ResourceNotFoundException {
-		getSubmodelService().putSubmodelElementByPath(m_path, sme);
+		getSubmodelService().setSubmodelElementByPath(m_path, sme);
 	}
 
 	@Override
 	public SubmodelElement update(SubmodelElementValue value) throws ResourceNotFoundException {
 		SubmodelService svc = getSubmodelService();
-		svc.patchSubmodelElementValueByPath(m_path, value);
+		svc.updateSubmodelElementValueByPath(m_path, value);
 		return svc.getSubmodelElementByPath(m_path);
 	}
 	
@@ -180,8 +180,12 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	public static DefaultElementReference parseJson(ObjectNode topNode) throws IOException {
 		MDTSubmodelReference smRef = MDTModelSerDe.readValue(topNode.get(FIELD_SUBMODEL_REF),
 															MDTSubmodelReference.class);
-		String idShortPath = topNode.get(FIELD_ELEMENT_PATH).asText();
+		if ( smRef == null ) {
+			String json = MDTModelSerDe.toJsonString(topNode);
+			throw new IllegalArgumentException("Failed to parse MDTSubmodelReference: ref=" + json);
+		}
 		
+		String idShortPath = topNode.get(FIELD_ELEMENT_PATH).asText();
 		return DefaultElementReference.newInstance(smRef, idShortPath);
 	}
 	

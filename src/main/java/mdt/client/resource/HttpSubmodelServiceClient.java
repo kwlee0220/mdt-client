@@ -33,7 +33,7 @@ import utils.http.RESTfulIOException;
 import mdt.client.Fa3stHttpClient;
 import mdt.model.MDTOperationHandle;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 import mdt.model.sm.AASFile;
 import mdt.model.sm.value.SubmodelElementValue;
 
@@ -99,7 +99,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public SubmodelElement postSubmodelElement(SubmodelElement element) {
+	public SubmodelElement addSubmodelElement(SubmodelElement element) {
 		try {
 			String url = getEndpoint() + "/submodel-elements";
 			RequestBody reqBody = createRequestBody(element);
@@ -113,7 +113,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public SubmodelElement postSubmodelElementByPath(String idShortPath, SubmodelElement element) {
+	public SubmodelElement addSubmodelElementByPath(String idShortPath, SubmodelElement element) {
 		try {
 			String url = String.format("%s/submodel-elements/%s", getEndpoint(), encodeIdShortPath(idShortPath));
 			RequestBody reqBody = createRequestBody(element);
@@ -127,7 +127,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public SubmodelElement putSubmodelElementByPath(String idShortPath, SubmodelElement element) {
+	public SubmodelElement setSubmodelElementByPath(String idShortPath, SubmodelElement element) {
 		try {
 			String url = String.format("%s/submodel-elements/%s", getEndpoint(), encodeIdShortPath(idShortPath));
 			RequestBody reqBody = createRequestBody(element);
@@ -141,7 +141,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void patchSubmodelElementByPath(String idShortPath, SubmodelElement element)
+	public void updateSubmodelElementByPath(String idShortPath, SubmodelElement element)
 			throws ResourceNotFoundException {
 		try {
 			String url = String.format("%s/submodel-elements/%s",
@@ -157,7 +157,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void patchSubmodelElementValueByPath(String idShortPath, SubmodelElementValue value) {
+	public void updateSubmodelElementValueByPath(String idShortPath, SubmodelElementValue value) {
 		try {
 			String url = String.format("%s/submodel-elements/%s/$value",
 										getEndpoint(), encodeIdShortPath(idShortPath));

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 
 /**
  *

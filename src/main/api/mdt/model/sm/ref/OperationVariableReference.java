@@ -17,9 +17,9 @@ import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.SubmodelElementValue;
 

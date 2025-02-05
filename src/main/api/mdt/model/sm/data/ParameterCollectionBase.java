@@ -1,4 +1,4 @@
-package mdt.model.service;
+package mdt.model.sm.data;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,12 +15,9 @@ import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
 import mdt.model.sm.data.DefaultEquipmentParameter;
 import mdt.model.sm.data.DefaultEquipmentParameterValue;
-import mdt.model.sm.data.EquipmentParameter;
-import mdt.model.sm.data.EquipmentParameterValue;
-import mdt.model.sm.data.Parameter;
-import mdt.model.sm.data.ParameterValue;
 
 
 /**

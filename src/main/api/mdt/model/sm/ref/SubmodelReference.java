@@ -1,7 +1,7 @@
 package mdt.model.sm.ref;
 
 import mdt.model.ResourceNotFoundException;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 
 
 /**

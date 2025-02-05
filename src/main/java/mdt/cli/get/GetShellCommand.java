@@ -18,10 +18,11 @@ import utils.stream.FStream;
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.AssetAdministrationShellService;
 import mdt.model.DescriptorUtils;
 import mdt.model.MDTManager;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.service.AssetAdministrationShellService;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -58,7 +59,7 @@ public class GetShellCommand extends AbstractMDTCommand {
 	}
 	
 	private HttpMDTInstanceClient getAnyInstanceByAasIdShort(HttpMDTInstanceManagerClient manager, String aasIdShort) {
-		List<HttpMDTInstanceClient> instList = manager.getAllInstancesByAasIdShort(m_aasId);
+		List<HttpMDTInstanceClient> instList = manager.getInstanceAllByAasIdShort(m_aasId);
 		if ( instList.size() == 1 ) {
 			return (HttpMDTInstanceClient)instList.get(0);
 		}

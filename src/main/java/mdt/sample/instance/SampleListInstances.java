@@ -7,7 +7,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.model.service.MDTInstance;
+import mdt.model.instance.MDTInstance;
 
 
 /**
@@ -21,13 +21,13 @@ public class SampleListInstances {
 		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT)
 																	.getInstanceManager();
 		
-		List<HttpMDTInstanceClient> instList = manager.getAllInstances();
+		List<HttpMDTInstanceClient> instList = manager.getInstanceAll();
 		System.out.println("------------------------------------------");
 		for ( MDTInstance inst: instList ) {
 			System.out.println("ID: " + inst.getId());
 			
 			StringBuilder builder = new StringBuilder();
-			for ( SubmodelDescriptor smDesc: inst.getAllSubmodelDescriptors() ) {
+			for ( SubmodelDescriptor smDesc: inst.getSubmodelDescriptorAll() ) {
 				builder.append(",").append(smDesc.getIdShort());
 			}
 			System.out.println("SUB_MODELS: " + builder.toString().substring(1));

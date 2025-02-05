@@ -10,10 +10,10 @@ import utils.Utilities;
 import utils.func.Tuple;
 import utils.stream.FStream;
 
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceInfo;
 import mdt.model.instance.OperationInfo;
 import mdt.model.instance.ParameterInfo;
-import mdt.model.service.MDTInstance;
 import mdt.tree.CompositeNode;
 import mdt.tree.DefaultNode;
 import mdt.tree.ListNode;

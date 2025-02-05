@@ -29,17 +29,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Sets;
 
-import lombok.experimental.UtilityClass;
-
+import utils.Throwables;
 import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.http.OkHttpClientUtils;
 import utils.stream.FStream;
 
+import lombok.experimental.UtilityClass;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.instance.MDTInstanceManagerException;
-import mdt.model.service.SubmodelService;
 
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
@@ -121,20 +120,20 @@ public class AASUtils {
 	}
 	
 	public static Environment readEnvironment(File aasEnvFile)
-		throws IOException, ResourceAlreadyExistsException, ResourceNotFoundException {
+		throws IOException, ModelValidationException, MDTInstanceManagerException {
 		JsonDeserializer deser = MDTModelSerDe.getJsonDeserializer();
 		
 		try ( FileInputStream fis = new FileInputStream(aasEnvFile) ) {
 			Environment env = deser.read(fis, Environment.class);
 			if ( env.getAssetAdministrationShells().size() > 1
 				|| env.getAssetAdministrationShells().size() == 0 ) {
-				throw new MDTInstanceManagerException("Not supported: Multiple AAS descriptors in the Environment");
+				throw new ModelValidationException("Not supported: Multiple AAS descriptors in the Environment");
 			}
 			
 			Set<String> submodelIds = Sets.newHashSet();
 			for ( Submodel submodel: env.getSubmodels() ) {
 				if ( submodelIds.contains(submodel.getId()) ) {
-					throw new ResourceAlreadyExistsException("Submodel", submodel.getId());
+					throw new ModelValidationException("Submodel already exists: id=" + submodel.getId());
 				}
 				submodelIds.add(submodel.getId());
 			}
@@ -143,18 +142,21 @@ public class AASUtils {
 			for ( Reference ref: aas.getSubmodels() ) {
 				String refId = ref.getKeys().get(0).getValue();
 				if ( !submodelIds.contains(refId) ) {
-					throw new ResourceNotFoundException("Submodel", "id=" + refId);
+					throw new ModelValidationException("Submodel is not found: " + refId);
 				}
 			}
 			
 			return env;
 		}
 		catch ( DeserializationException e ) {
-			throw new MDTInstanceManagerException("failed to parse Environment: file=" + aasEnvFile);
+			throw new IOException("failed to parse Environment: file=" + aasEnvFile);
+		}
+		catch ( ModelValidationException e ) {
+			throw e;
 		}
 		catch ( Throwable e ) {
-			e.printStackTrace();
-			throw new AssertionError();
+			Throwable cause = Throwables.unwrapThrowable(e);
+			throw new MDTInstanceManagerException("Failed to read Environment: file=" + aasEnvFile, cause);
 		}
 	}
 	

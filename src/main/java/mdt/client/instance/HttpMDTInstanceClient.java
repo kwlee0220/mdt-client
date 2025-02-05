@@ -35,12 +35,12 @@ import mdt.model.DescriptorUtils;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
 import mdt.model.instance.DefaultMDTInstanceInfo;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.DefaultData;
 import mdt.model.sm.info.ComponentItem;
@@ -227,8 +227,8 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 
 	@Override
-	public List<SubmodelService> getAllSubmodelServices() throws InvalidResourceStatusException {
-		return FStream.from(getAllInstanceSubmodelDescriptors())
+	public List<SubmodelService> getSubmodelServiceAll() throws InvalidResourceStatusException {
+		return FStream.from(getInstanceSubmodelDescriptorAll())
 						.map(desc -> toSubmodelService(desc.getId()))
 						.toList();
 	}
@@ -246,8 +246,8 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 
 	@Override
-	public List<SubmodelService> getAllSubmodelServiceBySemanticId(String semanticId) {
-		return FStream.from(getAllInstanceSubmodelDescriptorBySemanticId(semanticId))
+	public List<SubmodelService> getSubmodelServiceAllBySemanticId(String semanticId) {
+		return FStream.from(getInstanceSubmodelDescriptorAllBySemanticId(semanticId))
 						.map(isd -> toSubmodelService(isd.getId()))
 						.toList();
 	}
@@ -257,7 +257,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		return m_infoModel.updateAndGet(p -> FOption.getOrElse(p, this::loadInformationModel));
 	}
 	private InformationModel loadInformationModel() throws ResourceNotFoundException {
-		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(InformationModel.SEMANTIC_ID);
+		List<SubmodelService> found = getSubmodelServiceAllBySemanticId(InformationModel.SEMANTIC_ID);
 		SubmodelService svc = Funcs.getFirst(found).getOrThrow(() -> new ResourceNotFoundException("InformationModel",
 																		"semanticId=" + InformationModel.SEMANTIC_ID));
 		DefaultInformationModel infoModel = new DefaultInformationModel();
@@ -270,7 +270,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		return m_data.updateAndGet(p -> FOption.getOrElseThrow(p, this::loadData));
 	}
 	private Data loadData() throws ResourceNotFoundException {
-		List<SubmodelService> found = getAllSubmodelServiceBySemanticId(Data.SEMANTIC_ID);
+		List<SubmodelService> found = getSubmodelServiceAllBySemanticId(Data.SEMANTIC_ID);
 		SubmodelService dataSvc = Funcs.getFirst(found)
 										.getOrThrow(() -> new ResourceNotFoundException("DataSubmodel",
 																				"semanticId=" + Data.SEMANTIC_ID));
@@ -280,11 +280,11 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 
 	@Override
-	public List<Simulation> getAllSimulations() {
+	public List<Simulation> getSimulationAll() {
 		return m_simulationList.updateAndGet(lst -> FOption.getOrElseThrow(lst, this::loadAllSimulations));
 	}
 	private List<Simulation> loadAllSimulations() {
-		return FStream.from(getAllSubmodelServiceBySemanticId(Simulation.SEMANTIC_ID))
+		return FStream.from(getSubmodelServiceAllBySemanticId(Simulation.SEMANTIC_ID))
 						.map(smSvc -> {
 							Submodel submodel = smSvc.getSubmodel();
 							DefaultSimulation sim = new DefaultSimulation();
@@ -309,7 +309,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
     // @GetMapping({"instances/{id}/submodel_descriptors"})
 	@Override
-	public List<SubmodelDescriptor> getAllSubmodelDescriptors() {
+	public List<SubmodelDescriptor> getSubmodelDescriptorAll() {
 		String url = String.format("%s/submodel_descriptors", getEndpoint());
 		return m_restfulClient.get(url, m_smListDeser);
 	}
@@ -399,7 +399,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	
 	@Override
 	public String toString() {
-		String submodelIdStr = FStream.from(getAllInstanceSubmodelDescriptors())
+		String submodelIdStr = FStream.from(getInstanceSubmodelDescriptorAll())
 										.map(InstanceSubmodelDescriptor::getIdShort)
 										.join(", ");
 		return String.format("[%s] AAS=%s SubmodelIdShorts=(%s) status=%s",

@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import utils.StopWatch;
 import utils.UnitUtils;
-import utils.async.FixedIntervalLoopExecution;
+import utils.async.PeriodicLoopExecution;
 import utils.async.StartableExecution;
 import utils.func.FOption;
 
@@ -18,6 +18,8 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
+import mdt.model.MDTModelSerDe;
+import mdt.model.instance.DefaultMDTInstanceInfo;
 import mdt.tree.state.InstanceStatesNode;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -28,16 +30,20 @@ import picocli.CommandLine.ParentCommand;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "states",
+	name = "mdt-info",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "Get states (parameter-infos & operation-infos) of an instance"
+	description = "Get MDT information (parameter-infos & operation-infos) of an instance"
 )
-public class GetInstanceStatesCommand extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceStatesCommand.class);
+public class GetInstanceMdtInfoCommand extends AbstractMDTCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceMdtInfoCommand.class);
 	
 	@ParentCommand GetInstanceCommand m_parent;
+	
+	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
+			description="output type (candidnates: 'tree' or 'json')")
+	private String m_output = "tree";
 	
 	@Option(names={"--skip-parameters"}, description="skip paramerter-infos")
 	private boolean m_skipParameters = false;
@@ -53,10 +59,10 @@ public class GetInstanceStatesCommand extends AbstractMDTCommand {
 	private boolean m_verbose = false;
 
 	public static final void main(String... args) throws Exception {
-		main(new GetInstanceStatesCommand(), args);
+		main(new GetInstanceMdtInfoCommand(), args);
 	}
 	
-	public GetInstanceStatesCommand() {
+	public GetInstanceMdtInfoCommand() {
 		setLogger(s_logger);
 	}
 
@@ -66,15 +72,15 @@ public class GetInstanceStatesCommand extends AbstractMDTCommand {
 		HttpMDTInstanceClient instance = client.getInstance(m_parent.getInstanceId());
 		
 		if ( m_repeat == null ) {
-			displayStates(instance);
+			display(instance);
 			return;
 		}
 
 		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
-		StartableExecution<Void> exec = new FixedIntervalLoopExecution<Void>(repeatInterval) {
+		StartableExecution<Void> exec = new PeriodicLoopExecution<>(repeatInterval) {
 			@Override
-			protected FOption<Void> performAction(long loopIndex) throws Exception {
-				displayStates(instance);
+			protected FOption<Void> performPeriodicAction(long loopIndex) throws Exception {
+				display(instance);
 				return FOption.empty();
 			}
 		};
@@ -89,7 +95,20 @@ public class GetInstanceStatesCommand extends AbstractMDTCommand {
 		TREE_OPTS.setMaxDepth(5);
 	}
 	
-	private void displayStates(HttpMDTInstanceClient instance) {
+	private void display(HttpMDTInstanceClient instance) {
+		switch ( m_output ) {
+			case "tree":
+				displayAsTree(instance);
+				break;
+			case "json":
+				displayMDTInfo(instance);
+				break;
+			default:
+				throw new IllegalArgumentException("unknown output type: " + m_output);
+		}
+	}
+	
+	private void displayAsTree(HttpMDTInstanceClient instance) {
 		StopWatch watch = StopWatch.start();
 		InstanceStatesNode statesNode = new InstanceStatesNode(instance, !m_skipParameters, !m_skipOperations);
 		String treeString = TextTree.newInstance(TREE_OPTS).render(statesNode);
@@ -99,5 +118,10 @@ public class GetInstanceStatesCommand extends AbstractMDTCommand {
 		if ( m_verbose ) {
 			System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
 		}
+	}
+	
+	private void displayMDTInfo(HttpMDTInstanceClient instance) {
+		DefaultMDTInstanceInfo info = DefaultMDTInstanceInfo.builder(instance).build();
+		System.out.println(MDTModelSerDe.toJsonString(info));
 	}
 }

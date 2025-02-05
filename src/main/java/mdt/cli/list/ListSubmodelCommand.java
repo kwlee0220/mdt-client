@@ -16,11 +16,12 @@ import mdt.cli.list.ListCommands.SimpleListCollector;
 import mdt.cli.list.ListCommands.TableCollector;
 import mdt.model.DescriptorUtils;
 import mdt.model.ReferenceUtils;
-import mdt.model.service.MDTInstance;
+import mdt.model.instance.MDTInstance;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.simulation.Simulation;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -46,8 +47,8 @@ public class ListSubmodelCommand extends AbstractListCommand {
 	}
 
 	@Override
-	public String buildListString() {
-		return collect(new SimpleListCollector());
+	public String buildListString(String delim) {
+		return collect(new SimpleListCollector(delim));
 	}
 
 	@Override
@@ -73,12 +74,12 @@ public class ListSubmodelCommand extends AbstractListCommand {
 	
 	private String collect(ListCollector collector) {
 		List<? extends MDTInstance> instances = (m_filter != null)
-									? getMDTInstanceManager().getAllInstancesByFilter(m_filter)
-									: getMDTInstanceManager().getAllInstances();
+									? getMDTInstanceManager().getInstanceAllByFilter(m_filter)
+									: getMDTInstanceManager().getInstanceAll();
 		
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {
-			for ( SubmodelDescriptor smDesc: inst.getAllSubmodelDescriptors() ) {
+			for ( SubmodelDescriptor smDesc: inst.getSubmodelDescriptorAll() ) {
 				String[] cols = toColumns(seqNo, inst, smDesc);
 				collector.collectLine(cols);
 				

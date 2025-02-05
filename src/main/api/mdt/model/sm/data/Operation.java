@@ -2,8 +2,6 @@ package mdt.model.sm.data;
 
 import java.util.List;
 
-import mdt.model.service.ParameterCollection;
-
 
 /**
  *

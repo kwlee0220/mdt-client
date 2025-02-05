@@ -19,8 +19,7 @@ import mdt.model.Input;
 import mdt.model.Output;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.ai.AIInfo;
 import mdt.model.sm.ai.DefaultAI;
@@ -127,7 +126,7 @@ public class DefaultMDTInstanceInfo implements MDTInstanceInfo {
 				default -> assetType;
 			};
 			
-			builder.fillSubmodelInfos(FStream.from(instance.getAllSubmodelServices())
+			builder.fillSubmodelInfos(FStream.from(instance.getSubmodelServiceAll())
 					.map(SubmodelService::getSubmodel).toList());
 		}
 		return builder;

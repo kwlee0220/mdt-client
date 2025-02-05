@@ -1,4 +1,4 @@
-package mdt.model.service;
+package mdt.model.sm.data;
 
 import java.util.List;
 
@@ -6,11 +6,17 @@ import utils.KeyValue;
 import utils.func.Funcs;
 
 import mdt.model.ResourceNotFoundException;
-import mdt.model.sm.data.Parameter;
-import mdt.model.sm.data.ParameterValue;
 
 
 /**
+ * {@code ParameterCollection}는 {@link Parameter}와 {@link ParameterValue} 객체들을
+ * 관리하는 컬렉션을 정의한다.
+ * <p>
+ * {@code ParameterCollection}은 {@link Parameter}와 {@link ParameterValue} 객체들을 각각의 목록으로 관리하며,
+ * 각 객체들은 서로 일대일 관계를 갖는다.
+ * <p>
+ * {@code ParameterCollection}에 포함된 Parameter와 ParameterValue 객체들은 인덱스와 식별자를 통해
+ * 접근할 수 있다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -50,13 +56,19 @@ public interface ParameterCollection {
 		return Funcs.findFirst(this.getParameterList(), param -> param.getParameterId().equals(paramId))
 					.getOrThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId));
 	}
+	
+	/**
+	 * 파라미터 식별자에 해당하는 {@link Parameter} 객체의 인덱스를 반환한다.
+	 * 
+	 * @param paramId 파라미터 식별자
+	 * @return 파라미터 인덱스.
+	 * @throws ResourceNotFoundException 식별자에 해당하는 파라미터가 존재하지 않는 경우.
+	 */
 	public default int getParameterIndex(String paramId) throws ResourceNotFoundException {
 		return Funcs.findFirstIndexed(this.getParameterList(), param -> param.getParameterId().equals(paramId))
 						.getOrThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId))
 						.index();
 	}
-//	public SubmodelElement getParameterAsSubmodelElement(String paramId) throws ResourceNotFoundException;
-//	public String getIdShortPathOfParameter(String paramId);
 	
 	/**
 	 * 파라미터 식별자에 해당하는 {@link ParameterValue} 객체를 반환한다.
@@ -69,6 +81,14 @@ public interface ParameterCollection {
 		return Funcs.findFirst(this.getParameterValueList(), param -> param.getParameterId().equals(paramId))
 				.getOrThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId));
 	}
+	
+	/**
+	 * 파라미터 식별자에 해당하는 {@link ParameterValue} 객체의 인덱스를 반환한다.
+	 * 
+	 * @param paramId 파라미터 식별자
+	 * @return 파라미터 인덱스.
+	 * @throws ResourceNotFoundException 식별자에 해당하는 파라미터가 존재하지 않는 경우.
+	 */
 	public default int getParameterValueIndex(String paramId) throws ResourceNotFoundException {
 		return Funcs.findFirstIndexed(this.getParameterValueList(), param -> param.getParameterId().equals(paramId))
 						.getOrThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId))

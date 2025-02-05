@@ -12,7 +12,6 @@ import utils.InternalException;
 import mdt.aas.SubmodelRegistry;
 import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
-
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -43,6 +42,14 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	public List<SubmodelDescriptor>
 	getAllSubmodelDescriptorsByIdShort(String idShort) {
 		String url = String.format("%s/submodel-descriptors?idShort=%s", m_endpoint, idShort);
+		
+		Request req = new Request.Builder().url(url).get().build();
+		return callList(req, SubmodelDescriptor.class);
+	}
+
+	@Override
+	public List<SubmodelDescriptor> getAllSubmodelDescriptorsBySemanticId(String semanticId) {
+		String url = String.format("%s/submodel-descriptors?semanticId=%s", m_endpoint, semanticId);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);

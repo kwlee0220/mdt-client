@@ -17,8 +17,8 @@ import mdt.cli.list.push.ListCommand.SimpleListCollector;
 import mdt.cli.list.push.ListCommand.TableCollector;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
 
 /**
  *
@@ -63,8 +63,8 @@ public class ShellListBuilder implements ListBuilder {
 	
 	private String collect(ListCollector collector) {
 		List<? extends MDTInstance> instances = (m_filter != null)
-									?  m_manager.getAllInstancesByFilter(m_filter)
-									: m_manager.getAllInstances();
+									?  m_manager.getInstanceAllByFilter(m_filter)
+									: m_manager.getInstanceAll();
 		
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {

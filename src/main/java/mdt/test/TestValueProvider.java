@@ -44,9 +44,9 @@ public class TestValueProvider {
 		float newValue = oldValue + 0.5f;
 		
 		String path2 = String.format(pattern, paramIdx);
-		svc.patchSubmodelElementValueByPath(path2, new PropertyValue("" + newValue));
+		svc.updateSubmodelElementValueByPath(path2, new PropertyValue("" + newValue));
 		
-		svc.patchSubmodelElementValueByPath("DataInfo.Equipment.EquipmentParameters[0].ParameterName",
+		svc.updateSubmodelElementValueByPath("DataInfo.Equipment.EquipmentParameters[0].ParameterName",
 											new PropertyValue("xxx"));
 	}
 	

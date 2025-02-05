@@ -14,12 +14,12 @@ import utils.stream.FStream;
 import mdt.model.Input;
 import mdt.model.Output;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.AISubmodelService;
-import mdt.model.service.SimulationSubmodelService;
 import mdt.model.sm.ai.AI;
+import mdt.model.sm.ai.AISubmodelService;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
+import mdt.model.sm.simulation.SimulationSubmodelService;
 
 
 /**

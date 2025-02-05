@@ -19,14 +19,14 @@ import mdt.model.DescriptorUtils;
 import mdt.model.Input;
 import mdt.model.Output;
 import mdt.model.ReferenceUtils;
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.MDTInstance;
-import mdt.model.service.SimulationSubmodelService;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.simulation.Simulation;
+import mdt.model.sm.simulation.SimulationSubmodelService;
 
 
 /**
@@ -70,12 +70,12 @@ public class SimulationListBuilder implements ListBuilder {
 	
 	private String collect(ListCollector collector) {
 		List<? extends MDTInstance> instances = (m_filter != null)
-									?  m_manager.getAllInstancesByFilter(m_filter)
-									: m_manager.getAllInstances();
+									?  m_manager.getInstanceAllByFilter(m_filter)
+									: m_manager.getInstanceAll();
 		
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {
-			for ( SubmodelDescriptor smDesc: inst.getAllSubmodelDescriptors() ) {
+			for ( SubmodelDescriptor smDesc: inst.getSubmodelDescriptorAll() ) {
 				if ( !Simulation.SEMANTIC_ID.equals(getSemanticIdString(smDesc)) ) {
 					continue;
 				}

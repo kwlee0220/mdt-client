@@ -50,7 +50,7 @@ public class RemoveMDTInstanceCommand extends AbstractMDTCommand {
 		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
 		
 		if ( m_removeAll ) {
-			manager.removeAllInstances();
+			manager.removeInstanceAll();
 		}
 		else {
 			for ( String instId: m_instanceIds ) {

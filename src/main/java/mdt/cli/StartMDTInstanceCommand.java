@@ -34,6 +34,7 @@ import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.sm.info.ComponentItem;
 import mdt.model.sm.info.TwinComposition;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -108,7 +109,7 @@ public class StartMDTInstanceCommand extends AbstractMDTCommand {
 		
 		List<HttpMDTInstanceClient> initialInstances;
 		if ( m_startAll ) {
-			initialInstances = m_manager.getAllInstancesByFilter("instance.status != 'RUNNING'");
+			initialInstances = m_manager.getInstanceAllByFilter("instance.status != 'RUNNING'");
 		}
 		else {
 			initialInstances = FStream.from(m_instanceIdList)
@@ -145,7 +146,9 @@ public class StartMDTInstanceCommand extends AbstractMDTCommand {
 								instId, m_pollingInterval, toStr);
 		}
 		
-		return Executions.runAsync(() -> startInstance(instance), m_executor);
+		StartableExecution<Void> exec = Executions.toExecution(() -> startInstance(instance), m_executor);
+		exec.start();
+		return exec;
 	}
 	
 	private void startInstance(HttpMDTInstanceClient instance)

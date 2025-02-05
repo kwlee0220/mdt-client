@@ -19,9 +19,12 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import utils.KeyedValueList;
+import utils.RuntimeInterruptedException;
 import utils.Throwables;
 import utils.async.AbstractThreadedExecution;
 import utils.async.Guard;
+import utils.async.GuardedRunnable;
+import utils.async.GuardedSupplier;
 import utils.func.FOption;
 import utils.http.OkHttpClientUtils;
 import utils.http.RESTfulIOException;
@@ -76,7 +79,7 @@ public class HttpTask extends AbstractThreadedExecution<Map<String,SubmodelEleme
 		try {
 			OperationRequestBody reqBody = buildParametersBody();
 			
-			m_guard.runAnSignalAllOrThrow(() -> {
+			GuardedRunnable.from(m_guard, () -> {
 				String encodedOpId = AASUtils.encodeBase64UrlSafe(m_opId);
 				String syncStr = (m_sync) ? "sync" : "async";
 				String startUrl = String.format("%s/operations/%s/%s", m_opServerEndpoint, encodedOpId, syncStr);
@@ -88,7 +91,7 @@ public class HttpTask extends AbstractThreadedExecution<Map<String,SubmodelEleme
 												.setPollInterval(m_pollInterval)
 												.setTimeout(m_timeout)
 												.build();
-			});
+			}).run();
 			
 			Map<String,SubmodelElement> outputValues = m_httpOp.run();
 			if ( s_logger.isInfoEnabled() ) {
@@ -133,9 +136,11 @@ public class HttpTask extends AbstractThreadedExecution<Map<String,SubmodelEleme
 	@Override
 	public boolean cancel() {
 		try {
-			return m_guard.awaitUntilAndGet(() -> m_httpOp != null, () -> m_httpOp.cancel(true));
+			return GuardedSupplier.from(m_guard, () -> m_httpOp.cancel(true))
+					                .preCondition(() -> m_httpOp != null)
+									.get();
 		}
-		catch ( InterruptedException e ) {
+		catch ( RuntimeInterruptedException e ) {
 			return false;
 		}
 	}

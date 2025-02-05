@@ -20,6 +20,14 @@ public interface DataInfo {
 		return Funcs.exists(getSubmodelElementEntityAll(), intfc::isInstance);
 	}
 	
+	public default boolean isEquipment() {
+		return existsEntity(Equipment.class);
+	}
+	
+	public default boolean isOperation() {
+		return existsEntity(Operation.class);
+	}
+	
 	public default Equipment getEquipment() {
 		try {
 			return getFirstSubmodelElementEntityByClass(Equipment.class);

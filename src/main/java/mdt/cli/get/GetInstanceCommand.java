@@ -20,10 +20,8 @@ import mdt.cli.IdPair;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
 import mdt.model.MDTManager;
-import mdt.model.MDTModelSerDe;
-import mdt.model.instance.DefaultMDTInstanceInfo;
+import mdt.model.SubmodelService;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.SubmodelUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -43,7 +41,7 @@ import picocli.CommandLine.Parameters;
 	subcommands = {
 		GetInstanceComponentItemsCommand.class,
 		GetInstanceCompositionDependenciesCommand.class,
-		GetInstanceStatesCommand.class,
+		GetInstanceMdtInfoCommand.class,
 		GetInstanceLogCommand.class,
 	}
 )
@@ -54,7 +52,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	private String m_instanceId;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: 'table', 'json', or 'mdt-info')")
+			description="output type (candidnates: 'table' or 'json')")
 	private String m_output = "table";
 
 	public static final void main(String... args) throws Exception {
@@ -81,9 +79,6 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		else if ( m_output.startsWith("json") ) {
 			displayEnvironment(instance);
 		}
-		else if ( m_output.startsWith("mdt-info") ) {
-			displayMDTInfo(instance);
-		}
 		else {
 			System.err.println("Unsupported output: " + m_output);
 			System.exit(-1);
@@ -102,7 +97,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		table.addCell(" GLOBAL_ASSET_ID "); table.addCell(" " + getOrEmpty(aasDesc.getGlobalAssetId()) + " ");
 		table.addCell(" ASSET_TYPE "); table.addCell(" " + getOrEmpty(aasDesc.getAssetType()) + " ");
 		table.addCell(" ASSET_KIND "); table.addCell(" " + getOrEmpty(aasDesc.getAssetKind()) + " ");
-		FStream.from(instance.getAllInstanceSubmodelDescriptors())
+		FStream.from(instance.getInstanceSubmodelDescriptorAll())
 				.zipWithIndex()
 				.forEach(tup -> {
 					table.addCell(String.format(" SUB_MODEL[%02d] ", tup.index()));
@@ -119,7 +114,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	private void displayEnvironment(HttpMDTInstanceClient instance) throws SerializationException {	
 		AssetAdministrationShell aas = instance.getAssetAdministrationShellService()
 												.getAssetAdministrationShell();
-		List<Submodel> submodels = FStream.from(instance.getAllSubmodelServices())
+		List<Submodel> submodels = FStream.from(instance.getSubmodelServiceAll())
 											.map(SubmodelService::getSubmodel)
 											.toList();
 		Environment env = new DefaultEnvironment.Builder()
@@ -131,53 +126,6 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		String jsonStr = ser.write(env);
 		System.out.println(jsonStr);
 	}
-	
-	private void displayMDTInfo(HttpMDTInstanceClient instance) {
-		DefaultMDTInstanceInfo info = DefaultMDTInstanceInfo.builder(instance).build();
-		System.out.println(MDTModelSerDe.toJsonString(info));
-	}
-	
-//	private void displayMDTInfo(HttpMDTInstanceClient instance) throws IOException {
-//		DefaultMDTInstanceInfo info = DefaultMDTInstanceInfo.builder(instance).build();
-//		JsonNode infoNode = MDTModelSerDe.toJsonNode(info);
-//		
-//		ObjectNode root = MDTModelSerDe.MAPPER.createObjectNode();
-//		root.set("id", infoNode.get("id"));
-//		root.set("assetType", infoNode.get("assetType"));
-//		root.set("status", infoNode.get("status"));
-//		root.set("baseEndpoint", infoNode.get("baseEndpoint"));
-//		
-//		String paramList = FStream.from(infoNode.get("parameters").elements())
-//							        .map(pnode -> String.format("%s:%s", pnode.get("id").asText(),
-//							        							toTypeString(pnode.get("type").asText())))
-//							        .join(", ");
-//		root.put("parameters", paramList);
-//		
-//		ArrayNode operations = MDTModelSerDe.MAPPER.createArrayNode();
-//		FStream.from(infoNode.get("operations").elements())
-//				.forEach(opNode -> {
-//					String inArgs = FStream.from(opNode.get("inputArguments").elements())
-//											.map(pnode -> String.format("%s:%s", pnode.get("id").asText(),
-//																				toTypeString(pnode.get("type").asText())))
-//											.join(", ");
-//					String outArgs = FStream.from(opNode.get("outputArguments").elements())
-//											.map(pnode -> String.format("%s:%s", pnode.get("id").asText(),
-//																				toTypeString(pnode.get("type").asText())))
-//											.join(", ");
-//					String opStr = String.format("[%s] %s(%s) -> %s",
-//												opNode.get("type").asText(), opNode.get("id").asText(),
-//												inArgs, outArgs);
-//					operations.add(opStr);
-//				});
-//		root.set("operations", operations);
-//
-//		String outputJson = MDTModelSerDe.MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root);
-//		System.out.println(outputJson);
-//	}
-//	
-//	private String toTypeString(String srcType) {
-//		return Utilities.split(srcType, ':', Tuple.of("", srcType))._2;
-//	}
 	
 	private static String toDisplayName(InstanceSubmodelDescriptor ismdesc) {
 		return String.format("(%s) %s (%s)", SubmodelUtils.getShortSubmodelSemanticId(ismdesc.getSemanticId()),

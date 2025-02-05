@@ -14,7 +14,7 @@ import mdt.aas.SubmodelRepository;
 import mdt.client.Fa3stHttpClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

@@ -9,8 +9,8 @@ import lombok.experimental.Delegate;
 import utils.InternalException;
 
 import mdt.model.ReferenceUtils;
+import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.service.SubmodelService;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.simulation.Simulation;
 

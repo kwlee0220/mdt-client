@@ -102,7 +102,7 @@ public class SKKUSimulationTask implements MDTTask {
 					resp = client.cancelSimulation(location);
 					if ( resp.getStatus() == OperationStatus.CANCELLED ) {
 						m_status = AsyncState.CANCELLED;
-						m_guard.signalAll();
+						m_guard.signalAllInGuard();
 						throw new CancellationException(resp.getMessage());
 					}
 				}
@@ -139,13 +139,13 @@ public class SKKUSimulationTask implements MDTTask {
 		m_guard.lock();
 		try {
 			while ( m_status == AsyncState.NOT_STARTED ) {
-				m_guard.await();
+				m_guard.awaitInGuard();
 			}
 			if ( m_status == AsyncState.RUNNING ) {
 				m_status = AsyncState.CANCELLING;
 				
 				while ( m_status == AsyncState.CANCELLING ) {
-					m_guard.await();
+					m_guard.awaitInGuard();
 				}
 				return m_status == AsyncState.CANCELLED;
 			}

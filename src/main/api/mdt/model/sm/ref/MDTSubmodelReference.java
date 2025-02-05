@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import mdt.model.service.MDTInstance;
+import mdt.model.instance.MDTInstance;
 import mdt.model.sm.SubmodelUtils;
 
 

@@ -7,10 +7,10 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 
 import mdt.client.HttpMDTManagerClient;
 import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.model.AssetAdministrationShellService;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.service.AssetAdministrationShellService;
-import mdt.model.service.MDTInstance;
+import mdt.model.instance.MDTInstance;
 
 /**
  *
@@ -33,7 +33,7 @@ public class SampleGetInstance {
 		System.out.printf("%-20s: %s%n", "assetType", inst.getAssetType());
 		System.out.printf("%-20s: %s%n", "assetKind", inst.getAssetKind());
 		
-		List<InstanceSubmodelDescriptor> smDescList = inst.getAllInstanceSubmodelDescriptors();
+		List<InstanceSubmodelDescriptor> smDescList = inst.getInstanceSubmodelDescriptorAll();
 		for ( int i =0; i < smDescList.size(); ++i ) {
 			InstanceSubmodelDescriptor d = smDescList.get(i);
 

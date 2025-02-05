@@ -32,7 +32,7 @@ import mdt.model.Input;
 import mdt.model.MDTModelSerDe;
 import mdt.model.Output;
 import mdt.model.ReferenceUtils;
-import mdt.model.service.SubmodelService;
+import mdt.model.SubmodelService;
 import mdt.model.sm.AASFile;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;

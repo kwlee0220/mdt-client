@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import utils.KeyedValueList;
 import utils.stream.FStream;
@@ -35,8 +36,11 @@ import mdt.model.sm.simulation.SimulationInfo;
  *
  * @author Kang-Woo Lee (ETRI)
  */
+@JsonPropertyOrder({"@class", "id", "aasId", "aasIdShort", "assetType", "status", "baseEndpoint",
+					"parameters", "operations"})
 @JsonInclude(Include.NON_NULL)
 public class DefaultMDTInstanceInfo implements MDTInstanceInfo {
+	@JsonProperty("@class") private final String m_jsonClass;
 	@JsonProperty("id") private final String m_id;
 	@JsonProperty("aasId") private final String m_aasId;
 	@JsonProperty("aasIdShort") private final String m_aasIdShort;
@@ -55,6 +59,7 @@ public class DefaultMDTInstanceInfo implements MDTInstanceInfo {
 									@JsonProperty("baseEndpoint") String baseEndpoint,
 									@JsonProperty("parameters") List<ParameterInfo> parameters,
 									@JsonProperty("operations") List<DefaultOperationInfo> operations) {
+		m_jsonClass = MDTInstanceInfo.class.getName();
 		m_id = id;
 		m_aasId = aasId;
 		m_aasIdShort = aasIdShort;
@@ -66,6 +71,7 @@ public class DefaultMDTInstanceInfo implements MDTInstanceInfo {
 	}
 	
 	private DefaultMDTInstanceInfo(Builder builder) {
+		m_jsonClass = MDTInstanceInfo.class.getName();
 		m_id = builder.m_id;
 		m_aasId = builder.m_aasId;
 		m_aasIdShort = builder.m_aasIdShort;
@@ -74,6 +80,11 @@ public class DefaultMDTInstanceInfo implements MDTInstanceInfo {
 		m_baseEndpoint = builder.m_baseEndpoint;
 		m_parameters = builder.m_parameters;
 		m_operations = builder.m_operations;
+	}
+	
+	@JsonProperty("@class")
+	public String getJsonClass() {
+		return m_jsonClass;
 	}
 
 	@Override

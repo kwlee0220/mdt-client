@@ -38,6 +38,7 @@ import picocli.CommandLine.Command;
 		StopMDTInstanceCommand.class,
 		SetTaskLauncher.class,
 		CopyTaskLauncher.class,
+		ExportMDTFramework.class,
 		TaskCommands.class,
 		WorkflowCommands.class,
 		SimulationCommands.class,

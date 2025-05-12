@@ -12,40 +12,37 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import utils.func.FOption;
 
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@JsonSerialize(using = ElementReferenceUtils.Serializer.class)
-@JsonDeserialize(using = ElementReferenceUtils.Deserializer.class)
+@JsonSerialize(using = ElementReferences.Serializer.class)
+@JsonDeserialize(using = ElementReferences.Deserializer.class)
 public interface ElementReference {
-	public static final String FIELD_REFERENCE_TYPE = "referenceType";
-	
 	/**
-	 * Reads the {@link SubmodelElement} referred to by the ElementReference.
+	 * 참조가 가리키는 {@link SubmodelElement}을 반환한다.
 	 * 
-	 * @return	{@link SubmodelElement} object.
-	 * @throws	If an exception occurs during the reading process.
+	 * @return	{@link SubmodelElement} 객체.
+	 * @throws	IOException    읽기 과정에서 예외가 발생한 경우.
 	 */
 	public SubmodelElement read() throws IOException;
 
 	/**
-	 * Reads the {@link SubmodelElement} referred to by the ElementReference and
-	 * returns its the value-only serialization value.
+	 * 참조가 가리키는 {@link SubmodelElement}을 읽어서 그 중 값에 해당하는 부분만 반환한다.
 	 * 
-	 * @return	{@link SubmodelElement} object.
-	 * @throws	If an exception occurs during the reading process.
+	 * @return	{@link SubmodelElement} 객체.
+	 * @throws	IOException    읽기 과정에서 예외가 발생한 경우.
 	 */
-	public default SubmodelElementValue readValue() throws IOException {
+	public default ElementValue readValue() throws IOException {
 		return FOption.map(read(), ElementValues::getValue);
 	}
 	
 	/**
-	 * Overwrites the SubmodelElement referred to by the ElementReference.
+	 * 참조가 가리키는 SubmodelElement을 주어진 SubmodelElement으로 갱신한다. 
 	 *
 	 * @param newElm	갱신할 새 값.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
@@ -53,45 +50,38 @@ public interface ElementReference {
 	public void write(SubmodelElement newElm) throws IOException;
 
 	/**
-	 * Updates the target SubmodelElement with the value of the given SubmodelElement.
+	 * 참조가 가리키는 SubmodelElement의 값 부분을 주어진 SubmodelElement의 값으로 갱신한다.
 	 *
-	 * @param sme	New SubmodelElement to update with.
-	 * @return	Updated SubmodelElement.
-	 * @throws	If an exception occurs during the update.
+	 * @param sme	갱신할 값을 포함한 SubmodelElement 객체.
+	 * @return    갱신된 SubmodelElement 객체.
+	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
-	public default SubmodelElement update(SubmodelElement sme) throws IOException {
-		return update(ElementValues.getValue(sme));
-	}
+	public SubmodelElement update(SubmodelElement sme) throws IOException;
 
 	/**
-	 * Updates the value of the SubmodelElement referred to by this reference with the given SubmodelElementValue.
+	 * 참조가 가리키는 SubmodelElement의 값 부분을 주어진 ElementValue으로 갱신한다.
 	 *
-	 * @param smev	New SubmodelElementValue to update with.
-	 * @return	Updated SubmodelElement.
-	 * @throws	If an exception occurs during the update.
+	 * @param smev    갱신할 값.
+	 * @return    갱신된 SubmodelElement 객체.
+	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
-	public default SubmodelElement update(SubmodelElementValue smev) throws IOException {
-		SubmodelElement proto = read();
-		ElementValues.update(proto, smev);
-		
-		return proto;
-	}
+	public SubmodelElement updateValue(ElementValue smev) throws IOException;
 	
 	/**
-	 * Updates the value of the SubmodelElement referred to by this reference with the given JsonNode.
+	 * 주어진 {@link JsonNode}을 이용하여 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
 	 * 
 	 * @param valueNode		New JsonNode
-	 * @return	Updated SubmodelElement.
-	 * @throws	If an exception occurs during the update.
+	 * @return    갱신된 SubmodelElement 객체.
+	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
 	public SubmodelElement updateWithValueJsonNode(JsonNode valueNode) throws IOException;
 
 	/**
-	 * Updates the value of the SubmodelElement referred to by this reference with the given Json string.
+	 * 주어진 Json 문자열을 이용하여 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
 	 * 
-	 * @param valueJsonString	New Json string.
-	 * @return	Updated SubmodelElement.
-	 * @throws	If an exception occurs during the update.
+	 * @param valueJsonString    New Json string
+	 * @return    갱신된 SubmodelElement 객체.
+	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
 	public SubmodelElement updateWithValueJsonString(String valueJsonString) throws IOException;
 	
@@ -109,12 +99,35 @@ public interface ElementReference {
 	  *
 	  * @param rawString    String to update.
 	 * @return	Updated SubmodelElement.
-	  * @throws    IOException If an exception occurs during the update process.
+	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	  */
 	public SubmodelElement updateWithRawString(String rawString) throws IOException;
+
+	public String toStringExpr();
+
+	public String getSerializationType();
 	
-	public void serialize(JsonGenerator gen) throws IOException;
+	/**
+	 * JsonGenerator를 이용하여 참조가 가리키는 SubmodelElement의 값을 Json으로 직렬화한다.
+	 * 
+	 * @param gen	Json 정렬화 과정에서 사용할 JsonGenerator.
+	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
+	 */
+	public void serializeFields(JsonGenerator gen) throws IOException;
 	
+	/**
+	 * 참조가 가리키는 SubmodelElement의 값을 Json 문자열로 직렬화한다.
+	 * 
+	 * @return	Json 문자열.
+	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
+	 */
 	public String toJsonString() throws IOException;
+	
+	/**
+	 * 참조가 가리키는 SubmodelElement의 값을 JsonNode로 직렬화한다.
+	 * 
+	 * @return	JsonNode 객체.
+	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
+	 */
 	public JsonNode toJsonNode() throws IOException;
 }

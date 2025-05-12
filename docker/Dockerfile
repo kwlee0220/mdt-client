@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:21-jdk
 
 RUN mkdir -p /mdt-client
 COPY mdt-client-all.jar /mdt-client/mdt-client-all.jar

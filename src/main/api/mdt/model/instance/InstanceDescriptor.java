@@ -6,12 +6,17 @@ import javax.annotation.Nullable;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 
 /**
  * <code>InstanceDescriptor</code>은 MDTInstance의 등록정보를 정의하는 인터페이스이다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
+@JsonSerialize(using=InstanceDescriptorSerDe.Serializer.class)
+@JsonDeserialize(using=InstanceDescriptorSerDe.Deserializer.class)
 public interface InstanceDescriptor {
 	/**
 	 * 대상 MDTInstance의 식별자를 반환한다.
@@ -74,5 +79,19 @@ public interface InstanceDescriptor {
 	 * 
 	 * @return	{@link InstanceSubmodelDescriptor}들의 리스트.
 	 */
-	public List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptors();
+	public List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptorAll();
+	
+	/**
+	 * 대상 MDTInstance가 포함한 모든 파라미터들의 descriptor들을 반환한다.
+	 * 
+	 * @return {@link MDTParameterDescriptor}들의 리스트.
+	 */
+	public List<MDTParameterDescriptor> getMDTParameterDescriptorAll();
+	
+	/**
+	 * 대상 MDTInstance가 포함한 모든 작업들의 descriptor들을 반환한다.
+	 * 
+	 * @return {@link MDTOperationDescriptor}들의 리스트.
+	 */
+	public List<MDTOperationDescriptor> getMDTOperationDescriptorAll();
 }

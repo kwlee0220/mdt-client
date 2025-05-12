@@ -205,7 +205,9 @@ public class ReferenceHelper {
             return null;
         }
         Reference result = clone(reference);
-        result.getKeys().remove(result.getKeys().size() - 1);
+        if ( result != null ) {
+        	result.getKeys().remove(result.getKeys().size() - 1);
+        }
         return result;
     }
 
@@ -432,21 +434,6 @@ public class ReferenceHelper {
 
 
     /**
-     * Create an element path out of a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a
-     * {@link org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement}.
-     *
-     * @param reference reference to the submodel element
-     * @return values of the keys of the reference separated by a "."
-     */
-    public static String toPath(Reference reference) {
-        if (reference == null || reference.getKeys().isEmpty()) {
-            return "";
-        }
-        return IdShortPath.fromReference(reference).toString();
-    }
-
-
-    /**
      * Combine a parent reference and a child reference to one reference.
      *
      * @param parent reference of the parent
@@ -495,9 +482,16 @@ public class ReferenceHelper {
      *         contain any keys
      */
     public static String toString(Reference reference, boolean includeReferenceType, boolean includeReferredSemanticId) {
-        if (Objects.isNull(reference) || Objects.isNull(reference.getKeys()) || reference.getKeys().isEmpty()) {
+		if ( reference == null ) {
+			return null;
+		}
+		if ( reference.getKeys() == null ) {
+			return null;
+		}
+        if ( reference.getKeys().isEmpty() ) {
             return null;
         }
+        
         String result = "";
         if (includeReferenceType) {
             String referredSemanticId = includeReferredSemanticId

@@ -20,10 +20,16 @@ public class DefaultAASFile implements AASFile {
 	private String m_contentType;
 	private byte[] m_content;
 	
-	public static DefaultAASFile from(File file, String path) throws IOException {
+	public static DefaultAASFile from(File file, String path, String mimeType) throws IOException {
 		DefaultAASFile mdtFile = new DefaultAASFile();
 		
-		mdtFile.setContentType(new Tika().detect(file));
+		if ( mimeType == null ) {
+			mimeType = new Tika().detect(file);
+		}
+		mdtFile.setContentType(mimeType);
+		if ( path == null ) {
+			path = file.getName();
+		}
 		mdtFile.setPath(path);
 		mdtFile.load(file);
 		
@@ -31,7 +37,7 @@ public class DefaultAASFile implements AASFile {
 	}
 	
 	public static DefaultAASFile from(File file) throws IOException {
-		return from(file, file.getName());
+		return from(file, file.getName(), null);
 	}
 	
 	public String getPath() {

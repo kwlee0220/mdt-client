@@ -13,6 +13,7 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import utils.InternalException;
 
@@ -25,9 +26,12 @@ public class MDTModelSerDe {
 	public static final JsonDeserializer JSON_DESERIALIZER = new JsonDeserializer();
 	public static final JsonSerializer JSON_SERIALIZER = new JsonSerializer();
 	public static final JsonMapper MAPPER = JsonMapper.builder()
-//															.addModule(new JavaTimeModule())
+															.addModule(new JavaTimeModule())
 															.findAndAddModules()
 															.build();
+	static {
+		MAPPER.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+	}
 	
 	private MDTModelSerDe() {
 		throw new AssertionError();
@@ -64,6 +68,9 @@ public class MDTModelSerDe {
 	}
 
 	public static <T> T readValue(JsonNode json, Class<T> cls) throws IOException {
+		if ( json == null || json.isNull() ) {
+			return null;
+		}
 		try {
 			return JSON_DESERIALIZER.read(json, cls);
 		}

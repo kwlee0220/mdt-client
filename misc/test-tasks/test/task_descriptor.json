@@ -1,0 +1,85 @@
+{
+  "id" : "simulation",
+  "name" : "",
+  "type" : "mdt.task.builtin.HttpTask",
+  "dependencies" : [ ],
+  "inputPorts" : [ {
+    "portType" : "ELEMENT",
+    "name" : "Data",
+    "description" : null,
+    "element" : {
+      "modelType" : "Property",
+      "value" : "0",
+      "valueType" : "xs:string",
+      "idShort" : "Data"
+    }
+  }, {
+    "portType" : "ELEMENT",
+    "name" : "IncAmount",
+    "description" : null,
+    "element" : {
+      "modelType" : "Property",
+      "value" : "1",
+      "valueType" : "xs:string",
+      "idShort" : "IncAmount"
+    }
+  }, {
+    "portType" : "ELEMENT",
+    "name" : "SleepTime",
+    "description" : null,
+    "element" : {
+      "modelType" : "Property",
+      "value" : "3",
+      "valueType" : "xs:string",
+      "idShort" : "SleepTime"
+    }
+  } ],
+  "outputPorts" : [ {
+    "portType" : "ELEMENT",
+    "name" : "Data",
+    "description" : null,
+    "element" : {
+      "modelType" : "Property",
+      "value" : "0",
+      "valueType" : "xs:string",
+      "idShort" : "Data"
+    }
+  } ],
+  "options" : [ {
+    "@type":"mdt.workflow.model.StringOption",
+    "name" : "server",
+    "value" : "http://129.254.91.134:12987"
+  }, {
+    "@type":"mdt.workflow.model.MDTSubmodelRefOption",
+    "name" : "mdt-operation",
+    "optionType" : "string",
+    "value" : {
+      "referenceType" : "default",
+      "instanceId": "test",
+      "submodelIdShort": "Simulation"
+    }
+  }, {
+    "@type":"mdt.workflow.model.MultiLineOption",
+    "name" : "commandLine",
+    "value" : [
+      "python3",
+      "op_increment.py",
+      "${Data:path}",
+      "--inc", "${IncAmount:value}",
+      "--sleep", "${SleepTime:value}",
+      "--output", "${Data:path}"
+    ]
+  }, {
+    "@type":"mdt.workflow.model.DurationOption",
+    "name" : "timeout",
+    "value" : "1m"
+  }, {
+    "@type":"mdt.workflow.model.StringOption",
+    "name" : "loglevel",
+    "value" : "info"
+  } ],
+  "labels" : [ {
+    "name" : "mdt-operation",
+    "value" : "submodel:test:Simulation"
+  } ]
+}

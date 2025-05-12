@@ -13,10 +13,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import mdt.model.MDTModelSerDe;
-import mdt.model.sm.AASFile;
-import mdt.model.sm.DefaultAASFile;
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
 
 
 /**
@@ -25,19 +23,9 @@ import mdt.model.sm.value.SubmodelElementValue;
  */
 public abstract class AbstractElementReference implements ElementReference {
 	@Override
-	public SubmodelElementValue readValue() throws IOException {
-		SubmodelElement sme = read();
-		if ( sme != null ) {
-			return ElementValues.getValue(sme);
-		}
-		else {
-			return null;
-		}
-	}
-
-	@Override
 	public SubmodelElement update(SubmodelElement sme) throws IOException {
-		return update(ElementValues.getValue(sme));
+		ElementValue newValue = ElementValues.getValue(sme);
+		return updateValue(newValue);
 	}
 
 	@Override
@@ -62,11 +50,6 @@ public abstract class AbstractElementReference implements ElementReference {
 							: new TextNode(externStr);
 		return updateWithValueJsonNode(rawValue);
 	}
-	
-//	@Override
-//	public void serialize(JsonGenerator gen) throws IOException, JsonProcessingException {
-//		throw new UnsupportedOperationException();
-//	}
 
 	@Override
 	public String toJsonString() throws IOException {

@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 
 import picocli.CommandLine.Command;
@@ -38,6 +38,9 @@ public class AddMDTInstanceCommand extends AbstractMDTCommand {
 	@Option(names={"--port", "-p"}, paramLabel="port-number", defaultValue = "-1",
 			description="Port number for this MDTInstance. (required only for JarInstance)")
 	private int m_port;
+	
+	@Option(names={"-v"}, description="verbose")
+	private boolean m_verbose = false;
 
 	public static final void main(String... args) throws Exception {
 		main(new AddMDTInstanceCommand(), args);
@@ -52,7 +55,10 @@ public class AddMDTInstanceCommand extends AbstractMDTCommand {
 		Preconditions.checkArgument(m_instanceDir.isDirectory(),
 									"MDTInstance directory path is not a directory: {}", m_instanceDir);
 		
-		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
+		HttpMDTInstanceManager client = (HttpMDTInstanceManager)manager.getInstanceManager();
 		client.addInstance(m_id, m_port, m_instanceDir);
+		if ( m_verbose ) {
+            System.out.printf("added MDTInstance: id=%s, port=%d%n", m_id, m_port);
+		}
 	}
 }

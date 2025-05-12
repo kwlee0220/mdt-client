@@ -21,8 +21,8 @@ import lombok.Data;
 
 import utils.InternalException;
 import utils.LoggerSettable;
+import utils.Tuple;
 import utils.func.FOption;
-import utils.func.Tuple;
 import utils.http.HttpClientProxy;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
@@ -132,6 +132,7 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <T> T parseResponse(Response resp, Class<T> cls) throws RESTfulIOException {
 		try {
 			String respBody = resp.body().string();
@@ -279,6 +280,7 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 		private List<ErrorMessage> errors;
 	}
 	
+	@SuppressWarnings("unused")
 	private static final TypeReference<List<ErrorMessage>> ERROR_LIST_TYPE
 														= new TypeReference<List<ErrorMessage>>(){};
 	@Data

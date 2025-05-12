@@ -8,7 +8,7 @@ import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.sm.data.Operation;
-import mdt.tree.ListNode;
+import mdt.tree.ArrayNode;
 import mdt.tree.TitleUpdatableNode;
 
 
@@ -45,7 +45,7 @@ public final class ProcessNode extends ParameterCollectionNode implements TitleU
 		List<ProductionOrderNode> orders = FStream.from(m_operation.getProductionOrders())
 											        .map(ProductionOrderNode::new)
 											        .toList();
-		children.add(new ListNode("ProductionOrders", orders));
+		children.add(new ArrayNode("ProductionOrders", orders));
 		
 		return children;
 	}

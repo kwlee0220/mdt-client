@@ -1,7 +1,6 @@
 package mdt.model.sm;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -9,9 +8,12 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.Key;
 import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
+import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
+import org.eclipse.digitaltwin.aas4j.v3.model.Range;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
@@ -37,27 +39,28 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import lombok.experimental.UtilityClass;
+
 import utils.CSV;
 import utils.Indexed;
 import utils.InternalException;
 import utils.func.FOption;
 import utils.func.Funcs;
 import utils.func.Try;
-import utils.func.Tuple;
 import utils.stream.FStream;
 
-import lombok.experimental.UtilityClass;
+import mdt.aas.DataType;
 import mdt.aas.DataTypes;
+import mdt.model.MDTModelSerDe;
+import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
-import mdt.model.sm.ref.SubmodelReferenceType;
-import mdt.model.sm.ref.ElementReferenceType;
 import mdt.model.sm.simulation.Simulation;
+import mdt.model.timeseries.TimeSeries;
 
 /**
  *
@@ -65,6 +68,16 @@ import mdt.model.sm.simulation.Simulation;
  */
 @UtilityClass
 public class SubmodelUtils {
+	public static SubmodelElement duplicate(SubmodelElement sme) {
+		try {
+			String jsonStr = MDTModelSerDe.toJsonString(sme);
+			return MDTModelSerDe.readValue(jsonStr, sme.getClass());
+		}
+		catch ( IOException e ) {
+			throw new InternalException("Failed to duplicate: " + sme, e);
+		}
+	}
+	
 	public static FStream<String> parseIdShortPath(String idShortPath) {
 		return CSV.parseCsv(idShortPath, '.')
 					.flatMapIterable(seg -> parsePathSegment(seg));
@@ -175,6 +188,11 @@ public class SubmodelUtils {
 		return current;
 	}
 	
+	public static <T extends SubmodelElement> T traverse(SubmodelElement start, String idShortPath, Class<T> targetClass)
+		throws ResourceNotFoundException {
+		return cast(traverse(start, idShortPath), targetClass);
+	}
+	
 	/**
 	 * Traverse the Submodel starting with the given idShort path.
 	 * 
@@ -192,6 +210,11 @@ public class SubmodelUtils {
 		return traverse(start, idShortPath);
 	}
 	
+	public static <T extends SubmodelElement> T traverse(Submodel submodel, String idShortPath, Class<T> targetClass)
+		throws ResourceNotFoundException {
+		return cast(traverse(submodel, idShortPath), targetClass);
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static <T extends SubmodelElement> T cast(SubmodelElement sme, Class<T> toClass) {
 		if ( toClass.isAssignableFrom(sme.getClass()) ) {
@@ -202,72 +225,42 @@ public class SubmodelUtils {
 		}
 	}
 	
-	public static Tuple<String,List<String>> parseSubmodelReference(Reference ref) {
-		if ( ref.getType() != ReferenceTypes.MODEL_REFERENCE ) {
-			String msg = String.format("Not ModelReference: type=%s", ref.getType());
-			throw new IllegalArgumentException(msg);
-		}
-		
-		List<Key> keys = ref.getKeys();
-		if ( keys.get(0).getType() != KeyTypes.SUBMODEL ) {
-			String msg = String.format("Not Submodel Reference: first-key type=%s", keys.get(0).getType());
-			throw new IllegalArgumentException(msg);
-		}
-		
-		ArrayList<String> pathSegs = Lists.newArrayList();
-		for ( int i =0; i < keys.size(); ++i ) {
-			Key key = keys.get(i);
-			switch ( key.getType() ) {
-				case ASSET_ADMINISTRATION_SHELL:
-				case IDENTIFIABLE:
-				case MULTI_LANGUAGE_PROPERTY:
-				case REFERABLE:
-				case SUBMODEL:
-					String msg = String.format("Unexpected type: type=%s", key.getType());
-					throw new IllegalArgumentException(msg);
-				default:
-					try {
-						int idx = Integer.parseInt(key.getValue());
-						if ( i > 1 ) {
-							if ( keys.get(i).getType() == KeyTypes.SUBMODEL_ELEMENT_LIST ) {
-								String last = pathSegs.remove(pathSegs.size()-1);
-								last = String.format("%s[%d]", last, idx);
-								pathSegs.add(last);
-							}
-						}
-						else {
-							String msg2 = String.format("Invalid reference key=%s", key.getValue());
-							throw new IllegalArgumentException(msg2);
-						}
-					}
-					catch ( NumberFormatException e ) {
-						pathSegs.add(key.getValue());
-					}
-					break;
-			}
-		}
-		
-		return Tuple.of(keys.get(0).getValue(), pathSegs);
-	}
-	
 	public static String getShortSubmodelSemanticId(String semanticIdStr) {
+		if ( semanticIdStr == null ) {
+			return "?";
+		}
+		
 		return switch ( semanticIdStr ) {
 			case InformationModel.SEMANTIC_ID -> "Info";
 			case Data.SEMANTIC_ID -> "Data";
 			case Simulation.SEMANTIC_ID -> "Sim";
 			case AI.SEMANTIC_ID -> "AI";
+			case TimeSeries.SEMANTIC_ID -> "TimeSeries";
 			default -> throw new InternalException("unknown Submodel " + semanticIdStr);
 		};
 	}
 	
-	public static FOption<Indexed<SubmodelElement>> findFieldById(SubmodelElementCollection smc, String fieldName) {
-		return Funcs.findFirstIndexed(smc.getValue(), field -> field.getIdShort().equals(fieldName));
+	public static boolean containsFieldById(SubmodelElementCollection smc, String fieldName) {
+		return Funcs.findFirst(smc.getValue(), field -> field.getIdShort().equals(fieldName)).isPresent();
 	}
-	public static Indexed<SubmodelElement> getFieldById(SubmodelElementCollection smc, String fieldName)
+	public static FOption<Indexed<SubmodelElement>> findFieldById(SubmodelElement smc, String fieldName) {
+		if ( smc instanceof SubmodelElementCollection coll ) {
+			return Funcs.findFirstIndexed(coll.getValue(), field -> field.getIdShort().equals(fieldName));
+		}
+		else {
+			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
+		}
+	}
+	public static FOption<Indexed<Property>> findPropertyById(SubmodelElement smc, String fieldName) {
+		return findFieldById(smc, fieldName)
+				.filter(idxed -> idxed.value() instanceof Property)
+				.map(idxed -> Indexed.with((Property) idxed.value(), idxed.index()));
+	}
+	public static Indexed<SubmodelElement> getFieldById(SubmodelElement smc, String fieldName)
 		throws IllegalArgumentException {
 		return findFieldById(smc, fieldName)
 					.getOrThrow(() -> {
-						String fieldNames = FStream.from(smc.getValue())
+						String fieldNames = FStream.from(((SubmodelElementCollection)smc).getValue())
 													.map(SubmodelElement::getIdShort)
 													.join(", ");
 						String msg = String.format("Failed to find the field '%s' from %s{%s}",
@@ -275,9 +268,43 @@ public class SubmodelUtils {
 						return new IllegalArgumentException(msg);
 					});
 	}
+	public static <T extends SubmodelElement> Indexed<T> getFieldById(SubmodelElementCollection smc, String fieldName,
+                                            						Class<T> outputClass) throws IllegalArgumentException {
+		Indexed<SubmodelElement> idxed = getFieldById(smc, fieldName);
+		return Indexed.with(cast(idxed.value(), outputClass), idxed.index());
+	}
 	
+	public static Indexed<Property> getPropertyById(SubmodelElementCollection smc, String fieldName) {
+		Indexed<SubmodelElement> idxed = getFieldById(smc, fieldName);
+		if ( idxed.value() instanceof Property prop ) {
+			return Indexed.with(prop, idxed.index());
+		}
+		else {
+			throw new IllegalArgumentException("Not a Property: " + fieldName);
+		}
+	}
+	public static Indexed<String> getPropertyValueById(SubmodelElement smc, String fieldName) {
+		Indexed<SubmodelElement> idxed = getFieldById(smc, fieldName);
+		if ( idxed.value() instanceof Property prop ) {
+			return Indexed.with(prop.getValue(), idxed.index());
+		}
+		else {
+			throw new IllegalArgumentException("Not a Property: " + fieldName);
+		}
+	}
+	
+	/**
+	 * 주어진 SubmodelElement의 리스트에 포함된 SubmodelElementCollection (SMC)들 중에서
+	 * SubmodelElementCollection의 하위 요소 중에서 idShort가 'fieldName'인 Property를 찾아서
+	 * 그 값이 'value'인 SubmodelElementCollection을 찾아서 반환한다.
+	 *
+	 * @param smeList	검색 대상 SubmodelElement 리스트.
+	 * @param fieldName	필드 이름.
+	 * @param value		찾을 값.
+	 * @return	검색된 SubmodelElementCollection
+	 */
 	public static FOption<Indexed<SubmodelElementCollection>>
-	findFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) throws IllegalArgumentException {
+	findFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) {
 		return FStream.from(smeList)
 						.castSafely(SubmodelElementCollection.class)
 						.zipWithIndex()
@@ -304,7 +331,8 @@ public class SubmodelUtils {
 				});
 	}
 	
-	public static DefaultSubmodelElementCollection newSubmodelElementCollection(String idShort, List<SubmodelElement> values) {
+	public static DefaultSubmodelElementCollection newSubmodelElementCollection(String idShort,
+																				List<SubmodelElement> values) {
 		return new DefaultSubmodelElementCollection.Builder()
 													.idShort(idShort)
 													.value(values)
@@ -318,6 +346,59 @@ public class SubmodelUtils {
 												.build();
 	}
 	
+	public static boolean isDataSubmodel(Submodel sm) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		return Data.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	public static String getParameterValuePrefix(Submodel dataSubmodel) {
+		SubmodelElementCollection dataInfo = traverse(dataSubmodel, "DataInfo", SubmodelElementCollection.class);
+		if ( containsFieldById(dataInfo, "Equipment") ) {
+			return "DataInfo.Equipment.EquipmentParameterValues";
+		}
+		else if ( containsFieldById(dataInfo, "Operation") ) {
+			return "DataInfo.Operation.OperationParameterValues";
+		}
+		else {
+			throw new IllegalArgumentException("Invalid DataInfo: " + dataInfo.getIdShort());
+		}
+	}
+	
+	public static boolean isAISubmodel(Submodel sm) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		return AI.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	public static boolean isSimulationSubmodel(Submodel sm) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		return Simulation.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	public static String getTypeString(SubmodelElement element) {
+		if ( element instanceof Property prop ) {
+			DataType<?> type = DataTypes.fromAas4jDatatype(prop.getValueType());
+			return type.getId();
+		}
+		else if ( element instanceof File ) {
+			return "File";
+		}
+		else if ( element instanceof SubmodelElementCollection ) {
+			return "SubmodelElementCollection";
+		}
+		else if ( element instanceof SubmodelElementList ) {
+			return "SubmodelElementList";
+		}
+		else if ( element instanceof MultiLanguageProperty ) {
+			return "MultiLanguageProperty";
+		}
+		else if ( element instanceof Range ) {
+			return "Range";
+		}
+		else {
+			String msg = String.format("Unsupported SubmodelElement: type=%s", element.getClass());
+			throw new IllegalArgumentException(msg);
+		}
+	}
 
 	private static @Nullable SubmodelElement hop(SubmodelElement sme, String seg) {
 		if ( sme instanceof SubmodelElementCollection smc ) {
@@ -470,14 +551,15 @@ public class SubmodelUtils {
 			Preconditions.checkState(node instanceof ObjectNode);
 			ObjectNode root = (ObjectNode)node;
 			
-			String refType = FOption.mapOrElse(node.get(ElementReference.FIELD_REFERENCE_TYPE), JsonNode::asText,
-												ElementReferenceType.DEFAULT.name());
-			
-			SubmodelReferenceType type = SubmodelReferenceType.fromName(refType);
-			return switch ( type ) {
-				case DEFAULT -> DefaultSubmodelReference.parseJson(root);
-				default -> throw new IllegalArgumentException("Unknown SubmodelReference type: " + type);
-			};
+			return DefaultSubmodelReference.parseJson(root);
+//			String refType = FOption.mapOrElse(node.get(DefaultSubmodelReference.FIELD_REFERENCE_TYPE), JsonNode::asText,
+//												ElementReferenceType.DEFAULT.name());
+//			
+//			SubmodelReferenceType type = SubmodelReferenceType.fromName(refType);
+//			return switch ( type ) {
+//				case DEFAULT -> DefaultSubmodelReference.parseJson(root);
+//				default -> throw new IllegalArgumentException("Unknown SubmodelReference type: " + type);
+//			};
 		}
 	}
 

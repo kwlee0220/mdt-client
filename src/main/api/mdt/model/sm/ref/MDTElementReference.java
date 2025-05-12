@@ -2,21 +2,46 @@ package mdt.model.sm.ref;
 
 import java.io.IOException;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
+import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.AASFile;
 import mdt.model.sm.DefaultAASFile;
 
 
 /**
+ * MDT 프레임워크에서 관리되는 SubmodelElement를 참조하는 ElementReference의 인터페이스.
+ * <p>
+ * {@link MDTElementReference}는 다음과 같은 세가지 정보를 가지고 있다.
+ * <ul>
+ *     <li>instanceId: Element를 포함하고 있는 MDTInstance 객체의 식별자.</li>
+ *     <li>Submodel idShort: Element를 포함하고 있는 Submodel의 idShort</li>
+ *     <li>Element idShort path: Element의 idShort path</li>
+ * </ul>
+ * <p>
+ * MDTElementReference를 통해 참조된 SubmodelElement를 읽고 쓰는 작업을 수행하기 위해서는
+ * {@link #activate(mdt.model.instance.MDTInstanceManager)} 메소드를 통해 활성화되어야 한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface MDTElementReference extends ElementReference, MDTInstanceManagerAwareReference {
+public interface MDTElementReference extends ElementReference {
+	/**
+	 * 본 참조가 활성화되어 있는지 여부를 반환한다.
+	 * 
+	 * @return 활성화 여부.
+	 */
+	public boolean isActivated();
+	
+	/**
+	 * 본 참조를 활성화시킨다.
+	 *
+	 * @param manager	객체 활성화에 사용될 {@link MDTInstanceManager} 객체.
+	 */
+	public void activate(MDTInstanceManager manager);
+	
 	/**
 	 * Element를 포함한 MDTInstance의 식별자를 반환한다.
 	 * 
@@ -25,51 +50,31 @@ public interface MDTElementReference extends ElementReference, MDTInstanceManage
 	public String getInstanceId();
 	
 	/**
-	 * Element를 포함한 Submodel의 idShort를 반환한다.
+	 * 본 참조에 할당된 MDTInstance를 반환한다.
+	 * <p>
+	 * 참조가 활성화되지 않은 경우에는 {@link IllegalStateException} 예외가 발생한다.
 	 * 
-	 * @return		Submodel의 idShort.
+	 * @return	MDTInstance
+	 * @throws	IllegalStateException	참조가 활성화되지 않은 경우.
 	 */
-	public String getSubmodelIdShort();
-	/**
-	 * Element가 위한 path를 반환한다.
-	 * 
-	 * @return		Element의 idShort path.
-	 */
-	public String getElementPath();
+	public MDTInstance getInstance() throws IllegalStateException;
 	
 	/**
-	 * Element를 포함한 MDTInstance를 반환한다.
+	 * Element를 포함한 {@link SubmodelService} 객체를 반환한다.
 	 * <p>
-	 * Reference가 {@link #activate(mdt.model.instance.MDTInstanceManager)}에 의해 activate되지 않은
-	 * 경우에는 {@link IllegalStateException} 예외가 발생한다.
+	 * 참조가 활성화되지 않은 경우에는 {@link IllegalStateException} 예외가 발생한다.
 	 * 
-	 * @return		MDTInstance
-	 * @throws	IllegalStateException	reference가 activate되지 않은 경우.
-	 * @see	#activate(mdt.model.instance.MDTInstanceManager)
-	 */
-	public MDTInstance getInstance();
-	
-	/**
-	 * Element를 포함한 Submodel 객체를 반환한다.
-	 * <p>
-	 * Reference가 {@link #activate(mdt.model.instance.MDTInstanceManager)}에 의해 activate되지 않은
-	 * 경우에는 {@link IllegalStateException} 예외가 발생한다.
-	 * 
-	 * @return		Submodel
-	 * @throws	IllegalStateException	reference가 activate되지 않은 경우.
-	 * @see	#activate(mdt.model.instance.MDTInstanceManager)
+	 * @return	SubmodelService
+	 * @throws	IllegalStateException	참조가 활성화되지 않은 경우.
 	 */
 	public SubmodelService getSubmodelService();
 	
-	public default Operation getAsOperation() throws IOException {
-		SubmodelElement sme = read();
-		if ( sme instanceof Operation op ) {
-			return op;
-		}
-		else {
-			throw new IllegalStateException("Target SubmodelElement is not an Operation: " + sme);
-		}
-	}
+	/**
+	 * 참조된 Element의 idShortPath 문자열을 반환한다.
+	 *
+	 * @return	idShortPath 문자열.
+	 */
+	public String getIdShortPathString();
 	
 	/**
 	 * Returns the value of the SubmodelElement referred to by the ElementReference

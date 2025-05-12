@@ -32,4 +32,9 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 	public Class<T> getJavaClass() {
 		return m_javaClass;
 	}
+	
+	@Override
+	public String toString() {
+		return getName();
+	}
 }

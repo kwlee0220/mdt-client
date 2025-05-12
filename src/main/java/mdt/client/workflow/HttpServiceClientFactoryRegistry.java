@@ -15,6 +15,7 @@ import okhttp3.OkHttpClient;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpServiceClientFactoryRegistry {
+	@SuppressWarnings("unused")
 	private final OkHttpClient m_httpClient;
 	private final Map<Class<?>, String> m_serviceBaseUrls = Maps.newHashMap();
 	

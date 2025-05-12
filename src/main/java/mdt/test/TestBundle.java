@@ -4,8 +4,8 @@ import java.io.File;
 
 import utils.io.FileUtils;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.HttpMDTManager;
+import mdt.client.instance.HttpMDTInstanceManager;
 
 /**
  *
@@ -13,8 +13,8 @@ import mdt.client.instance.HttpMDTInstanceManagerClient;
  */
 public class TestBundle {
 	public static final void main(String... args) throws Exception {
-		HttpMDTManagerClient mdt = HttpMDTManagerClient.connect("http://localhost:12985");
-		HttpMDTInstanceManagerClient manager = mdt.getInstanceManager();
+		HttpMDTManager mdt = HttpMDTManager.connect("http://localhost:12985");
+		HttpMDTInstanceManager manager = mdt.getInstanceManager();
 		
 		String instId = "welder";
 		File model = FileUtils.path(instId, "model.json");

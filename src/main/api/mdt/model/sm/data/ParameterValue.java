@@ -7,15 +7,17 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
+import utils.Keyed;
+
 import mdt.model.sm.entity.AasCRUDActions;
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface ParameterValue extends AasCRUDActions {
+public interface ParameterValue extends AasCRUDActions, Keyed<String> {
 	public static final String SEMANTIC_ID = "https://etri.re.kr/mdt/Submodel/Data/ParameterValue/1/1";
 	public static final Reference SEMANTIC_ID_REFERENCE
 		= new DefaultReference.Builder()
@@ -28,6 +30,10 @@ public interface ParameterValue extends AasCRUDActions {
 	
 	public String getEntityId();
 	public void setEntityId(String containerId);
+	
+	public default String key() {
+		return getParameterId();
+	}
 
 	/**
 	 * 파라미터의 식별자를 반환한다.
@@ -44,7 +50,7 @@ public interface ParameterValue extends AasCRUDActions {
 
 	public SubmodelElement getParameterValue();
 	public void setParameterValue(SubmodelElement value);
-	public default void setParameterValue(SubmodelElementValue value) {
+	public default void setParameterValue(ElementValue value) {
 		SubmodelElement prev = getParameterValue();
 		ElementValues.update(prev, value);
 		setParameterValue(prev);

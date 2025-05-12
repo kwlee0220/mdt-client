@@ -2,11 +2,12 @@ package mdt.task.builtin;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
@@ -18,15 +19,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Maps;
 
-import utils.KeyedValueList;
 import utils.Throwables;
+import utils.Tuple;
+import utils.async.CommandVariable;
 import utils.stream.FStream;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.task.MultiParameterTask;
-import mdt.task.Parameter;
+import mdt.model.sm.data.Parameter;
+import mdt.model.sm.variable.Variable;
+import mdt.task.AbstractMDTTask;
+import mdt.task.MDTTask;
 import mdt.task.TaskException;
+import mdt.workflow.model.TaskDescriptor;
 
 import jslt2.Jslt2;
 import jslt2.Jslt2Exception;
@@ -36,41 +41,41 @@ import jslt2.Jslt2Exception;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class JsltTask extends MultiParameterTask {
+public class JsltTask extends AbstractMDTTask implements MDTTask {
 	private static final Logger s_logger = LoggerFactory.getLogger(JsltTask.class);
 
 	private final File m_scriptFile;
 	private final String m_scriptExpr;
 	
-	public JsltTask(KeyedValueList<String,Parameter> parameters, Set<String> outputParameterNames) {
-		super(parameters, outputParameterNames);
-		
-		m_scriptFile = null;
-		m_scriptExpr = null;
-	}
-	
-	public JsltTask(File scriptFile, KeyedValueList<String,Parameter> parameters, Set<String> outputParameterNames) {
-		super(parameters, outputParameterNames);
+	public JsltTask(TaskDescriptor descriptor, File scriptFile) {
+		super(descriptor);
 		
 		m_scriptFile = scriptFile;
 		m_scriptExpr = null;
 	}
 	
-	public JsltTask(String scriptExpr, KeyedValueList<String,Parameter> parameters, Set<String> outputParameterNames) {
-		super(parameters, outputParameterNames);
+	public JsltTask(TaskDescriptor descriptor, String scriptExpr) {
+		super(descriptor);
 		
 		m_scriptFile = null;
 		m_scriptExpr = scriptExpr;
 	}
 
 	@Override
+	public TaskDescriptor getTaskDescriptor() {
+		return new TaskDescriptor();
+	}
+
+	@Override
 	public void run(MDTInstanceManager manager)
 		throws TimeoutException, InterruptedException, CancellationException, TaskException {
 		try {
+			TaskDescriptor descriptor = getTaskDescriptor();
+			
 			Map<String,SubmodelElement> values = Maps.newHashMap();
-			for ( Parameter param: FStream.from(m_parameters) ) {
-				SubmodelElement sme = param.getReference().read();
-				values.put(param.getName(), sme);
+			for ( Variable port: descriptor.getInputVariables() ) {
+				SubmodelElement sme = port.read();
+				values.put(port.getName(), sme);
 			}
 			JsonNode input = MDTModelSerDe.toJsonNode(values);
 			
@@ -92,19 +97,10 @@ public class JsltTask extends MultiParameterTask {
 			}
 			
 			// Transform 작업을 수행한다.
-			JsonNode output = runtime.eval(scriptReader, input);
+			JsonNode result = runtime.eval(scriptReader, input);
 			
 			// Transform 결과를 task variable들에 반영한다.
-			FStream.from(m_outputParameterNames)
-					.map(m_parameters::getOfKey)
-					.innerJoin(FStream.from(output.fields()), Parameter::getName, Map.Entry::getKey)
-					.forEachOrThrow(match -> {
-						if ( s_logger.isInfoEnabled() ) {
-							String valueStr = MDTModelSerDe.toJsonString(match._2.getValue());
-							s_logger.info("update variable[{}] with {}", match._1.getName(), valueStr);
-						}
-						match._1.getReference().updateWithValueJsonNode(match._2.getValue());
-					});
+			updateOutputVariables(result);
 		}
 		catch ( Jslt2Exception e ) {
 			throw new TaskException(e.getCause());
@@ -121,22 +117,16 @@ public class JsltTask extends MultiParameterTask {
 		return false;
 	}
 	
-//	public static TaskDescriptor getTemplateDescriptor() {
-//		TaskDescriptor tmplt = new TaskDescriptor();
-//		tmplt.setId("jslt");
-//		tmplt.setName("JSLT 태스크");
-//		tmplt.setType(JsltTask.class.getName());
-//		tmplt.setDescription("JSLT script를 활용한 SME를 변형시키는 태스크.");
-//		
-//		tmplt.getOptions().add(new OptionDescriptor("endpoint", false, "MDT-Manager 접속 endpoint", null));
-//		tmplt.getOptions().add(new OptionDescriptor("logger", false, "Logger level", null));
-//		tmplt.getOptions().add(new OptionDescriptor("file", false, "JSLT script 파일 경로", null));
-//		tmplt.getOptions().add(new OptionDescriptor("expr", false, "JSLT script 문자열", null));
-//
-//		VariableDescriptor var = VariableDescriptor.declare("output", Kind.OUTPUT,
-//															"변형된 결과 SubmodelElement 저장될 위치");
-//		tmplt.getVariables().add(var);
-//		
-//		return tmplt;
-//	}
+	private void updateOutputVariables(JsonNode results) throws IOException {
+		TaskDescriptor descriptor = getTaskDescriptor();
+		
+		for ( Variable outPort: descriptor.getOutputVariables() ) {
+			JsonNode result = results.get(outPort.getName());
+			if ( s_logger.isInfoEnabled() ) {
+				String valueStr = MDTModelSerDe.toJsonString(result);
+				s_logger.info("update variable[{}] with {}", outPort.getName(), valueStr);
+			}
+			outPort.updateWithValueJsonNode(result);
+		}
+	}
 }

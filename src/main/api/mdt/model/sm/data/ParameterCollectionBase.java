@@ -16,8 +16,6 @@ import utils.stream.FStream;
 
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
-import mdt.model.sm.data.DefaultEquipmentParameter;
-import mdt.model.sm.data.DefaultEquipmentParameterValue;
 
 
 /**
@@ -104,7 +102,7 @@ public class ParameterCollectionBase implements ParameterCollection {
 		SubmodelElementList parameters = (SubmodelElementList)m_service.getSubmodelElementByPath(idShortPath);
 		return FStream.from(parameters.getValue())
 						.map(this::toParameter)
-						.collect(KeyedValueList.newInstance(Parameter::getParameterId), KeyedValueList::add);
+						.collect(KeyedValueList.with(Parameter::getParameterId), KeyedValueList::add);
 	}
 
 	@Override
@@ -113,7 +111,7 @@ public class ParameterCollectionBase implements ParameterCollection {
 		SubmodelElementList values = (SubmodelElementList)m_service.getSubmodelElementByPath(idShortPath);
 		return FStream.from(values.getValue())
 						.map(this::toParameterValue)
-						.collect(KeyedValueList.newInstance(ParameterValue::getParameterId), KeyedValueList::add);
+						.collect(KeyedValueList.with(ParameterValue::getParameterId), KeyedValueList::add);
 	}
 
 	private String getIdShortPathOfParameter(int idx) {
@@ -139,7 +137,8 @@ public class ParameterCollectionBase implements ParameterCollection {
 		return FStream.from(parameters.getValue())
 						.map(SubmodelElement::getIdShort)
 						.zipWithIndex()
-						.toMap(Indexed::value, Indexed::index);
+						.toKeyValueStream(Indexed::value, Indexed::index)
+						.toMap();
 	}
 
 	private Map<String,Integer> getParameterValueBindings() {
@@ -151,7 +150,8 @@ public class ParameterCollectionBase implements ParameterCollection {
 		return FStream.from(values.getValue())
 								.map(SubmodelElement::getIdShort)
 								.zipWithIndex()
-								.toMap(Indexed::value, Indexed::index);
+								.toKeyValueStream(Indexed::value, Indexed::index)
+								.toMap();
 	}
 	
 	private DefaultEquipmentParameter toParameter(SubmodelElement elm) {

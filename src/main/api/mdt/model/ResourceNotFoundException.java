@@ -7,6 +7,10 @@ package mdt.model;
 public class ResourceNotFoundException extends MDTException {
     private static final long serialVersionUID = 1L;
 
+    public static ResourceNotFoundException ofSemanticId(String target, String semanticId) {
+        return new ResourceNotFoundException("Submodel", "semanticId=" + semanticId);
+    }
+
     public ResourceNotFoundException(String msg) {
         super(msg);
     }

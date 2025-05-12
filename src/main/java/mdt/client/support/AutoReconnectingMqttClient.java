@@ -1,6 +1,7 @@
 package mdt.client.support;
 
 import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -15,9 +16,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AbstractService;
 
 import utils.LoggerSettable;
+import utils.UnitUtils;
 import utils.async.Guard;
-import utils.async.GuardedRunnable;
-import utils.async.GuardedSupplier;
 import utils.func.FOption;
 
 
@@ -50,19 +50,48 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 		m_reconnectInterval = reconnectInterval;
 	}
 	
+	protected AutoReconnectingMqttClient(String mqttServerUri, String clientId, String reconnectInterval) {
+		this(mqttServerUri, clientId, UnitUtils.parseDuration(reconnectInterval));
+	}
+
+	/**
+	 * MQTT Broker에 연결된 클라이언트를 반환한다. 연결이 되지 않은 경우에는 {@code null}을 반환한다.
+	 * 
+	 * @return	연결에 성공한 경우는 {@code MqttClient} 객체, 그렇지 않은 경우는 {@code null}.
+	 */
 	public MqttClient pollMqttClient() {
 		return m_mqttClient;
 	}
 	
-	public MqttClient awaitMqttClient() throws InterruptedException {
-		return GuardedSupplier.from(m_guard, () -> m_mqttClient)
-								.preCondition(() -> m_mqttClient == null)
-								.get();
+	/**
+	 * MQTT Broker에 연결될 때까지 대기한다.
+	 * <p>
+	 * 만일 주어진 시간동안 연결되지 않으면 {@link TimeoutException}을 발생시킨다.
+	 *
+	 * @param timeout	제한 시간
+	 * @return	연결된 {@code MqttClient} 객체
+	 * @throws InterruptedException	연결 대기 중에 인터럽트가 발생한 경우
+	 * @throws TimeoutException	제한 시간 내에 연결되지 않은 경우
+	 */
+	public MqttClient waitMqttClient(Duration timeout) throws InterruptedException, TimeoutException {
+		return m_guard.awaitCondition(() -> m_mqttClient != null, timeout)
+						.andGet(() -> m_mqttClient);
+	}
+	
+	/**
+	 * MQTT Broker에 연결될 때까지 무한히 대기한다.
+	 *
+	 * @return	연결된 {@code MqttClient} 객체
+	 * @throws InterruptedException	연결 대기 중에 인터럽트가 발생한 경우
+	 */
+	public MqttClient waitMqttClient() throws InterruptedException {
+		return m_guard.awaitCondition(() -> m_mqttClient != null)
+						.andGet(() -> m_mqttClient);
 	}
 
 	@Override
 	public void connectionLost(Throwable cause) {
-		m_guard.runAndSignalAll(() -> m_mqttClient = null);
+		m_guard.run(() -> m_mqttClient = null);
 		if ( getLogger().isInfoEnabled() ) {
 			getLogger().info("MQTT-Broker disconnected: server={}", m_mqttServerUri);
 		}
@@ -74,6 +103,7 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 			getLogger().warn("MqttBrokerDisconnection action was failed: cause={}", e);
 		}
 		
+		// 재연결을 시도한다.
 		tryConnect();
 	}
 
@@ -99,6 +129,7 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 	protected void doStop() { }
 	
 	private void tryConnect() {
+		// MQTT Broker에 연결될 때까지 반복적으로 연결을 시도한다.
 		m_reconnect = MqttBrokerReconnect.builder()
 										.mqttServerUri(m_mqttServerUri)
 										.clientId(m_clientId)
@@ -110,11 +141,11 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 				if ( getLogger().isInfoEnabled() ) {
 					getLogger().info("MQTT-Broker connected: server={}", m_mqttServerUri);
 				}
-				GuardedRunnable.from(m_guard, () -> {
+				m_guard.run(() -> {
 					m_mqttClient = result.getUnchecked();
 					m_mqttClient.setCallback(this);
 					m_reconnect = null;
-				}).run();
+				});
 				
 				try {
 					mqttBrokerConnected(m_mqttClient);
@@ -124,7 +155,7 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 				}
 			}
 			else {
-				GuardedRunnable.from(m_guard, () -> m_reconnect = null).run();
+				m_guard.run(() -> m_mqttClient = null);
 			}
 		});
 

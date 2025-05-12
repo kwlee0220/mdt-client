@@ -12,6 +12,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -78,7 +79,7 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 				String toStr = ( m_timeout != null ) ? ", timeout=" + m_timeout : "";
 				getLogger().debug("starting program: {}{}", m_command, toStr);
 			}
-			Process process = m_guard.getOrThrow(() -> m_process = builder.start());
+			Process process = m_guard.getChecked(() -> m_process = builder.start());
 			if ( m_timeout != null ) {
 				boolean completed = process.waitFor(m_timeout.toMillis(), TimeUnit.MILLISECONDS);
 				checkAfterTerminated();
@@ -131,7 +132,8 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 		return FStream.from(m_fileArguments)
 						.filter(FileArgument::isOutput)
 						.mapOrThrow(fa -> KeyValue.of(fa.getName(), fa.read()))
-						.toMap(KeyValue::key, KeyValue::value);
+						.toKeyValueStream(Function.identity())
+						.toMap();
 	}
 	
 	private void checkAfterTerminated() throws CancellationException {

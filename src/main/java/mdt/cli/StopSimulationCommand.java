@@ -4,8 +4,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mdt.client.instance.HttpMDTInstanceClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatusResponse;
 import mdt.model.MDTManager;
@@ -47,15 +47,15 @@ public class StopSimulationCommand extends AbstractMDTCommand {
 		
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
+		HttpMDTInstanceManager client = (HttpMDTInstanceManager)manager.getInstanceManager();
 		
 		SubmodelService svc;
 		try {
-			HttpMDTInstanceClient inst = (HttpMDTInstanceClient)client.getInstanceBySubmodelId(m_targetId);
+			HttpMDTInstance inst = (HttpMDTInstance)client.getInstanceBySubmodelId(m_targetId);
 			svc = inst.getSubmodelServiceById(m_targetId);
 		}
 		catch ( ResourceNotFoundException expected ) {
-			HttpMDTInstanceClient inst = client.getInstance(m_targetId);
+			HttpMDTInstance inst = client.getInstance(m_targetId);
 			svc = inst.getSubmodelServiceByIdShort("Simulation");
 		}
 		
@@ -71,12 +71,15 @@ public class StopSimulationCommand extends AbstractMDTCommand {
 			case COMPLETED:
 				System.out.println("Simulation completes");
 				System.exit(0);
+				break;
 			case FAILED:
 				System.out.printf("Simulation is failed: cause=%s%n", resp.getMessage());
 				System.exit(-1);
+				break;
 			case CANCELLED:
 				System.out.println("Simulation is cancelled");
 				System.exit(-1);
+				break;
 			default:
 				throw new AssertionError();
 		}

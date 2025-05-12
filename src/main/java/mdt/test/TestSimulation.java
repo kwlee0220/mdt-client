@@ -1,7 +1,6 @@
 package mdt.test;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import mdt.client.resource.HttpSubmodelServiceClient;
@@ -22,7 +21,6 @@ public class TestSimulation {
 		String url = String.format("https://localhost:%d/api/v3.0/submodels/%s", port, id);
 		
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
-		Submodel submodel = svc.getSubmodel();
 //		System.out.println(ser.write(submodel));
 		
 		SubmodelElement sme;

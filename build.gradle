@@ -6,12 +6,12 @@ plugins {
 }
 
 group = 'etri'
-version = '0.9.1'
+version = '1.0.0'
 mainClassName = 'mdt.cli.MDTCommandsMain'
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
 //	withSourcesJar()
 //	withJavadocJar()
 }
@@ -21,8 +21,22 @@ sourceSets {
 		java {
 			srcDirs 'src/main/api'
 			srcDirs 'src/main/impl'
+			srcDirs 'src/main/antlr'
+			
+			// .antlr 디렉토리를 명시적으로 제외
+			// exclude '**/.antlr/**'
+			// exclude '.antlr/**'
 		}
 	}
+}
+
+repositories {
+    mavenLocal()
+	maven {
+		url "https://maven.aksw.org/repository/internal/"
+		allowInsecureProtocol = true
+	}
+	mavenCentral()
 }
 	
 [compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
@@ -74,6 +88,7 @@ dependencies {
 	implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: "${okhttp_version}"
 	
 	// jackson 
+	implementation "com.fasterxml.jackson.core:jackson-databind:${jackson_version}"
 	implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson_version}"
 	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson_version}"
 	
@@ -93,8 +108,15 @@ dependencies {
 	// MQTT
 	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"
 	
+	// Antlr
+	// antlr "org.antlr:antlr4:${antlr_version}"
+	implementation "org.antlr:antlr4-runtime:${antlr_version}"
+	
 	implementation "org.nocrala.tools.texttablefmt:text-table-formatter:${text_table_version}"
 	implementation "org.barfuin.texttree:text-tree:${text_tree_version}"
+	
+	testImplementation "junit:junit:${junit_version}"
+	testImplementation "org.mockito:mockito-core:${mockito_version}"
 }
 
 //task sourceJar(type: Jar) {
@@ -104,15 +126,6 @@ dependencies {
 test {
 	useJUnitPlatform()
 }
-
-// javadoc {
-// 	options.encoding = 'UTF-8'
-// 	options.links("https://docs.oracle.com/javase/8/docs/api/")
-// 	options.links("https://google.github.io/guava/releases/23.0/api/docs/")
-// 	options.links("http://reactivex.io/RxJava/javadoc/")
-
-// 	options.addStringOption('Xdoclint:none', '-quiet')
-// }
 
 shadowJar {
 	mergeServiceFiles()

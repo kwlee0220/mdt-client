@@ -11,15 +11,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import utils.func.Tuple;
+import utils.Tuple;
 import utils.http.HttpClientProxy;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.sm.DefaultAASFile;
 import mdt.model.sm.AASFile;
+import mdt.model.sm.DefaultAASFile;
+
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -130,14 +131,24 @@ public class Fa3stHttpClient implements HttpClientProxy {
 							mdtFile.setContent(respBody.bytes());
 							return (T)mdtFile;
 						}
-						
-						String respBodyStr = respBody.string();
-						if ( respBodyStr.length() > 0 ) {
-							return MDTModelSerDe.readValue(respBodyStr, valueType);
-						}
 						else {
-							return null;
+							String respBodyStr = respBody.string();
+							if ( respBodyStr.length() > 0 ) {
+								JsonNode root = MDTModelSerDe.MAPPER.readTree(respBodyStr);
+								
+								JsonNode results = root.get("result");
+								if ( results != null ) {
+									return MDTModelSerDe.readValue(results.get(0), valueType);
+								}
+								else {
+									return MDTModelSerDe.readValue(root, valueType);
+								}
+							}
+							else {
+								return null;
+							}
 						}
+						
 					}
 				}
 				else {

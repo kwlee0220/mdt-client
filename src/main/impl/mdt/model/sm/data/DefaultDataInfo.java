@@ -50,7 +50,8 @@ public class DefaultDataInfo extends SubmodelElementCollectionEntity implements 
 		SubmodelElementCollection smc = (SubmodelElementCollection)sme;
 		
 		Map<String, SubmodelElement> elementMap = FStream.from(smc.getValue())
-														.toMap(SubmodelElement::getIdShort);
+														.tagKey(SubmodelElement::getIdShort)
+														.toMap();
 		FStream.from(m_topLevelEntityList)
 				.map(entity -> entity.newSubmodelElement())
 				.forEach(newElm -> elementMap.put(newElm.getIdShort(), newElm));

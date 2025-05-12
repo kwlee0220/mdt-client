@@ -3,7 +3,7 @@ package mdt.test;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 
 import mdt.aas.ShellRegistry;
-import mdt.client.HttpMDTManagerClient;
+import mdt.client.HttpMDTManager;
 
 /**
  *
@@ -11,7 +11,7 @@ import mdt.client.HttpMDTManagerClient;
  */
 public class TestAASRegistry {
 	public static final void main(String... args) throws Exception {
-		HttpMDTManagerClient mdtClient = HttpMDTManagerClient.connect("http://localhost:12985");
+		HttpMDTManager mdtClient = HttpMDTManager.connect("http://localhost:12985");
 		
 		ShellRegistry registry = mdtClient.getAssetAdministrationShellRegistry();
 		for ( AssetAdministrationShellDescriptor aasDesc: registry.getAllAssetAdministrationShellDescriptors() ) {

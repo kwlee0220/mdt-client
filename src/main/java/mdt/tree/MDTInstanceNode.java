@@ -43,7 +43,7 @@ public class MDTInstanceNode implements Node {
 	@Override
 	public String getText() {
 		MDTInfo mdtInfo = m_info.getMDTInfo();
-		String id = ObjectUtils.defaultIfNull(mdtInfo.getAssetName(), mdtInfo.getAssetID());
+		String id = ObjectUtils.defaultIfNull(mdtInfo.getAssetName(), mdtInfo.getIdShort());
 		String typeStr = mdtInfo.getAssetType() != null
 						? String.format(" (%s)", mdtInfo.getAssetType()) : "";
 		ObjectUtils.defaultIfNull(mdtInfo.getAssetType(), "");
@@ -168,7 +168,9 @@ public class MDTInstanceNode implements Node {
 //	}
 	
 	public static MDTInstanceNode fromSubmodelList(String mdtId, List<Submodel> submodelList) {
-		Map<String,Submodel> submodels = FStream.from(submodelList).toMap(Submodel::getIdShort);
+		Map<String,Submodel> submodels = FStream.from(submodelList)
+												.tagKey(Submodel::getIdShort)
+												.toMap();
 		
 		Builder builder = builder().mdtId(mdtId);
 		

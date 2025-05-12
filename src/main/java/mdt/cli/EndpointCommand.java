@@ -1,6 +1,7 @@
 package mdt.cli;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +11,6 @@ import utils.io.FileUtils;
 
 import mdt.client.MDTClientConfig;
 import mdt.model.MDTManager;
-
 import picocli.CommandLine.Command;
 
 /**
@@ -18,7 +18,7 @@ import picocli.CommandLine.Command;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "endpoint",
+	name = "endpoints",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
@@ -42,10 +42,13 @@ public class EndpointCommand extends AbstractMDTCommand {
 		if ( m_clientConfigFile != null ) {
 			try {
 				MDTClientConfig config = MDTClientConfig.load(m_clientConfigFile);
-				System.out.println(config.getEndpoint() + " (from option '--client_conf')");
+				System.out.println("(from option '--client_conf')");
+				printMDTClientConfig(config);
 				return;
 			}
-			catch ( Throwable expected ) { }
+			catch ( IOException e ) {
+				System.err.println("failed to load client config file: " + m_clientConfigFile);
+			}
 		}
 		
 		// 그렇지 않은 경우는 설정 정보를 사용하거나 환경 변수를 활용하여 MDT Manager에 접속한다.
@@ -55,18 +58,22 @@ public class EndpointCommand extends AbstractMDTCommand {
 		if ( clientConfigFile.canRead() ) {
 			try {
 				MDTClientConfig config = MDTClientConfig.load(clientConfigFile);
-				System.out.println(config.getEndpoint()
-									+ " (from configuration file: " + clientConfigFile.getAbsolutePath() + ")");
+				System.out.println("(from configuration file: " + clientConfigFile.getAbsolutePath() + ")");
+				printMDTClientConfig(config);
 				return;
 			}
-			catch ( Throwable expected ) { }
+			catch ( IOException e ) {
+				System.err.println("failed to load client config file: " + m_clientConfigFile);
+			}
 		}
 
 		// client config file이 존재하지 않는 경우에는 환경변수 MDT_ENDPOINT에 기록된
 		// endpoint 정보를 사용하여 접속을 시도한다.
-		String endpoint = System.getenv("MDT_ENDPOINT");
-		if ( endpoint == null ) {
-			System.out.println(endpoint + " (from environment variable 'MDT_ENDPOINT')");
+		String mdtEndpoint = System.getenv("MDT_ENDPOINT");
+		if ( mdtEndpoint != null ) {
+			System.out.println("(from environment variable 'MDT_ENDPOINT')");
+			MDTClientConfig config = MDTClientConfig.of(mdtEndpoint);
+			printMDTClientConfig(config);
 			return;
 		}
 		
@@ -76,5 +83,13 @@ public class EndpointCommand extends AbstractMDTCommand {
 	@Override
 	protected void run(MDTManager mdt) throws Exception {
 		throw new AssertionError();
+	}
+	
+	private void printMDTClientConfig(MDTClientConfig config) {
+		System.out.println("- mdt-endpoint: " + config.getMdtEndpoint());
+		System.out.println("  . connect-timeout: " + config.getConnectTimeout());
+		System.out.println("  . read-timeout: " + config.getReadTimeout());
+		System.out.println("- workflow-endpoint: " + config.getWorkflowManagerEndpoint());
+		System.out.println("- mqtt-endpoint: " + config.getMqttEndpoint());
 	}
 }

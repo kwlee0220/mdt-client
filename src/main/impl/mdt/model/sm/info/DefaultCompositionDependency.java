@@ -14,12 +14,12 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 @Getter @Setter
 public class DefaultCompositionDependency extends SubmodelElementCollectionEntity
 											implements CompositionDependency {
-	@PropertyField(idShort="SourceId") private String source;
-	@PropertyField(idShort="TargetId") private String target;
+	@PropertyField(idShort="SourceId") private String sourceId;
+	@PropertyField(idShort="TargetId") private String targetId;
 	@PropertyField(idShort="DependencyType") private String dependencyType;
 	
 	@Override
 	public String toString() {
-		return String.format("%s[%s->%s]", getDependencyType(), getSource(), getTarget());
+		return String.format("%s[%s->%s]", getDependencyType(), getSourceId(), getTargetId());
 	}
 }

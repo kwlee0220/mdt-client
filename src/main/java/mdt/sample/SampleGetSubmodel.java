@@ -11,13 +11,13 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Lists;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.HttpMDTManager;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.ReferenceUtils;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
+import mdt.model.sm.value.ElementValue;
 
 /**
  *
@@ -31,7 +31,7 @@ public class SampleGetSubmodel {
 	}
 	
 	public static final void main(String... args) throws Exception {
-		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT).getInstanceManager();
+		HttpMDTInstanceManager manager = HttpMDTManager.connect(ENDPOINT).getInstanceManager();
 		
 		MDTInstance inst = manager.getInstance("Test");
 		SubmodelService svc = inst.getSubmodelServiceByIdShort("Data");
@@ -56,7 +56,7 @@ public class SampleGetSubmodel {
 		JsonMapper mapper = JsonMapper.builder().build();
 		List<JsonNode> jnodeList = Lists.newArrayList();
 		for ( SubmodelElement sme: submodel.getSubmodelElements() ) {
-			SubmodelElementValue value = ElementValues.getValue(sme);
+			ElementValue value = ElementValues.getValue(sme);
 			jnodeList.add(mapper.valueToTree(value));
 		}
 		
@@ -66,7 +66,7 @@ public class SampleGetSubmodel {
 		System.out.println(jsonStr);
 		
 		for ( SubmodelElement sme: svc.getAllSubmodelElements() ) {
-			SubmodelElementValue value = ElementValues.getValue(sme);
+			ElementValue value = ElementValues.getValue(sme);
 			jnodeList.add(mapper.valueToTree(value));
 		}
 		

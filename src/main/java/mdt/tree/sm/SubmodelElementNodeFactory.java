@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.barfuin.texttree.api.Node;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
+import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
@@ -17,15 +18,17 @@ import mdt.model.Output;
 import mdt.model.ReferenceUtils;
 import mdt.model.sm.data.Equipment;
 import mdt.model.sm.data.ParameterValue;
-import mdt.model.sm.info.ComponentItem;
 import mdt.model.sm.info.CompositionDependency;
+import mdt.model.sm.info.CompositionItem;
 import mdt.model.sm.value.ElementValues;
+import mdt.model.timeseries.Record;
 import mdt.tree.CustomNodeTransform;
 import mdt.tree.TextNode;
-import mdt.tree.sm.CustomNodeTransforms.ComponentItemTransform;
 import mdt.tree.sm.CustomNodeTransforms.CompositionDependencyTransform;
+import mdt.tree.sm.CustomNodeTransforms.CompositionItemTransform;
 import mdt.tree.sm.CustomNodeTransforms.InputTransform;
 import mdt.tree.sm.CustomNodeTransforms.OutputTransform;
+import mdt.tree.sm.CustomNodeTransforms.RecordTransform;
 import mdt.tree.sm.data.EquipmentNode;
 import mdt.tree.sm.data.ParameterValueNode;
 
@@ -39,10 +42,11 @@ public class SubmodelElementNodeFactory {
 	static {
 		TRANSFORMS.put(ParameterValue.SEMANTIC_ID, new ParameterValueNode.Transform());
 		TRANSFORMS.put(Equipment.SEMANTIC_ID, new EquipmentNode.Transform());
-		TRANSFORMS.put(ComponentItem.SEMANTIC_ID, new ComponentItemTransform());
+		TRANSFORMS.put(CompositionItem.SEMANTIC_ID, new CompositionItemTransform());
 		TRANSFORMS.put(CompositionDependency.SEMANTIC_ID, new CompositionDependencyTransform());
 		TRANSFORMS.put(Input.SEMANTIC_ID, new InputTransform());
 		TRANSFORMS.put(Output.SEMANTIC_ID, new OutputTransform());
+		TRANSFORMS.put(Record.SEMANTIC_ID, new RecordTransform());
 	}
 	
 	public static Node toNode(String prefix, SubmodelElement smElm) {
@@ -71,6 +75,9 @@ public class SubmodelElementNodeFactory {
 		}
 		else if ( smElm instanceof Operation op) {
 			return new AASOperationNode(op);
+		}
+		else if ( smElm instanceof MultiLanguageProperty mlp ) {
+			return DataElementNodes.fromMLProperty(prefix, id, mlp);
 		}
 		else {
 			return new TextNode(ElementValues.toRawString(smElm));

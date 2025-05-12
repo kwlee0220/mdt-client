@@ -21,11 +21,11 @@ public interface CompositionDependency {
 									.build())
 				.build();
 	
-	public String getSource();
-	public void setSource(String src);
+	public String getSourceId();
+	public void setSourceId(String src);
 	
-	public String getTarget();
-	public void setTarget(String tar);
+	public String getTargetId();
+	public void setTargetId(String tar);
 	
 	public String getDependencyType();
 	public void setDependencyType(String type);

@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.instance.HttpMDTInstanceClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 
 import picocli.CommandLine.Command;
@@ -33,8 +33,8 @@ public class GetInstanceLogCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
-		HttpMDTInstanceClient instance = manager.getInstance(m_parent.getInstanceId());
+		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
+		HttpMDTInstance instance = manager.getInstance(m_parent.getInstanceId());
 
 		System.out.print(instance.getOutputLog());
 	}

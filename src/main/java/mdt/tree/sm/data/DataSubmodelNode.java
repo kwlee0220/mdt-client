@@ -29,7 +29,7 @@ import mdt.model.sm.data.Repairs;
 import mdt.model.sm.data.Routing;
 import mdt.model.sm.data.Routings;
 import mdt.model.sm.entity.SubmodelElementEntity;
-import mdt.tree.ListNode;
+import mdt.tree.ArrayNode;
 
 
 /**
@@ -70,108 +70,108 @@ public final class DataSubmodelNode implements Node {
 			return new ProcessNode((Operation)entity);
 		}
 		else if ( ProductionPlannings.class.isAssignableFrom(entityClass) ) {
-			List<? extends ProductionPlanning> plannings = ((ProductionPlannings)entity).getMemberList();
+			List<? extends ProductionPlanning> plannings = ((ProductionPlannings)entity).getElementAll();
 			if ( plannings.size() != 1 ) {
 				List<ProductionPlanningNode> nodes = FStream.from(plannings)
 															.map(ProductionPlanningNode::new)
 															.toList();
-				return new ListNode("ProductionPlannings", nodes);
+				return new ArrayNode("ProductionPlannings", nodes);
 			}
 			else {
 				return new ProductionPlanningNode(plannings.get(0));
 			}
 		}
 		else if ( ProductionOrders.class.isAssignableFrom(entityClass) ) {
-			List<? extends ProductionOrder> orders = ((ProductionOrders)entity).getMemberList();
+			List<? extends ProductionOrder> orders = ((ProductionOrders)entity).getElementAll();
 			if ( orders.size() != 1 ) {
 				List<ProductionOrderNode> nodes = FStream.from(orders)
 															.map(ProductionOrderNode::new)
 															.toList();
-				return new ListNode("ProductionOrders", nodes);
+				return new ArrayNode("ProductionOrders", nodes);
 			}
 			else {
 				return new ProductionOrderNode(orders.get(0));
 			}
 		}
 		else if ( ProductionPerformances.class.isAssignableFrom(entityClass) ) {
-			List<? extends ProductionPerformance> perfs = ((ProductionPerformances)entity).getMemberList();
+			List<? extends ProductionPerformance> perfs = ((ProductionPerformances)entity).getElementAll();
 			if ( perfs.size() != 1 ) {
 				List<ProductionPerformanceNode> nodes = FStream.from(perfs)
 															.map(ProductionPerformanceNode::new)
 															.toList();
-				return new ListNode("ProductionPerformances", nodes);
+				return new ArrayNode("ProductionPerformances", nodes);
 			}
 			else {
 				return new ProductionPerformanceNode(perfs.get(0));
 			}
 		}
 		else if ( Repairs.class.isAssignableFrom(entityClass) ) {
-			List<? extends Repair> repairs = ((Repairs)entity).getMemberList();
+			List<? extends Repair> repairs = ((Repairs)entity).getElementAll();
 			if ( repairs.size() != 1 ) {
 				List<RepairNode> nodes = FStream.from(repairs)
 												.map(RepairNode::new)
 												.toList();
-				return new ListNode("Repairs", nodes);
+				return new ArrayNode("Repairs", nodes);
 			}
 			else {
 				return new RepairNode(repairs.get(0));
 			}
 		}
 		else if ( ItemMasters.class.isAssignableFrom(entityClass) ) {
-			List<? extends ItemMaster> items = ((ItemMasters)entity).getMemberList();
+			List<? extends ItemMaster> items = ((ItemMasters)entity).getElementAll();
 			if ( items.size() != 1 ) {
 				List<ItemMasterNode> nodes = FStream.from(items)
 												.map(ItemMasterNode::new)
 												.toList();
-				return new ListNode("ItemMasters", nodes);
+				return new ArrayNode("ItemMasters", nodes);
 			}
 			else {
 				return new ItemMasterNode(items.get(0));
 			}
 		}
 		else if ( Andons.class.isAssignableFrom(entityClass) ) {
-			List<? extends Andon> andons = ((Andons)entity).getMemberList();
+			List<? extends Andon> andons = ((Andons)entity).getElementAll();
 			if ( andons.size() != 1 ) {
 				List<AndonNode> nodes = FStream.from(andons)
 												.map(AndonNode::new)
 												.toList();
-				return new ListNode("ItemMasters", nodes);
+				return new ArrayNode("ItemMasters", nodes);
 			}
 			else {
 				return new AndonNode(andons.get(0));
 			}
 		}
 		else if ( BOMs.class.isAssignableFrom(entityClass) ) {
-			List<? extends BOM> boms = ((BOMs)entity).getMemberList();
+			List<? extends BOM> boms = ((BOMs)entity).getElementAll();
 			if ( boms.size() != 1 ) {
 				List<BOMNode> nodes = FStream.from(boms)
 												.map(BOMNode::new)
 												.toList();
-				return new ListNode("BOMs", nodes);
+				return new ArrayNode("BOMs", nodes);
 			}
 			else {
 				return new BOMNode(boms.get(0));
 			}
 		}
 		else if ( Routings.class.isAssignableFrom(entityClass) ) {
-			List<? extends Routing> routings = ((Routings)entity).getMemberList();
+			List<? extends Routing> routings = ((Routings)entity).getElementAll();
 			if ( routings.size() != 1 ) {
 				List<RoutingNode> nodes = FStream.from(routings)
 												.map(RoutingNode::new)
 												.toList();
-				return new ListNode("Routings", nodes);
+				return new ArrayNode("Routings", nodes);
 			}
 			else {
 				return new RoutingNode(routings.get(0));
 			}
 		}
 		else if ( Equipments.class.isAssignableFrom(entityClass) ) {
-			List<? extends Equipment> equipments = ((Equipments)entity).getMemberList();
+			List<? extends Equipment> equipments = ((Equipments)entity).getElementAll();
 			if ( equipments.size() != 1 ) {
 				List<EquipmentNode> nodes = FStream.from(equipments)
 													.map((equip) -> new EquipmentNode("", equip))
 													.toList();
-				return new ListNode("Equipments", nodes);
+				return new ArrayNode("Equipments", nodes);
 			}
 			else {
 				return new EquipmentNode("", equipments.get(0));

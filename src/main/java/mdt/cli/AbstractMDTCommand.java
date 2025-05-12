@@ -8,7 +8,7 @@ import utils.LoggerSettable;
 import utils.Throwables;
 import utils.func.FOption;
 
-import mdt.client.HttpMDTManagerClient;
+import mdt.client.HttpMDTManager;
 import mdt.client.MDTClientConfig;
 import mdt.model.MDTManager;
 
@@ -81,17 +81,17 @@ public abstract class AbstractMDTCommand implements Runnable, LoggerSettable {
 			root.setLevel(m_logLevel);
 		}
 
-		HttpMDTManagerClient mdt;
+		HttpMDTManager mdt;
 		
 		try {
 			// 사용자가 명시적으로 client 설정 정보를 지정한 경우에는 이를 통해 MDT Manager에 접속한다.
 			if ( m_clientConfigFile != null ) {
 				MDTClientConfig config = MDTClientConfig.load(m_clientConfigFile);
-				mdt = HttpMDTManagerClient.connect(config);
+				mdt = HttpMDTManager.connect(config);
 			}
 			// 그렇지 않은 경우는 설정 정보를 사용하거나 환경 변수를 활용하여 MDT Manager에 접속한다.
 			else {
-				mdt = HttpMDTManagerClient.connectWithDefault();
+				mdt = HttpMDTManager.connectWithDefault();
 			}
 			if ( getLogger().isDebugEnabled() ) {
 				getLogger().debug("connecting to MDTInstanceManager {}", mdt.getEndpoint());

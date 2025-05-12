@@ -18,7 +18,7 @@ import utils.http.RESTfulRemoteException;
 import utils.stream.FStream;
 
 import mdt.model.sm.AASFile;
-import mdt.model.sm.value.SubmodelElementValue;
+import mdt.model.sm.value.ElementValue;
 
 
 /**
@@ -103,13 +103,13 @@ public interface SubmodelService {
 	
 	/**
 	 * 주어진 idShortPath에 해당하는 SubmodelElement 객체의 값을
-	 * 주어진 {@link SubmodelElementValue} 값으로 변경한다.
+	 * 주어진 {@link ElementValue} 값으로 변경한다.
 	 *
 	 * @param idShortPath	Submodel내의 변경 대상 idShortPath.
 	 * @param value	    변경할 값
 	 * @throws ResourceNotFoundException	해당 idShortPath에 해당하는 SubmodelElement 객체가 존재하지 않는 경우.
 	 */
-	public void updateSubmodelElementValueByPath(String idShortPath, SubmodelElementValue value)
+	public void updateSubmodelElementValueByPath(String idShortPath, ElementValue value)
 		throws ResourceNotFoundException;
 	
 	/**

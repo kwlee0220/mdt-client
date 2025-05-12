@@ -467,32 +467,6 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Adds submodel elements from an idShortPath to the reference.
-     *
-     * @param path the idShortPath
-     * @return the builder
-     */
-    public ReferenceBuilder idShortPath(String path) {
-        return idShortPath(IdShortPath.parse(path));
-    }
-
-
-    /**
-     * Adds submodel elements from an idShortPath to the reference.
-     *
-     * @param path the idShortPath
-     * @return the builder
-     */
-    public ReferenceBuilder idShortPath(IdShortPath path) {
-        if (Objects.isNull(path)) {
-            return this;
-        }
-        getBuildingInstance().getKeys().addAll(path.toReference().getKeys());
-        return this;
-    }
-
-
-    /**
      * Adds a key representing a SubmodelElement with a given index inside a SubmodelElementList.
      *
      * @param index the index

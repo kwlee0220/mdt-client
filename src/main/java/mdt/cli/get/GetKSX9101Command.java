@@ -17,8 +17,8 @@ import utils.UnitUtils;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.instance.HttpMDTInstanceClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.SubmodelService;
 import mdt.model.instance.InstanceSubmodelDescriptor;
@@ -63,7 +63,7 @@ public class GetKSX9101Command extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)manager.getInstanceManager();
+		HttpMDTInstanceManager client = (HttpMDTInstanceManager)manager.getInstanceManager();
 		
 		TreeOptions opts = new TreeOptions();
 		opts.setStyle(TreeStyles.UNICODE_ROUNDED);
@@ -74,7 +74,7 @@ public class GetKSX9101Command extends AbstractMDTCommand {
 			StopWatch watch = StopWatch.start();
 			
 			try {
-				HttpMDTInstanceClient inst = client.getInstance(m_mdtId);
+				HttpMDTInstance inst = client.getInstance(m_mdtId);
 				
 				// 획득한 MDTInstance가 KSX9101를 지원하는지 간략히 확인.
 				// 확인은 MDTInstance가 'InformationModel'과 'Data' idShort를 갖는
@@ -88,7 +88,8 @@ public class GetKSX9101Command extends AbstractMDTCommand {
 				
 				Map<String,Submodel> submodels = FStream.from(inst.getSubmodelServiceAll())
 														.map(SubmodelService::getSubmodel)
-														.toMap(Submodel::getIdShort);
+														.tagKey(Submodel::getIdShort)
+														.toMap();
 				
 				Submodel submodel;
 				MDTInstanceNode.Builder builder = MDTInstanceNode.builder().mdtId(m_mdtId);

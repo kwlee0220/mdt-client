@@ -7,7 +7,6 @@ import com.google.common.base.Preconditions;
 import lombok.experimental.Delegate;
 
 import mdt.model.SubmodelService;
-import mdt.model.sm.simulation.DefaultSimulation;
 
 
 /**

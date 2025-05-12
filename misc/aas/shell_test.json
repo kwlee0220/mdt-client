@@ -1,0 +1,40 @@
+
+{
+  "category": "CONSTANT",
+  "idShort": "Test",
+  "id": "https://www.samcheon.com/mdt/Test",
+  "assetInformation": {
+    "assetKind": "Instance",
+    "globalAssetId": ""
+  },
+  "submodels": [
+    {
+      "type": "ExternalReference",
+      "keys": [
+        {
+          "type": "Submodel",
+          "value": "https://www.samcheon.com/mdt/Test/sm/InformationModel"
+        }
+      ]
+    },
+    {
+      "type": "ExternalReference",
+      "keys": [
+        {
+          "type": "Submodel",
+          "value": "https://www.samcheon.com/mdt/Test/sm/Data"
+        }
+      ]
+    },
+    {
+      "type": "ExternalReference",
+      "keys": [
+        {
+          "type": "Submodel",
+          "value": "https://www.samcheon.com/mdt/Test/sm/Simulation"
+        }
+      ]
+    }
+  ],
+  "modelType": "AssetAdministrationShell"
+}

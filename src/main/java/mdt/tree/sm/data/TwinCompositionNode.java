@@ -37,7 +37,7 @@ public final class TwinCompositionNode implements Node {
 	
 	private Node toNode(Indexed<CompositionDependency> indexed) {
 		CompositionDependency dep = indexed.value();
-		String text = String.format("[%02d] %s", indexed.index(), dep.getTarget());
+		String text = String.format("[%02d] %s", indexed.index(), dep.getTargetId());
 		return new TextNode(text);
 	}
 }

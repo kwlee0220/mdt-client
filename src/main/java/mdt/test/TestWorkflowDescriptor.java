@@ -3,7 +3,7 @@ package mdt.test;
 import java.io.File;
 import java.io.IOException;
 
-import mdt.workflow.model.WorkflowDescriptor;
+import mdt.workflow.WorkflowModel;
 
 /**
  *
@@ -28,11 +28,11 @@ public class TestWorkflowDescriptor {
 	}
 	
 	public static void loadWfDesc(File file) throws IOException {
-		WorkflowDescriptor wfDesc = WorkflowDescriptor.parseJsonFile(file);
+		WorkflowModel wfDesc = WorkflowModel.parseJsonFile(file);
 //		System.out.println(wfDesc);
 		
 		String json = wfDesc.toJsonString();
 		System.out.println(json);
-		wfDesc = WorkflowDescriptor.parseJsonString(json);
+		wfDesc = WorkflowModel.parseJsonString(json);
 	}
 }

@@ -16,8 +16,9 @@ public interface DataType<T> {
 		return getTypeDefXsd().name();
 	}
 	
-	public String toValueString(T value);
+	public String toValueString(Object value);
 	public T parseValueString(String str);
 	
 	public Object toJdbcObject(T value);
+	public T fromJdbcObject(Object jdbcObj);
 }

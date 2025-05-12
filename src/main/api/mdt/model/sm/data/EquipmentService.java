@@ -1,7 +1,6 @@
 package mdt.model.sm.data;
 
 import mdt.model.SubmodelService;
-import mdt.model.sm.data.DefaultEquipment;
 import mdt.model.sm.entity.SMCollectionField;
 
 

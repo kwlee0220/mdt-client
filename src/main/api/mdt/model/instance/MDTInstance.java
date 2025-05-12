@@ -10,21 +10,13 @@ import javax.annotation.Nullable;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
-import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
-
-import com.google.common.base.Preconditions;
-
-import utils.func.Funcs;
 
 import mdt.aas.AssetAdministrationShellRegistry;
 import mdt.model.AssetAdministrationShellService;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
-import mdt.model.sm.data.Data;
-import mdt.model.sm.info.InformationModel;
-import mdt.model.sm.simulation.Simulation;
 
 
 /**
@@ -37,6 +29,13 @@ import mdt.model.sm.simulation.Simulation;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTInstance {
+	/**
+	 * {@link MDTInstanceManager} 객체를 반환한다.
+	 * 
+	 * @return	{@link MDTInstanceManager} 객체.
+	 */
+	public MDTInstanceManager getInstanceManager();
+	
 	/**
 	 * MDTInstance의 식별자를 반환한다.
 	 * <p>
@@ -55,11 +54,8 @@ public interface MDTInstance {
 	 * 내부적으로는 {@code getInstanceDescriptor().getStatus()}와 동일하다.
 	 * 
 	 * @return	상태 정보
-	 * @see MDTInstance#getInstanceDescriptor()
 	 */
-	public default MDTInstanceStatus getStatus() {
-		return getInstanceDescriptor().getStatus();
-	}
+	public MDTInstanceStatus getStatus();
 	
 	/**
 	 * MDTInstance에 부여된 endpoint를 반환한다.
@@ -72,9 +68,7 @@ public interface MDTInstance {
 	 * @return	Endpoint 정보.
 	 * @see MDTInstance#getInstanceDescriptor()
 	 */
-	public default @Nullable String getBaseEndpoint() {
-		return getInstanceDescriptor().getBaseEndpoint();
-	}
+	public @Nullable String getBaseEndpoint();
 
 	/**
 	 * MDTInstance가 포함한 AssetAdministrationShell (AAS)의 식별자를 반환한다.
@@ -135,8 +129,6 @@ public interface MDTInstance {
 	public default @Nullable AssetKind getAssetKind() {
 		return getInstanceDescriptor().getAssetKind();
 	}
-	
-	public MDTInstanceInfo getInfo();
 	
 	/**
 	 * MDTInstance를 시작시킨다.
@@ -254,25 +246,13 @@ public interface MDTInstance {
 	 */
 	public SubmodelService getSubmodelServiceByIdShort(String submodelIdShort) throws ResourceNotFoundException;
 	
+	/**
+	 * 주어진 semanticId에 해당하는 {@link SubmodelService} 객체를 반환한다.
+	 * 
+	 * @param semanticId	검색에 사용할 semanticId.
+	 * @return	{@link SubmodelService} 객체 리스트.
+	 */
 	public List<SubmodelService> getSubmodelServiceAllBySemanticId(String semanticId);
-	public default SubmodelService getInformationModelSubmodel() throws ResourceNotFoundException {
-		List<SubmodelService> found = getSubmodelServiceAllBySemanticId(InformationModel.SEMANTIC_ID);
-		return Funcs.getFirst(found)
-					.getOrThrow(() -> new ResourceNotFoundException("SubmodelService",
-																	"semanticId=" + InformationModel.SEMANTIC_ID));
-	}
-	public default SubmodelService getDataSubmodel() throws ResourceNotFoundException {
-		List<SubmodelService> found = getSubmodelServiceAllBySemanticId(Data.SEMANTIC_ID);
-		if ( found.size() == 0 ) {
-			throw new ResourceNotFoundException("SubmodelService", "semanticId=" + Data.SEMANTIC_ID);
-		}
-		
-		return found.get(0);
-	}
-
-	public InformationModel getInformationModel() throws ResourceNotFoundException;
-	public Data getData() throws ResourceNotFoundException;
-	public List<Simulation> getSimulationAll();
 	
 	/**
 	 * MDTInstance가 포함한 AssetAdministrationShell (AAS)의 기술자를 반환한다.
@@ -304,55 +284,6 @@ public interface MDTInstance {
 	public List<SubmodelDescriptor> getSubmodelDescriptorAll();
 	
 	/**
-	 * 하위 모델 식별에 해당하는 기술자를 반환한다.
-	 * 
-	 * @param submodelId	하위 모델 식별자
-	 * @return	하위 모델 식별자
-	 * @throws ResourceNotFoundException	식별자에 해당하는 하위 모델 기술자가 없는 경우.
-	 */
-	public default SubmodelDescriptor getSubmodelDescriptorById(String submodelId)
-		throws ResourceNotFoundException {
-		Preconditions.checkNotNull(submodelId);
-		
-		return getSubmodelDescriptorAll().stream()
-								.filter(desc -> desc.getId().equals(submodelId))
-								.findAny()
-								.orElseThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
-	}
-	
-	/**
-	 * idShort에 해당하는 하위 모델의 기술자를 반환한다.
-	 * 
-	 * @param submodelIdShort	검색에 사용할 하위 모델의 idShort.
-	 * @return	하위 모델 식별자
-	 * @throws ResourceNotFoundException	식별자에 해당하는 하위 모델 기술자가 없는 경우.
-	 */
-	public default List<SubmodelDescriptor> getSubmodelDescriptorAllByIdShort(String submodelIdShort)
-		throws ResourceNotFoundException {
-		Preconditions.checkNotNull(submodelIdShort);
-		
-		return getSubmodelDescriptorAll().stream()
-								.filter(desc -> submodelIdShort.equals(desc.getIdShort()))
-								.toList();
-	}
-	
-	public default List<SubmodelDescriptor> getSubmodelDescriptorAllBySemanticId(String semanticId) {
-		Preconditions.checkNotNull(semanticId);
-		
-		return getSubmodelDescriptorAll().stream()
-										.filter(desc -> {
-											Reference ref = desc.getSemanticId();
-											if ( ref != null ) {
-												return semanticId.equals(ref.getKeys().get(0).getValue());
-											}
-											else {
-												return false;
-											}
-										})
-										.toList();
-	}
-	
-	/**
 	 * MDTInstance의 기술자를 반환한다.
 	 * 
 	 * @return	MDTInstance의 기술자.
@@ -365,41 +296,7 @@ public interface MDTInstance {
 	 *  @return		MDTInstance 하위 모델 기술자 리스트.
 	 */
 	public default List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptorAll() {
-		return getInstanceDescriptor().getInstanceSubmodelDescriptors();
-	}
-	
-	/**
-	 * 하위 모델 식별자에 해당하는 MDTInstance 하위 모델 기술자를 반환한다.
-	 * 
-	 * @param submodelId	대상 하위 모델의 식별자.
-	 * @return	MDTInstance 하위 모델 기술자
-	 * @throws ResourceNotFoundException	idShort에 해당하는 하위 모델 기술자가 없는 경우.
-	 */
-	public default InstanceSubmodelDescriptor getInstanceSubmodelDescriptorById(String submodelId)
-		throws ResourceNotFoundException {
-		return Funcs.findFirst(getInstanceDescriptor().getInstanceSubmodelDescriptors(),
-								isd -> isd.getId().equals(submodelId))
-					.getOrThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
-	}
-	
-	/**
-	 * 주어진 idShort에 해당하는 MDTInstance 하위 모델 기술자를 반환한다.
-	 * 
-	 * @param idShort	대상 하위 모델의 idShort
-	 * @return	MDTInstance 하위 모델 기술자
-	 * @throws ResourceNotFoundException	idShort에 해당하는 하위 모델 기술자가 없는 경우.
-	 */
-	public default InstanceSubmodelDescriptor getInstanceSubmodelDescriptorByIdShort(String idShort)
-		throws ResourceNotFoundException {
-		return Funcs.findFirst(getInstanceDescriptor().getInstanceSubmodelDescriptors(),
-								isd -> isd.getIdShort().equals(idShort))
-					.getOrThrow(() -> new ResourceNotFoundException("Submodel",
-														String.format("instance[%s].%s", getId(), idShort)));
-	}
-
-	public default List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptorAllBySemanticId(String semanticId) {
-		return Funcs.filter(getInstanceDescriptor().getInstanceSubmodelDescriptors(),
-							isd -> isd.getSemanticId() != null &&  isd.getSemanticId().equals(semanticId));
+		return getInstanceDescriptor().getInstanceSubmodelDescriptorAll();
 	}
 	
 	public String getOutputLog() throws IOException;

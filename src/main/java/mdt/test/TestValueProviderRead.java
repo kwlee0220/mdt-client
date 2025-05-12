@@ -47,6 +47,7 @@ public class TestValueProviderRead {
 		System.out.println(millis);
 	}
 	
+	@SuppressWarnings("unused")
 	private static List<String> readAllFields(HttpSubmodelServiceClient svc) {
 		String pattern = "DataInfo.Equipment.EquipmentParameterValues[%d].ParameterValue";
 		
@@ -85,6 +86,7 @@ public class TestValueProviderRead {
 		return List.of(value);
 	}
 	
+	@SuppressWarnings("unused")
 	private static List<String> readRowMemory(HttpSubmodelServiceClient svc) {
 		String pattern = "DataInfo.Equipment.EquipmentParameters";
 		SubmodelElementList sml = (SubmodelElementList)svc.getSubmodelElementByPath(pattern);

@@ -21,16 +21,20 @@ public class TestMqttAutoReconnect {
 		root.setLevel(Level.DEBUG);
 		
 		AutoReconnectingMqttClient reconnect
-								= new AutoReconnectingMqttClient("tcp://0.0.0.0:1883", null, Duration.ofSeconds(1)) {
-			@Override protected void mqttBrokerConnected(MqttClient client) { }
-			@Override protected void mqttBrokerDisconnected() { }
+								= new AutoReconnectingMqttClient("tcp://192.168.0.10:1883", null, Duration.ofSeconds(1)) {
+			@Override protected void mqttBrokerConnected(MqttClient client) {
+				System.out.println("connected: " + client.getServerURI());
+			}
+			@Override protected void mqttBrokerDisconnected() {
+				System.out.println("disconnected");
+			}
 		};
 		reconnect.startAsync();
 		
-		for ( int i =0; i < 60; ++i ) {
-			System.out.println(reconnect.pollMqttClient());
-			Thread.sleep(1000);
-		}
+//		for ( int i =0; i < 60; ++i ) {
+//			System.out.println(reconnect.pollMqttClient());
+//			Thread.sleep(1000);
+//		}
 		
 		reconnect.stopAsync();
 		

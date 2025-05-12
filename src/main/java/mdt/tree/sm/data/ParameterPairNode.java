@@ -11,7 +11,7 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.sm.data.Parameter;
 import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
+import mdt.model.sm.value.ElementValue;
 
 
 /**
@@ -51,7 +51,7 @@ public final class ParameterPairNode implements Node {
 	}
 	
 	private String toParameterValueString(ParameterValue param) {
-		SubmodelElementValue smev = ElementValues.getValue(param.getParameterValue());
+		ElementValue smev = ElementValues.getValue(param.getParameterValue());
 		return MDTModelSerDe.toJsonString(smev);
 	}
 }

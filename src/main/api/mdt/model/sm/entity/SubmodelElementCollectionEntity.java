@@ -54,7 +54,8 @@ public class SubmodelElementCollectionEntity extends AbstractSMEContainerEntity<
 			FOption.accept(getSemanticId(), smc::setSemanticId);
 			
 			Map<String, SubmodelElement> elementMap = FStream.from(smc.getValue())
-															.toMap(SubmodelElement::getIdShort);
+															.tagKey(SubmodelElement::getIdShort)
+															.toMap();
 			for ( SubmodelElement newElm: super.readSubmodelElementFromFields() ) {
 				elementMap.put(newElm.getIdShort(), newElm);
 			}

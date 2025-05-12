@@ -39,7 +39,7 @@ public class MDTInstanceStatusSubscriber extends AutoReconnectingMqttClient {
 		String json = new String(msg.getPayload(), StandardCharsets.UTF_8);
 		InstanceStatusChangeEvent ev = MAPPER.readValue(json, InstanceStatusChangeEvent.class);
 		
-		HttpMDTInstanceManagerClient.EVENT_BUS.post(ev);
+		HttpMDTInstanceManager.EVENT_BUS.post(ev);
 	}
 
 	@Override public void deliveryComplete(IMqttDeliveryToken token) { }

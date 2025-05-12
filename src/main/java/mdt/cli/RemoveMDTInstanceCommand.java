@@ -5,10 +5,10 @@ import java.util.List;
 import org.slf4j.Logger;
 
 import utils.LoggerNameBuilder;
+import utils.func.Unchecked;
 
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -47,9 +47,16 @@ public class RemoveMDTInstanceCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
+		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
 		if ( m_removeAll ) {
+			if ( m_force ) {
+				manager.getInstanceAllByFilter("instance.status = 'RUNNING'")
+						.parallelStream()
+						.forEach(inst -> {
+							Unchecked.runOrIgnore(() -> inst.stop(null, null));
+						});
+			}
 			manager.removeInstanceAll();
 		}
 		else {

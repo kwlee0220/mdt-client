@@ -8,11 +8,13 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
+import utils.Keyed;
+
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface Parameter {
+public interface Parameter extends Keyed<String> {
 	public static final String SEMANTIC_ID = "https://etri.re.kr/mdt/Submodel/Data/Parameter/1/1";
 	public static final Reference SEMANTIC_ID_REFERENCE
 		= new DefaultReference.Builder()
@@ -28,6 +30,10 @@ public interface Parameter {
 	
 	public default Reference getSemanticId() {
 		return SEMANTIC_ID_REFERENCE;
+	}
+	
+	public default String key() {
+		return getParameterId();
 	}
 
 	/**

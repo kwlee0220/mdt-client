@@ -29,6 +29,7 @@ import mdt.model.sm.ref.SubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
+import mdt.workflow.model.TaskDescriptor;
 
 import picocli.CommandLine.Option;
 
@@ -50,6 +51,11 @@ public class SKKUSimulationTask implements MDTTask {
 	@GuardedBy("m_guard") private AsyncState m_status = AsyncState.NOT_STARTED;
 	
 	protected SKKUSimulationTask() {
+	}
+
+	@Override
+	public TaskDescriptor getTaskDescriptor() {
+		return new TaskDescriptor();
 	}
 	
 	public void setSimulationSubmodelReference(SubmodelReference ref) {
@@ -90,7 +96,7 @@ public class SKKUSimulationTask implements MDTTask {
 		String simulationSubmodelEndpoint = svc.getEndpoint();
 		OperationStatusResponse<Void> resp = client.startSimulationWithEndpoint(simulationSubmodelEndpoint);
 		
-		m_guard.runAndSignalAll(() -> m_status = AsyncState.RUNNING);
+		m_guard.run(() -> m_status = AsyncState.RUNNING);
 		
 		String location = resp.getOperationLocation();
 		while ( resp.getStatus() == OperationStatus.RUNNING ) {
@@ -102,7 +108,7 @@ public class SKKUSimulationTask implements MDTTask {
 					resp = client.cancelSimulation(location);
 					if ( resp.getStatus() == OperationStatus.CANCELLED ) {
 						m_status = AsyncState.CANCELLED;
-						m_guard.signalAllInGuard();
+						m_guard.signalAll();
 						throw new CancellationException(resp.getMessage());
 					}
 				}
@@ -139,13 +145,13 @@ public class SKKUSimulationTask implements MDTTask {
 		m_guard.lock();
 		try {
 			while ( m_status == AsyncState.NOT_STARTED ) {
-				m_guard.awaitInGuard();
+				m_guard.awaitSignal();
 			}
 			if ( m_status == AsyncState.RUNNING ) {
 				m_status = AsyncState.CANCELLING;
 				
 				while ( m_status == AsyncState.CANCELLING ) {
-					m_guard.awaitInGuard();
+					m_guard.awaitSignal();
 				}
 				return m_status == AsyncState.CANCELLED;
 			}
@@ -184,7 +190,7 @@ public class SKKUSimulationTask implements MDTTask {
 			
 			SKKUSimulationTask task = new SKKUSimulationTask();
 			
-			DefaultSubmodelReference simRef = DefaultSubmodelReference.parseString(m_simSubmodelRefString);
+			DefaultSubmodelReference simRef = DefaultSubmodelReference.parseStringExpr(m_simSubmodelRefString);
 			simRef.activate(manager);
 			
 			task.setSimulationSubmodelReference(simRef);

@@ -4,15 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 
+import javax.annotation.Nullable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import utils.UnitUtils;
 
@@ -21,16 +22,16 @@ import utils.UnitUtils;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-@NoArgsConstructor
-@Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"mdtEndpoint", "connectTimeout", "readTimeout", "mqttEndpoint", "workflowManagerEndpoint"})
 public final class MDTClientConfig {
 	private static final Logger s_logger = LoggerFactory.getLogger(MDTClientConfig.class);
-//	private static final String DEFAULT_ENDPOINT = "http://localhost:12985/instance-manager";
 
-	private String endpoint;
-	private Duration connectTimeout;
-	private Duration readTimeout;
-	private String mqttEndpoint;
+	private String m_mdtEndpoint;
+	@Nullable private Duration m_connectTimeout;
+	@Nullable private Duration m_readTimeout;
+	@Nullable private String m_mqttEndpoint;
+	@Nullable private String m_workflowManagerEndpoint;
 	
 	public static MDTClientConfig load(File configFile) throws IOException {
 		if ( s_logger.isInfoEnabled() ) {
@@ -43,14 +44,61 @@ public final class MDTClientConfig {
 		return config;
 	}
 	
+	public static MDTClientConfig of(String mdtEndpoint) {
+		MDTClientConfig config = new MDTClientConfig();
+		config.setMdtEndpoint(mdtEndpoint);
+		
+		return config;
+	}
+	
+	public String getMdtEndpoint() {
+		return m_mdtEndpoint;
+	}
+	
+	public void setMdtEndpoint(String endpoint) {
+		m_mdtEndpoint = endpoint;
+	}
+	
+	public Duration getConnectTimeout() {
+		return m_connectTimeout;
+	}
+	
+	public void setConnectTimeout(Duration timeout) {
+		m_connectTimeout = timeout;
+	}
+	
 	@JsonProperty("connectTimeout")
 	public void setConnectTimeoutString(String str) {
-		this.connectTimeout = UnitUtils.parseDuration(str);
+		m_connectTimeout = UnitUtils.parseDuration(str);
+	}
+	
+	public Duration getReadTimeout() {
+		return m_readTimeout;
+	}
+	
+	public void setReadTimeout(Duration timeout) {
+		m_readTimeout = timeout;
 	}
 	
 	@JsonProperty("readTimeout")
 	public void setReadTimeoutString(String str) {
-		this.readTimeout = UnitUtils.parseDuration(str);
+		this.m_readTimeout = UnitUtils.parseDuration(str);
+	}
+	
+	public String getMqttEndpoint() {
+		return m_mqttEndpoint;
+	}
+	
+	public void setMqttEndpoint(String endpoint) {
+		m_mqttEndpoint = endpoint;
+	}
+	
+	public String getWorkflowManagerEndpoint() {
+		return m_workflowManagerEndpoint;
+	}
+	
+	public void setWorkflowManagerEndpoint(String endpoint) {
+		m_workflowManagerEndpoint = endpoint;
 	}
 }
 	

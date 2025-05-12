@@ -1,17 +1,17 @@
 package mdt.sample.workflow;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
-import mdt.model.NameValue;
+import mdt.client.HttpMDTManager;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.model.workflow.StringOption;
-import mdt.model.workflow.WorkflowDescriptors;
-import mdt.task.builtin.HttpTask;
-import mdt.workflow.WorkflowDescriptorService;
+import mdt.model.sm.variable.Variable;
+import mdt.model.sm.variable.Variables;
+import mdt.workflow.WorkflowManager;
+import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.Options;
 import mdt.workflow.model.TaskDescriptor;
-import mdt.workflow.model.VariableDescriptor;
-import mdt.workflow.model.WorkflowDescriptor;
+import mdt.workflow.model.TaskDescriptors;
 
 
 /**
@@ -24,110 +24,121 @@ public class WfThicknessSimulationShort {
 	private static final String HTTP_OP_SERVER_ENDPOINT = "http://129.254.91.134:12987";
 	
 	public static final void main(String... args) throws Exception {
-		HttpMDTManagerClient mdt = HttpMDTManagerClient.connect(ENDPOINT);
-		HttpMDTInstanceManagerClient manager = mdt.getInstanceManager();
+		HttpMDTManager mdt = HttpMDTManager.connect(ENDPOINT);
+		HttpMDTInstanceManager manager = mdt.getInstanceManager();
 		
-		WorkflowDescriptor wfDesc;
+		WorkflowModel wfDesc;
 		
-		wfDesc = new WorkflowDescriptor();
+		wfDesc = new WorkflowModel();
 		wfDesc.setId("thickness-simulation-short");
 		wfDesc.setName("냉장고 내함 두께 불량을 탐지 워크플로우");
 		wfDesc.setDescription("본 워크플로우는 냉장고의 내함 두께 불량을 탐지한다.");
 
-		TaskDescriptor taskDesc;
-		VariableDescriptor varDesc;
+		TaskDescriptor descriptor;
+		Variable var;
 
-		taskDesc = inspectSurfaceThickness(manager, "inspect-thickness");
-		VariableDescriptor from = VariableDescriptor.parseString("UpperImage",
-									"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue");
-		taskDesc.getInputVariables().replace(from);
-		wfDesc.getTasks().add(taskDesc);
+		descriptor = inspectSurfaceThickness(manager, "inspect-thickness");
+		descriptor.getInputVariables().addOrReplace(Variables.newInstance("UpperImage", "", "param:inspector:UpperImage"));
+		wfDesc.getTaskDescriptors().add(descriptor);
 
-		taskDesc = updateDefectList(manager, "update-defect-list");
-		varDesc = VariableDescriptor.parseString("Defect",
-										"inspector/ThicknessInspection/AIInfo.Outputs[0].OutputValue");
-		taskDesc.getInputVariables().replace(varDesc);
-		varDesc = VariableDescriptor.parseString("DefectList",
-										"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue");
-		taskDesc.getInputVariables().replace(varDesc);
-		varDesc = VariableDescriptor.parseString("DefectList",
-										"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue");
-		taskDesc.getOutputVariables().replace(varDesc);
-		taskDesc.getDependencies().add("inspect-thickness");
-		wfDesc.getTasks().add(taskDesc);
+		descriptor = updateDefectList2(manager, "update-defect-list");
+		descriptor.getInputVariables().addOrReplace(Variables.newInstance("Defect", "",
+																		"oparg:inspector:ThicknessInspection:out:0"));
+		descriptor.getInputVariables().addOrReplace(Variables.newInstance("DefectList", "", "param:inspector:DefectList"));
+		descriptor.getOutputVariables().addOrReplace(Variables.newInstance("DefectList", "", "param:inspector:DefectList"));
+		descriptor.getDependencies().add("inspect-thickness");
+		wfDesc.getTaskDescriptors().add(descriptor);
 
-		taskDesc = simulateProcess(manager, "simulate-process");
-		varDesc = VariableDescriptor.parseString("DefectList",
-										"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue");
-		taskDesc.getInputVariables().replace(varDesc);
-		varDesc = VariableDescriptor.parseString("AverageCycleTime",
-										"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue");
-		taskDesc.getOutputVariables().replace(varDesc);
-		taskDesc.getDependencies().add("update-defect-list");
-		wfDesc.getTasks().add(taskDesc);
+		descriptor = simulateProcess(manager, "simulate-process");
+		var = Variables.newInstance("DefectList", null, "param:inspector:DefectList");
+		descriptor.getInputVariables().addOrReplace(var);
+		var = Variables.newInstance("AverageCycleTime", null, "param:inspector:CycleTime");
+		descriptor.getOutputVariables().addOrReplace(var);
+		descriptor.getDependencies().add("update-defect-list");
+		wfDesc.getTaskDescriptors().add(descriptor);
 
 //		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
-		
-		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
-		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
+
+		WorkflowManager wfManager = mdt.getWorkflowManager();
+		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
 		
 		System.out.println("Workflow id: " + wfId);
 	}
 	
 	private static TaskDescriptor inspectSurfaceThickness(MDTInstanceManager manager, String id) {
-		TaskDescriptor task = new TaskDescriptor();
-		
-		task.setId(id);
-		task.setType(HttpTask.class.getName());
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "inspector/ThicknessInspection"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-submodel", "inspector/ThicknessInspection"));
-		
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("inspector", "ThicknessInspection");
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
 		smRef.activate(manager);
-		
-		WorkflowDescriptors.addAIInputOutputVariables(task, smRef);
-		
-		return task;
+
+		return TaskDescriptors.httpTaskBuilder()
+								.id(id)
+								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
+								.operationId("inspector/ThicknessInspection")
+								.pollInterval("2s")
+								.timeout("1m")
+								.operationSubmodelRef(smRef)
+								.addOption(Options.newOption("loglevel", "info"))
+								.addLabel("mdt-operation", smRef.toStringExpr())
+								.build();
+	}
+	private static TaskDescriptor inspectSurfaceThickness2(MDTInstanceManager manager, String id) {
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
+		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
+		opElmRef.activate(manager);
+
+		return TaskDescriptors.aasOperationTaskBuilder()
+								.id(id)
+								.operationRef(opElmRef)
+								.pollInterval("2s")
+								.timeout("1m")
+								.addOption(Options.newOption("loglevel", "info"))
+								.addLabel("mdt-operation", smRef.toStringExpr())
+								.addInputVariable(Variables.newInstance("UpperImage", "", "param:inspector:UpperImage"))
+								.build();
 	}
 	
 	private static TaskDescriptor updateDefectList(MDTInstanceManager manager, String id) {
-		TaskDescriptor task = new TaskDescriptor();
-		
-		task.setId(id);
-		task.setType(HttpTask.class.getName());
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "inspector/UpdateDefectList"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-submodel", "inspector/UpdateDefectList"));
-		
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("inspector", "UpdateDefectList");
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "UpdateDefectList");
 		smRef.activate(manager);
-		
-		WorkflowDescriptors.addAIInputOutputVariables(task, smRef);
-		
-		return task;
+
+		return TaskDescriptors.httpTaskBuilder()
+								.id(id)
+								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
+								.operationId("inspector/UpdateDefectList")
+								.pollInterval("2s")
+								.timeout("1m")
+								.operationSubmodelRef(smRef)
+								.addOption(Options.newOption("loglevel", "info"))
+								.addLabel("mdt-operation", smRef.toStringExpr())
+								.build();
+	}
+	private static TaskDescriptor updateDefectList2(MDTInstanceManager manager, String id) {
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "UpdateDefectList");
+		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
+		opElmRef.activate(manager);
+
+		return TaskDescriptors.aasOperationTaskBuilder()
+								.id(id)
+								.operationRef(opElmRef)
+								.pollInterval("2s")
+								.timeout("1m")
+								.addOption(Options.newOption("loglevel", "info"))
+								.addLabel("mdt-operation", smRef.toStringExpr())
+								.build();
 	}
 	
 	private static TaskDescriptor simulateProcess(MDTInstanceManager manager, String id) {
-		TaskDescriptor task = new TaskDescriptor();
-		
-		task.setId(id);
-		task.setType(HttpTask.class.getName());
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "inspector/ProcessSimulation"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-submodel", "inspector/ProcessSimulation"));
-		
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("inspector", "ProcessSimulation");
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ProcessSimulation");
 		smRef.activate(manager);
-		
-		WorkflowDescriptors.addSimulationInputOutputVariables(task, smRef);
-		
-		return task;
+
+		return TaskDescriptors.httpTaskBuilder()
+								.id(id)
+								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
+								.operationId("inspector/ProcessSimulation")
+								.pollInterval("2s")
+								.timeout("1m")
+								.operationSubmodelRef(smRef)
+								.addOption(Options.newOption("loglevel", "info"))
+								.addLabel("mdt-operation", smRef.toStringExpr())
+								.build();
 	}
 }

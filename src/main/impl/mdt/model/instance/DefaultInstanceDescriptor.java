@@ -14,37 +14,67 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
+@Accessors(prefix="m_")
 @NoArgsConstructor
 public class DefaultInstanceDescriptor implements InstanceDescriptor {
-	private String id;
-	private MDTInstanceStatus status;
-	@Nullable private String baseEndpoint;
+	private String m_id;
+	private MDTInstanceStatus m_status;
+	@Nullable private String m_baseEndpoint;
 	
-	private String aasId;
-	@Nullable private String aasIdShort;
-	@Nullable private String globalAssetId;
-	@Nullable private String assetType;
-	@Nullable private AssetKind assetKind;
+	private String m_aasId;
+	@Nullable private String m_aasIdShort;
+	@Nullable private String m_globalAssetId;
+	@Nullable private String m_assetType;
+	@Nullable private AssetKind m_assetKind;
 
 	@Getter(AccessLevel.NONE)
-	private List<DefaultInstanceSubmodelDescriptor> submodels = Lists.newArrayList();
+	private List<DefaultInstanceSubmodelDescriptor> m_submodels = Lists.newArrayList();
+
+	@Getter(AccessLevel.NONE)
+	private List<? extends MDTParameterDescriptor> m_parameters = Lists.newArrayList();
+
+	@Getter(AccessLevel.NONE)
+	private List<? extends MDTOperationDescriptor> m_operations = Lists.newArrayList();
 	
 	@Override
-	public List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptors() {
-		return FStream.from(this.submodels)
+	public List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptorAll() {
+		return FStream.from(m_submodels)
 						.cast(InstanceSubmodelDescriptor.class)
 						.toList();
 	}
 
 	public void setSubmodels(List<? extends InstanceSubmodelDescriptor> smDescs) {
-		submodels = FStream.from(smDescs)
+		m_submodels = FStream.from(smDescs)
 							.cast(DefaultInstanceSubmodelDescriptor.class)
 							.toList();
+	}
+
+	@Override
+	public List<MDTParameterDescriptor> getMDTParameterDescriptorAll() {
+		return FStream.from(m_parameters)
+						.cast(MDTParameterDescriptor.class)
+						.toList();
+	}
+	
+	public void setAssetParameters(List<? extends MDTParameterDescriptor> params) {
+		m_parameters = params;
+	}
+
+	@Override
+	public List<MDTOperationDescriptor> getMDTOperationDescriptorAll() {
+		return FStream.from(m_operations)
+						.cast(MDTOperationDescriptor.class)
+						.toList();
+	}
+	
+	public void setAssetOperations(List<? extends MDTOperationDescriptor> ops) {
+		m_operations = ops;
 	}
 }

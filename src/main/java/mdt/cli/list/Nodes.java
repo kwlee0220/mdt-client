@@ -8,10 +8,11 @@ import com.google.common.collect.Maps;
 
 import lombok.experimental.UtilityClass;
 
+import utils.Keyed;
 import utils.KeyedValueList;
-import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
-import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
 
 /**
@@ -89,7 +90,7 @@ public class Nodes {
 		
 		@Override
 		public String toString() {
-			String memberIdsStr = FStream.from(m_instances)
+			String memberIdsStr = KeyValueFStream.from(m_instances)
 											.map(kv -> kv.value().getId())
 											.join(", ");
 			return String.format("%s: {%s}", m_status, memberIdsStr);
@@ -101,24 +102,29 @@ public class Nodes {
 	public static final String ANSI_GREEN = "\u001B[32m";
 	public static final String ANSI_YELLOW = "\u001B[33m";
 	public static final String ANSI_BOLD = "\u001B[1m";
-	public static class InstanceNode implements Node {
-		private final HttpMDTInstanceClient m_instance;
+	public static class InstanceNode implements Node, Keyed<String> {
+		private final HttpMDTInstance m_instance;
 		private final MDTInstanceStatus m_status;
 		private final String m_baseUrl;
 		private final KeyedValueList<String, InstanceNode> m_children;
 		
-		public InstanceNode(HttpMDTInstanceClient instance) {
+		public InstanceNode(HttpMDTInstance instance) {
 			m_instance = instance;
 			m_status = instance.getStatus();
 			m_baseUrl = (m_status == MDTInstanceStatus.RUNNING) ? m_instance.getBaseEndpoint() : null;
-			m_children = KeyedValueList.newInstance(InstanceNode::getId);
+			m_children = KeyedValueList.with(Node::getKey);
+		}
+
+		@Override
+		public String key() {
+			return getId();
 		}
 		
 		public String getId() {
 			return m_instance.getId();
 		}
 		
-		public HttpMDTInstanceClient getInstance() {
+		public HttpMDTInstance getInstance() {
 			return m_instance;
 		}
 		

@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -25,6 +26,7 @@ import com.google.common.collect.Maps;
 
 import lombok.experimental.UtilityClass;
 
+import utils.DataUtils;
 import utils.func.FOption;
 import utils.func.Try;
 
@@ -93,8 +95,9 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Boolean value) {
-			return (value != null) ? ""+value : null;
+		public String toValueString(Object value) {
+			Boolean flag = DataUtils.asBoolean(value);
+			return (flag != null) ? ""+flag : null;
 		}
 	
 		@Override
@@ -105,6 +108,11 @@ public class DataTypes {
 		@Override
 		public Boolean toJdbcObject(Boolean value) {
 			return value;
+		}
+
+		@Override
+		public Boolean fromJdbcObject(Object jdbcObj) {
+			return (Boolean)jdbcObj;
 		}
 	}
 
@@ -117,7 +125,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Instant value) {
+		public String toValueString(Object obj) {
+			LocalDateTime value = DataUtils.asDatetime(obj);
 			return (value != null) ? value.toString() : null;
 		}
 	
@@ -135,6 +144,11 @@ public class DataTypes {
 		public Timestamp toJdbcObject(Instant value) {
 			return FOption.map(value, Timestamp::from);
 		}
+
+		@Override
+		public Instant fromJdbcObject(Object jdbcObj) {
+			return ((Timestamp)jdbcObj).toInstant();
+		}
 	}
 
 	public static class DateType extends AbstractDataType<Date> implements DataType<Date> {
@@ -145,7 +159,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Date value) {
+		public String toValueString(Object obj) {
+			Date value = DataUtils.asDate(obj);
 			return (value != null) ? DATE_FORMATTER.format(value) : null;
 		}
 	
@@ -163,6 +178,11 @@ public class DataTypes {
 		public java.sql.Date toJdbcObject(Date value) {
 			return FOption.map(value, v -> new java.sql.Date(v.getTime()));
 		}
+
+		@Override
+		public Date fromJdbcObject(Object jdbcObj) {
+			return new Date(((java.sql.Date)jdbcObj).getTime());
+		}
 	}
 
 	public static class DoubleType extends AbstractDataType<Double> implements DataType<Double> {
@@ -171,8 +191,9 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Double value) {
-			return (value != null) ? ""+value : null;
+		public String toValueString(Object obj) {
+			Double value = DataUtils.asDouble(obj);
+			return (value != null) ? ""+obj : null;
 		}
 	
 		@Override
@@ -183,6 +204,11 @@ public class DataTypes {
 		@Override
 		public Double toJdbcObject(Double value) {
 			return value;
+		}
+
+		@Override
+		public Double fromJdbcObject(Object jdbcObj) {
+			return (Double)jdbcObj;
 		}
 	}
 
@@ -196,7 +222,7 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Duration value) {
+		public String toValueString(Object value) {
 			return (value != null) ? value.toString() : "";
 		}
 	
@@ -209,6 +235,27 @@ public class DataTypes {
 		public Long toJdbcObject(Duration value) {
 			return FOption.map(value, Duration::toMillis);
 		}
+
+		@Override
+		public Duration fromJdbcObject(Object jdbcObj) {
+			if ( jdbcObj == null ) {
+				return null;
+			}
+			if ( jdbcObj instanceof Long longv ) {
+				return Duration.ofMillis(longv);
+			}
+			else if ( jdbcObj instanceof Double dbv ) {
+				long millis = Math.round(dbv.doubleValue() * 1000);
+				return Duration.ofMillis(millis);
+			}
+			else if ( jdbcObj instanceof Float fltv ) {
+				long millis = Math.round(fltv.floatValue() * 1000);
+				return Duration.ofMillis(millis);
+			}
+			else {
+				throw new IllegalArgumentException("Invalid Duration value: " + jdbcObj);
+			}
+		}
 	}
 
 	public static class FloatType extends AbstractDataType<Float> implements DataType<Float> {
@@ -217,7 +264,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Float value) {
+		public String toValueString(Object obj) {
+			Float value = DataUtils.asFloat(obj);
 			return (value != null) ? ""+value : null;
 		}
 	
@@ -230,6 +278,19 @@ public class DataTypes {
 		public Float toJdbcObject(Float value) {
 			return value;
 		}
+
+		@Override
+		public Float fromJdbcObject(Object jdbcObj) {
+			if ( jdbcObj instanceof Double ) {
+				return ((Double) jdbcObj).floatValue();
+			}
+			else if ( jdbcObj instanceof Float ) {
+				return (Float) jdbcObj;
+			}
+			else {
+				throw new IllegalArgumentException("Invalid JDBC object type: " + jdbcObj.getClass());
+			}
+		}
 	}
 
 	public static class IntType extends AbstractDataType<Integer> implements DataType<Integer> {
@@ -238,7 +299,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Integer value) {
+		public String toValueString(Object obj) {
+			Integer value = DataUtils.asInt(obj);
 			return (value != null) ? ""+value : null;
 		}
 	
@@ -251,6 +313,22 @@ public class DataTypes {
 		public Integer toJdbcObject(Integer value) {
 			return value;
 		}
+
+		@Override
+		public Integer fromJdbcObject(Object jdbcObj) {
+			if ( jdbcObj == null ) {
+				return 0;
+			}
+			if ( jdbcObj instanceof Integer intv ) {
+				return intv;
+			}
+			else if ( jdbcObj instanceof Long longv ) {
+				return longv.intValue();
+			}
+			else {
+				return Integer.parseInt(jdbcObj.toString());
+			}
+		}
 	}
 
 	public static class LongType extends AbstractDataType<Long> implements DataType<Long> {
@@ -259,7 +337,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Long value) {
+		public String toValueString(Object obj) {
+			Long value = DataUtils.asLong(obj);
 			return (value != null) ? ""+value : null;
 		}
 	
@@ -272,6 +351,11 @@ public class DataTypes {
 		public Long toJdbcObject(Long value) {
 			return value;
 		}
+
+		@Override
+		public Long fromJdbcObject(Object jdbcObj) {
+			return (Long)jdbcObj;
+		}
 	}
 
 	public static class ShortType extends AbstractDataType<Short> implements DataType<Short> {
@@ -280,7 +364,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(Short value) {
+		public String toValueString(Object obj) {
+			Short value = DataUtils.asShort(obj);
 			return (value != null) ? ""+value : null;
 		}
 	
@@ -293,6 +378,11 @@ public class DataTypes {
 		public Short toJdbcObject(Short value) {
 			return value;
 		}
+
+		@Override
+		public Short fromJdbcObject(Object jdbcObj) {
+			return (Short)jdbcObj;
+		}
 	}
 
 	public static class StringType extends AbstractDataType<String> implements DataType<String> {
@@ -301,8 +391,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(String value) {
-			return value;
+		public String toValueString(Object value) {
+			return (value != null) ? value.toString() : null;
 		}
 	
 		@Override
@@ -314,6 +404,11 @@ public class DataTypes {
 		public String toJdbcObject(String value) {
 			return value;
 		}
+
+		@Override
+		public String fromJdbcObject(Object jdbcObj) {
+			return (String)jdbcObj;
+		}
 	}
 
 	public static class TimeType extends AbstractDataType<LocalTime> implements DataType<LocalTime> {
@@ -324,7 +419,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(LocalTime value) {
+		public String toValueString(Object obj) {
+			LocalTime value = (LocalTime)obj;
 			return (value != null) ? TIME_FORMATTER.format(value) : null;
 		}
 	
@@ -342,6 +438,11 @@ public class DataTypes {
 		public java.sql.Time toJdbcObject(LocalTime value) {
 			return FOption.map(value, Time::valueOf);
 		}
+
+		@Override
+		public LocalTime fromJdbcObject(Object jdbcObj) {
+			return ((java.sql.Time)jdbcObj).toLocalTime();
+		}
 	}
 
 	public static class DecimalType extends AbstractDataType<BigDecimal> implements DataType<BigDecimal> {
@@ -350,7 +451,8 @@ public class DataTypes {
 		}
 	
 		@Override
-		public String toValueString(BigDecimal value) {
+		public String toValueString(Object obj) {
+			Double value = DataUtils.asDouble(obj);
 			return (value != null) ? ""+value : null;
 		}
 	
@@ -362,6 +464,11 @@ public class DataTypes {
 		@Override
 		public BigDecimal toJdbcObject(BigDecimal value) {
 			return value;
+		}
+
+		@Override
+		public BigDecimal fromJdbcObject(Object jdbcObj) {
+			return (BigDecimal)jdbcObj;
 		}
 	}
 }

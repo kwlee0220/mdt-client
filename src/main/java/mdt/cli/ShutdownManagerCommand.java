@@ -3,7 +3,7 @@ package mdt.cli;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mdt.client.HttpMDTManagerClient;
+import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 
 import picocli.CommandLine.Command;
@@ -32,7 +32,7 @@ public class ShutdownManagerCommand extends AbstractMDTCommand {
 		
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		((HttpMDTManagerClient)manager).shutdown();
+		((HttpMDTManager)manager).shutdown();
 		
 		System.exit(0);
 	}

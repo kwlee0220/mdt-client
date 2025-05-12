@@ -34,6 +34,6 @@ public class DefaultInformationModel extends SubmodelEntity implements Informati
 	
 	@Override
 	public String toString() {
-		return String.format("%s[%s]", getClass().getSimpleName(), this.MDTInfo.getAssetID());
+		return String.format("%s[%s]", getClass().getSimpleName(), this.MDTInfo.getAssetName());
 	}
 }

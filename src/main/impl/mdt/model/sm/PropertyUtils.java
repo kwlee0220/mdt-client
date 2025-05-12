@@ -15,9 +15,10 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultLangStringTextType;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultMultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 
+import lombok.experimental.UtilityClass;
+
 import utils.stream.FStream;
 
-import lombok.experimental.UtilityClass;
 import mdt.aas.DataTypes;
 import mdt.model.sm.value.MultiLanguagePropertyValue;
 
@@ -34,6 +35,12 @@ public class PropertyUtils {
 									.valueType(valueType)
 									.build();
 	}
+	public static Property newProperty(String id, DataTypeDefXsd valueType) {
+		return new DefaultProperty.Builder()
+									.idShort(id)
+									.valueType(valueType)
+									.build();
+	}
 	
 	public static Property STRING(String id, @Nullable String value) {
 		return newProperty(id, DataTypes.STRING.getTypeDefXsd(), value);
@@ -42,7 +49,7 @@ public class PropertyUtils {
 	public static Property INT(String id, @Nullable Object value) {
 		return newProperty(id, DataTypes.STRING.getTypeDefXsd(), (value != null) ? value.toString() : null);
 	}
-	public static Property INT(String id, @Nullable int value) {
+	public static Property INT(String id, int value) {
 		return newProperty(id, DataTypes.INT.getTypeDefXsd(), DataTypes.INT.toValueString(value));
 	}
 
@@ -71,7 +78,7 @@ public class PropertyUtils {
 
 	public static MultiLanguageProperty MULTI_LANGUAGE(String id, MultiLanguagePropertyValue value) {
 		List<LangStringTextType> textList
-				= FStream.from(value.get())
+				= FStream.from(value.getLangTextAll())
 							.map(langText -> new DefaultLangStringTextType.Builder()
 																			.language(langText.getLanguage())
 																			.text(langText.getText())

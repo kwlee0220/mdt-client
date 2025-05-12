@@ -90,7 +90,7 @@ public class ShellListBuilder implements ListBuilder {
 									.flatMapFStream(names -> FStream.from(names))
 									.join(", ");
 		
-		String smIdCsv = FStream.from(inst.getInstanceDescriptor().getInstanceSubmodelDescriptors())
+		String smIdCsv = FStream.from(inst.getInstanceDescriptor().getInstanceSubmodelDescriptorAll())
 								.map(InstanceSubmodelDescriptor::getIdShort)
 								.join(", ");
 		return new String[] {

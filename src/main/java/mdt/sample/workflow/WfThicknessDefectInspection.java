@@ -1,16 +1,16 @@
 package mdt.sample.workflow;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.HttpMDTManager;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.model.workflow.StringOption;
-import mdt.model.workflow.WorkflowDescriptors;
 import mdt.task.builtin.HttpTask;
-import mdt.workflow.WorkflowDescriptorService;
+import mdt.workflow.WorkflowManager;
+import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
-import mdt.workflow.model.WorkflowDescriptor;
+import mdt.workflow.model.TaskDescriptors;
 
 
 /**
@@ -23,53 +23,51 @@ public class WfThicknessDefectInspection {
 	private static final String HTTP_OP_SERVER_ENDPOINT = "http://129.254.91.134:12987";
 	
 	public static final void main(String... args) throws Exception {
-		HttpMDTManagerClient mdt = HttpMDTManagerClient.connect(ENDPOINT);
-		HttpMDTInstanceManagerClient manager = mdt.getInstanceManager();
+		HttpMDTManager mdt = HttpMDTManager.connect(ENDPOINT);
+		HttpMDTInstanceManager manager = mdt.getInstanceManager();
 		
-		WorkflowDescriptor wfDesc;
+		WorkflowModel wfDesc;
 		
-		wfDesc = new WorkflowDescriptor();
+		wfDesc = new WorkflowModel();
 		wfDesc.setId("thickness-defect-inspection");
 		wfDesc.setName("냉장고 내함 두께 불량을 탐지 워크플로우");
 		wfDesc.setDescription("본 워크플로우는 냉장고의 내함 두께 불량을 탐지한다.");
 
 		TaskDescriptor taskDesc;
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-image",
-											"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue",
-											"inspector/ThicknessInspection/AIInfo.Inputs[0].InputValue");
-		wfDesc.getTasks().add(taskDesc);
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-image", "param:inspector:Data:2",
+															"oparg:inspector:ThicknessInspection:in:0");
+		wfDesc.getTaskDescriptors().add(taskDesc);
 
 		taskDesc = inspectSurfaceThickness(manager, "inspect-thickness");
 		taskDesc.getDependencies().add("copy-image");
-		wfDesc.getTasks().add(taskDesc);
+		wfDesc.getTaskDescriptors().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-defect",
-											"inspector/ThicknessInspection/AIInfo.Outputs[0].OutputValue",
-											"inspector/UpdateDefectList/AIInfo.Inputs[0].InputValue");
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-defect",
+															"oparg:inspector:ThicknessInspection:out:0",
+															"oparg:inspector:UpdateDefectList:in:0");
 		taskDesc.getDependencies().add("inspect-thickness");
-		wfDesc.getTasks().add(taskDesc);
+		wfDesc.getTaskDescriptors().add(taskDesc);
 
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-defect-list",
-											"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
-											"inspector/UpdateDefectList/AIInfo.Inputs[1].InputValue");
-		wfDesc.getTasks().add(taskDesc);
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-defect-list", "param:inspector:Data:1",
+															"oparg:inspector:UpdateDefectList:in:1");
+		wfDesc.getTaskDescriptors().add(taskDesc);
 
 		taskDesc = updateDefectList(manager, "update-defect-list");
 		taskDesc.getDependencies().add("copy-defect");
 		taskDesc.getDependencies().add("copy-defect-list");
-		wfDesc.getTasks().add(taskDesc);
+		wfDesc.getTaskDescriptors().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-updated-defect-list",
-											"inspector/UpdateDefectList/AIInfo.Outputs[0].OutputValue",
-											"inspector/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue");
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-updated-defect-list",
+															"oparg:inspector:UpdateDefectList:out:0",
+															"param:inspector:Data:1");
 		taskDesc.getDependencies().add("update-defect-list");
-		wfDesc.getTasks().add(taskDesc);
+		wfDesc.getTaskDescriptors().add(taskDesc);
 		
 //		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
-		
-		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
-		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
+
+		WorkflowManager wfManager = mdt.getWorkflowManager();
+		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
 		
 		System.out.println("Workflow id: " + wfId);
 	}
@@ -83,12 +81,12 @@ public class WfThicknessDefectInspection {
 		task.getOptions().add(new StringOption("id", "inspector/ThicknessInspection"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
 		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-submodel", "inspector/ThicknessInspection"));
+		task.getLabels().add(NameValue.of("mdt-operation", "inspector/ThicknessInspection"));
 		
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("inspector", "ThicknessInspection");
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
 		smRef.activate(manager);
 		
-		WorkflowDescriptors.addAIInputOutputVariables(task, smRef);
+		TaskDescriptors.loadAIVariables(task, smRef);
 		
 		return task;
 	}
@@ -102,12 +100,12 @@ public class WfThicknessDefectInspection {
 		task.getOptions().add(new StringOption("id", "inspector/UpdateDefectList"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
 		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-submodel", "inspector/UpdateDefectList"));
+		task.getLabels().add(NameValue.of("mdt-operation", "inspector/UpdateDefectList"));
 		
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.newInstance("inspector", "UpdateDefectList");
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "UpdateDefectList");
 		smRef.activate(manager);
 		
-		WorkflowDescriptors.addAIInputOutputVariables(task, smRef);
+		TaskDescriptors.loadAIVariables(task, smRef);
 		
 		return task;
 	}

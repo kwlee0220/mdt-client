@@ -9,12 +9,16 @@ import java.util.List;
 public interface TwinComposition {
 	public String getCompositionID();
 	public void setCompositionID(String compositionID);
+	
+	public default String getKey() {
+		return getCompositionID();
+	}
 
 	public String getCompositionType();
 	public void setCompositionType(String compositionType);
 
-	public List<ComponentItem> getComponentItems();
-	public void setComponentItems(List<ComponentItem> componentItems);
+	public List<CompositionItem> getCompositionItems();
+	public void setCompositionItems(List<CompositionItem> compositionItems);
 
 	public List<CompositionDependency> getCompositionDependencies();
 	public void setCompositionDependencies(List<CompositionDependency> compositionDependencies);

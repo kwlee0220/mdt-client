@@ -4,55 +4,47 @@ import java.io.IOException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import utils.func.Lazy;
+
 import mdt.model.SubmodelService;
-import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.IdShortPath;
 
 
 /**
+ * Submodel에 포함된 SubmodelElement를 참조하는 ElementReference의 기본 클래스.
+ * <p>
+ * SubmodelBasedElementReference는 대상 SubmodelElement를 참조하기 위해 SubmodelService 객체와
+ * SubmodelElement의 idShort path를 사용한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class SubmodelBasedElementReference extends AbstractElementReference {
-	/**
-	 * Returns the SubmodelService that manages the SubmodelElement.
-	 * 
-	 * @return	SubmodelService object.
-	 */
-	abstract protected SubmodelService getSubmodelService();
-	/**
-	 * Returns the idShort path of the SubmodelElement.
-	 * 
-	 * @return	idShort path of the SubmodelElement.
-	 */
-	abstract protected String getElementPath();
-
+public abstract class SubmodelBasedElementReference extends AbstractElementReference
+													implements MDTElementReference {
+	private final Lazy<IdShortPath> m_idShortPath = Lazy.of(this::parseIdShortPath);
+	
+	public IdShortPath getIdShortPath() {
+		return m_idShortPath.get();
+	}
+	
 	@Override
 	public SubmodelElement read() throws IOException {
-		return getSubmodelService().getSubmodelElementByPath(getElementPath());
+		return getSubmodelService().getSubmodelElementByPath(getIdShortPathString());
 	}
 
 	@Override
-	public SubmodelElement update(SubmodelElementValue smev) throws IOException {
+	public SubmodelElement updateValue(ElementValue smev) throws IOException {
 		SubmodelService service = getSubmodelService();
-		service.updateSubmodelElementValueByPath(getElementPath(), smev);
-		return service.getSubmodelElementByPath(getElementPath());
+		service.updateSubmodelElementValueByPath(getIdShortPathString(), smev);
+		return service.getSubmodelElementByPath(getIdShortPathString());
 	}
 
 	@Override
 	public void write(SubmodelElement sme) throws IOException {
-		getSubmodelService().setSubmodelElementByPath(getElementPath(), sme);
+		getSubmodelService().setSubmodelElementByPath(getIdShortPathString(), sme);
 	}
 	
-	
-	@Override
-	public SubmodelElementValue readValue() throws IOException {
-		SubmodelElement sme = read();
-		if ( sme != null ) {
-			return ElementValues.getValue(sme);
-		}
-		else {
-			return null;
-		}
+	private IdShortPath parseIdShortPath() {
+		return IdShortPath.fromString(getIdShortPathString());
 	}
 }

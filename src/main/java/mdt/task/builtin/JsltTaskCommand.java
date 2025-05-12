@@ -6,6 +6,7 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.model.MDTManager;
 
 import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 
@@ -13,7 +14,13 @@ import picocli.CommandLine.Option;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-//@picocli.CommandLine.Command(name = "jslt", description = "transform Port's data")
+@Command(
+		name = "jslt",
+		parameterListHeading = "Parameters:%n",
+		optionListHeading = "Options:%n",
+		mixinStandardHelpOptions = true,
+		description = "JSLT2-based task execution command."
+	)
 public class JsltTaskCommand extends AbstractMDTCommand {
 	@ArgGroup(exclusive=true, multiplicity="0..1")
 	private ScriptSpec m_script;
@@ -28,16 +35,16 @@ public class JsltTaskCommand extends AbstractMDTCommand {
 	@Override
 	protected void run(MDTManager mdt) throws Exception {
 		JsltTask task;
-		if ( m_script != null ) {
-			if ( m_script.m_file != null ) {
-				task = new JsltTask(m_script.m_file, null, null);
-			}
-			else if ( m_script.m_expr != null ) {
-				task = new JsltTask(m_script.m_expr, null, null);
-			}
+		if ( m_script.m_file != null ) {
+			task = new JsltTask(null, m_script.m_file);
+		}
+		else if ( m_script.m_expr != null ) {
+			task = new JsltTask(null, m_script.m_expr);
+		}
+		else {
+			throw new IllegalArgumentException("Either --expr or --file must be specified");
 		}
 		
-		task = new JsltTask(null, null);
 		task.run(mdt.getInstanceManager());
 	}
 

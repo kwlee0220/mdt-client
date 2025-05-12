@@ -7,5 +7,5 @@ import java.util.List;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface Equipments {
-	public List<? extends Equipment> getMemberList();
+	public List<? extends Equipment> getElementAll();
 }

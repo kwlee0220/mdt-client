@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
+import utils.Keyed;
 import utils.Named;
 
 
@@ -15,7 +16,7 @@ import utils.Named;
  * @author Kang-Woo Lee (ETRI)
  */
 @JsonInclude(Include.NON_NULL)
-public final class NameValue implements Named {
+public final class NameValue implements Named, Keyed<String> {
 	private final String m_name;
 	private final String m_value;
 	
@@ -30,6 +31,11 @@ public final class NameValue implements Named {
 		
 		this.m_name = name;
 		this.m_value = value;
+	}
+	
+	@Override
+	public String key() {
+        return m_name;
 	}
 	
 	@Override

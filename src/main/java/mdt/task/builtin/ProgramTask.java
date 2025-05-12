@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -13,16 +13,11 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.commons.io.FilenameUtils;
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-
 import utils.InternalException;
-import utils.KeyValue;
 import utils.KeyedValueList;
 import utils.Throwables;
 import utils.async.AbstractThreadedExecution;
@@ -31,24 +26,33 @@ import utils.async.CommandExecution;
 import utils.async.CommandVariable;
 import utils.async.CommandVariable.FileVariable;
 import utils.async.Guard;
-import utils.func.FOption;
 import utils.io.FileUtils;
 import utils.io.IOUtils;
 import utils.stream.FStream;
 
 import mdt.aas.DataTypes;
-import mdt.client.operation.OperationUtils;
+import mdt.model.MDTModelSerDe;
+import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.AASFile;
-import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.ai.AI;
+import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.ref.MDTInstanceManagerAwareReference;
+import mdt.model.sm.ref.MDTSubmodelReference;
+import mdt.model.sm.simulation.Simulation;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.FileValue;
 import mdt.model.sm.value.PropertyValue;
+import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
+import mdt.model.sm.variable.Variable;
 import mdt.task.MDTTask;
-import mdt.task.OperationExecutionContext;
-import mdt.task.Parameter;
 import mdt.task.TaskException;
+import mdt.workflow.model.DurationOption;
+import mdt.workflow.model.FileOption;
+import mdt.workflow.model.MDTSubmodelRefOption;
+import mdt.workflow.model.MultiLineOption;
+import mdt.workflow.model.TaskDescriptor;
 
 
 /**
@@ -56,63 +60,27 @@ import mdt.task.TaskException;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class ProgramTask extends AbstractThreadedExecution<Map<String,SubmodelElement>>
-							implements MDTTask, CancellableWork  {
+public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTTask, CancellableWork  {
 	private static final Logger s_logger = LoggerFactory.getLogger(ProgramTask.class);
-
-	private volatile MDTInstanceManager m_manager;
-	private final ProgramOperationDescriptor m_descriptor;
 	
-	private final Map<String,Parameter> m_inputParameters;
-	private final Map<String,Parameter> m_outputParameters;
-	private Map<String,SubmodelElement> m_outputValues;
+	public static final String OPT_WORKING_DIRECTORY = "workingDirectory";
+	public static final String OPT_TIMEOUT = "timeout";
+	
+	private final TaskDescriptor m_descriptor;
+	@GuardedBy("m_manager") private MDTInstanceManager m_manager;
 	
 	private final Guard m_guard = Guard.create();
 	@GuardedBy("m_guard") private CommandExecution m_cmdExec;
 	
-	public ProgramTask(ProgramOperationDescriptor descriptor) {
-		Preconditions.checkNotNull(descriptor);
-
+	public ProgramTask(TaskDescriptor descriptor) {
 		m_descriptor = descriptor;
-		m_inputParameters = FStream.from(m_descriptor.getInputParameters())
-                                    .toMap(Parameter::getName);
-		m_outputParameters = FStream.from(m_descriptor.getOutputParameters())
-				                    .toMap(Parameter::getName);	
-	}
-	
-	public void setMDTInstanceManager(MDTInstanceManager manager) {
-		m_manager = manager;
-	}
-	
-	public ProgramOperationDescriptor getOperationDescriptor() {
-		return m_descriptor;
-	}
-	
-	public void setWorkingDirectory(File dir) {
-		Preconditions.checkArgument(dir != null && dir.isDirectory(), "invalid working directory: {}", dir);
-		m_descriptor.setWorkingDirectory(dir);
-	}
-	
-	public Map<String,Parameter> getInputParameters() {
-        return m_inputParameters;
-	}
-	
-	public Map<String, Parameter> getOutputParameters() {
-		return m_outputParameters;
-	}
-	
-	public void addOrReplaceInputParameter(Parameter param) {
-		m_descriptor.getInputParameters().addOrReplace(param);
-	}
-	
-	public void addOrReplaceOutputParameter(Parameter param) {
-		m_descriptor.getOutputParameters().addOrReplace(param);
-	}
-	
-	public Map<String,SubmodelElement> getOutputValues() {
-		Preconditions.checkState(m_outputValues != null, "Task has not been completed");
 		
-		return m_outputValues;
+		setLogger(s_logger);
+	}
+
+	@Override
+	public TaskDescriptor getTaskDescriptor() {
+		return m_descriptor;
 	}
 
 	@Override
@@ -137,12 +105,12 @@ public class ProgramTask extends AbstractThreadedExecution<Map<String,SubmodelEl
 
 	@Override
 	public boolean cancel() {
-		return cancel(true);
+		return cancelWork();
 	}
 
 	@Override
 	public boolean cancelWork() {
-		m_guard.runAndSignalAll(() -> {
+		m_guard.run(() -> {
 			if ( m_cmdExec != null ) {
 				m_cmdExec.cancel(true);
 			}
@@ -150,119 +118,78 @@ public class ProgramTask extends AbstractThreadedExecution<Map<String,SubmodelEl
 		
 		return true;
 	}
-
+	
 	@Override
-	protected Map<String,SubmodelElement> executeWork() throws InterruptedException, CancellationException,
-																TimeoutException, Exception {
+	protected Void executeWork() throws InterruptedException, CancellationException, TimeoutException, Exception {
 		Instant started = Instant.now();
-
-		OperationExecutionContext context = buildContext(m_manager);
-		m_guard.runAndSignalAll(() -> {
-			if ( m_cmdExec != null ) {
-				throw new IllegalStateException("Task has already started");
-			}
-			
-			m_cmdExec = buildCommandExecution(context);
-		});
 		
 		try {
-			m_cmdExec.executeWork();
-	
-			Map<String,CommandVariable> cmdVarMap = m_cmdExec.getVariableMap();
-			Map<String,SubmodelElement> outputValues = Maps.newHashMap();
+			m_guard.runChecked(() -> {
+				if ( m_cmdExec != null ) {
+					throw new IllegalStateException("Task has already started");
+				}
+				m_cmdExec = buildCommandExecution();
+			});
 			
-			// CommandVariable들 중에서 output parameter의 이름과 동일한 varaible의
-			// 값을 해당 parameter의 SubmodelElement을 갱신시킨다.
-			FStream.from(context.getOutputParameters())
-					.innerJoin(FStream.from(cmdVarMap), Parameter::getName, KeyValue::key)
-					.forEach(match -> {
-						Parameter target = match._1;
-						CommandVariable cmdVar = match._2.value();
+			try {
+				m_cmdExec.executeWork();
 
-						try {
-							SubmodelElement updated = target.getReference().updateWithRawString(cmdVar.getValue());
-							if ( s_logger.isInfoEnabled() ) {
-								s_logger.info("update output parameter[{}]: {}",
-												target.getName(), cmdVar.getValue());
-							}
-							
-							outputValues.put(target.getName(), updated);
-						}
-						catch ( IOException e ) {
-							s_logger.error("Failed to update output parameter[{}]: {}, cause={}",
-											target.getName(), cmdVar.getValue(), e);
-						}
-					});
-			
-			// LastExecutionTime 정보가 제공된 경우 task의 수행 시간을 계산하여 해당 SubmodelElement를 갱신한다.
+				// CommandExecution이 정상적으로 종료된 경우:
+				// CommandVariable들 중에서 output parameter의 이름과 동일한 varaible의
+				// 값을 해당 parameter의 SubmodelElement을 갱신시킨다.
+				updateOutputVariables();
+			}
+			finally {
+				m_cmdExec.close();
+			}
+		}
+		catch ( TaskException | TimeoutException | InterruptedException | CancellationException e ) {
+			throw e;
+		}
+		
+		// LastExecutionTime 정보가 제공된 경우 task의 수행 시간을 계산하여 해당 SubmodelElement를 갱신한다.
+		MDTElementReference lastExecTimeRef = loadLastExecutionTimeRef();
+		if ( lastExecTimeRef != null ) {
 			Duration execTime = Duration.between(started, Instant.now());
-			if ( context.getLastExecutionTimeReference() != null ) {
-				try {
-					String execTimeStr = DataTypes.DURATION.toString(execTime);
-					context.getLastExecutionTimeReference().update(new PropertyValue(execTimeStr));
-				}
-				catch ( ResourceNotFoundException | IOException expected ) {
-					s_logger.warn("Failed to update 'LastExecutionTime', cause=" + expected);
-				}
+			try {
+				String execTimeStr = DataTypes.DURATION.toString(execTime);
+				lastExecTimeRef.updateValue(new PropertyValue(execTimeStr));
 			}
-			
-			return m_outputValues = outputValues;
-		}
-		finally {
-			m_cmdExec.close();
-		}
-	}
-
-	private OperationExecutionContext buildContext(MDTInstanceManager manager) {
-		OperationExecutionContext execContext;
-		if ( m_descriptor.getSubmodelReference() != null ) {
-			DefaultSubmodelReference smeRef = DefaultSubmodelReference.parseString(m_descriptor.getSubmodelReference());
-			smeRef.activate(manager);
-			
-			execContext = OperationUtils.loadSubmodelExecutionContext(smeRef);
-		}
-		else {
-			execContext = new OperationExecutionContext();
+			catch ( ResourceNotFoundException | IOException expected ) {
+				getLogger().warn("Failed to update 'LastExecutionTime', cause=" + expected);
+			}
 		}
 		
-		for ( Parameter param: m_descriptor.getInputParameters() ) {
-			if ( param.getReference() instanceof MDTInstanceManagerAwareReference aware ) {
-				aware.activate(manager);
-			}
-			execContext.getInputParameters().addOrReplace(param);
-		}
-		for ( Parameter param: m_descriptor.getOutputParameters() ) {
-			if ( param.getReference() instanceof MDTInstanceManagerAwareReference aware ) {
-				aware.activate(manager);
-			}
-			
-			// 만일 output parameter와 동일한 이름의 parameter가 input parameter에도 존재하는 경우에는
-			// 'output' parameter가 input parameter도 포함하기 때문에 같이 갱신한다.
-			if ( execContext.getInputParameters().containsKey(param.getName()) ) {
-				execContext.getInputParameters().addOrReplace(param);
-			}
-			execContext.getOutputParameters().addOrReplace(param);
-		}
-		
-		return execContext;
+		return null;
 	}
 
-	private CommandExecution buildCommandExecution(OperationExecutionContext context) {
-		File workingDir = FOption.getOrElse(m_descriptor.getWorkingDirectory(),
-											FileUtils::getCurrentWorkingDirectory);
+	private CommandExecution buildCommandExecution() throws TaskException {
+		// TaskDescriptor에서 필요한 정보를 읽어 CommandExecution을 생성한다.
+		//
+		TaskDescriptor descriptor = getTaskDescriptor();
+		
+		File workingDir = descriptor.findOption("workingDirectory", FileOption.class)
+									.map(FileOption::getValue)
+									.getOrElse(FileUtils::getCurrentWorkingDirectory);
+		List<String> commandLine = descriptor.findOption("commandLine", MultiLineOption.class)
+									.map(MultiLineOption::getValue)
+									.getOrThrow(() -> new IllegalArgumentException("Option is not specified: commandLine"));
+		Duration timeout = descriptor.findOption("timeout", DurationOption.class)
+												.map(DurationOption::getValue)
+												.getOrNull();
 		
 		CommandExecution.Builder builder = CommandExecution.builder()
-															.addCommand(m_descriptor.getCommandLine())
+															.addCommand(commandLine)
 															.setWorkingDirectory(workingDir)
-															.setTimeout(m_descriptor.getTimeout());
+															.setTimeout(timeout);
 		
-		KeyedValueList<String, Parameter> parameters = KeyedValueList.newInstance(Parameter::getName);
-		FStream.from(context.getInputParameters())
-				.concatWith(FStream.from(context.getOutputParameters()))
-				.filterNot(p -> parameters.containsKey(p.getName()))
-				.forEach(parameters::add);
-		FStream.from(parameters)
-				.mapOrThrow(param -> newCommandVariable(workingDir, param))
+		KeyedValueList<String, Variable> ports = KeyedValueList.with(Variable::getName);
+		FStream.from(descriptor.getInputVariables())
+				.concatWith(FStream.from(descriptor.getOutputVariables()))
+				.filterNot(p -> ports.containsKey(p.getName()))
+				.forEach(ports::add);
+		FStream.from(ports)
+				.mapOrThrow(var -> newCommandVariable(workingDir, var))
 				.forEachOrThrow(builder::addVariable);
 
 		// stdout/stderr redirection
@@ -272,38 +199,83 @@ public class ProgramTask extends AbstractThreadedExecution<Map<String,SubmodelEl
 		return builder.build();
 	}
 	
-	private FileVariable newCommandVariable(File workingDir, Parameter param) {
+	private FileVariable newCommandVariable(File workingDir, Variable var) throws TaskException {
 		File file = null;
 		try {
-			SubmodelElement data = param.getReference().read();
+			ElementValue value = var.readValue();
 			
-			if ( data instanceof org.eclipse.digitaltwin.aas4j.v3.model.File ) {
-				MDTElementReference dref = (MDTElementReference)param.getReference();
-				AASFile mdtFile = dref.getSubmodelService().getFileByPath(dref.getElementPath());
-				
-				String fileName = String.format("%s.%s", param.getName(),
-														FilenameUtils.getExtension(mdtFile.getPath()));
-				file = new File(workingDir, fileName);
-				IOUtils.toFile(mdtFile.getContent(), file);
-				
-				return new FileVariable(param.getName(), file);
-			}
-			else if ( data instanceof Property ) {
-				// PropertyValue인 경우, 바로 JSON으로 출력하면 double-quote가 추가되기 때문에
-				// 이를 막기 위해 값을 직접 저장한다.
-				file = new File(workingDir, param.getName());
-				String extStr = OperationUtils.toExternalString(data);
-				IOUtils.toFile(extStr, StandardCharsets.UTF_8, file);
-				
-				return new FileVariable(param.getName(), file);
+			if ( value instanceof FileValue ) {
+				if ( var instanceof ReferenceVariable refVar ) {
+					MDTElementReference dref = (MDTElementReference) refVar.getReference();
+					AASFile mdtFile = dref.getSubmodelService().getFileByPath(dref.getIdShortPathString());
+
+					String fileName = String.format("%s.%s", var.getName(),
+													FilenameUtils.getExtension(mdtFile.getPath()));
+					file = new File(workingDir, fileName);
+					IOUtils.toFile(mdtFile.getContent(), file);
+
+					return new FileVariable(var.getName(), file);
+				}
+				else {
+					throw new TaskException("TaskPort should be a ReferencePort: port=" + var);
+				}
 			}
 			else {
-				throw new IllegalArgumentException("Unsupported Port data type: " + data.getClass());
+				// PropertyValue인 경우, 바로 JSON으로 출력하면 double-quote가 추가되기 때문에
+				// 이를 막기 위해 값을 직접 저장한다.
+				file = new File(workingDir, var.getName());
+				String extStr = (value instanceof PropertyValue pvalue)
+								? pvalue.get() : MDTModelSerDe.toJsonString(value);
+				IOUtils.toFile(extStr, StandardCharsets.UTF_8, file);
+				
+				return new FileVariable(var.getName(), file);
 			}
 		}
 		catch ( IOException e ) {
-			throw new InternalException("Failed to write value to file: name=" + param.getName()
+			throw new InternalException("Failed to write value to file: name=" + var.getName()
 										+ ", path=" + file.getAbsolutePath(), e);
+		}
+	}
+
+	private DefaultElementReference loadLastExecutionTimeRef() throws TaskException {
+		MDTSubmodelReference opSmRef = getTaskDescriptor().findOption("mdt-operation", MDTSubmodelRefOption.class)
+															.map(MDTSubmodelRefOption::getValue)
+															.getOrNull();
+		if ( opSmRef != null ) {
+			Submodel submodel = opSmRef.get().getSubmodel();
+			String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+			if ( AI.SEMANTIC_ID.equals(semanticId) ) {
+				return DefaultElementReference.newInstance(opSmRef, "AIInfo.Model.LastExecutionTime");
+			}
+			else if ( Simulation.SEMANTIC_ID.equals(semanticId) ) {
+				return DefaultElementReference.newInstance(opSmRef, "SimulationInfo.Model.LastExecutionTime");
+			}
+		}
+		
+		return null;
+	}
+	
+	private void updateOutputVariables() {
+		TaskDescriptor descriptor = getTaskDescriptor();
+		
+		for ( Variable outVar: descriptor.getOutputVariables() ) {
+			// Output port와 동일 이름을 가진 command variable을 찾는다.
+			CommandVariable cmdVar = m_cmdExec.getVariableMap().get(outVar.getName());
+			if ( cmdVar == null ) {
+				continue;
+			}
+			
+			// 동일 이름을 command-variable이 검색된 경우.
+			try {
+				outVar.updateWithRawString(cmdVar.getValue());
+				if ( getLogger().isInfoEnabled() ) {
+					getLogger().info("Updated: output variable[{}]: {}", outVar.getName(), cmdVar.getValue());
+				}
+			}
+			catch ( IOException e ) {
+				getLogger().error("Failed to update output parameter[{}]: {}, cause={}",
+									outVar.getName(), cmdVar.getValue(), e);
+			}
 		}
 	}
 }

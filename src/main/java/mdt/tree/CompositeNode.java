@@ -11,9 +11,9 @@ import org.barfuin.texttree.api.Node;
  */
 public class CompositeNode implements TitleUpdatableNode {
 	private String m_title;
-	private final List<? extends TitleUpdatableNode> m_children;
+	private final List<? extends Node> m_children;
 	
-	public CompositeNode(String title, List<? extends TitleUpdatableNode> elements) {
+	public CompositeNode(String title, List<? extends Node> elements) {
 		m_title = title;
 		m_children = elements;
 	}

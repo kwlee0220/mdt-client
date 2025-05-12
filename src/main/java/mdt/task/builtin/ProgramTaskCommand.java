@@ -1,17 +1,23 @@
 package mdt.task.builtin;
 
 import java.io.File;
-import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mdt.cli.AbstractMDTCommand;
+import utils.UnitUtils;
+
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.task.TaskException;
+import mdt.workflow.model.DurationOption;
+import mdt.workflow.model.TaskDescriptor;
+import mdt.workflow.model.TaskDescriptors;
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 
@@ -19,12 +25,27 @@ import picocli.CommandLine.Parameters;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class ProgramTaskCommand extends AbstractMDTCommand {
+@Command(
+	name = "program",
+	parameterListHeading = "Parameters:%n",
+	optionListHeading = "Options:%n",
+	mixinStandardHelpOptions = true,
+	description = "Program task execution command."
+)
+public class ProgramTaskCommand extends MultiVariablesCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpTaskCommand.class);
 
-	@Parameters(index="0", arity="1", paramLabel="path",
-				description="Path to the program-based operation descriptor")
-	private String m_opDescFilePath;
+	@Parameters(index="0", arity="1", paramLabel="path", description="Path to the operation descriptor")
+	private File m_opDescFile;
+	
+	@Option(names={"--workingDir"}, paramLabel="path", description="Working directory")
+	private File m_workingDir;
+	
+	private Duration m_timeout = null;
+	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\")")
+	public void setTimeout(String toStr) {
+		m_timeout = UnitUtils.parseDuration(toStr);
+	}
 	
 	public ProgramTaskCommand() {
 		setLogger(s_logger);
@@ -34,15 +55,30 @@ public class ProgramTaskCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		MDTInstanceManager manager = mdt.getInstanceManager();
 
-		File opDescFile = new File(m_opDescFilePath);
-		try {
-			ProgramOperationDescriptor descriptor = MDTModelSerDe.getJsonMapper()
-																.readValue(opDescFile, ProgramOperationDescriptor.class);
-			ProgramTask task = new ProgramTask(descriptor);
-			task.run(manager);
+		Instant started = Instant.now();
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(ProgramTask.class.getName());
+
+		if ( m_opDescFile != null ) {
+			ProgramOperationDescriptor opDesc = ProgramOperationDescriptor.load(m_opDescFile, MDTModelSerDe.MAPPER);
+			TaskDescriptors.update(manager, descriptor, opDesc);
 		}
-		catch ( IOException e ) {
-			throw new TaskException("Failed to read Task command file=" + opDescFile, e);
+		if ( m_workingDir != null ) {
+			descriptor.addOption(ProgramTask.OPT_WORKING_DIRECTORY, m_workingDir);
+		}
+		if ( m_timeout != null ) {
+			descriptor.getOptions().add(new DurationOption(ProgramTask.OPT_TIMEOUT, m_timeout));
+		}
+
+		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
+		loadTaskVariablesFromParameters(manager, descriptor);
+
+		ProgramTask task = new ProgramTask(descriptor);
+		task.run(manager);
+		
+		Duration elapsed = Duration.between(started, Instant.now());
+		if ( getLogger().isInfoEnabled() ) {
+			getLogger().info("HttpTask: elapsedTime={}", elapsed);
 		}
 	}
 

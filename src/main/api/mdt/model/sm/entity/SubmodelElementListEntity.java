@@ -41,11 +41,11 @@ public abstract class SubmodelElementListEntity<E extends SubmodelElementEntity>
 		m_valueTypeListElement = valueTypeListElement;
 	}
 	
-	public List<E> getMemberList() {
+	public List<E> getElementAll() {
 		return m_members;
 	}
 	
-	public void setMemberList(List<E> members) {
+	public void setElementAll(List<E> members) {
 		m_members = members;
 	}
 

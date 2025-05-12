@@ -13,10 +13,9 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
  */
 @Getter @Setter
 public class DefaultMDTInfo extends SubmodelElementCollectionEntity implements MDTInfo {
-	@PropertyField(idShort="AssetID") private String assetID;
 	@PropertyField(idShort="AssetName") private String assetName;
-	@PropertyField(idShort="AssetType") private String assetType;
-	@PropertyField(idShort="Status") private String status;
+	@PropertyField(idShort="AssetType") private MDTAssetType assetType;
+	@PropertyField(idShort="Status") private MDTAssetStatus status;
 	@PropertyField(idShort="IdShort") private String idShort;
 	
 	public DefaultMDTInfo() {
@@ -25,8 +24,8 @@ public class DefaultMDTInfo extends SubmodelElementCollectionEntity implements M
 	
 	@Override
 	public String toString() {
-		return String.format("%s[IdShort=%s, AssetID=%s, AssetName=%s, AssetType=%s, Status=%s]",
-							getClass().getSimpleName(), getIdShort(), getAssetID(), getAssetName(),
+		return String.format("%s[IdShort=%s, AssetName=%s, AssetType=%s, Status=%s]",
+							getClass().getSimpleName(), getIdShort(), getAssetName(),
 							getAssetType(), getStatus());
 	}
 }

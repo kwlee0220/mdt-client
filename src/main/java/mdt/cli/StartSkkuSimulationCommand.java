@@ -14,8 +14,8 @@ import utils.UnitUtils;
 import utils.func.Funcs;
 
 import mdt.aas.SubmodelRegistry;
-import mdt.client.instance.HttpMDTInstanceClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatus;
 import mdt.client.operation.OperationStatusResponse;
@@ -82,11 +82,11 @@ public class StartSkkuSimulationCommand extends AbstractMDTCommand {
 		
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		HttpMDTInstanceManagerClient client = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
+		HttpMDTInstanceManager client = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
 		SubmodelRegistry registry = mdt.getSubmodelRegistry();
 		
-		HttpMDTInstanceClient inst;
+		HttpMDTInstance inst;
 		SubmodelDescriptor simulationSubmodelDesc;
 		try {
 			simulationSubmodelDesc = registry.getSubmodelDescriptorById(m_targetId);
@@ -170,12 +170,15 @@ public class StartSkkuSimulationCommand extends AbstractMDTCommand {
 			case COMPLETED:
 				System.out.printf("Simulation completes: id=%s%n", m_targetId);
 				System.exit(0);
+				break;
 			case FAILED:
 				System.out.printf("Simulation is failed: id=%s, cause=%s%n", m_targetId, resp.getMessage());
 				System.exit(-1);
+				break;
 			case CANCELLED:
 				System.out.printf("Simulation is cancelled: id=%s, cause=%s%n", m_targetId, resp.getMessage());
 				System.exit(-1);
+				break;
 			default:
 				throw new AssertionError();
 		}

@@ -2,73 +2,72 @@ package mdt.model.sm.value;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Supplier;
+import java.util.Map;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringTextType;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultLangStringTextType;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.google.common.collect.Lists;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.func.Funcs;
+import utils.stream.FStream;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class MultiLanguagePropertyValue implements SubmodelElementValue,
-															Supplier<List<LangStringTextType>> {
-	private List<LangStringTextType> m_langTexts;
+public final class MultiLanguagePropertyValue implements DataElementValue {
+	public static final String SERIALIZATION_TYPE = "mdt:value:mlprop";
+	
+	private final List<LangStringTextType> m_langTexts;
 	
 	public MultiLanguagePropertyValue(List<LangStringTextType> langTexts) {
 		m_langTexts = langTexts;
 	}
 	
-	public MultiLanguagePropertyValue() {
-		m_langTexts = Lists.newArrayList();
-	}
-	
 	public MultiLanguagePropertyValue(String language, String text) {
-		DefaultLangStringTextType langText = new DefaultLangStringTextType();
-		langText.setLanguage(language);
-		langText.setText(text);
-		m_langTexts = List.of(langText);
+		this(List.of(buildLangStringTextType(language, text)));
 	}
 	
-	@Override
-	public List<LangStringTextType> get() {
+	public List<LangStringTextType> getLangTextAll() {
 		return m_langTexts;
 	}
 	
-	public void setValue(List<LangStringTextType> values) {
-		m_langTexts = values;
+	public static MultiLanguagePropertyValue parseJsonNode(JsonNode jnode) throws IOException {
+		List<LangStringTextType> textList
+						= FStream.from(jnode.elements())
+									.mapOrThrow(elm -> {
+										Map.Entry<String,JsonNode> ent
+											= Funcs.getFirst(elm.fields())
+													.getOrThrow(() -> new IOException("No language field"));
+										return buildLangStringTextType(ent.getKey(), ent.getValue().asText());
+									})
+									.toList();
+		return new MultiLanguagePropertyValue(textList);
 	}
-	
-	public void addLangStringText(final LangStringTextType langText) {
-		LangStringTextType replaced = Funcs.replaceFirst(m_langTexts,
-														t -> t.getLanguage().equals(langText.getLanguage()),
-														langText);
-		if ( replaced == null ) {
-			m_langTexts.add(langText);
-		}
+
+	@Override
+	public String getSerializationType() {
+		return SERIALIZATION_TYPE;
 	}
-	
+
 	@Override
 	public void serialize(JsonGenerator gen) throws IOException {
 		gen.writeStartArray();
-		
 		for ( LangStringTextType langText: m_langTexts ) {
-			serializeLangStringTextType(gen, langText);
+			gen.writeStartObject();
+			gen.writeStringField(langText.getLanguage(), langText.getText());
+			gen.writeEndObject();
 		}
-		
 		gen.writeEndArray();
 	}
 	
-	private void serializeLangStringTextType(JsonGenerator gen, LangStringTextType langText) throws IOException {
-		gen.writeStartObject();
-		gen.writeStringField("language", langText.getLanguage());
-		gen.writeStringField("text", langText.getText());
-		gen.writeEndObject();
+	public static LangStringTextType buildLangStringTextType(String language, String text) {
+		return new DefaultLangStringTextType.Builder()
+											.language(language)
+											.text(text)
+											.build();
 	}
 }

@@ -1,7 +1,7 @@
 package mdt.sample.instance;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.HttpMDTManager;
+import mdt.client.instance.HttpMDTInstanceManager;
 
 /**
  *
@@ -11,7 +11,7 @@ public class SampleRemoveInstance {
 	private static final String ENDPOINT = "http://61.98.138.54:10133";
 	
 	public static final void main(String... args) throws Exception {
-		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT)
+		HttpMDTInstanceManager manager = HttpMDTManager.connect(ENDPOINT)
 																	.getInstanceManager();
 		
 		System.out.printf("# of instances: %s%n", manager.countInstances());

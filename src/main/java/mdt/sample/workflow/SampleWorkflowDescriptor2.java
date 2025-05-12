@@ -1,10 +1,10 @@
 package mdt.sample.workflow;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.model.workflow.WorkflowDescriptors;
-import mdt.workflow.WorkflowDescriptorService;
+import mdt.client.HttpMDTManager;
+import mdt.workflow.WorkflowManager;
+import mdt.workflow.WorkflowModel;
 import mdt.workflow.model.TaskDescriptor;
-import mdt.workflow.model.WorkflowDescriptor;
+import mdt.workflow.model.TaskDescriptors;
 
 
 /**
@@ -12,40 +12,36 @@ import mdt.workflow.model.WorkflowDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 public class SampleWorkflowDescriptor2 {
-//	private static final String ENDPOINT = "http://129.254.91.134:12985";
-	private static final String ENDPOINT = "http://localhost:12985";
-	
 	public static final void main(String... args) throws Exception {
-		HttpMDTManagerClient mdt = HttpMDTManagerClient.connect(ENDPOINT);
+		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();
 		
-		WorkflowDescriptor wfDesc;
+		WorkflowModel wfModel;
 		
-		wfDesc = new WorkflowDescriptor();
-		wfDesc.setId("sample-workflow-2");
-		wfDesc.setName("테스트 시뮬레이션");
-		wfDesc.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
+		wfModel = new WorkflowModel();
+		wfModel.setId("sample-workflow-2");
+		wfModel.setName("테스트 시뮬레이션");
+		wfModel.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
 
 		TaskDescriptor taskDesc;
+
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-data", "param:test:Data",
+															"oparg:test:Simulation:in:Data");
+		wfModel.getTaskDescriptors().add(taskDesc);
+
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-inc-amount", "param:test:IncAmount",
+													"oparg:test:Simulation:in:IncAmount");
+		wfModel.getTaskDescriptors().add(taskDesc);
+
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("set-sleeptime", "'3'",
+															"oparg:test:Simulation:in:SleepTime");
+		wfModel.getTaskDescriptors().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-data",
-												"test/Data/DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue",
-												"test/Simulation/SimulationInfo.Inputs[0].InputValue");
-		wfDesc.getTasks().add(taskDesc);
-		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy-inc-amount",
-												"test/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
-												"test/Simulation/SimulationInfo.Inputs[1].InputValue");
-		wfDesc.getTasks().add(taskDesc);
-		
-		taskDesc = WorkflowDescriptors.newSetTask("set-sleep-time", "3",
-												"test/Simulation/SimulationInfo.Inputs[2].InputValue");
-		wfDesc.getTasks().add(taskDesc);
-		
-//		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
-		
-		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
-		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
-		
-		System.out.println("Workflow id: " + wfId);
+//		System.out.println(wfModel.toJsonString());
+
+		WorkflowManager wfManager = mdt.getWorkflowManager();
+		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
+
+		wfModel = wfManager.getWorkflowModel("sample-workflow-2");
+		System.out.println(wfModel.toJsonString());
 	}
 }

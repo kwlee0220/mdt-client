@@ -2,8 +2,8 @@ package mdt.sample.instance;
 
 import java.io.File;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.HttpMDTManager;
+import mdt.client.instance.HttpMDTInstanceManager;
 
 /**
  *
@@ -14,7 +14,7 @@ public class SampleAddInstance {
 	
 	public static final void main(String... args) throws Exception {
 		// MDTInstanceManager에 접속함.
-		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT)
+		HttpMDTInstanceManager manager = HttpMDTManager.connect(ENDPOINT)
 																	.getInstanceManager();
 		
 		// 'Test' 인스턴스 배포

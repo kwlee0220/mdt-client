@@ -1,5 +1,6 @@
 package mdt.cli.get;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
@@ -17,11 +18,14 @@ import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.cli.IdPair;
-import mdt.client.instance.HttpMDTInstanceClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.SubmodelService;
 import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTModelService;
+import mdt.model.instance.MDTOperationDescriptor;
+import mdt.model.instance.MDTParameterDescriptor;
 import mdt.model.sm.SubmodelUtils;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -39,9 +43,9 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Get an MDTInstance information.",
 	subcommands = {
-		GetInstanceComponentItemsCommand.class,
+		GetInstanceCompositionItemsCommand.class,
 		GetInstanceCompositionDependenciesCommand.class,
-		GetInstanceMdtInfoCommand.class,
+		GetInstanceMdtModelInfoCommand.class,
 		GetInstanceLogCommand.class,
 	}
 )
@@ -52,7 +56,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	private String m_instanceId;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: 'table' or 'json')")
+			description="output type (candidnates: 'table', 'json' or 'env')")
 	private String m_output = "table";
 
 	public static final void main(String... args) throws Exception {
@@ -69,14 +73,17 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
-		HttpMDTInstanceClient instance = manager.getInstance(m_instanceId);
+		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
+		HttpMDTInstance instance = manager.getInstance(m_instanceId);
 		
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
 			displayAsTable(instance);
 		}
 		else if ( m_output.startsWith("json") ) {
+			displayAsJson(instance);
+		}
+		else if ( m_output.startsWith("env") ) {
 			displayEnvironment(instance);
 		}
 		else {
@@ -85,7 +92,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	private void displayAsTable(HttpMDTInstanceClient instance) {
+	private void displayAsTable(HttpMDTInstance instance) {
 		Table table = new Table(2);
 
 		table.addCell(" FIELD "); table.addCell(" VALUE");
@@ -103,6 +110,20 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 					table.addCell(String.format(" SUB_MODEL[%02d] ", tup.index()));
 					table.addCell(" " + toDisplayName(tup.value()) + " ");
 				});
+		
+		FStream.from(instance.getInstanceDescriptor().getMDTParameterDescriptorAll())
+				.zipWithIndex()
+				.forEach(tup -> {
+					table.addCell(String.format(" PARAMETER[%02d] ", tup.index()));
+					table.addCell(" " + toDisplayName(tup.value()) + " ");
+				});
+		FStream.from(instance.getInstanceDescriptor().getMDTOperationDescriptorAll())
+				.zipWithIndex()
+				.forEach(tup -> {
+					table.addCell(String.format(" %s ", tup.value().getOperationType().toUpperCase()));
+					table.addCell(" " + toDisplayName(tup.value()) + " ");
+				});
+		
 		table.addCell(" STATUS "); table.addCell(" " + instance.getStatus().toString());
 		String epStr = instance.getEndpoint();
 		epStr = (epStr != null) ? instance.getEndpoint() : "";
@@ -111,7 +132,12 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		System.out.println(table.render());
 	}
 	
-	private void displayEnvironment(HttpMDTInstanceClient instance) throws SerializationException {	
+	private void displayAsJson(HttpMDTInstance instance) throws SerializationException, IOException {
+		MDTModelService info = MDTModelService.of(instance);
+		System.out.println(info.toJsonString(true));
+	}
+	
+	private void displayEnvironment(HttpMDTInstance instance) throws SerializationException {	
 		AssetAdministrationShell aas = instance.getAssetAdministrationShellService()
 												.getAssetAdministrationShell();
 		List<Submodel> submodels = FStream.from(instance.getSubmodelServiceAll())
@@ -130,6 +156,12 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	private static String toDisplayName(InstanceSubmodelDescriptor ismdesc) {
 		return String.format("(%s) %s (%s)", SubmodelUtils.getShortSubmodelSemanticId(ismdesc.getSemanticId()),
 							ismdesc.getId(), ismdesc.getIdShort());
+	}
+	private static String toDisplayName(MDTParameterDescriptor paramDesc) {
+		return String.format("%s (%s)", paramDesc.getName(), paramDesc.getValueType());
+	}
+	private static String toDisplayName(MDTOperationDescriptor opDesc) {
+		return String.format("%s", opDesc.toSignatureString());
 	}
 	
 	private String getOrEmpty(Object obj) {

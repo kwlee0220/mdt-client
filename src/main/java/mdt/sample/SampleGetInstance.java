@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.HttpMDTManager;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.AssetAdministrationShellService;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.InstanceSubmodelDescriptor;
@@ -20,7 +20,7 @@ public class SampleGetInstance {
 	private static final String ENDPOINT = "http://localhost:12985";
 	
 	public static final void main(String... args) throws Exception {
-		HttpMDTInstanceManagerClient manager = HttpMDTManagerClient.connect(ENDPOINT)
+		HttpMDTInstanceManager manager = HttpMDTManager.connect(ENDPOINT)
 																	.getInstanceManager();
 		
 		MDTInstance inst = manager.getInstance("내함_성형");

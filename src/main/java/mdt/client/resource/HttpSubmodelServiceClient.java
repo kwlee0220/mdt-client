@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
 import lombok.Data;
 
 import utils.InternalException;
-import utils.func.Tuple;
+import utils.Tuple;
 import utils.http.OkHttpClientUtils;
 import utils.http.RESTfulIOException;
 
@@ -35,7 +35,7 @@ import mdt.model.MDTOperationHandle;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.sm.AASFile;
-import mdt.model.sm.value.SubmodelElementValue;
+import mdt.model.sm.value.ElementValue;
 
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -157,7 +157,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void updateSubmodelElementValueByPath(String idShortPath, SubmodelElementValue value) {
+	public void updateSubmodelElementValueByPath(String idShortPath, ElementValue value) {
 		try {
 			String url = String.format("%s/submodel-elements/%s/$value",
 										getEndpoint(), encodeIdShortPath(idShortPath));
@@ -237,14 +237,15 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(url).post(reqBody).build();
 			OperationResultResponse resp = call(req, OperationResultResponse.class);
 			
-			if ( resp.success ) {
+			if ( resp != null && resp.success ) {
 				return new DefaultOperationResult.Builder()
 												.inoutputArguments(resp.inoutputArguments)
 												.outputArguments(resp.outputArguments)
 												.build();
 			}
 			else {
-				throw new RuntimeException("Operation invocation failed: idShortPath=" + idShortPath);
+				throw new RuntimeException("Operation invocation failed: idShortPath=" + idShortPath
+											+ ", state=" + resp.executionState + ", messages=" + resp.messages);
 			}
 		}
 		catch ( IOException e ) {

@@ -28,7 +28,6 @@ import mdt.model.instance.DefaultInstanceDescriptor;
 import mdt.model.instance.DefaultInstanceSubmodelDescriptor;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.instance.MDTInstanceStatus;
 
 /**
  *
@@ -111,9 +110,6 @@ public class InstanceDescriptorSerDe {
 			
 			DefaultInstanceDescriptor desc = new DefaultInstanceDescriptor();
 			desc.setId(getStringField(node, "id"));
-			desc.setStatus(FOption.map(getStringField(node, "status"), MDTInstanceStatus::valueOf));
-			desc.setBaseEndpoint(getStringField(node, "baseEndpoint"));
-			
 			desc.setAasId(getStringField(node, "aasId"));
 			desc.setAasIdShort(getStringField(node, "aasIdShort"));
 			desc.setGlobalAssetId(getStringField(node, "globalAssetId"));
@@ -154,9 +150,6 @@ public class InstanceDescriptorSerDe {
 			throws IOException, JsonProcessingException {
 			gen.writeStartObject();
 			gen.writeStringField("id", desc.getId());
-			gen.writeStringField("status", desc.getStatus().name());
-			gen.writeStringField("baseEndpoint", desc.getBaseEndpoint());
-			
 			gen.writeStringField("aasId", desc.getAasId());
 			gen.writeStringField("aasIdShort", desc.getAasIdShort());
 			gen.writeStringField("globalAssetId", desc.getGlobalAssetId());
@@ -164,7 +157,7 @@ public class InstanceDescriptorSerDe {
 			gen.writeStringField("assetKind", desc.getAssetKind().name());
 			
 			gen.writeArrayFieldStart("submodels");
-			for ( InstanceSubmodelDescriptor smDesc: desc.getInstanceSubmodelDescriptors() ) {
+			for ( InstanceSubmodelDescriptor smDesc: desc.getInstanceSubmodelDescriptorAll() ) {
 				serialize(smDesc, gen);
 			}
 			gen.writeEndArray();

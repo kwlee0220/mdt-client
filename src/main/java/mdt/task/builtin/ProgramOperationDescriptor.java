@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
@@ -21,20 +22,23 @@ import utils.UnitUtils;
 import utils.func.FOption;
 import utils.stream.FStream;
 
-import mdt.task.Parameter;
+import mdt.model.sm.ref.MDTSubmodelReference;
+import mdt.model.sm.variable.Variable;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
+@JsonIncludeProperties({"commandLine", "workingDirectory", "operationSubmodel", "inputVariables", "outputVariables",
+						"concurrent", "timeout"})
 @JsonInclude(Include.NON_NULL)
 public final class ProgramOperationDescriptor {
 	private List<String> m_commandLine = Collections.emptyList();
 	@Nullable private File m_workingDirectory;
-	@Nullable private String m_submodelRef;
-	private KeyedValueList<String,Parameter> m_inputParameters = KeyedValueList.newInstance(Parameter::getName);
-	private KeyedValueList<String,Parameter> m_outputParameters = KeyedValueList.newInstance(Parameter::getName);
+	@Nullable private MDTSubmodelReference m_operationSubmodelRef;
+	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);
+	private KeyedValueList<String,Variable> m_outputVariables = KeyedValueList.with(Variable::getName);
 	private boolean m_concurrent = false;
 	@Nullable private Duration m_timeout;
 	
@@ -65,34 +69,34 @@ public final class ProgramOperationDescriptor {
 		m_workingDirectory = dir;
 	}
 	
-	@JsonProperty("submodel")
-	public String getSubmodelReference() {
-		return m_submodelRef;
+	@JsonProperty("operationSubmodel")
+	public MDTSubmodelReference getOperationSubmodel() {
+		return m_operationSubmodelRef;
 	}
 
-	@JsonProperty("submodel")
-	public void setSubmodelReference(String ref) {
-		m_submodelRef = ref;
+	@JsonProperty("operationSubmodel")
+	public void setOperationSubmodel(MDTSubmodelReference ref) {
+		m_operationSubmodelRef = ref;
 	}
 
-	@JsonProperty("inputParameters")
-	public KeyedValueList<String,Parameter> getInputParameters() {
-		return m_inputParameters;
+	@JsonProperty("inputVariables")
+	public KeyedValueList<String,Variable> getInputVariables() {
+		return m_inputVariables;
 	}
 
-	@JsonProperty("inputParameters")
-	public void setInputParameters(List<Parameter> parameters) {
-		m_inputParameters = KeyedValueList.from(parameters, Parameter::getName);
+	@JsonProperty("inputVariables")
+	public void setInputVariables(List<Variable> variables) {
+		m_inputVariables = KeyedValueList.from(variables, Variable::getName);
 	}
 
-	@JsonProperty("outputParameters")
-	public KeyedValueList<String,Parameter> getOutputParameters() {
-		return m_outputParameters;
+	@JsonProperty("outputVariables")
+	public KeyedValueList<String,Variable> getOutputVariables() {
+		return m_outputVariables;
 	}
 
-	@JsonProperty("outputParameters")
-	public void getOutputParameters(List<Parameter> parameters) {
-		m_outputParameters = KeyedValueList.from(parameters, Parameter::getName);
+	@JsonProperty("outputVariables")
+	public void getOutputVariables(List<Variable> variables) {
+		m_outputVariables = KeyedValueList.from(variables, Variable::getName);
 	}
 
 	@JsonProperty("concurrent")
@@ -123,9 +127,9 @@ public final class ProgramOperationDescriptor {
 	
 	@Override
 	public String toString() {
-		String smStr = ( m_submodelRef != null ) ? String.format(", submodel=%s", m_submodelRef) : "";
-		String inVarNames = FStream.from(m_inputParameters).map(Parameter::getName).join(",", "{", "}");
-		String outVarNames = FStream.from(m_outputParameters).map(Parameter::getName).join(",", "{", "}");
+		String smStr = ( m_operationSubmodelRef != null ) ? String.format(", submodel=%s", m_operationSubmodelRef) : "";
+		String inVarNames = FStream.from(m_inputVariables).map(Variable::getName).join(",", "{", "}");
+		String outVarNames = FStream.from(m_outputVariables).map(Variable::getName).join(",", "{", "}");
 		String workingDirStr = FOption.mapOrElse(getWorkingDirectory(),
 												f -> String.format(", working-dir=%s", f), "");
 		return String.format("command=%s%s%s, inputs=%s, outputs=%s",

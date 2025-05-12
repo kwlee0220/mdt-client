@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.barfuin.texttree.api.Node;
 
-import utils.func.Tuple;
-import utils.stream.FStream;
+import utils.Tuple;
+import utils.stream.KeyValueFStream;
 
 import mdt.model.sm.data.Parameter;
 import mdt.model.sm.data.ParameterCollection;
@@ -28,15 +28,15 @@ public abstract class ParameterCollectionNode implements Node {
 		List<Parameter> params = m_paramColl.getParameterList();
 		List<ParameterValue> values = m_paramColl.getParameterValueList();
 		
-		return FStream.from(params)
-						.outerJoin(FStream.from(values), Parameter::getParameterId, ParameterValue::getParameterId)
-						.map(t -> {
-							Parameter p = t._1.isEmpty() ? null : t._1.get(0);
-							ParameterValue v = t._2.isEmpty() ? null : t._2.get(0);
-							return Tuple.of(p,  v);
-						})
-						.zipWithIndex()
-						.map(idxed -> new ParameterPairNode(idxed.index(), idxed.value()._1, idxed.value()._2))
-						.toList();
+		return KeyValueFStream.fromKeyed(params)
+								.outerJoin(KeyValueFStream.fromKeyed(values))
+								.map(kv -> {
+									Parameter p = kv.value()._1.isEmpty() ? null : kv.value()._1.get(0);
+									ParameterValue v = kv.value()._2.isEmpty() ? null : kv.value()._2.get(0);
+									return Tuple.of(p,  v);
+								})
+								.zipWithIndex()
+								.map(idxed -> new ParameterPairNode(idxed.index(), idxed.value()._1, idxed.value()._2))
+								.toList();
 	}
 }

@@ -42,7 +42,7 @@ public class PortDescriptorDeserializer extends StdDeserializer<PortDescriptor> 
 			return PortDescriptors.parseStringExpr(name, desc, refNode.asText());
 		}
 		else {
-			boolean valueOnly = FOption.mapOrElse(node.get("valueOnly"), v -> Boolean.parseBoolean(v.asText()), false);
+//			boolean valueOnly = FOption.mapOrElse(node.get("valueOnly"), v -> Boolean.parseBoolean(v.asText()), false);
 			String portType = FOption.mapOrElse(node.get("portType"), JsonNode::asText,
 												PortType.SME.getId()); 
 			

@@ -1,91 +1,83 @@
 package mdt.client.operation;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.Maps;
-
-import lombok.Builder;
-import lombok.Getter;
 
 import utils.InternalException;
 import utils.func.Try;
 import utils.stream.FStream;
 
-import mdt.model.MDTModelSerDe;
-import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
+import mdt.model.sm.variable.Variable;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@Getter
-@Builder
+@JsonIncludeProperties({"session", "status", "result", "message"})
 @JsonInclude(Include.NON_NULL)
 public class OperationResponse {
-	private final String session;
-	private final OperationStatus status;
-	@Nullable private String outputValuesString;
-	@Nullable private final String message;
+	/** 비동기적으로 수행하는 경우 수행 중인 연산의 식별자 */
+	private final String m_sessionId;
+	/** 연산의 수행 상태 */
+	private final OperationStatus m_status;
+	/** 연산 수행 결과 (성공적으로 연산이 완료된 경우) */
+	@Nullable private final List<Variable> m_result;
+	/** 연산 수행 결과 메시지 (연산 수행이 성공적으로 완료되지 못한 경우) */
+	@Nullable private final String m_message;
 	
 	@JsonCreator
-	public OperationResponse(@JsonProperty("session") String session,
+	public OperationResponse(@JsonProperty("session") String sessionId,
 								@JsonProperty("status") OperationStatus status,
-								@JsonProperty("outputValuesString") String outputValuesString,
+								@JsonProperty("result") List<Variable> result,
 								@JsonProperty("message") String message) {
-		this.session = session;
-		this.status = status;
-		this.outputValuesString = outputValuesString;
-		this.message = message;
+		m_sessionId = sessionId;
+		m_status = status;
+		m_result = result;
+		m_message = message;
 	}
 	
-	@JsonIgnore
-	public Map<String,SubmodelElement> getOutputValues() {
-		try {
-			Map<String,SubmodelElement> outputValues = Maps.newHashMap();
-			
-			if ( this.outputValuesString != null ) {
-				JsonNode paramMapNode = MDTModelSerDe.readJsonNode(outputValuesString);
-				Iterator<Entry<String,JsonNode>> iter = paramMapNode.fields();
-				while ( iter.hasNext() ) {
-					Entry<String,JsonNode> ent = iter.next();
-                    String key = ent.getKey();
-                    JsonNode valueNode = ent.getValue();
-                    
-                    SubmodelElement updated = MDTModelSerDe.readValue(valueNode, SubmodelElement.class);
-                    outputValues.put(key, updated);
-				}
-			}
-			
-			return outputValues;
-		}
-		catch ( Exception e ) {
-			throw new InternalException(e);
-		}
+	private OperationResponse(Builder builder) {
+		m_sessionId = builder.m_sessionId;
+		m_status = builder.m_status;
+		m_result = builder.m_result;
+		m_message = builder.m_message;
+	}
+	
+	@JsonProperty("session")
+	public String getSessionId() {
+		return m_sessionId;
+	}
+	
+	public OperationStatus getStatus() {
+		return m_status;
+	}
+	
+	public List<Variable> getResult() {
+		return m_result;
+	}
+	
+	public String getMessage() {
+		return m_message;
 	}
 	
 	public Throwable toJavaException() {
-		int idx = this.message.indexOf(':');
+		int idx = this.m_message.indexOf(':');
 		if ( idx < 0 ) {
-			throw new IllegalStateException("Invalid Error message: " + this.message);
+			throw new IllegalStateException("Invalid Error message: " + this.m_message);
 		}
 		
-		String code = this.message.substring(0, idx);
-		String details = this.message.substring(idx+1);
+		String code = this.m_message.substring(0, idx);
+		String details = this.m_message.substring(idx+1);
 		
 		try {
 			@SuppressWarnings("unchecked")
@@ -99,7 +91,7 @@ public class OperationResponse {
 				return ctor0.newInstance();
 			}
 			
-			return new Exception(this.message);
+			return new Exception(this.m_message);
 		}
 		catch ( Exception e ) {
 			throw new InternalException(e);
@@ -108,40 +100,34 @@ public class OperationResponse {
 	
 	@Override
 	public String toString() {
-		Map<String,SubmodelElement> outputs = getOutputValues();
-		String valuesStr = FStream.from(outputs)
-									.mapValue(ElementValues::getValue)
-									.map(kv -> String.format("%s:%s", kv.key(), kv.value()))
-									.join(", ");
-		String msgStr = (this.message != null) ? String.format(", message=%s", this.message) : "";
-		return String.format("[%s] status=%s, outputs={%s}%s", this.session, this.status, valuesStr, msgStr);
+		String valuesStr = (m_result != null)
+								? FStream.from(m_result)
+										.map(Variable::toString)
+										.join(", ")
+								: "";
+		String msgStr = (this.m_message != null) ? String.format(", message=%s", this.m_message) : "";
+		return String.format("[%s] status=%s, outputs={%s}%s", this.m_sessionId, this.m_status, valuesStr, msgStr);
 	}
 	
 	public static <T> OperationResponse running(String sessionId, String msg) {
 		return OperationResponse.builder()
 								.session(sessionId)
 								.status(OperationStatus.RUNNING)
-								.outputValuesString(null)
+								.result(null)
 								.message(msg)
 								.build();
 	}
 	
-	public static <T> OperationResponse completed(String sessionId, Map<String,SubmodelElement> outputValues) {
-		JsonNode root = FStream.from(outputValues)
-						        .mapValue(MDTModelSerDe::toJsonNode)
-						        .fold(MDTModelSerDe.MAPPER.createObjectNode(), (r,kv) -> r.set(kv.key(), kv.value()));
-		
-		try {
-			String outputValuesString = MDTModelSerDe.toJsonString(root);
-			return OperationResponse.builder()
-									.session(sessionId)
-									.status(OperationStatus.COMPLETED)
-									.outputValuesString(outputValuesString)
-									.build();
-		}
-		catch ( IOException e ) {
-			throw new InternalException(e);
-		}
+	public static <T> OperationResponse completed(String sessionId, List<Variable> outputVariables) {
+		// Result 중에서 'ReferenceVariable'이 아닌 경우만 뽑아서 result를 구성한다.
+		List<Variable> result = FStream.from(outputVariables)
+										.filter(var -> !(var instanceof ReferenceVariable))
+										.toList();
+		return OperationResponse.builder()
+								.session(sessionId)
+								.status(OperationStatus.COMPLETED)
+								.result(result)
+								.build();
 	}
 	
 	public static <T> OperationResponse failed(String sessionId, Throwable cause) {
@@ -149,7 +135,7 @@ public class OperationResponse {
 		return OperationResponse.builder()
 								.session(sessionId)
 								.status(OperationStatus.FAILED)
-								.outputValuesString(null)
+								.result(null)
 								.message(errorMsg)
 								.build();
 	}
@@ -158,8 +144,46 @@ public class OperationResponse {
 		return OperationResponse.builder()
 								.session(sessionId)
 								.status(OperationStatus.CANCELLED)
-								.outputValuesString(null)
+								.result(null)
 								.message(msg)
 								.build();
+	}
+	
+	public static Builder builder() {
+		return new Builder();
+	}
+	public static class Builder {
+		/** 비동기적으로 수행하는 경우 수행 중인 연산의 식별자 */
+		private String m_sessionId;
+		/** 연산의 수행 상태 */
+		private OperationStatus m_status;
+		/** 연산 수행 결과 (성공적으로 연산이 완료된 경우) */
+		@Nullable private List<Variable> m_result;
+		/** 연산 수행 결과 메시지 (연산 수행이 성공적으로 완료되지 못한 경우) */
+		@Nullable private String m_message;
+		
+		public OperationResponse build() {
+			return new OperationResponse(this);
+		}
+		
+		public Builder session(String session) {
+			m_sessionId = session;
+			return this;
+		}
+		
+		public Builder status(OperationStatus status) {
+			m_status = status;
+			return this;
+		}
+		
+		public Builder result(List<Variable> result) {
+			m_result = result;
+			return this;
+		}
+		
+		public Builder message(String message) {
+			m_message = message;
+			return this;
+		}
 	}
 }

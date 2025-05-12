@@ -5,9 +5,9 @@ import java.util.Map;
 
 import org.apache.commons.text.StringSubstitutor;
 
-import lombok.experimental.UtilityClass;
+import utils.stream.KeyValueFStream;
 
-import utils.stream.FStream;
+import lombok.experimental.UtilityClass;
 
 
 /**
@@ -24,7 +24,7 @@ public class MDTSubstitutor {
 		// 이 값을 이용하여 string substitution을 사용하여 JSON 파일 구성하면
 		// 이 '\'가 escape character로 간주되어 문제를 유발한다.
 		// 이를 해결하기 위해 '\'를 '/'로 대체시킨다.
-		MDT_ENV_VARS = FStream.from(System.getenv())
+		MDT_ENV_VARS = KeyValueFStream.from(System.getenv())
 								.mapValue(v -> v.replaceAll("\\\\", "/"))
 								.toMap();
 		SUBSTITUTOR = new StringSubstitutor(MDT_ENV_VARS);
@@ -34,6 +34,7 @@ public class MDTSubstitutor {
 		return SUBSTITUTOR.replace(template);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static <T> T substituteJsonObject(T obj) throws IOException {
 		String template = MDTModelSerDe.toJsonString(obj);
 		String substituted = substibute(template);

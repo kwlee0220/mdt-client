@@ -32,9 +32,9 @@ public final class AASOperationNode implements Node {
 	public Iterable<? extends Node> getChildren() {
 		List<Node> children = Lists.newArrayList();
 		
-		children.add(new VariableListNode("InputVariables", m_operation.getInputVariables()));
-		children.add(new VariableListNode("InoutputVariables", m_operation.getInoutputVariables()));
-		children.add(new VariableListNode("OutputVariables", m_operation.getOutputVariables()));
+		children.add(new VariableListNode("InputVariables:", m_operation.getInputVariables()));
+		children.add(new VariableListNode("InoutputVariables:", m_operation.getInoutputVariables()));
+		children.add(new VariableListNode("OutputVariables:", m_operation.getOutputVariables()));
 		
 		return children;
 	}

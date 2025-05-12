@@ -17,15 +17,16 @@ import utils.StopWatch;
 import utils.UnitUtils;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.instance.HttpMDTInstanceManagerClient;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.ref.ElementReference;
-import mdt.model.sm.ref.ElementReferenceUtils;
-import mdt.model.sm.ref.MDTInstanceManagerAwareReference;
+import mdt.model.sm.ref.ElementReferences;
+import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.value.SubmodelElementValue;
 import mdt.tree.sm.SubmodelElementNodeFactory;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -45,9 +46,8 @@ public class GetElementCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetElementCommand.class);
 	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
 
-	@Parameters(index="0", arity="1", paramLabel="sme-reference",
-				description="Target submodel-element reference: <mdt_id>/<submodel_idshort>/<idShortPath>")
-	private String m_target = null;
+	@Parameters(index="0", arity="1", paramLabel="element-ref", description="Target submodel-element reference")
+	private String m_elmRef = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: tree, json, or value)")
@@ -70,11 +70,11 @@ public class GetElementCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		HttpMDTInstanceManagerClient manager = (HttpMDTInstanceManagerClient)mdt.getInstanceManager();
+		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
-		ElementReference smeRef = ElementReferenceUtils.parseString(m_target);
-		if ( smeRef instanceof MDTInstanceManagerAwareReference aware ) {
-			aware.activate(manager);
+		ElementReference smeRef = ElementReferences.parseExpr(m_elmRef);
+		if ( smeRef instanceof MDTElementReference iref ) {
+			iref.activate(manager);
 		}
 		
 		TreeOptions opts = new TreeOptions();
@@ -98,6 +98,7 @@ public class GetElementCommand extends AbstractMDTCommand {
 					System.out.print(CLEAR_CONSOLE_CONTROL);
 				}
 				System.out.print(outputString);
+				System.out.println();
 				if ( m_verbose ) {
 					System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
 				}
@@ -134,7 +135,7 @@ public class GetElementCommand extends AbstractMDTCommand {
 			return file.getValue();
 		}
 		
-		SubmodelElementValue value = ElementValues.getValue(target);
+		ElementValue value = ElementValues.getValue(target);
 		return MDTModelSerDe.toJsonString(value);
 	}
 }

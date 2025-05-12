@@ -38,6 +38,7 @@ public class TestMeasureFrequency {
 		writeAsync.join();
 	}
 	
+	@SuppressWarnings("unused")
 	private static void read(HttpSubmodelServiceClient svc) {
 		String path0 = "DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue";
 		SubmodelElement sme0 = svc.getSubmodelElementByPath(path0);

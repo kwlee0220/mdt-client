@@ -14,6 +14,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestMqtt implements MqttCallback {
+	@SuppressWarnings({ "unused", "resource" })
 	public static final void main(String... args) throws Exception {
 		MqttConnectOptions opts = new MqttConnectOptions();
 		opts.setCleanSession(true);

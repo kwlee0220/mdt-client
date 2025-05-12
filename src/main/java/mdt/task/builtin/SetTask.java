@@ -4,121 +4,46 @@ import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
-import javax.annotation.Nullable;
-
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-
-import utils.LoggerSettable;
-import utils.func.FOption;
-
-import mdt.model.MDTModelSerDe;
-import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.DefaultAASFile;
-import mdt.model.sm.ref.ElementReference;
-import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.variable.Variable;
+import mdt.model.sm.variable.Variables;
+import mdt.task.AbstractMDTTask;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
-
+import mdt.workflow.model.TaskDescriptor;
 
 /**
- * 
+ *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class SetTask implements MDTTask, LoggerSettable {
+public class SetTask extends AbstractMDTTask implements MDTTask {
 	private static final Logger s_logger = LoggerFactory.getLogger(SetTask.class);
+	private static final String VARIABLE_SOURCE = "source";
+	private static final String VARIABLE_TARGET = "target";
 	
-	private Logger m_logger;
-	
-	protected SetTask() {
-		setLogger(m_logger);
+	public SetTask(TaskDescriptor descriptor) {
+		super(descriptor);
+		
+		setLogger(s_logger);
 	}
-
+	
 	@Override
-	public boolean cancel() {
-		return false;
-	}
-
-	@Override
-	public Logger getLogger() {
-		return FOption.getOrElse(m_logger, s_logger);
-	}
-
-	@Override
-	public void setLogger(Logger logger) {
-		m_logger = logger;
-	}
-	
-	public static class SetDefaultTask extends SetTask {
-		private static final Logger s_logger = LoggerFactory.getLogger(SetDefaultTask.class);
-		
-		private final ElementReference m_target;
-		private final String m_valueJson;
-		
-		public SetDefaultTask(ElementReference target, String valueJson) {
-			m_target = target;
-			m_valueJson = valueJson;
+	public void run(MDTInstanceManager manager) throws TimeoutException, InterruptedException,
+														CancellationException, TaskException {
+		try {
+			Variable target = getTaskDescriptor().getOutputVariables().getOfKey(VARIABLE_TARGET);
+			Variables.activate(target, manager);
 			
-			setLogger(s_logger);
+			Variable source = getTaskDescriptor().getInputVariables().getOfKey(VARIABLE_SOURCE);
+			Variables.activate(source, manager);
+			
+			target.updateValue(source.readValue());
 		}
-		
-		@Override
-		public void run(MDTInstanceManager manager) throws TimeoutException, InterruptedException,
-																CancellationException, TaskException {
-			// m_valueJson 값이 SubmodelElement 전체인 경우도 처리하기 위해
-			// 일단 SubmodelElement 형태로 파싱해보고 성공하면 갱신하고
-			// 그렇지 않다만 value 값에 대한 json 문자열로 간주하여 처리한다.
-			try {
-				SubmodelElement newSme = MDTModelSerDe.readValue(m_valueJson, SubmodelElement.class);
-				m_target.update(newSme);
-			}
-			catch ( IOException e ) {
-				try {
-					m_target.updateWithValueJsonString(m_valueJson);
-				}
-				catch ( IOException e1 ) {
-					throw new TaskException("Invalid value to set: value=" + m_valueJson, e1);
-				}
-			}
-		}
-	}
-	
-	public static class SetFileTask extends SetTask {
-		private static final Logger s_logger = LoggerFactory.getLogger(SetFileTask.class);
-		
-		private final MDTElementReference m_target;
-		private final java.io.File m_file;
-		@Nullable private final String m_path;
-		
-		public SetFileTask(ElementReference target, java.io.File file, String path) {
-			Preconditions.checkArgument(target instanceof MDTElementReference,
-										"Not MDTSubmodelElementReference, but {}", target.getClass());
-			m_target = (MDTElementReference)target;
-			m_file = file;
-			m_path = path;
-			
-			setLogger(s_logger);
-		}
-
-		@Override
-		public void run(MDTInstanceManager manager) throws TimeoutException, InterruptedException,
-																CancellationException, TaskException {
-			SubmodelService svc = m_target.getSubmodelService();
-			
-			try {
-				DefaultAASFile mdtFile = (m_path != null)
-										? DefaultAASFile.from(m_file, m_path)
-										: DefaultAASFile.from(m_file);
-				svc.putFileByPath(m_target.getElementPath(), mdtFile);
-			}
-			catch ( IOException e ) {
-				throw new TaskException("Failed to read file", e);
-			}
-			
+		catch ( IOException e ) {
+			throw new TaskException("Failed to run SetTask: " + this, e);
 		}
 	}
 }

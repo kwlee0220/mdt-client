@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import mdt.model.instance.MDTInstance;
+import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.SubmodelUtils;
 
 
@@ -16,27 +17,27 @@ import mdt.model.sm.SubmodelUtils;
  */
 @JsonSerialize(using = SubmodelUtils.Serializer.class)
 @JsonDeserialize(using = SubmodelUtils.Deserializer.class)
-public interface MDTSubmodelReference extends SubmodelReference, MDTInstanceManagerAwareReference {
+public interface MDTSubmodelReference extends SubmodelReference {
+	/**
+	 * 본 참조가 활성화되어 있는지 여부를 반환한다.
+	 * 
+	 * @return 활성화 여부.
+	 */
+	public boolean isActivated();
+	
+	/**
+	 * 본 참조를 활성화시킨다.
+	 *
+	 * @param manager	객체 활성화에 사용될 {@link MDTInstanceManager} 객체.
+	 */
+	public void activate(MDTInstanceManager manager);
+	
 	/**
 	 * Submodel을 포함한 MDTInstance의 식별자를 반환한다.
 	 * 
 	 * @return		MDTInstance 식별자.
 	 */
 	public String getInstanceId();
-	
-	/**
-	 * 대상 Submodel의 idShort를 반환한다.
-	 * 
-	 * @return		Submodel의 idShort.
-	 */
-	public String getSubmodelIdShort();
-
-	/**
-	 * 대상 Submodel의 식별자(id)를 반환한다.
-	 * 
-	 * @return		Submodel의 식별자.
-	 */
-	public String getSubmodelId();
 
 	/**
 	 * Submodel을 포함한 MDTInstance를 반환한다.
@@ -51,4 +52,5 @@ public interface MDTSubmodelReference extends SubmodelReference, MDTInstanceMana
 	public MDTInstance getInstance();
 	
 	public void serialize(JsonGenerator gen) throws IOException;
+	public String toStringExpr();
 }

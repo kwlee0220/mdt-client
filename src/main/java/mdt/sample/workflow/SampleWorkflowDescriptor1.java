@@ -1,10 +1,10 @@
 package mdt.sample.workflow;
 
-import mdt.client.HttpMDTManagerClient;
-import mdt.model.workflow.WorkflowDescriptors;
-import mdt.workflow.WorkflowDescriptorService;
+import mdt.client.HttpMDTManager;
+import mdt.workflow.WorkflowManager;
+import mdt.workflow.WorkflowModel;
 import mdt.workflow.model.TaskDescriptor;
-import mdt.workflow.model.WorkflowDescriptor;
+import mdt.workflow.model.TaskDescriptors;
 
 
 /**
@@ -12,36 +12,31 @@ import mdt.workflow.model.WorkflowDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 public class SampleWorkflowDescriptor1 {
-//	private static final String ENDPOINT = "http://129.254.91.134:12985";
-	private static final String ENDPOINT = "http://localhost:12985";
-	
 	public static final void main(String... args) throws Exception {
-		HttpMDTManagerClient mdt = HttpMDTManagerClient.connect(ENDPOINT);
+		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();
 		
-		WorkflowDescriptor wfDesc;
+		WorkflowModel wfModel;
 		
-		wfDesc = new WorkflowDescriptor();
-		wfDesc.setId("sample-workflow-1");
-		wfDesc.setName("테스트 시뮬레이션");
-		wfDesc.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
+		wfModel = new WorkflowModel();
+		wfModel.setId("sample-workflow-1");
+		wfModel.setName("테스트 시뮬레이션");
+		wfModel.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
 
 		TaskDescriptor taskDesc;
+
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("set", "'222'", "param:test:1");
+		wfModel.getTaskDescriptors().add(taskDesc);
 		
-		taskDesc = WorkflowDescriptors.newSetTask("set", "222",
-												"test/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue");
-		wfDesc.getTasks().add(taskDesc);
-		
-		taskDesc = WorkflowDescriptors.newCopyTask("copy",
-												"test/Data/DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
-												"test/Simulation/SimulationInfo.Inputs[1].InputValue");
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy", "param:test:1", "oparg:test:Simulation:in:1"); 
 		taskDesc.getDependencies().add("set");
 		
-		wfDesc.getTasks().add(taskDesc);
-//		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
+		wfModel.getTaskDescriptors().add(taskDesc);
+//		System.out.println(wfModel.toJsonString());
+
+		WorkflowManager wfManager = mdt.getWorkflowManager();
+		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
 		
-		WorkflowDescriptorService wfService = mdt.getWorkflowDescriptorService();
-		String wfId = wfService.addOrUpdateWorkflowDescriptor(wfDesc, true);
-		
-		System.out.println("Workflow id: " + wfId);
+		wfModel = wfManager.getWorkflowModel("sample-workflow-1");
+		System.out.println(wfModel.toJsonString());
 	}
 }

@@ -26,10 +26,9 @@ import picocli.CommandLine.Command;
 	description="\nList all MDT-related entities",
 	subcommands= {
 		ListMDTInstanceCommand.class,
-		ListAASCommand.class,
+		ListShellCommand.class,
 		ListSubmodelCommand.class,
-		ListSimulationCommand.class,
-		ListAICommand.class,
+		ListOperationCommand.class,
 	})
 public class ListCommands extends CommandCollection {
 	public static final String DELIM = "|";
@@ -39,12 +38,12 @@ public class ListCommands extends CommandCollection {
 		public String getFinalString();
 	}
 
-	static class SimpleListCollector implements ListCollector {
+	static class CSVCollector implements ListCollector {
 		private final String m_delim;
 		private ByteArrayOutputStream m_baos;
 		private PrintWriter m_writer;
 		
-		SimpleListCollector(String delim) {
+		CSVCollector(String delim) {
 			m_delim = delim;
 			m_baos = new ByteArrayOutputStream();
 			m_writer = new PrintWriter(m_baos);
@@ -77,7 +76,9 @@ public class ListCommands extends CommandCollection {
 	
 		@Override
 		public void collectLine(Object[] cols) {
-			FStream.of(cols).forEach(c -> m_table.addCell(""+c));
+			FStream.of(cols)
+				    .map(col -> FOption.mapOrElse(col, c-> ""+c, ""))
+					.forEach(m_table::addCell);
 		}
 		
 		@Override

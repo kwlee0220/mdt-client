@@ -12,7 +12,7 @@ import utils.Keyed;
 import utils.KeyedValueList;
 import utils.stream.KeyValueFStream;
 
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.model.instance.MDTInstanceStatus;
 
 /**
@@ -103,12 +103,12 @@ public class Nodes {
 	public static final String ANSI_YELLOW = "\u001B[33m";
 	public static final String ANSI_BOLD = "\u001B[1m";
 	public static class InstanceNode implements Node, Keyed<String> {
-		private final HttpMDTInstance m_instance;
+		private final HttpMDTInstanceClient m_instance;
 		private final MDTInstanceStatus m_status;
 		private final String m_baseUrl;
 		private final KeyedValueList<String, InstanceNode> m_children;
 		
-		public InstanceNode(HttpMDTInstance instance) {
+		public InstanceNode(HttpMDTInstanceClient instance) {
 			m_instance = instance;
 			m_status = instance.getStatus();
 			m_baseUrl = (m_status == MDTInstanceStatus.RUNNING) ? m_instance.getBaseEndpoint() : null;
@@ -124,7 +124,7 @@ public class Nodes {
 			return m_instance.getId();
 		}
 		
-		public HttpMDTInstance getInstance() {
+		public HttpMDTInstanceClient getInstance() {
 			return m_instance;
 		}
 		

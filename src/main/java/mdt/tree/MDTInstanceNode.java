@@ -19,9 +19,9 @@ import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.info.MDTInfo;
 import mdt.model.sm.simulation.DefaultSimulation;
 import mdt.model.sm.simulation.Simulation;
-import mdt.tree.sm.SimulationSubmodelNode;
-import mdt.tree.sm.data.DataSubmodelNode;
-import mdt.tree.sm.info.InformationModelSubmodelNode;
+import mdt.tree.node.InformationModelSubmodelNode;
+import mdt.tree.node.SimulationSubmodelNode;
+import mdt.tree.node.data.DataSubmodelNode;
 
 /**
  *

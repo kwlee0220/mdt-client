@@ -1,12 +1,16 @@
 package mdt.sample.workflow;
 
+import java.io.IOException;
+
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
+import mdt.model.ModelValidationException;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.variable.Variable;
 import mdt.model.sm.variable.Variables;
+import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
 import mdt.workflow.model.Options;
@@ -19,12 +23,10 @@ import mdt.workflow.model.TaskDescriptors;
  * @author Kang-Woo Lee (ETRI)
  */
 public class WfThicknessSimulationShort {
-//	private static final String ENDPOINT = "http://129.254.91.134:12985";
-	private static final String ENDPOINT = "http://localhost:12985";
-	private static final String HTTP_OP_SERVER_ENDPOINT = "http://129.254.91.134:12987";
+	private static final String HTTP_OP_SERVER_ENDPOINT = "http://218.158.72.211:12987";
 	
 	public static final void main(String... args) throws Exception {
-		HttpMDTManager mdt = HttpMDTManager.connect(ENDPOINT);
+		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();
 		HttpMDTInstanceManager manager = mdt.getInstanceManager();
 		
 		WorkflowModel wfDesc;
@@ -37,22 +39,25 @@ public class WfThicknessSimulationShort {
 		TaskDescriptor descriptor;
 		Variable var;
 
-		descriptor = inspectSurfaceThickness(manager, "inspect-thickness");
-		descriptor.getInputVariables().addOrReplace(Variables.newInstance("UpperImage", "", "param:inspector:UpperImage"));
+		descriptor = inspectSurfaceThickness2(manager, "inspect-thickness");
+		descriptor.getInputVariables().addOrReplace(Variables.newInstance("UpperImage", "",
+																			"param:inspector:UpperImage:ParameterValue"));
 		wfDesc.getTaskDescriptors().add(descriptor);
 
 		descriptor = updateDefectList2(manager, "update-defect-list");
 		descriptor.getInputVariables().addOrReplace(Variables.newInstance("Defect", "",
 																		"oparg:inspector:ThicknessInspection:out:0"));
-		descriptor.getInputVariables().addOrReplace(Variables.newInstance("DefectList", "", "param:inspector:DefectList"));
-		descriptor.getOutputVariables().addOrReplace(Variables.newInstance("DefectList", "", "param:inspector:DefectList"));
+		descriptor.getInputVariables().addOrReplace(Variables.newInstance("DefectList", "",
+																		"param:inspector:DefectList:ParameterValue"));
+		descriptor.getOutputVariables().addOrReplace(Variables.newInstance("DefectList", "",
+																		"param:inspector:DefectList:ParameterValue"));
 		descriptor.getDependencies().add("inspect-thickness");
 		wfDesc.getTaskDescriptors().add(descriptor);
 
-		descriptor = simulateProcess(manager, "simulate-process");
-		var = Variables.newInstance("DefectList", null, "param:inspector:DefectList");
+		descriptor = simulateProcess2(manager, "simulate-process");
+		var = Variables.newInstance("DefectList", null, "param:inspector:DefectList:ParameterValue");
 		descriptor.getInputVariables().addOrReplace(var);
-		var = Variables.newInstance("AverageCycleTime", null, "param:inspector:CycleTime");
+		var = Variables.newInstance("AverageCycleTime", null, "param:inspector:CycleTime:ParameterValue");
 		descriptor.getOutputVariables().addOrReplace(var);
 		descriptor.getDependencies().add("update-defect-list");
 		wfDesc.getTaskDescriptors().add(descriptor);
@@ -65,20 +70,16 @@ public class WfThicknessSimulationShort {
 		System.out.println("Workflow id: " + wfId);
 	}
 	
-	private static TaskDescriptor inspectSurfaceThickness(MDTInstanceManager manager, String id) {
+	private static TaskDescriptor inspectSurfaceThickness(MDTInstanceManager manager, String id)
+		throws ModelValidationException, IOException {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
 		smRef.activate(manager);
-
-		return TaskDescriptors.httpTaskBuilder()
-								.id(id)
-								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
-								.operationId("inspector/ThicknessInspection")
-								.pollInterval("2s")
-								.timeout("1m")
-								.operationSubmodelRef(smRef)
-								.addOption(Options.newOption("loglevel", "info"))
-								.addLabel("mdt-operation", smRef.toStringExpr())
-								.build();
+		
+		TaskDescriptor descriptor = TaskDescriptors.from(smRef);
+		descriptor.addOrReplaceOption("loglevel", "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}
 	private static TaskDescriptor inspectSurfaceThickness2(MDTInstanceManager manager, String id) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
@@ -88,11 +89,12 @@ public class WfThicknessSimulationShort {
 		return TaskDescriptors.aasOperationTaskBuilder()
 								.id(id)
 								.operationRef(opElmRef)
-								.pollInterval("2s")
+								.pollInterval("1s")
 								.timeout("1m")
 								.addOption(Options.newOption("loglevel", "info"))
-								.addLabel("mdt-operation", smRef.toStringExpr())
-								.addInputVariable(Variables.newInstance("UpperImage", "", "param:inspector:UpperImage"))
+								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
+								.addInputVariable(Variables.newInstance("UpperImage", "",
+																		"param:inspector:UpperImage:ParameterValue"))
 								.build();
 	}
 	
@@ -104,11 +106,11 @@ public class WfThicknessSimulationShort {
 								.id(id)
 								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
 								.operationId("inspector/UpdateDefectList")
-								.pollInterval("2s")
+								.pollInterval("1s")
 								.timeout("1m")
 								.operationSubmodelRef(smRef)
 								.addOption(Options.newOption("loglevel", "info"))
-								.addLabel("mdt-operation", smRef.toStringExpr())
+								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
 	private static TaskDescriptor updateDefectList2(MDTInstanceManager manager, String id) {
@@ -119,10 +121,25 @@ public class WfThicknessSimulationShort {
 		return TaskDescriptors.aasOperationTaskBuilder()
 								.id(id)
 								.operationRef(opElmRef)
-								.pollInterval("2s")
+								.pollInterval("1s")
 								.timeout("1m")
 								.addOption(Options.newOption("loglevel", "info"))
-								.addLabel("mdt-operation", smRef.toStringExpr())
+								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
+								.build();
+	}
+	
+	private static TaskDescriptor simulateProcess2(MDTInstanceManager manager, String id) {
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ProcessSimulation");
+		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
+		opElmRef.activate(manager);
+
+		return TaskDescriptors.aasOperationTaskBuilder()
+								.id(id)
+								.operationRef(opElmRef)
+								.pollInterval("1s")
+								.timeout("1m")
+								.addOption(Options.newOption("loglevel", "info"))
+								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
 	
@@ -138,7 +155,7 @@ public class WfThicknessSimulationShort {
 								.timeout("1m")
 								.operationSubmodelRef(smRef)
 								.addOption(Options.newOption("loglevel", "info"))
-								.addLabel("mdt-operation", smRef.toStringExpr())
+								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
 }

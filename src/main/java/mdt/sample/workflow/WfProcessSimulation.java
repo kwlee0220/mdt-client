@@ -6,6 +6,7 @@ import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.task.builtin.HttpTask;
+import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
 import mdt.workflow.model.StringOption;
@@ -66,7 +67,7 @@ public class WfProcessSimulation {
 		task.getOptions().add(new StringOption("id", "inspector/ProcessSimulation"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
 		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-operation", "inspector/ProcessSimulation"));
+		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "inspector:ProcessSimulation"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ProcessSimulation");
 		smRef.activate(manager);

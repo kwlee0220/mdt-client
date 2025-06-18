@@ -6,6 +6,7 @@ import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.task.builtin.HttpTask;
+import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
 import mdt.workflow.model.StringOption;
@@ -85,7 +86,7 @@ public class SampleWorkflowDescriptor6 {
 		task.getOptions().add(new StringOption("id", "ktech_inspector/SurfaceErrorDetection"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
 		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-operation", "ktech_inspector/SurfaceErrorDetection"));
+		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:SurfaceErrorDetection"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("ktech_inspector", "SurfaceErrorDetection");
 		smRef.activate(manager);
@@ -105,7 +106,7 @@ public class SampleWorkflowDescriptor6 {
 		task.getOptions().add(new StringOption("id", "ktech_inspector/STErrorPrediction"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
 		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-operation", "ktech_inspector/STErrorPrediction"));
+		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:STErrorPrediction"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("ktech_inspector", "STErrorPrediction");
 		smRef.activate(manager);
@@ -125,7 +126,7 @@ public class SampleWorkflowDescriptor6 {
 		task.getOptions().add(new StringOption("id", "ktech_inspector/LTErrorPrediction"));
 		task.getOptions().add(new StringOption("timeout", "1m"));
 		task.getOptions().add(new StringOption("loglevel", "info"));
-		task.getLabels().add(NameValue.of("mdt-operation", "ktech_inspector/LTErrorPrediction"));
+		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:LTErrorPrediction"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("ktech_inspector", "LTErrorPrediction");
 		smRef.activate(manager);

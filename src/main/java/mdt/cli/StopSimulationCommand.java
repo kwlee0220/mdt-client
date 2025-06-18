@@ -4,7 +4,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatusResponse;
@@ -51,11 +51,11 @@ public class StopSimulationCommand extends AbstractMDTCommand {
 		
 		SubmodelService svc;
 		try {
-			HttpMDTInstance inst = (HttpMDTInstance)client.getInstanceBySubmodelId(m_targetId);
+			HttpMDTInstanceClient inst = (HttpMDTInstanceClient)client.getInstanceBySubmodelId(m_targetId);
 			svc = inst.getSubmodelServiceById(m_targetId);
 		}
 		catch ( ResourceNotFoundException expected ) {
-			HttpMDTInstance inst = client.getInstance(m_targetId);
+			HttpMDTInstanceClient inst = client.getInstance(m_targetId);
 			svc = inst.getSubmodelServiceByIdShort("Simulation");
 		}
 		

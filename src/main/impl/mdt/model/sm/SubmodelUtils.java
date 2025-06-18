@@ -56,10 +56,14 @@ import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
+import mdt.model.sm.data.Equipment;
+import mdt.model.sm.data.Operation;
+import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
+import mdt.model.sm.value.ElementValues;
 import mdt.model.timeseries.TimeSeries;
 
 /**
@@ -138,6 +142,13 @@ public class SubmodelUtils {
 		throws ResourceNotFoundException {
 		Property prop = cast(traverse(start, idShortPath), Property.class);
 		return getPropertyValue(prop, valueClass);
+	}
+	
+	public static void updateSubBuffer(String bufferPath, SubmodelElement buffer,
+										String updatePath, SubmodelElement update) {
+		String relPath = toRelativeIdShortPath(bufferPath, updatePath);
+		SubmodelElement subBuffer = traverse(buffer, relPath);
+		ElementValues.update(subBuffer, ElementValues.getValue(update));
 	}
 	
 	/**
@@ -351,6 +362,11 @@ public class SubmodelUtils {
 		return Data.SEMANTIC_ID.equals(semanticId);
 	}
 	
+	public static boolean isParameterValue(SubmodelElement sme) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sme.getSemanticId());
+		return ParameterValue.SEMANTIC_ID.equals(semanticId);
+	}
+	
 	public static String getParameterValuePrefix(Submodel dataSubmodel) {
 		SubmodelElementCollection dataInfo = traverse(dataSubmodel, "DataInfo", SubmodelElementCollection.class);
 		if ( containsFieldById(dataInfo, "Equipment") ) {
@@ -372,6 +388,16 @@ public class SubmodelUtils {
 	public static boolean isSimulationSubmodel(Submodel sm) {
 		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return Simulation.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	public static boolean isEquipment(SubmodelElement element) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
+		return Equipment.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	public static boolean isOperation(SubmodelElement element) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
+		return Operation.SEMANTIC_ID.equals(semanticId);
 	}
 	
 	public static String getTypeString(SubmodelElement element) {

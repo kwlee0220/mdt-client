@@ -2,7 +2,7 @@ package mdt.workflow.model;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -12,18 +12,22 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import utils.DataUtils;
+import utils.InternalException;
 import utils.KeyedValueList;
 import utils.func.FOption;
+import utils.io.IOUtils;
 import utils.stream.FStream;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.NameValue;
-import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.variable.Variable;
@@ -132,33 +136,55 @@ public final class TaskDescriptor {
 		m_options = KeyedValueList.from(options, Option::getName);
 	}
 	
-	public boolean addOption(String name, String value) {
-		return m_options.add(new StringOption(name, value));
+	public void addOrReplaceOption(String name, String value) {
+		m_options.addOrReplace(new StringOption(name, value));
 	}
-	public boolean addOption(String name, boolean flag) {
-		return m_options.add(new BooleanOption(name, flag));
+	public void addOrReplaceOption(String name, Boolean value) {
+		m_options.addOrReplace(new StringOption(name, ""+value));
 	}
-	public boolean addOption(String name, Duration dur) {
-		return m_options.add(new DurationOption(name, dur));
+	public void addOrReplaceOption(String name, MDTElementReference ref) {
+		m_options.addOrReplace(new MDTElementRefOption(name, ref));
 	}
-	public boolean addOption(String name, File file) {
-		return m_options.add(new FileOption(name, file));
-	}
-	public boolean addOption(String name, MDTElementReference ref) {
-		return m_options.add(new MDTElementRefOption(name, ref));
-	}
-	public boolean addOption(String name, MDTSubmodelReference ref) {
-		return m_options.add(new MDTSubmodelRefOption(name, ref));
+	public void addOrReplaceOption(String name, MDTSubmodelReference ref) {
+		m_options.addOrReplace(new MDTSubmodelRefOption(name, ref));
 	}
 	
 	public List<NameValue> getLabels() {
 		return m_labels;
+	}
+	public FOption<String> findLabel(String name) {
+		return FStream.from(m_labels)
+						.findFirst(lb -> lb.getName().equals(name))
+						.map(NameValue::getValue);
+	}
+
+	public void addLabel(String name, String value) {
+		Preconditions.checkArgument(name != null, "label name must not be null");
+		Preconditions.checkArgument(value != null, "label value must not be null");
+
+		m_labels.add(NameValue.of(name, value));
 	}
 
 	public void setLabels(Iterable<NameValue> labels) {
 		Preconditions.checkArgument(labels != null, "labels must not be null");
 		
 		m_labels = Lists.newArrayList(labels);
+	}
+	
+	public FOption<String> findStringOption(String optName) {
+		return FStream.from(m_options)
+						.findFirst(opt -> opt.getName().equals(optName))
+						.map(opt -> (String)opt.getValue());
+	}
+	public FOption<Boolean> findBooleanOption(String optName) {
+		return FStream.from(m_options)
+						.findFirst(opt -> opt.getName().equals(optName))
+						.map(opt -> DataUtils.asBoolean(opt.getValue()));
+	}
+	public FOption<Integer> findIntegerOption(String optName) {
+		return FStream.from(m_options)
+						.findFirst(opt -> opt.getName().equals(optName))
+						.map(opt -> DataUtils.asInt(opt.getValue()));
 	}
 	
 	public FOption<Option<?>> findOption(String optName) {
@@ -178,7 +204,10 @@ public final class TaskDescriptor {
 							throw new IllegalArgumentException(details);
 						});
 	}
-	
+
+	public static TaskDescriptor parseJsonString(String json) throws IOException {
+		return MDTModelSerDe.getJsonMapper().readValue(json, TaskDescriptor.class);
+	}
 	public static TaskDescriptor parseJsonFile(File jsonFile) throws IOException {
 		return MDTModelSerDe.getJsonMapper().readValue(jsonFile, TaskDescriptor.class);
 	}
@@ -195,7 +224,45 @@ public final class TaskDescriptor {
 	}
 	
 	public String toJsonString() {
-		return MDTModelSerDe.toJsonString(this);
+		try {
+			return JsonMapper.builder()
+							.findAndAddModules()
+							.addModule(new JavaTimeModule())
+							.build()
+							.writerFor(TaskDescriptor.class)
+							.writeValueAsString(this);
+		}
+		catch ( IOException e ) {
+			String msg = String.format("Failed to serialize TaskDescriptor: %s", this);
+			throw new InternalException(msg, e);
+		}
+	}
+	private static final int CHUNK_SIZE = 200;
+	public List<String> toEncodedString() {
+		byte[] bytes = toJsonString().getBytes(StandardCharsets.UTF_8);
+		String fullStr = IOUtils.stringify(bytes);
+		
+	    int length = fullStr.length();
+	    List<String> chunks = Lists.newArrayList();
+	    for (int i = 0; i < length; i += CHUNK_SIZE) {
+	        int endIndex = Math.min(i + CHUNK_SIZE, length);
+	        chunks.add(fullStr.substring(i, endIndex));
+	    }
+	    
+	    return chunks;
+	}
+	public static TaskDescriptor parseEncodedString(List<String> chunks) throws IOException {
+		try {
+			String encodedStr = FStream.from(chunks).fold(new StringBuilder(), StringBuilder::append).toString();
+			
+			byte[] bytes = IOUtils.destringify(encodedStr);
+			String jsonStr = new String(bytes, StandardCharsets.UTF_8);
+			return parseJsonString(jsonStr);
+		}
+		catch ( Throwable e ) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	@Override

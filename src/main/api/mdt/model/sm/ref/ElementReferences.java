@@ -1,6 +1,7 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -13,11 +14,12 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Preconditions;
 
+import utils.SplitStream;
+import utils.func.Try;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
 import mdt.model.MDTModelSerDe;
-import mdt.model.expr.MDTExprParser;
 import mdt.model.expr.MDTParserException;
 import mdt.model.instance.MDTInstanceManager;
 
@@ -46,17 +48,114 @@ public class ElementReferences {
 	public static ElementReference parseJsonNode(JsonNode node) throws IOException {
         return MDTModelSerDe.readValue(node, ElementReference.class);
     }
-	
-	public static MDTElementReference parseExpr(String exprStr) throws MDTParserException {
-		Preconditions.checkArgument(exprStr != null, "ElementReference expression is null");
+
+	public static DefaultSubmodelReference parseSubmodelReference(String exprStr) {
+		SplitStream tokens = SplitStream.of(exprStr, ':');
+		DefaultSubmodelReference ref = parseSubmodelReference(tokens);
+		if ( tokens.hasNext() ) {
+			throw new MDTParserException("Invalid submodel reference: expr=" + exprStr);
+		}
 		
-		return MDTExprParser.parseElementReference(exprStr).evaluate();
+		return ref;
+	}
+	private static DefaultSubmodelReference parseSubmodelReference(SplitStream tokens) {
+		String fullExpr = tokens.remaining();
+		Supplier<IllegalArgumentException> errorMsg
+							= () -> new IllegalArgumentException("Invalid DefaultSubmodelReference: expr=" + fullExpr);
+		
+		String first = tokens.nextToken().getOrThrow(errorMsg);
+		String second = tokens.nextToken().getOrThrow(errorMsg);
+		switch ( first ) {
+			case "submodel":
+				return DefaultSubmodelReference.ofId(second);
+			default:
+				return DefaultSubmodelReference.ofIdShort(first, second);
+		}
 	}
 	
-	public static DefaultSubmodelReference parseSubmodelReference(String exprStr) throws MDTParserException {
+	public static MDTElementReference parseExpr(String exprStr) {
 		Preconditions.checkArgument(exprStr != null, "ElementReference expression is null");
 		
-		return MDTExprParser.parseSubmodelReference(exprStr).evaluate();
+		SplitStream tokens = SplitStream.of(exprStr, ':');
+		MDTElementReference ref = parseExpr(tokens);
+		if ( tokens.hasNext() ) {
+			throw new MDTParserException("Invalid ElementReference: expr=" + exprStr);
+		}
+		
+		return ref;
+	}
+
+	private static MDTElementReference parseExpr(SplitStream tokens) {
+		String label = tokens.next();
+		switch ( label.toLowerCase() ) {
+			case "param":
+				return parseParameterReference(tokens);
+			case "oparg":
+				return parseArgumentReference(tokens);
+			case "opvar":
+				return parseOperationVariableReference(tokens);
+			default:
+				tokens.pushBack(label);
+				return parseDefaultElementReference(tokens);
+				
+		}
+	}
+	private static DefaultElementReference parseDefaultElementReference(SplitStream tokens) {
+		String fullExpr = tokens.remaining();
+		Supplier<IllegalArgumentException> errorMsg
+						= () -> new IllegalArgumentException("Invalid DefaultElementReference: expr=" + fullExpr);
+						
+		DefaultSubmodelReference smRef = parseSubmodelReference(tokens);
+		String elementPath = tokens.nextToken().getOrThrow(errorMsg);
+		return DefaultElementReference.newInstance(smRef, elementPath);
+	}
+	private static MDTParameterReference parseParameterReference(SplitStream tokens) {
+		String fullExpr = tokens.remaining();
+		Supplier<IllegalArgumentException> errorMsg
+						= () -> new IllegalArgumentException("Invalid MDTParameterReference: expr=" + fullExpr);
+						
+		String instanceId = tokens.nextToken().getOrThrow(errorMsg);
+		String paramSpec = tokens.nextToken().getOrThrow(errorMsg);
+		
+		switch ( paramSpec ) {
+			case "*":
+				return MDTParameterReference.newInstance(instanceId, "*");
+			default:
+				if ( tokens.hasNext() ) {
+					return MDTParameterReference.newInstance(instanceId, paramSpec, tokens.next());
+				}
+				else {
+					return MDTParameterReference.newInstance(instanceId, paramSpec);
+				}
+		}
+	}
+	private static MDTArgumentReference parseArgumentReference(SplitStream tokens) {
+		String fullExpr = tokens.remaining();
+		Supplier<IllegalArgumentException> errorMsg
+							= () -> new IllegalArgumentException("Invalid MDTArgumentReference: expr=" + fullExpr);
+							
+		DefaultSubmodelReference smRef = parseSubmodelReference(tokens);
+		MDTArgumentKind inout = MDTArgumentKind.fromString(tokens.nextToken().getOrThrow(errorMsg));
+		String spec = tokens.nextToken().getOrThrow(errorMsg);
+		return MDTArgumentReference.builder()
+									.submodelReference(smRef)
+									.kind(inout)
+									.argument(spec)
+									.build();
+	}
+	private static OperationVariableReference parseOperationVariableReference(SplitStream tokens) {
+		String fullExpr = tokens.remaining();
+		Supplier<IllegalArgumentException> errorMsg
+							= () -> new IllegalArgumentException("Invalid OperationVariableReference: expr=" + fullExpr);
+							
+		MDTElementReference opRef = parseExpr(tokens);
+		
+		OperationVariableReference.Kind kind = OperationVariableReference.Kind.fromString(
+																			tokens.nextToken().getOrThrow(errorMsg));
+		String ordinalStr = tokens.nextToken().getOrThrow(errorMsg);
+		int ordinal = Try.get(() -> Integer.parseInt(ordinalStr)).getOrThrow(errorMsg);
+		
+		return OperationVariableReference.newInstance(opRef, kind, ordinal);
 	}
 	
 	private static final String FIELD_TYPE = "@type";

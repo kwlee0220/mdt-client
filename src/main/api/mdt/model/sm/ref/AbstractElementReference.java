@@ -3,6 +3,7 @@ package mdt.model.sm.ref;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
@@ -13,8 +14,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import mdt.model.MDTModelSerDe;
+import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.value.ParameterValue;
 
 
 /**
@@ -32,9 +35,7 @@ public abstract class AbstractElementReference implements ElementReference {
 	public SubmodelElement updateWithValueJsonNode(JsonNode valueNode) throws IOException {
 		SubmodelElement sme = read();
 		ElementValues.update(sme, valueNode);
-		write(sme);
-		
-		return sme;
+		return updateValue(ElementValues.getValue(sme));
 	}
 
 	@Override

@@ -1,6 +1,9 @@
 package mdt.cli;
 
+import java.time.Duration;
+
 import utils.LogbackConfigLoader;
+import utils.Picoclies;
 
 import mdt.cli.MDTCommandsMain.SimulationCommands;
 import mdt.cli.MDTCommandsMain.TaskCommands;
@@ -10,9 +13,10 @@ import mdt.cli.set.SetCommands;
 import mdt.cli.workflow.WorkflowCommands;
 import mdt.task.builtin.AASOperationTaskCommand;
 import mdt.task.builtin.HttpTaskCommand;
-import mdt.task.builtin.JsltTaskCommand;
 import mdt.task.builtin.ProgramTaskCommand;
+import mdt.task.builtin.SetTaskCommand;
 
+import ch.qos.logback.classic.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
@@ -44,8 +48,10 @@ public class MDTCommandsMain {
 		
 		CommandLine cmdLine = new CommandLine(new MDTCommandsMain())
 									.setCaseInsensitiveEnumValuesAllowed(true)
-									.setAbbreviatedSubcommandsAllowed(true)
 									.setAbbreviatedOptionsAllowed(true)
+									.setAbbreviatedSubcommandsAllowed(true)
+									.registerConverter(Duration.class, new Picoclies.DurationConverter())
+									.registerConverter(Level.class, new Picoclies.LogLevelConverter())
 									.setUsageHelpWidth(110);
 		System.exit(cmdLine.execute(args));
 	}
@@ -57,10 +63,12 @@ public class MDTCommandsMain {
 		mixinStandardHelpOptions = true,
 		description="MDT Task related commands",
 		subcommands= {
+			RunTaskCommand.class,
 			AASOperationTaskCommand.class,
 			ProgramTaskCommand.class,
 			HttpTaskCommand.class,
-			JsltTaskCommand.class,
+			SetTaskCommand.class,
+//			JsltTaskCommand.class,
 		})
 	public static class TaskCommands extends CommandCollection {}
 	

@@ -30,20 +30,4 @@ public class OptionTest {
 		Assert.assertEquals("nickName", opt2.getName());
 		Assert.assertEquals("Tommy", opt2.getValue());
 	}
-
-	private static final String PROP_JSON_BOOLEAN = """
-		{"@type":"mdt:option:boolean","name":"activated","value":true}""";
-	@Test
-	public void serdeBooleanOption() throws IOException {
-		BooleanOption opt = new BooleanOption("activated", true);
-		
-		String jsonStr = m_mapper.writeValueAsString(opt);
-		Assert.assertEquals(PROP_JSON_BOOLEAN, jsonStr);
-		
-		Option<?> read = m_mapper.readValue(jsonStr, Option.class);
-		Assert.assertTrue(read instanceof BooleanOption);
-		BooleanOption opt2 = (BooleanOption)read;
-		Assert.assertEquals("activated", opt2.getName());
-		Assert.assertEquals(true, opt2.getValue());
-	}
 }

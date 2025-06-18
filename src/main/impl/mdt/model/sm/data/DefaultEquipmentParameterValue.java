@@ -1,5 +1,7 @@
 package mdt.model.sm.data;
 
+import java.time.Instant;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.google.common.base.Objects;
@@ -22,7 +24,7 @@ public class DefaultEquipmentParameterValue extends SubmodelElementCollectionEnt
 	@PropertyField(idShort="EquipmentID") private String equipmentId;
 	@PropertyField(idShort="ParameterID") private String parameterId;
 	@SMElementField(idShort="ParameterValue") private SubmodelElement parameterValue;
-	@PropertyField(idShort="EventDateTime") private String eventDateTime;
+	@PropertyField(idShort="EventDateTime") private Instant eventDateTime;
 	@PropertyField(idShort="ValidationResultCode") private String validationResultCode;
 	
 	@Override

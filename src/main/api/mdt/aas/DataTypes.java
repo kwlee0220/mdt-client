@@ -27,6 +27,8 @@ import com.google.common.collect.Maps;
 import lombok.experimental.UtilityClass;
 
 import utils.DataUtils;
+import utils.Tuple;
+import utils.Utilities;
 import utils.func.FOption;
 import utils.func.Try;
 
@@ -126,13 +128,27 @@ public class DataTypes {
 	
 		@Override
 		public String toValueString(Object obj) {
-			LocalDateTime value = DataUtils.asDatetime(obj);
-			return (value != null) ? value.toString() : null;
+			if ( obj == null ) {
+				return null;
+			}
+			
+			LocalDateTime ldt = DataUtils.asDatetime(obj);
+			String ldtStr = ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+			if ( ldtStr.indexOf('.') >= 0 ) {
+				Tuple<String,String> tup = Utilities.splitLast(ldtStr, ':');
+				
+				int end = Math.min(tup._2.indexOf('.') + 4, tup._2.length());
+				String formatted = tup._2.substring(0, end);
+				return String.format("%s:%s", tup._1, formatted);
+			}
+			else {
+				return ldtStr;
+			}
 		}
 	
 		@Override
 		public Instant parseValueString(String str) {
-			if ( str == null ) {
+			if ( str == null || str.trim().length() == 0 ) {
 				return null;
 			}
 			return Try.get(() -> Instant.parse(str))
@@ -147,7 +163,7 @@ public class DataTypes {
 
 		@Override
 		public Instant fromJdbcObject(Object jdbcObj) {
-			return ((Timestamp)jdbcObj).toInstant();
+			return DataUtils.asInstant(jdbcObj);
 		}
 	}
 

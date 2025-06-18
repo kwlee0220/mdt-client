@@ -8,7 +8,7 @@ import java.util.Set;
 import utils.stream.FStream;
 
 import mdt.client.HttpMDTManager;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
@@ -26,7 +26,7 @@ public class TestMDTInstance {
 		HttpMDTInstanceManager client = mdtClient.getInstanceManager();
 		
 		File dir = new File("D:\\Dropbox\\Temp\\fa3st-repository\\ispark\\models");
-		HttpMDTInstance inst1 = client.addInstance("KR3", null, new File(dir, "aas_KR3.json"), new File(dir, "conf_KR3.json"));
+		HttpMDTInstanceClient inst1 = client.addInstance("KR3", null, new File(dir, "aas_KR3.json"), new File(dir, "conf_KR3.json"));
 		assert inst1.getId().equals("KR3");
 		assert inst1.getAasIdShort().equals("KR3");
 		assert FStream.from(inst1.getInstanceSubmodelDescriptorAll())
@@ -36,7 +36,7 @@ public class TestMDTInstance {
 		assert inst1.getEndpoint() == null;
 		assert inst1.getAssetType().equals("Line");
 		
-		HttpMDTInstance inst2 = client.addInstance("CRF", null, new File(dir, "aas_CRF.json"), new File(dir, "conf_CRF.json"));
+		HttpMDTInstanceClient inst2 = client.addInstance("CRF", null, new File(dir, "aas_CRF.json"), new File(dir, "conf_CRF.json"));
 		assert inst2.getId().equals("CRF");
 		assert inst2.getAasIdShort().equals("CRF");
 		assert FStream.from(inst1.getInstanceSubmodelDescriptorAll())
@@ -46,7 +46,7 @@ public class TestMDTInstance {
 		assert inst2.getEndpoint() == null;
 		assert inst2.getAssetType().equals("Process");
 
-		HttpMDTInstance inst3 = client.addInstance("KRCW-01EATT018", null, new File(dir, "aas_KRCW-01EATT018.json"),
+		HttpMDTInstanceClient inst3 = client.addInstance("KRCW-01EATT018", null, new File(dir, "aas_KRCW-01EATT018.json"),
 														new File(dir, "conf_KRCW-01EATT018.json"));
 		assert inst3.getId().equals("KRCW-01EATT018");
 		assert inst3.getAasIdShort().equals("KRCW-01EATT018");

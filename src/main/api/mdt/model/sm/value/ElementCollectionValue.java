@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.InternalException;
 import utils.KeyValue;
+import utils.func.FOption;
 import utils.func.Unchecked;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
@@ -20,7 +21,7 @@ import utils.stream.KeyValueFStream;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class ElementCollectionValue implements ElementValue {
+public class ElementCollectionValue implements ElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:collection";
 	
 	private final Map<String,ElementValue> m_fields;
@@ -33,6 +34,16 @@ public final class ElementCollectionValue implements ElementValue {
 		return m_fields;
 	}
 	
+	public boolean containsField(String fieldName) {
+		return m_fields.containsKey(fieldName);
+	}
+
+	public FOption<ElementValue> findField(String fieldName) {
+		return KeyValueFStream.from(m_fields)
+						.findFirst(kv -> kv.key().equals(fieldName))
+						.map(KeyValue::value);
+	}
+
 	public ElementValue getField(String fieldName) {
 		return KeyValueFStream.from(m_fields)
 						.findFirst(kv -> kv.key().equals(fieldName))

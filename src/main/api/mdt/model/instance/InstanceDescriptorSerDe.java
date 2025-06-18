@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import utils.stream.FStream;
 
+import mdt.model.sm.info.MDTAssetType;
+
 /**
  *
  * @author Kang-Woo Lee (ETRI)
@@ -43,7 +45,7 @@ public class InstanceDescriptorSerDe {
 			gen.writeStringField("aasIdShort", desc.getAasIdShort());
 			gen.writeStringField("globalAssetId", desc.getGlobalAssetId());
 			if ( desc.getAssetType() != null ) {
-				gen.writeStringField("assetType", desc.getAssetType());
+				gen.writeStringField("assetType", desc.getAssetType().name());
 			}
 			if ( desc.getAssetKind() != null ) {
 				gen.writeStringField("assetKind", desc.getAssetKind().name());
@@ -94,7 +96,7 @@ public class InstanceDescriptorSerDe {
 			desc.setAasId(node.get("aasId").asText());
 			desc.setAasIdShort(getText(node.get("aasIdShort")));
 			desc.setGlobalAssetId(getText(node.get("globalAssetId")));
-			desc.setAssetType(getText(node.get("assetType")));
+			desc.setAssetType(MDTAssetType.valueOf(getText(node.get("assetType"))));
 			desc.setAssetKind(AssetKind.valueOf(node.get("assetKind").asText()));
 			desc.setStatus(MDTInstanceStatus.valueOf(node.get("status").asText()));
 			

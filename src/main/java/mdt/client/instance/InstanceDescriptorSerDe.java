@@ -28,6 +28,7 @@ import mdt.model.instance.DefaultInstanceDescriptor;
 import mdt.model.instance.DefaultInstanceSubmodelDescriptor;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.sm.info.MDTAssetType;
 
 /**
  *
@@ -113,7 +114,7 @@ public class InstanceDescriptorSerDe {
 			desc.setAasId(getStringField(node, "aasId"));
 			desc.setAasIdShort(getStringField(node, "aasIdShort"));
 			desc.setGlobalAssetId(getStringField(node, "globalAssetId"));
-			desc.setAssetType(getStringField(node, "assetType"));
+			desc.setAssetType(MDTAssetType.valueOf(getStringField(node, "assetType")));
 			desc.setAssetKind(FOption.map(getStringField(node, "assetKind"), AssetKind::valueOf));
 			
 			ArrayNode submodelNodes = (ArrayNode)node.get("submodels");
@@ -153,7 +154,7 @@ public class InstanceDescriptorSerDe {
 			gen.writeStringField("aasId", desc.getAasId());
 			gen.writeStringField("aasIdShort", desc.getAasIdShort());
 			gen.writeStringField("globalAssetId", desc.getGlobalAssetId());
-			gen.writeStringField("assetType", desc.getAssetType());
+			gen.writeStringField("assetType", desc.getAssetType().name());
 			gen.writeStringField("assetKind", desc.getAssetKind().name());
 			
 			gen.writeArrayFieldStart("submodels");

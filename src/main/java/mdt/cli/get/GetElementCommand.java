@@ -13,6 +13,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.MovingAverage;
 import utils.StopWatch;
 import utils.UnitUtils;
 
@@ -25,7 +26,7 @@ import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.tree.sm.SubmodelElementNodeFactory;
+import mdt.tree.node.DefaultNodeFactories;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -57,8 +58,13 @@ public class GetElementCommand extends AbstractMDTCommand {
 			description="repeat interval (e.g. \"1s\", \"500ms\"")
 	private String m_repeat = null;
 	
+	@Option(names={"--file"}, paramLabel="path", description="file path to save output")
+	private File m_outputFile;
+	
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
+	
+	private final MovingAverage m_mavg = new MovingAverage(0.1f);
 
 	public static final void main(String... args) throws Exception {
 		main(new GetElementCommand(), args);
@@ -98,9 +104,12 @@ public class GetElementCommand extends AbstractMDTCommand {
 					System.out.print(CLEAR_CONSOLE_CONTROL);
 				}
 				System.out.print(outputString);
-				System.out.println();
 				if ( m_verbose ) {
-					System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
+					watch.stop();
+					
+					double avg = m_mavg.observe(watch.getElapsedInFloatingSeconds());
+					String secStr = UnitUtils.toMillisString(Math.round(avg * 1000));
+					System.out.println("elapsed: " + secStr);
 				}
 			}
 			catch ( Exception e ) {
@@ -119,7 +128,7 @@ public class GetElementCommand extends AbstractMDTCommand {
 	}
 
 	private String toDisplayTree(SubmodelElement target, TreeOptions opts) throws Exception {
-		Node topNode = SubmodelElementNodeFactory.toNode("", target);
+		Node topNode = DefaultNodeFactories.create(target);
 		return TextTree.newInstance(opts).render(topNode);
 	}
 

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Lists;
 
 import utils.InternalException;
+import utils.MovingAverage;
 import utils.StopWatch;
 import utils.UnitUtils;
 import utils.Utilities;
@@ -30,7 +31,7 @@ import utils.stream.FStream;
 import mdt.cli.AbstractMDTCommand;
 import mdt.cli.list.Nodes.InstanceNode;
 import mdt.cli.list.Nodes.RootNode;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstance;
@@ -89,6 +90,8 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
 	
+	private final MovingAverage m_mavg = new MovingAverage(0.1f);
+	
 	public ListMDTInstanceCommand() {
 		setLogger(s_logger);
 	}
@@ -146,7 +149,11 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 					System.out.print(outputString);
 				}
 				if ( m_verbose ) {
-					System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
+					watch.stop();
+					
+					double avg = m_mavg.observe(watch.getElapsedInFloatingSeconds());
+					String secStr = UnitUtils.toMillisString(Math.round(avg * 1000));
+					System.out.println("elapsed: " + secStr);
 				}
 			}
 			catch ( RESTfulIOException e ) {
@@ -247,7 +254,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		
 		// take a snapshot
 		Map<String,InstanceNode> nodes = FStream.from(instances)
-												.castSafely(HttpMDTInstance.class)
+												.castSafely(HttpMDTInstanceClient.class)
 												.map(InstanceNode::new)
 												.tagKey(InstanceNode::getId)
 												.toMap();
@@ -264,7 +271,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		
 		FStream.from(runningNodes)
 				.forEach(node -> {
-					for ( HttpMDTInstance comp: node.getInstance().getTargetOfDependency("contain") ) {
+					for ( HttpMDTInstanceClient comp: node.getInstance().getTargetOfDependency("contain") ) {
 						InstanceNode depNode = nodes.get(comp.getId());
 						if ( depNode != null && depNode.getStatus() == MDTInstanceStatus.RUNNING ) {
 							node.addChild(depNode);
@@ -277,7 +284,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		TreeStyle style = Utilities.isWindowsOS() ? TreeStyles.WIN_TREE : TreeStyles.UNICODE_ROUNDED;
 		opts.setStyle(style);
 		opts.setMaxDepth(5);
-		pw.println(TextTree.newInstance(opts).render(root));
+		pw.print(TextTree.newInstance(opts).render(root));
 	}
 
 	private Object[] toLongColumns(int seqNo, MDTInstance instance, String format) {
@@ -292,6 +299,18 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 				.otherwise().forEach((k, grp) -> outputs.add(String.format("%s(%d)", k, grp.size())));
 		
 		String submodelIdCsv = FStream.from(outputs).join(',');
+		
+//		String assetName = "";
+//		if ( instance.getStatus() == MDTInstanceStatus.RUNNING ) {
+//			assetName = FStream.from(instance.getSubmodelServiceAllBySemanticId(InformationModel.SEMANTIC_ID))
+//								.findFirst()
+//								.map(infoSvc -> {
+//									SubmodelElement nameSme = infoSvc.getSubmodelElementByPath("MDTInfo.AssetName");
+//									return (nameSme instanceof Property prop) ? prop.getValue() : "";
+//								})
+//								.getOrElse("");
+//		}
+//		assetName = "'" + Utilities.padRight(assetName, 20) + "'";
 		
 		String serviceEndpoint = ObjectUtils.defaultIfNull(instance.getBaseEndpoint(), "");
 		return new Object[] {

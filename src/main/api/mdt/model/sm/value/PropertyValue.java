@@ -1,11 +1,14 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import mdt.aas.DataTypes;
 
 
 /**
@@ -61,5 +64,9 @@ public class PropertyValue implements DataElementValue, Supplier<String> {
 	@Override
 	public void serialize(JsonGenerator gen) throws IOException {
 		gen.writeString(m_value);
+	}
+	
+	public static PropertyValue DATE_TIME(Instant ts) {
+		return new PropertyValue(DataTypes.DATE_TIME.toValueString(ts));
 	}
 }

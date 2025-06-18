@@ -152,7 +152,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	}
 
 	@SuppressWarnings("unused")
-	private List<MDTInstance> listDependentInstanceAll(HttpMDTInstance inst) {
+	private List<MDTInstance> listDependentInstanceAll(HttpMDTInstanceClient inst) {
 		MDTModelService mdtInfo =  MDTModelService.of(inst);
 		
 		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();

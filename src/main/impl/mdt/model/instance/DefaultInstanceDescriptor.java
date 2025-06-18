@@ -8,13 +8,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 
 import com.google.common.collect.Lists;
 
-import utils.stream.FStream;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import utils.stream.FStream;
+
+import mdt.model.sm.info.MDTAssetType;
 
 /**
  *
@@ -31,7 +33,7 @@ public class DefaultInstanceDescriptor implements InstanceDescriptor {
 	private String m_aasId;
 	@Nullable private String m_aasIdShort;
 	@Nullable private String m_globalAssetId;
-	@Nullable private String m_assetType;
+	@Nullable private MDTAssetType m_assetType;
 	@Nullable private AssetKind m_assetKind;
 
 	@Getter(AccessLevel.NONE)

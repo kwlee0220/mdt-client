@@ -7,12 +7,11 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.UnitUtils;
+import utils.func.FOption;
 
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.workflow.model.DurationOption;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -38,14 +37,11 @@ public class ProgramTaskCommand extends MultiVariablesCommand {
 	@Parameters(index="0", arity="1", paramLabel="path", description="Path to the operation descriptor")
 	private File m_opDescFile;
 	
-	@Option(names={"--workingDir"}, paramLabel="path", description="Working directory")
+	@Option(names={"--workingDirectory"}, paramLabel="path", description="Working directory")
 	private File m_workingDir;
 	
-	private Duration m_timeout = null;
 	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\")")
-	public void setTimeout(String toStr) {
-		m_timeout = UnitUtils.parseDuration(toStr);
-	}
+	private String m_timeout = null;
 	
 	public ProgramTaskCommand() {
 		setLogger(s_logger);
@@ -63,15 +59,11 @@ public class ProgramTaskCommand extends MultiVariablesCommand {
 			ProgramOperationDescriptor opDesc = ProgramOperationDescriptor.load(m_opDescFile, MDTModelSerDe.MAPPER);
 			TaskDescriptors.update(manager, descriptor, opDesc);
 		}
-		if ( m_workingDir != null ) {
-			descriptor.addOption(ProgramTask.OPT_WORKING_DIRECTORY, m_workingDir);
-		}
-		if ( m_timeout != null ) {
-			descriptor.getOptions().add(new DurationOption(ProgramTask.OPT_TIMEOUT, m_timeout));
-		}
+		FOption.accept(m_workingDir, dir -> descriptor.addOrReplaceOption(ProgramTask.OPTION_WORKING_DIRECTORY, dir.getAbsolutePath()));
+		FOption.accept(m_timeout, to -> descriptor.addOrReplaceOption(ProgramTask.OPTION_TIMEOUT, to));
 
 		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
-		loadTaskVariablesFromParameters(manager, descriptor);
+		loadTaskVariablesFromArguments(manager, descriptor);
 
 		ProgramTask task = new ProgramTask(descriptor);
 		task.run(manager);

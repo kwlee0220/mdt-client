@@ -1,5 +1,9 @@
 package mdt.model.expr;
 
+import javax.annotation.Nullable;
+
+import utils.func.FOption;
+
 import mdt.model.expr.TerminalExpr.IntegerExpr;
 import mdt.model.expr.TerminalExpr.StringExpr;
 import mdt.model.sm.ref.DefaultElementReference;
@@ -38,16 +42,20 @@ public abstract class MDTElementReferenceExpr implements MDTExpr {
 	public static class ParameterReferenceExpr extends MDTElementReferenceExpr implements MDTExpr {
 		private final StringExpr m_instanceIdExpr;
 		private final MDTExpr m_paramIdExpr;
+		@Nullable private final MDTIdShortPathExpr m_subPathExpr;
 		
-		public ParameterReferenceExpr(StringExpr instanceIdExpr, MDTExpr paramIdExpr) {
+		public ParameterReferenceExpr(StringExpr instanceIdExpr, MDTExpr paramIdExpr, MDTIdShortPathExpr subPathExpr) {
 			m_instanceIdExpr = instanceIdExpr;
 			m_paramIdExpr = paramIdExpr;
+			m_subPathExpr = subPathExpr;
 		}
 
 		@Override
 		public MDTParameterReference evaluate() {
+			String idShortPathStr = FOption.map(m_subPathExpr, e -> e.evaluate().toString());
 			return MDTParameterReference.newInstance(m_instanceIdExpr.evaluate(),
-													m_paramIdExpr.evaluate().toString());
+													m_paramIdExpr.evaluate().toString(),
+													idShortPathStr);
 		}
 	}
 	

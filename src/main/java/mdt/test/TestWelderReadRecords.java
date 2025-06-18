@@ -12,7 +12,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultRange;
 import com.google.common.collect.Lists;
 
 import mdt.client.HttpMDTManager;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.SubmodelService;
 import mdt.model.timeseries.DefaultRecords;
@@ -27,7 +27,7 @@ public class TestWelderReadRecords {
 		HttpMDTManager mgr = HttpMDTManager.connect("http://localhost:12985");
 		HttpMDTInstanceManager mdt = mgr.getInstanceManager();
 		
-		HttpMDTInstance welder = mdt.getInstance("welder");
+		HttpMDTInstanceClient welder = mdt.getInstance("welder");
 		SubmodelService svc = welder.getSubmodelServiceByIdShort("WelderAmpereLog");
 		
 		List<OperationVariable> inputVars = Lists.newArrayList();

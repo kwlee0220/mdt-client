@@ -1,5 +1,7 @@
 package mdt.model.sm.data;
 
+import java.time.Instant;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.google.common.base.Objects;
@@ -22,7 +24,7 @@ public class DefaultOperationParameterValue extends SubmodelElementCollectionEnt
 	@PropertyField(idShort="OperationID") private String operationId;
 	@PropertyField(idShort="ParameterID") private String parameterId;
 	@SMElementField(idShort="ParameterValue") private SubmodelElement parameterValue;
-	@PropertyField(idShort="EventDateTime") private String eventDateTime;
+	@PropertyField(idShort="EventDateTime") private Instant eventDateTime;
 	@PropertyField(idShort="ValidationResultCode") private String validationResultCode;
 	
 	public DefaultOperationParameterValue() {
@@ -56,7 +58,7 @@ public class DefaultOperationParameterValue extends SubmodelElementCollectionEnt
 	
 	@Override
 	public String toString() {
-		return String.format("%OperationParameterValue[%s.%s]=%s",
+		return String.format("OperationParameterValue[%s.%s]=%s",
 							this.operationId, this.parameterId, this.parameterValue);
 	}
 }

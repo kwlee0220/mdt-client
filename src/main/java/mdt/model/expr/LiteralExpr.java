@@ -36,8 +36,8 @@ public abstract class LiteralExpr implements MDTExpr {
 				return new PropertyValue(String.format("%d", id.intValue()));
 			}
 			else if ( m_terminal instanceof DoubleExpr ) {
-				Double value = (Double) m_terminal.evaluate();
-				return new PropertyValue(String.format("\"%f\"", value.doubleValue()));
+				double value = (Double) m_terminal.evaluate();
+				return new PropertyValue(String.format("%s", value));
 			}
 			else {
 				throw new IllegalArgumentException("Unsupported terminal type: " + m_terminal);

@@ -18,7 +18,7 @@ import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.cli.IdPair;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.SubmodelService;
@@ -27,6 +27,7 @@ import mdt.model.instance.MDTModelService;
 import mdt.model.instance.MDTOperationDescriptor;
 import mdt.model.instance.MDTParameterDescriptor;
 import mdt.model.sm.SubmodelUtils;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -43,9 +44,6 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Get an MDTInstance information.",
 	subcommands = {
-		GetInstanceCompositionItemsCommand.class,
-		GetInstanceCompositionDependenciesCommand.class,
-		GetInstanceMdtModelInfoCommand.class,
 		GetInstanceLogCommand.class,
 	}
 )
@@ -74,7 +72,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	@Override
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
-		HttpMDTInstance instance = manager.getInstance(m_instanceId);
+		HttpMDTInstanceClient instance = manager.getInstance(m_instanceId);
 		
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
@@ -92,7 +90,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	private void displayAsTable(HttpMDTInstance instance) {
+	private void displayAsTable(HttpMDTInstanceClient instance) {
 		Table table = new Table(2);
 
 		table.addCell(" FIELD "); table.addCell(" VALUE");
@@ -132,12 +130,12 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		System.out.println(table.render());
 	}
 	
-	private void displayAsJson(HttpMDTInstance instance) throws SerializationException, IOException {
+	private void displayAsJson(HttpMDTInstanceClient instance) throws SerializationException, IOException {
 		MDTModelService info = MDTModelService.of(instance);
 		System.out.println(info.toJsonString(true));
 	}
 	
-	private void displayEnvironment(HttpMDTInstance instance) throws SerializationException {	
+	private void displayEnvironment(HttpMDTInstanceClient instance) throws SerializationException {	
 		AssetAdministrationShell aas = instance.getAssetAdministrationShellService()
 												.getAssetAdministrationShell();
 		List<Submodel> submodels = FStream.from(instance.getSubmodelServiceAll())

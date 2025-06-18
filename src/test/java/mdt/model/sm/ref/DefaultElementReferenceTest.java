@@ -20,6 +20,7 @@ public class DefaultElementReferenceTest {
 		= "{\"@type\":\"mdt:ref:element\","
 				+ "\"submodelReference\":{\"instanceId\":\"test\",\"submodelIdShort\":\"Simulation\"},"
 				+ "\"elementPath\":\"DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue\"}";
+	private static final String EXPR = "test:Simulation:DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue";
 	
 	@Test
 	public void testSerializeDefaultElementReference() throws JsonProcessingException {
@@ -37,5 +38,17 @@ public class DefaultElementReferenceTest {
 		Assert.assertEquals("test", ref.getInstanceId());
 		Assert.assertEquals(DefaultSubmodelReference.ofIdShort("test", "Simulation"), ref.getSubmodelReference());
 		Assert.assertEquals("DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue", ref.getIdShortPathString());
+	}
+
+	@Test
+	public void testExpr() {
+		ByIdShortSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("test", "Simulation");
+		DefaultElementReference ref = DefaultElementReference.newInstance(smRef,
+													"DataInfo.Equipment.EquipmentParameterValues[0].ParameterValue");
+		String expr = ref.toStringExpr();
+		Assert.assertEquals(EXPR, expr);
+		
+		ElementReference ref2 = ElementReferences.parseExpr(expr);
+		Assert.assertEquals(ref, ref2);
 	}
 }

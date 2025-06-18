@@ -42,21 +42,28 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 			}
 			catch ( NumberFormatException expected ) {
 				kindStr = kindStr.trim().toLowerCase();
-				if ( kindStr.startsWith("in") ) {
-					return INPUT;
-				}
-				else if ( kindStr.startsWith("out") ) {
-	                return OUTPUT;
-	            }
-				else if ( kindStr.startsWith("inout") ) {
-	                return INOUTPUT;
-	            }
-				else if ( kindStr.equals("*") ) {
-					return null;
-				}
-				else {
-					throw new IllegalArgumentException("Invalid OperationVariable's kind: " + kindStr);
-				}
+				return switch ( kindStr ) {
+					case "in" -> INPUT;
+					case "out" -> OUTPUT;
+					case "inout" -> INOUTPUT;
+					case "*" -> null;
+					default -> throw new IllegalArgumentException("Invalid OperationVariable's kind: " + kindStr);
+				};
+//				if ( kindStr.startsWith("in") ) {
+//					return INPUT;
+//				}
+//				else if ( kindStr.startsWith("out") ) {
+//	                return OUTPUT;
+//	            }
+//				else if ( kindStr.startsWith("inout") ) {
+//	                return INOUTPUT;
+//	            }
+//				else if ( kindStr.equals("*") ) {
+//					return null;
+//				}
+//				else {
+//					throw new IllegalArgumentException("Invalid OperationVariable's kind: " + kindStr);
+//				}
 			}
 		}
 	};
@@ -160,12 +167,27 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 
 	@Override
 	public String toStringExpr() {
-		return String.format("opvar:%s:%s:%s", m_opRef.toStringExpr(), toKindString(m_kind), m_ordinal);
+		return String.format("opvar:%s:%s:%d", m_opRef.toStringExpr(), toKindString(m_kind), m_ordinal);
 	}
 	
 	@Override
 	public String toString() {
 		return String.format("opvar:%s:%s", m_opRef.toStringExpr(), toKindString(m_kind), m_ordinal);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null || !(obj instanceof OperationVariableReference) ) {
+			return false;
+		}
+
+		OperationVariableReference other = (OperationVariableReference) obj;
+		return m_opRef.equals(other.m_opRef)
+				&& m_kind.equals(other.m_kind)
+				&& m_ordinal == other.m_ordinal;
 	}
 	
 	public static OperationVariableReference newInstance(MDTElementReference opRef, Kind kind, int ordinal) {

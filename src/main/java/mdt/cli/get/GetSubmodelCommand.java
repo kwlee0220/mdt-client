@@ -37,7 +37,7 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelCommand.class);
 
 	@Parameters(index="0", arity="0..1", paramLabel="ref",
-				description="SubmodelReference (<twin-id>/<submodel_idshort>) to show")
+				description="SubmodelReference (<twin-id>:<submodel_idshort>) to show")
 	private String m_submodelRefString = null;
 	
 	@Option(names={"--id"}, paramLabel="id", description="Submodel id to show")

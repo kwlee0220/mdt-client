@@ -3,7 +3,7 @@ package mdt.test;
 import java.io.File;
 
 import mdt.client.HttpMDTManager;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 
 /**
@@ -17,7 +17,7 @@ public class TestAddInstanceBundle {
 		
 		String instId = "test";
 		File instanceDir = new File("/home/kwlee/mdt/models/test");
-		HttpMDTInstance inst = manager.addInstance(instId, 19090, instanceDir);
+		HttpMDTInstanceClient inst = manager.addInstance(instId, instanceDir);
 		System.out.println("instance: aas-id=" + inst.getAasId());
 	}
 }

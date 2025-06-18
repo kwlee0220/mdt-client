@@ -11,11 +11,12 @@ import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.DataUtils;
 import utils.Throwables;
+import utils.UnitUtils;
 import utils.async.AbstractThreadedExecution;
 import utils.async.CancellableWork;
 import utils.async.Guard;
@@ -24,29 +25,17 @@ import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 import utils.stream.FStream;
 
-import mdt.aas.DataTypes;
 import mdt.client.operation.HttpOperationClient;
 import mdt.client.operation.OperationRequest;
 import mdt.client.operation.OperationResponse;
 import mdt.model.MDTException;
-import mdt.model.ReferenceUtils;
-import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.ai.AI;
-import mdt.model.sm.ref.DefaultElementReference;
-import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.ref.MDTSubmodelReference;
-import mdt.model.sm.simulation.Simulation;
-import mdt.model.sm.value.PropertyValue;
 import mdt.model.sm.variable.AbstractVariable.ElementVariable;
 import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
 import mdt.model.sm.variable.AbstractVariable.ValueVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
-import mdt.workflow.model.BooleanOption;
-import mdt.workflow.model.DurationOption;
-import mdt.workflow.model.MDTSubmodelRefOption;
 import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 
@@ -60,7 +49,7 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 	private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 	
 	public static final String OPTION_SERVER_ENDPOINT = "server";
-	public static final String OPTION_OPERATION = "opid";
+	public static final String OPTION_OPERATION = "opId";
 	public static final String OPTION_SYNC = "sync";
 	public static final String OPTION_POLL_INTERVAL = "poll";
 	public static final String OPTION_TIMEOUT = "timeout";
@@ -125,19 +114,9 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 		// CommandVariable들 중에서 output parameter의 이름과 동일한 varaible의
 		// 값을 해당 parameter의 SubmodelElement을 갱신시킨다.
 		updateOutputVariables(resp.getResult());
-		
+
 		// LastExecutionTime 정보가 제공된 경우 task의 수행 시간을 계산하여 해당 SubmodelElement를 갱신한다.
-		MDTElementReference lastExecTimeRef = loadLastExecutionTimeRef();
-		if ( lastExecTimeRef != null ) {
-			Duration execTime = Duration.between(started, Instant.now());
-			try {
-				String execTimeStr = DataTypes.DURATION.toString(execTime);
-				lastExecTimeRef.updateValue(new PropertyValue(execTimeStr));
-			}
-			catch ( ResourceNotFoundException | IOException expected ) {
-				getLogger().warn("Failed to update 'LastExecutionTime', cause=" + expected);
-			}
-		}
+		TaskUtils.updateLastExecutionTime(m_manager, m_descriptor, started, getLogger());
 		
 		return null;
 	}
@@ -172,16 +151,16 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 								.getOrThrow(() -> new IllegalArgumentException("operationId option is not provided"));
 		reqBody.setOperation(opId);
 		
-		boolean sync = descriptor.findOption(OPTION_SYNC, BooleanOption.class)
-									.map(BooleanOption::getValue)
+		boolean sync = descriptor.findStringOption(OPTION_SYNC)
+									.map(DataUtils::asBoolean)
 									.getOrElse(false);
 		reqBody.setAsync(!sync);
 
-		Duration pollInterval = descriptor.findOption(OPTION_POLL_INTERVAL, DurationOption.class)
-											.map(DurationOption::getValue)
+		Duration pollInterval = descriptor.findOption(OPTION_POLL_INTERVAL)
+											.map(opt -> UnitUtils.parseDuration(opt.getValue().toString()))
 											.getOrElse(DEFAULT_POLL_INTERVAL);
-		Duration timeout = descriptor.findOption(OPTION_TIMEOUT, DurationOption.class)
-									.map(DurationOption::getValue)
+		Duration timeout = descriptor.findOption(OPTION_TIMEOUT)
+									.map(opt -> UnitUtils.parseDuration(opt.getValue().toString()))
 									.getOrNull();
 		
 		reqBody.setInputVariables(descriptor.getInputVariables());
@@ -229,23 +208,5 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 									outVar.getName(), resultVar, e);
 			}
 		}
-	}
-
-	private DefaultElementReference loadLastExecutionTimeRef() throws TaskException {
-		MDTSubmodelReference opSmRef = getTaskDescriptor().findOption("mdt-operation", MDTSubmodelRefOption.class)
-															.map(MDTSubmodelRefOption::getValue)
-															.getOrNull();
-		if ( opSmRef != null ) {
-			Submodel submodel = opSmRef.get().getSubmodel();
-			String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
-			if ( AI.SEMANTIC_ID.equals(semanticId) ) {
-				return DefaultElementReference.newInstance(opSmRef, "AIInfo.Model.LastExecutionTime");
-			}
-			else if ( Simulation.SEMANTIC_ID.equals(semanticId) ) {
-				return DefaultElementReference.newInstance(opSmRef, "SimulationInfo.Model.LastExecutionTime");
-			}
-		}
-		
-		return null;
 	}
 }

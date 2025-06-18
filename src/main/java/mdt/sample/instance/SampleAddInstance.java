@@ -20,11 +20,11 @@ public class SampleAddInstance {
 		// 'Test' 인스턴스 배포
 		File modelFile = new File("/home/kwlee/mdt/models/test/model.json");
 		File configFile = new File("/home/kwlee/mdt/models/test/config.json");
-		manager.addInstance("Test", 19000, null, modelFile, configFile);
+		manager.addInstance("Test", null, modelFile, configFile);
 		
 		// 'surface' 인스턴스 배포
 		File modelFile2 = new File("/home/kwlee/mdt/models/surface/model.json");
 		File configFile2 = new File("/home/kwlee/mdt/models/surface/config.json");
-		manager.addInstance("surface", 19005, null, modelFile2, configFile2);
+		manager.addInstance("surface", null, modelFile2, configFile2);
 	}
 }

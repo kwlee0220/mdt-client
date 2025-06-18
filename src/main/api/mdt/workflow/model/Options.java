@@ -75,12 +75,6 @@ public class Options {
 		switch ( type ) {
 			case StringOption.SERIALIZATION_TYPE:
 				return StringOption.deserializeFields(jnode);
-			case DurationOption.SERIALIZATION_TYPE:
-				return DurationOption.deserializeFields(jnode);
-			case FileOption.SERIALIZATION_TYPE:
-				return FileOption.deserializeFields(jnode);
-			case BooleanOption.SERIALIZATION_TYPE:
-				return BooleanOption.deserializeFields(jnode);
 			case MDTElementRefOption.SERIALIZATION_TYPE:
 				return MDTElementRefOption.deserializeFields(jnode);
 			case MDTSubmodelRefOption.SERIALIZATION_TYPE:

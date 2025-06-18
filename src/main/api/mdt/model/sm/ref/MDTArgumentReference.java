@@ -2,6 +2,7 @@ package mdt.model.sm.ref;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
@@ -185,6 +186,21 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 	public String toString() {
 		String actStr = ( m_argRef != null ) ? "activated" : "deactivated";
 		return String.format("%s (%s)", toStringExpr(), actStr);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null || !(obj instanceof MDTArgumentReference) ) {
+			return false;
+		}
+
+		MDTArgumentReference other = (MDTArgumentReference) obj;
+		return Objects.equals(m_submodelRef, other.m_submodelRef)
+				&& Objects.equals(m_kind, other.m_kind)
+				&& Objects.equals(m_argSpec, other.m_argSpec);
 	}
 	
 	public static Builder builder() {

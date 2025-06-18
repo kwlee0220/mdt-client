@@ -18,7 +18,7 @@ import mdt.model.ResourceNotFoundException;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTInstanceManager {
-	public static final String FA3ST_JAR_FILE_NAME = "faaast-starter-all.jar";
+	public static final String MDT_INSTANCE_JAR_FILE_NAME = "mdt-instance-all.jar";
 	public static final String MODEL_FILE_NAME = "model.json";
 	public static final String MODEL_AASX_NAME = "model.aasx";
 	public static final String CONF_FILE_NAME = "config.json";

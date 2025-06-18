@@ -65,7 +65,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
 	
 	private final Guard m_guard = Guard.create();
-	@GuardedBy("m_guard") private final Map<String,HttpMDTInstance> m_instances = Maps.newHashMap();
+	@GuardedBy("m_guard") private final Map<String,HttpMDTInstanceClient> m_instances = Maps.newHashMap();
 	
 	private HttpMDTInstanceManager(Builder builder) {
 		m_endpoint = builder.m_endpoint;
@@ -88,7 +88,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		String instId = topic.substring(TOPIC_PREFIX_LENGTH);
 		m_guard.lock();
 		try {
-			HttpMDTInstance inst = m_instances.get(instId);
+			HttpMDTInstanceClient inst = m_instances.get(instId);
 			if ( inst == null ) {
 				return;
 			}
@@ -127,22 +127,22 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	}
 
 	@Override
-	public HttpMDTInstance getInstance(String id) throws MDTInstanceManagerException {
+	public HttpMDTInstanceClient getInstance(String id) throws MDTInstanceManagerException {
 		InstanceDescriptor desc = getInstanceDescriptor(id);
-		return new HttpMDTInstance(this, desc);
+		return new HttpMDTInstanceClient(this, desc);
 //		return createInstance(desc);
 	}
 
     // @GetMapping({"/instances"})
 	@Override
-	public List<HttpMDTInstance> getInstanceAll() throws MDTInstanceManagerException {
+	public List<HttpMDTInstanceClient> getInstanceAll() throws MDTInstanceManagerException {
 		String url = String.format("%s/instances", getEndpoint());
 		return toInstances(m_restfulClient.get(url, m_descListDeser));
 	}
 
     // @GetMapping({"/instances?filter={filter}"})
 	@Override
-	public List<HttpMDTInstance> getInstanceAllByFilter(String filter) {
+	public List<HttpMDTInstanceClient> getInstanceAllByFilter(String filter) {
 		String url = String.format("%s/instances", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
 						 		.addQueryParameter("filter", filter)
@@ -151,19 +151,19 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	}
 	
 	@Override
-	public HttpMDTInstance getInstanceByAasId(String aasId) throws ResourceNotFoundException {
+	public HttpMDTInstanceClient getInstanceByAasId(String aasId) throws ResourceNotFoundException {
 		String filter = String.format("instance.aasId = '%s'", aasId);
-		List<HttpMDTInstance> instList = getInstanceAllByFilter(filter);
+		List<HttpMDTInstanceClient> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 0 ) {
 			throw new ResourceNotFoundException("MDTInstance", "aasId=" + aasId);
 		}
 		else {
-			return (HttpMDTInstance)instList.get(0);
+			return (HttpMDTInstanceClient)instList.get(0);
 		}
 	}
 	
 	@Override
-	public List<HttpMDTInstance> getInstanceAllByAasIdShort(String aasIdShort) {
+	public List<HttpMDTInstanceClient> getInstanceAllByAasIdShort(String aasIdShort) {
 		String filter = String.format("instance.aasIdShort = '%s'", aasIdShort);
 		return getInstanceAllByFilter(filter);
 	}
@@ -180,14 +180,13 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	private static final MediaType JSON_TYPE = MediaType.parse("text/json");
 	private static final MediaType ZIP_TYPE = MediaType.parse("application/zip");
     // @PostMapping({"/instances"})
-	public HttpMDTInstance addInstance(String id, int port, File jarFile, File modelFile, File confFile)
+	public HttpMDTInstanceClient addInstance(String id, File jarFile, File modelFile, File confFile)
 		throws MDTInstanceManagerException {
 		MultipartBody.Builder builder = new MultipartBody.Builder()
 											.setType(MultipartBody.FORM)
-											.addFormDataPart("id", id)
-											.addFormDataPart("port", ""+port);
+											.addFormDataPart("id", id);
 		if ( jarFile != null ) {
-			builder = builder.addFormDataPart("jar", MDTInstanceManager.FA3ST_JAR_FILE_NAME,
+			builder = builder.addFormDataPart("jar", MDTInstanceManager.MDT_INSTANCE_JAR_FILE_NAME,
 												RequestBody.create(jarFile, OCTET_TYPE));
 		}
 		if ( modelFile != null ) {
@@ -212,25 +211,32 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 //		return new HttpMDTInstanceClient(this, desc);
 		return createInstance(desc);
 	}
-	public HttpMDTInstance addInstance(String id, File jarFile, File modelFile, File confFile) {
-		return addInstance(id, -1, jarFile, modelFile, confFile);
-	}
 	
-	public HttpMDTInstance addInstance(String id, int port, File instanceDir)
+	public HttpMDTInstanceClient addInstance(String id, File instanceFile)
 		throws MDTInstanceManagerException {
-		Preconditions.checkNotNull(id);
-		Preconditions.checkNotNull(instanceDir);
-		Preconditions.checkArgument(instanceDir.isDirectory());
+		Preconditions.checkArgument(id != null, "MDTInstance id must not be null");
+		Preconditions.checkArgument(instanceFile != null, "MDTInstance file must not be null");
 		
 		MultipartBody.Builder builder = new MultipartBody.Builder()
 											.setType(MultipartBody.FORM)
-											.addFormDataPart("id", id)
-											.addFormDataPart("port", ""+port);
+											.addFormDataPart("id", id);
+		
+		File zippedFile = instanceFile;
+		if ( instanceFile.isDirectory() ) {
+			try {
+				// Instance 파일이 디렉토리인 경우, zip 파일로 압축한다.
+				zippedFile = new File(instanceFile.getParentFile(), id + ".zip");
+				ZipFile.zipDirectory(zippedFile.toPath(), instanceFile.toPath());
+			}
+			catch ( IOException e ) {
+				throw new MDTInstanceManagerException("Failed to add an instance: dir=" + instanceFile, e);
+			}
+		}
+		else if ( !Files.getFileExtension(zippedFile.getAbsolutePath()).equals("zip") ) {
+			throw new MDTInstanceManagerException("MDTInstance file must be a zip file: " + zippedFile);
+		}
 
-		File zippedFile = new File(instanceDir.getParentFile(), id + ".zip");
 		try {
-			// 주어진 디렉토리를 zip 파일로 만들어서 upload 시킨다.
-			ZipFile.zipDirectory(zippedFile.toPath(), instanceDir.toPath());
 			builder.addFormDataPart("bundle", id + ".zip", RequestBody.create(zippedFile, ZIP_TYPE));
 
 			String url = String.format("%s/instances", getEndpoint());
@@ -239,15 +245,16 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 			
 			return createInstance(desc);
 		}
-		catch ( IOException e ) {
-			throw new MDTInstanceManagerException("Failed to add an instance: dir=" + instanceDir, e);
-		}
 		finally {
-			zippedFile.delete();
+			if ( zippedFile != instanceFile ) {
+				// 임시로 생성한 zip 파일을 삭제한다.
+				// (디렉토리인 경우에만 zip 파일로 압축하고, 압축한 후에는 삭제한다.)
+				zippedFile.delete();
+			}
 		}
 	}
 	
-	public HttpMDTInstance addZippedInstance(String id, int port, File zippedInstanceDir) {
+	public HttpMDTInstanceClient addZippedInstance(String id, int port, File zippedInstanceDir) {
 		Preconditions.checkNotNull(id);
 		Preconditions.checkNotNull(zippedInstanceDir);
 		Preconditions.checkArgument(Files.getFileExtension(zippedInstanceDir.getAbsolutePath()).equals("zip"));
@@ -267,10 +274,10 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return createInstance(desc);
 	}
 	
-	private HttpMDTInstance createInstance(InstanceDescriptor desc) throws ResourceAlreadyExistsException {
+	private HttpMDTInstanceClient createInstance(InstanceDescriptor desc) throws ResourceAlreadyExistsException {
 		return m_guard.get(() -> {
-			HttpMDTInstance inst = new HttpMDTInstance(this, desc);
-			HttpMDTInstance prev = m_instances.putIfAbsent(desc.getId(), inst);
+			HttpMDTInstanceClient inst = new HttpMDTInstanceClient(this, desc);
+			HttpMDTInstanceClient prev = m_instances.putIfAbsent(desc.getId(), inst);
 			if ( prev != null ) {
 				throw new ResourceAlreadyExistsException("MDTInstance", "id=" + desc.getId());
 			}
@@ -285,7 +292,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 											.setType(MultipartBody.FORM)
 											.addFormDataPart("id", id);
 		if ( jarFile != null ) {
-			builder = builder.addFormDataPart("jar", MDTInstanceManager.FA3ST_JAR_FILE_NAME,
+			builder = builder.addFormDataPart("jar", MDTInstanceManager.MDT_INSTANCE_JAR_FILE_NAME,
 												RequestBody.create(jarFile, OCTET_TYPE));
 		}
 		if ( modelFile != null ) {
@@ -364,9 +371,9 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		}
 	}
 	
-	private List<HttpMDTInstance> toInstances(List<InstanceDescriptor> descList) {
+	private List<HttpMDTInstanceClient> toInstances(List<InstanceDescriptor> descList) {
 		return FStream.from(descList)
-						.map(desc -> new HttpMDTInstance(HttpMDTInstanceManager.this, desc))
+						.map(desc -> new HttpMDTInstanceClient(HttpMDTInstanceManager.this, desc))
 						.toList();
 	}
 	

@@ -5,8 +5,6 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 
@@ -32,12 +30,9 @@ public class AddMDTInstanceCommand extends AbstractMDTCommand {
 	@Parameters(index="0", paramLabel="id", description="MDTInstance implementation jar file path")
 	private String m_id;
 
-	@Parameters(index="1", paramLabel="instance-dir", description="Path to the MDTInstance implementation directory")
-	private File m_instanceDir;
-
-	@Option(names={"--port", "-p"}, paramLabel="port-number", defaultValue = "-1",
-			description="Port number for this MDTInstance. (required only for JarInstance)")
-	private int m_port;
+	@Parameters(index="1", paramLabel="path",
+				description="Path to the MDTInstance implementation directory or zip file")
+	private File m_instanceFile;
 	
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
@@ -52,13 +47,10 @@ public class AddMDTInstanceCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager manager) throws Exception {
-		Preconditions.checkArgument(m_instanceDir.isDirectory(),
-									"MDTInstance directory path is not a directory: {}", m_instanceDir);
-		
 		HttpMDTInstanceManager client = (HttpMDTInstanceManager)manager.getInstanceManager();
-		client.addInstance(m_id, m_port, m_instanceDir);
+		client.addInstance(m_id, m_instanceFile);
 		if ( m_verbose ) {
-            System.out.printf("added MDTInstance: id=%s, port=%d%n", m_id, m_port);
+            System.out.printf("added MDTInstance: id=%s%n", m_id);
 		}
 	}
 }

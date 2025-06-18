@@ -38,6 +38,8 @@ public interface MDTSubmodelReference extends SubmodelReference {
 	 * @return		MDTInstance 식별자.
 	 */
 	public String getInstanceId();
+	
+	public String getSubmodelId();
 
 	/**
 	 * Submodel을 포함한 MDTInstance를 반환한다.

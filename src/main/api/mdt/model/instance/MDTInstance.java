@@ -17,6 +17,8 @@ import mdt.model.AssetAdministrationShellService;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
+import mdt.model.sm.data.ParameterCollection;
+import mdt.model.sm.info.MDTAssetType;
 
 
 /**
@@ -114,7 +116,7 @@ public interface MDTInstance {
 	 * @return	자산 타입.
 	 * @see MDTInstance#getInstanceDescriptor()
 	 */
-	public default @Nullable String getAssetType() {
+	public default @Nullable MDTAssetType getAssetType() {
 		return getInstanceDescriptor().getAssetType();
 	}
 	
@@ -282,6 +284,8 @@ public interface MDTInstance {
 	 * @see	SubmodelService
 	 */
 	public List<SubmodelDescriptor> getSubmodelDescriptorAll();
+	
+	public ParameterCollection getParameterCollection() throws ResourceNotFoundException;
 	
 	/**
 	 * MDTInstance의 기술자를 반환한다.

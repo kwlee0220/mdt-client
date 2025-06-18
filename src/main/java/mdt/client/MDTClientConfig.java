@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 
-import javax.annotation.Nullable;
-
+import org.apache.commons.text.StringSubstitutor;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import utils.UnitUtils;
+import utils.io.IOUtils;
 
 
 /**
@@ -38,8 +39,12 @@ public final class MDTClientConfig {
 			s_logger.info("reading a configuration from {}", configFile);
 		}
 		
+		String confYamlString = IOUtils.toString(configFile);
+		StringSubstitutor interpolator = StringSubstitutor.createInterpolator();
+		confYamlString = interpolator.replace(confYamlString);
+		
 		JsonMapper mapper = JsonMapper.builder(new YAMLFactory()).build();
-		MDTClientConfig config = mapper.readValue(configFile, MDTClientConfig.class);
+		MDTClientConfig config = mapper.readValue(confYamlString, MDTClientConfig.class);
 		
 		return config;
 	}

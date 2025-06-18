@@ -13,9 +13,9 @@ import mdt.model.sm.entity.SubmodelElementListEntity;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-public class DefaultCompopentItems extends SubmodelElementListEntity<DefaultCompositionItem>
+public class DefaultCompositionItems extends SubmodelElementListEntity<DefaultCompositionItem>
 									implements CompositionItems {
-	public DefaultCompopentItems() {
+	public DefaultCompositionItems() {
 		setIdShort("CompositionItems");
 		setOrderRelevant(false);
 		setTypeValueListElement(AasSubmodelElements.REFERENCE_ELEMENT);

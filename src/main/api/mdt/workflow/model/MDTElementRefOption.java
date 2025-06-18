@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import utils.json.JacksonUtils;
 
 import mdt.model.MDTModelSerDe;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 
 
@@ -35,7 +35,7 @@ public final class MDTElementRefOption extends AbstractOption<MDTElementReferenc
 	}
 	
 	public static MDTElementRefOption parseStringExpr(String name, String expr) {
-		MDTElementReference elmRef = MDTExprParser.parseElementReference(expr).evaluate();
+		MDTElementReference elmRef = ElementReferences.parseExpr(expr);
 		return new MDTElementRefOption(name, elmRef);
 	}
 	

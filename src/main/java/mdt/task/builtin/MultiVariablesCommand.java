@@ -2,19 +2,20 @@ package mdt.task.builtin;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 import utils.KeyedValueList;
 import utils.Throwables;
 import utils.Tuple;
 import utils.Utilities;
-import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.model.expr.LiteralExpr;
@@ -46,7 +47,41 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		setLogger(s_logger);
 	}
 	
-	public void loadTaskVariablesFromParameters(MDTInstanceManager manager, TaskDescriptor descriptor)
+	@Getter
+	@AllArgsConstructor
+	@Accessors(prefix = "m_")
+	public static class UnmatchedOption {
+		private final String m_type;
+		private final String m_name;
+		private final String m_value;
+		
+		@Override
+		public String toString() {
+			return String.format("%s.%s=%s", m_type, m_name, m_value);
+		}
+	}
+	
+	protected List<UnmatchedOption> collectUnmatchedOptions() throws IOException {
+		List<UnmatchedOption> unmatchedOptions = Lists.newArrayList();
+		List<String> remains = Lists.newArrayList(m_unmatcheds);
+		while ( remains.size() > 0 ) {
+			String optName = remains.remove(0);
+			
+			optName = trimHeadingDashes(optName);
+			Tuple<String, String> tup = Utilities.split(optName, '.', Tuple.of(null, optName));
+			if ( remains.size() == 0 || remains.get(0).startsWith("-") ) {
+				// 옵션의 value가 지정되지 않은 경우
+				unmatchedOptions.add(new UnmatchedOption(tup._1, tup._2, null));
+			}
+			else {
+				unmatchedOptions.add(new UnmatchedOption(tup._1, tup._2, remains.removeFirst()));
+			}
+		}
+		
+		return unmatchedOptions;
+	}
+	
+	protected void loadTaskVariablesFromArguments(MDTInstanceManager manager, TaskDescriptor descriptor)
 		throws IOException {
 		// Command line에서 지정된 옵션을 파싱하여 input/output parameter를 추출한다.
 		// 이때, input/output parameter 관련 정보들은 unmatcheds에 포함되어 있다.
@@ -55,68 +90,73 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		//   --out.<parameter-name> <element-reference> (output parameter의 경우)
 		//   --inout.<parameter-name> <element-reference> (input/output parameter의 경우)
 		//
-		Map<String,String> unmatchedOptions
-				= FStream.from(m_unmatcheds)
-						.buffer(2, 2)
-						.peek(b -> {
-							if ( b.size() != 2 ) {
-								String msg = String.format("invalid variable specification: %s", b.get(0));
-								throw new IllegalArgumentException(msg);
-							}
-						})
-						// 첫번째 항목  앞에 붙은 '-'는 제거하여 key로 사용하고,
-						// 두번째 항묵을 value로 사용한다. 
-						.toKeyValueStream(b -> trimHeadingDashes(b.get(0)), b -> b.get(1))
-						.toMap();
+		List<UnmatchedOption> unmatchedOptions = collectUnmatchedOptions();
+//		Map<String,String> unmatchedOptions
+//				= FStream.from(m_unmatcheds)
+//						.buffer(2, 2)
+//						.peek(b -> {
+//							if ( b.size() != 2 ) {
+//								String msg = String.format("invalid variable specification: %s", b.get(0));
+//								throw new IllegalArgumentException(msg);
+//							}
+//						})
+//						// 첫번째 항목  앞에 붙은 '-'는 제거하여 key로 사용하고,
+//						// 두번째 항묵을 value로 사용한다. 
+//						.toKeyValueStream(b -> trimHeadingDashes(b.get(0)), b -> b.get(1))
+//						.toMap();
 		
-		for ( Entry<String,String> ent: unmatchedOptions.entrySet() ) {
-			// in/out/inout이 별도로 지정되지 않은 경우는 'in'으로 간주한다.
-			Tuple<String,String> tup = Utilities.split(ent.getKey(), '.', Tuple.of("in", ent.getKey()));
-			String kind = tup._1;
-			String varName = tup._2;
-
+		for ( UnmatchedOption unmatchedOpt: collectUnmatchedOptions() ) {
 			Variable var;
-			MDTExpr expr = MDTExprParser.parseExpr(ent.getValue());
+			MDTExpr expr = MDTExprParser.parseExpr(unmatchedOpt.getValue());
 			if ( expr instanceof MDTElementReferenceExpr refExpr ) {
 				try {
 					MDTElementReference ref = refExpr.evaluate();
 					ref.activate(manager);
-					var = Variables.newInstance(varName, "", ref);
+					var = Variables.newInstance(unmatchedOpt.getName(), "", ref);
 				}
 				catch ( Exception e ) {
 					Throwable cause = Throwables.unwrapThrowable(e);
 					String msg = String.format("Failed to parse %s variable(\"%s\"), ref=%s, cause=%s",
-												kind, varName, ent.getValue(), cause);
+												unmatchedOpt.getType(), unmatchedOpt.getName(), unmatchedOpt.getValue(),
+												cause);
 					throw new IllegalArgumentException(msg);
 				}
 			}
 			else if ( expr instanceof LiteralExpr lit ) {
-				var = Variables.newInstance(varName, "", lit.evaluate());
+				var = Variables.newInstance(unmatchedOpt.getName(), "", lit.evaluate());
 			}
 			else {
-				throw new IllegalArgumentException("Unexpected variable expression: name=" + varName
-													+ ", expr=" + ent.getValue());
+				throw new IllegalArgumentException("Unexpected variable expression: name=" + unmatchedOpt.getName()
+													+ ", expr=" + unmatchedOpt.getValue());
 			}
 			
+			String kind = unmatchedOpt.getType();
+			if ( kind == null ) {
+				throw new IllegalArgumentException("unexpected option: " + unmatchedOpt);
+			}
 			switch ( kind.toLowerCase() ) {
 				case "in":
 					updateTaskVariable(descriptor.getInputVariables(), var);
 					if ( getLogger().isDebugEnabled() ) {
-						getLogger().debug("set input parameter variable[{}]", kind, varName);
+						getLogger().debug("set input parameter variable[{}]", kind, unmatchedOpt.getName());
 					}
 					break;
 				case "out":
 					updateTaskVariable(descriptor.getOutputVariables(), var);
 					if ( getLogger().isDebugEnabled() ) {
-						getLogger().debug("set output parameter variable[{}]", kind, varName);
+						getLogger().debug("set output parameter variable[{}]", kind, unmatchedOpt.getName());
 					}
 					break;
 				case "inout":
 					updateTaskVariable(descriptor.getInputVariables(), var);
 					updateTaskVariable(descriptor.getOutputVariables(), var);
 					if ( getLogger().isDebugEnabled() ) {
-						getLogger().debug("set inoutput parameter variable[{}]", kind, varName);
+						getLogger().debug("set inoutput parameter variable[{}]", kind, unmatchedOpt.getName());
 					}
+					break;
+				case "opt":
+				case "opton":
+					descriptor.addLabel(unmatchedOpt.getName(), unmatchedOpt.getValue());
 					break;
 				default:
 					throw new AssertionError("invalid kind: " + kind);
@@ -124,17 +164,17 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	private void updateTaskVariable(KeyedValueList<String, Variable> varList, Variable paramVar) throws IOException {
+	private static void updateTaskVariable(KeyedValueList<String, Variable> varList, Variable paramVar) throws IOException {
 		Variable taskVar = varList.getOfKey(paramVar.getName());
 		if ( taskVar != null ) {
-			taskVar.updateValue(paramVar.readValue());
+			varList.replace(paramVar);
 		}
 		else {
 			varList.add(paramVar);
 		}
 	}
 	
-	private String trimHeadingDashes(String optName) {
+	private static String trimHeadingDashes(String optName) {
 		if ( optName.startsWith("--") ) {
 			return optName.substring(2);
 		}

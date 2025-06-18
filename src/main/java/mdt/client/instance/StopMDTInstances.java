@@ -105,6 +105,8 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 		} 
 		
 		for ( MDTInstance instance: targetInstList ) {
+			m_instanceMap.putIfAbsent(instance.getId(), instance);
+			
 			buildDependencies(instance);
 		}
 		
@@ -121,6 +123,9 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 						StartableExecution<Void> exec = Executions.toExecution(() -> stopInstance(freeAgent), m_executor);
 						exec.whenFinished(result -> onInstanceFinished(freeAgent));
 						exec.start();
+					}
+					else {
+						onInstanceFinished(freeAgent);
 					}
 				}
 				
@@ -166,7 +171,6 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	}
 	
 	private void buildDependencies(MDTInstance start) {
-		m_instanceMap.putIfAbsent(start.getId(), start);
 		Set<String> dependents = m_dependencyMap.computeIfAbsent(start.getId(), k -> Sets.newHashSet());
 		
 		List<MDTInstance> components = MDTModelService.of(start).getSubComponentAll();

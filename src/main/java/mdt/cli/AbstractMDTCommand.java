@@ -1,10 +1,12 @@
 package mdt.cli;
 
 import java.io.File;
+import java.time.Duration;
 
 import org.slf4j.LoggerFactory;
 
 import utils.LoggerSettable;
+import utils.Picoclies;
 import utils.Throwables;
 import utils.func.FOption;
 
@@ -25,7 +27,6 @@ import picocli.CommandLine.Option;
  */
 public abstract class AbstractMDTCommand implements Runnable, LoggerSettable {
 	private org.slf4j.Logger m_logger;
-	private Level m_logLevel = null;
 	
 	@Option(names={"--client_conf"}, paramLabel="path", required=false,
 			description={"MDTManager configuration file path"})
@@ -39,30 +40,31 @@ public abstract class AbstractMDTCommand implements Runnable, LoggerSettable {
 	
 	@Option(names={"--loglevel"}, paramLabel="logger-level",
 					description={"Logger level: debug, info, warn, or error"})
-	public void setLoggerLevel(String level) {
-		switch ( level.toLowerCase() ) {
-			case "off":
-				m_logLevel = Level.OFF;
-				break;
-			case "trace":
-				m_logLevel = Level.TRACE;
-				break;
-			case "debug":
-				m_logLevel = Level.DEBUG;
-				break;
-			case "info":
-				m_logLevel = Level.INFO;
-				break;
-			case "warn":
-				m_logLevel = Level.WARN;
-				break;
-			case "error":
-				m_logLevel = Level.ERROR;
-				break;
-			default:
-				throw new IllegalArgumentException("invalid logger level: " + level);
-		}
-	}
+	private Level m_logLevel = null;
+//	public void setLoggerLevel(String level) {
+//		switch ( level.toLowerCase() ) {
+//			case "off":
+//				m_logLevel = Level.OFF;
+//				break;
+//			case "trace":
+//				m_logLevel = Level.TRACE;
+//				break;
+//			case "debug":
+//				m_logLevel = Level.DEBUG;
+//				break;
+//			case "info":
+//				m_logLevel = Level.INFO;
+//				break;
+//			case "warn":
+//				m_logLevel = Level.WARN;
+//				break;
+//			case "error":
+//				m_logLevel = Level.ERROR;
+//				break;
+//			default:
+//				throw new IllegalArgumentException("invalid logger level: " + level);
+//		}
+//	}
 
 	@Override
 	public org.slf4j.Logger getLogger() {
@@ -93,9 +95,7 @@ public abstract class AbstractMDTCommand implements Runnable, LoggerSettable {
 			else {
 				mdt = HttpMDTManager.connectWithDefault();
 			}
-			if ( getLogger().isDebugEnabled() ) {
-				getLogger().debug("connecting to MDTInstanceManager {}", mdt.getEndpoint());
-			}
+			getLogger().debug("connecting to MDTInstanceManager {}", mdt.getEndpoint());
 			
 			run(mdt);
 		}
@@ -108,7 +108,13 @@ public abstract class AbstractMDTCommand implements Runnable, LoggerSettable {
 	}
 
 	protected static final void main(AbstractMDTCommand cmd, String... args) throws Exception {
-		CommandLine commandLine = new CommandLine(cmd).setUsageHelpWidth(110);
+		CommandLine commandLine = new CommandLine(cmd)
+										.setCaseInsensitiveEnumValuesAllowed(true)
+										.setAbbreviatedOptionsAllowed(true)
+										.setAbbreviatedSubcommandsAllowed(true)
+										.registerConverter(Duration.class, new Picoclies.DurationConverter())
+										.registerConverter(Level.class, new Picoclies.LogLevelConverter())
+										.setUsageHelpWidth(110);
 		try {
 			commandLine.parseArgs(args);
 

@@ -9,6 +9,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import mdt.model.sm.info.MDTAssetType;
+
 
 /**
  * <code>InstanceDescriptor</code>은 MDTInstance의 등록정보를 정의하는 인터페이스이다.
@@ -65,7 +67,7 @@ public interface InstanceDescriptor {
 	 * 
 	 * @return	자산 타입.
 	 */
-	@Nullable public String getAssetType();
+	@Nullable public MDTAssetType getAssetType();
 	
 	/**
 	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 자산 종류를 반환한다.

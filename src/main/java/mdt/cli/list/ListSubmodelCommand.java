@@ -17,7 +17,7 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.cli.list.ListCommands.CSVCollector;
 import mdt.cli.list.ListCommands.ListCollector;
 import mdt.cli.list.ListCommands.TableCollector;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.model.MDTManager;
 import mdt.model.ReferenceUtils;
 import mdt.model.instance.MDTInstance;
@@ -132,7 +132,7 @@ public class ListSubmodelCommand extends AbstractMDTCommand {
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {
 			for ( SubmodelDescriptor smDesc: inst.getSubmodelDescriptorAll() ) {
-				String[] cols = toColumns(seqNo, (HttpMDTInstance)inst, smDesc);
+				String[] cols = toColumns(seqNo, (HttpMDTInstanceClient)inst, smDesc);
 				collector.collectLine(cols);
 				
 				++seqNo;
@@ -142,7 +142,7 @@ public class ListSubmodelCommand extends AbstractMDTCommand {
 		return collector.getFinalString();
 	}
 
-	private String[] toColumns(int seqNo, HttpMDTInstance inst, SubmodelDescriptor smDesc) {
+	private String[] toColumns(int seqNo, HttpMDTInstanceClient inst, SubmodelDescriptor smDesc) {
 		String[] cols = new String[] {
 			String.format("%3d", seqNo), inst.getId(), smDesc.getId(), smDesc.getIdShort(),
 			getSemanticIdString(smDesc), inst.getSubmodelServiceEndpoint(smDesc.getId())

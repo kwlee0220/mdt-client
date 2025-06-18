@@ -52,6 +52,18 @@ public class MDTArgumentReferenceTest {
 		Assert.assertEquals(MDTArgumentKind.OUTPUT, argRef.getKind());
 		Assert.assertEquals("SleepTime", argRef.getArgumentSpec());
 	}
+
+	@Test
+	public void testExpr() {
+		ByIdShortSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("test", "Simulation");
+		MDTArgumentReference ref = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.OUTPUT, "SleepTime");
+		
+		String expr = ref.toStringExpr();
+		Assert.assertEquals(EXPR, expr);
+		
+		ElementReference ref2 = ElementReferences.parseExpr(expr);
+		Assert.assertEquals(ref, ref2);
+	}
 	
 	@Test
 	public void testToStringExpr() throws JsonProcessingException {

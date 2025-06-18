@@ -2,6 +2,8 @@ package mdt.model.sm;
 
 import utils.func.FOption;
 
+import mdt.model.sm.value.FileValue;
+
 import okhttp3.MediaType;
 
 /**
@@ -58,5 +60,9 @@ public interface AASFile {
 	 */
 	public default MediaType getMediaType() {
 		return FOption.map(getContentType(), MediaType::parse);
+	}
+	
+	public default FileValue getValue() {
+		return new FileValue(getContentType(), getPath());
 	}
 }

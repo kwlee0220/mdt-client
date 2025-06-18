@@ -16,7 +16,7 @@ import utils.func.Try;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.AssetAdministrationShellService;
 import mdt.model.DescriptorUtils;
@@ -58,10 +58,10 @@ public class GetShellCommand extends AbstractMDTCommand {
 		setLogger(s_logger);
 	}
 	
-	private HttpMDTInstance getAnyInstanceByAasIdShort(HttpMDTInstanceManager manager, String aasIdShort) {
-		List<HttpMDTInstance> instList = manager.getInstanceAllByAasIdShort(m_aasId);
+	private HttpMDTInstanceClient getAnyInstanceByAasIdShort(HttpMDTInstanceManager manager, String aasIdShort) {
+		List<HttpMDTInstanceClient> instList = manager.getInstanceAllByAasIdShort(m_aasId);
 		if ( instList.size() == 1 ) {
-			return (HttpMDTInstance)instList.get(0);
+			return (HttpMDTInstanceClient)instList.get(0);
 		}
 		else  {
 			throw new ResourceNotFoundException("AssetAdministrationShell", "aasId=" + m_aasId);
@@ -72,7 +72,7 @@ public class GetShellCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
-		HttpMDTInstance instance = Try.get(() -> manager.getInstanceByAasId(m_aasId))
+		HttpMDTInstanceClient instance = Try.get(() -> manager.getInstanceByAasId(m_aasId))
 											.recover(() -> getAnyInstanceByAasIdShort(manager, m_aasId))
 											.recover(() -> manager.getInstance(m_aasId))
 											.get();
@@ -92,7 +92,7 @@ public class GetShellCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	public static void display(HttpMDTInstance instance, String output) {
+	public static void display(HttpMDTInstanceClient instance, String output) {
 		AssetAdministrationShellService shellSvc = instance.getAssetAdministrationShellService();
 		AssetAdministrationShell aas = shellSvc.getAssetAdministrationShell();
 			
@@ -118,7 +118,7 @@ public class GetShellCommand extends AbstractMDTCommand {
 		System.out.println(ser.write(aas));
 	}
 	
-	private static void displayAsSimple(AssetAdministrationShell aas, HttpMDTInstance instance) {
+	private static void displayAsSimple(AssetAdministrationShell aas, HttpMDTInstanceClient instance) {
 		Table table = new Table(2);
 
 		table.addCell(" FIELD "); table.addCell(" VALUE");

@@ -2,6 +2,7 @@ package mdt.cli.set;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
@@ -14,10 +15,12 @@ import mdt.model.SubmodelService;
 import mdt.model.expr.MDTExprParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.DefaultAASFile;
+import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ParameterValue;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -40,22 +43,20 @@ public class SetElementCommand extends AbstractMDTCommand {
 	@Parameters(index="0", arity="1", paramLabel="element-ref", description="target SubmodelElementReference to set")
 	private String m_target = null;
 	
-	@ArgGroup(exclusive=true)
-	private ValueExprSpec m_valueExprSpec;
-	static class ValueExprSpec {
-		@Option(names={"--value"}, arity="1", paramLabel="expression", description="Source value specification")
-		private String m_value;
-	}
+	@ArgGroup(exclusive=true, multiplicity="1")
+	private SourceSpec m_source;
 	
-	@ArgGroup(exclusive=true)
-	private JsonSpec m_jsonSpec;
-	static class JsonSpec {
+	static class SourceSpec {
+		@Option(names={"--value"}, paramLabel="expression", description="Source value specification")
+		private String m_value;
+		
 		@Option(names={"--json"}, paramLabel="Json file path", description="Json file path")
 		private File m_jsonFile;
+
+		@ArgGroup(exclusive = false)
+		FileElementSpec m_fileElementSpec;
 	}
 	
-	@ArgGroup(exclusive = false)
-	FileElementSpec m_fileElementSpec;
 	static class FileElementSpec {
 		@Option(names = {"--file", "-f"}, paramLabel="file path", required=true)
 		private File m_file;
@@ -76,22 +77,21 @@ public class SetElementCommand extends AbstractMDTCommand {
 			throw new IllegalArgumentException("Target element is not MDTElementReference: " + ref);
 		}
 		MDTElementReference targetRef = (MDTElementReference)ref;
-		
 		targetRef.activate(manager);
-		if ( m_valueExprSpec != null && m_valueExprSpec.m_value != null ) {
-			setWithExpr(manager, targetRef, m_valueExprSpec.m_value);
+		
+		if ( m_source.m_value != null ) {
+			setWithExpr(manager, targetRef, m_source.m_value);
 		}
-		else if ( m_jsonSpec != null && m_jsonSpec.m_jsonFile != null ) {
-			setWithJsonFile(manager, targetRef, m_jsonSpec.m_jsonFile);
+		else if ( m_source.m_jsonFile != null ) {
+			setWithJsonFile(manager, targetRef, m_source.m_jsonFile);
 		}
-		else if ( m_fileElementSpec.m_file != null ) {
+		else if ( m_source.m_fileElementSpec != null ) {
 			SubmodelElement sme = targetRef.read();
 			if ( !(sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File) ) {
 				throw new IllegalArgumentException("Target element is not a File: " + targetRef);
 			}
 			
-			setFile(manager, targetRef, m_fileElementSpec.m_file, m_fileElementSpec.m_path,
-					m_fileElementSpec.m_mimeType);
+			setFile(manager, targetRef, m_source.m_fileElementSpec);
 		}
 		else {
 			throw new IllegalArgumentException("Value is not specified");
@@ -99,15 +99,29 @@ public class SetElementCommand extends AbstractMDTCommand {
 	}
 	
 	private void setWithExpr(MDTInstanceManager manager, ElementReference target, String expr) throws IOException {
-		MDTExprParser parser = new MDTExprParser();
-		Object src = parser.parseExpr(expr).evaluate();
+		ElementValue newValue;
+		
+		Object src = MDTExprParser.parseExpr(expr).evaluate();
 		if ( src instanceof MDTElementReference ref ) {
 			ref.activate(manager);
-			target.updateValue(ref.readValue());
+			newValue = ref.readValue();
 		}
 		else if ( src instanceof ElementValue value ) {
-			target.updateValue(value);
+			newValue = value;
 		}
+		else {
+			throw new IllegalArgumentException("Invalid expression: " + expr);
+		}
+		
+		SubmodelElement sme = target.read();
+		// ParameterValue인 경우에는 'ParameterValue' 필드를 사용한다.
+		if ( SubmodelUtils.isParameterValue(sme) ) {
+			newValue = ParameterValue.builder()
+									.eventDateTime(Instant.now())
+									.value(newValue)
+									.build();
+		}
+		target.updateValue(newValue);
 	}
 	
 	/**
@@ -138,10 +152,10 @@ public class SetElementCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	private void setFile(MDTInstanceManager manager, MDTElementReference target, File file, String path,
-						String mimeType) throws IOException {
+	private void setFile(MDTInstanceManager manager, MDTElementReference target, FileElementSpec fileSpec)
+		throws IOException {
 		SubmodelService svc = target.getSubmodelService();
-		DefaultAASFile mdtFile = DefaultAASFile.from(file, path, mimeType);
+		DefaultAASFile mdtFile = DefaultAASFile.from(fileSpec.m_file, fileSpec.m_path, fileSpec.m_mimeType);
 		svc.putFileByPath(target.getIdShortPathString(), mdtFile);
 	}
 

@@ -1,9 +1,10 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
@@ -14,21 +15,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 
+import utils.func.FOption;
+import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
-import mdt.client.HttpMDTManager;
-import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.ModelValidationException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.instance.MDTModelService;
 import mdt.model.sm.SubmodelUtils;
-import mdt.model.sm.data.Equipment;
-import mdt.model.sm.data.Operation;
 import mdt.model.sm.data.ParameterCollection;
-import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.info.MDTAssetType;
+import mdt.model.sm.value.ElementCollectionValue;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ParameterValue;
 
 
 /**
@@ -40,18 +40,23 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	public static final String SERIALIZATION_TYPE = "mdt:ref:param";
 	private static final String FIELD_INSTANCE_ID = "instanceId";
 	private static final String FIELD_PARAMETER_ID = "parameterId";
+	private static final String FIELD_SUB_PATH = "subPath";
 	
 	private final String m_instanceId;
 	private final String m_parameterId;
+	private final String m_subPath;
 
 	private volatile DefaultElementReference m_ref;
 	
-	private MDTParameterReference(String instanceId, String parameterId) {
+	private MDTParameterReference(String instanceId, String parameterId, String subPath) {
 		Preconditions.checkArgument(instanceId != null, "instanceId is null");
 		Preconditions.checkArgument(parameterId != null, "parameterId is null");
+		Preconditions.checkArgument(!parameterId.equals(ALL) || subPath == null || subPath.length() > 0,
+									"parameterId is empty");
 		
 		m_instanceId = instanceId;
 		m_parameterId = parameterId;
+		m_subPath = subPath;
 	}
 
 	@Override
@@ -62,7 +67,10 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	@Override
 	public void activate(MDTInstanceManager manager) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort(m_instanceId, "Data");
-		String idShortPath = buildIdShortPath(manager);
+		
+		MDTInstance instance = manager.getInstance(m_instanceId);
+		String idShortPath = buildIdShortPath(instance);
+		
 		m_ref = DefaultElementReference.newInstance(smRef, idShortPath);
 		m_ref.activate(manager);
 	}
@@ -81,6 +89,10 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	
 	public String getParameterId() {
 		return m_parameterId;
+	}
+	
+	public String getSubPath() {
+		return m_subPath;
 	}
 
 	@Override
@@ -106,10 +118,9 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 					= FStream.from(((SubmodelElementList)sme).getValue())
 								.castSafely(SubmodelElementCollection.class)
 								.map(smc -> {
-									String id = ((Property)(SubmodelUtils.getFieldById(smc, "ParameterID").value())).getValue();
-									SubmodelElement value = SubmodelUtils.getFieldById(smc, "ParameterValue").value();
-									value.setIdShort(id);
-									return value;
+									String id = SubmodelUtils.getPropertyById(smc, "ParameterID").value().getValue();
+									smc.setIdShort(id);
+									return (SubmodelElement)smc;
 								})
 								.toList();
 			return new DefaultSubmodelElementList.Builder()
@@ -123,6 +134,34 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	}
 
 	@Override
+	public void write(SubmodelElement sme) throws IOException {
+		throw new UnsupportedOperationException("Cannot update MDTParameter entirely: ref=" + this);
+	}
+
+	@Override
+	public SubmodelElement updateValue(ElementValue smev) throws IOException {
+		SubmodelService service = getSubmodelService();
+		
+		// smev의 타입이 ElementCollectionValue가 아닌 경우에는 Parameter의 value 부분만
+		// 갱신하는 것으로 간주하고, EventDateTime을 추가하여 ElementCollectionValue로 변환한다.
+		// 만일 smev의 타입이 ElementCollectionValue인 경우에는
+		// 호출자가 Parameter 값 전체를 갱신하려는 것인지 value 부분만 갱신하려는 것인지
+		// 판단하기 어려워 주어진 smev를 그대로 사용한다.
+		// TODO: 물론 이것은 나중에 문제를 읽으킬 여지가 있다.
+		if ( smev instanceof ElementCollectionValue || m_subPath != null ) {
+			service.updateSubmodelElementValueByPath(getIdShortPathString(), smev);
+		}
+		else {
+			ParameterValue paramValue = ParameterValue.builder()
+														.value(smev)
+														.eventDateTime(Instant.now())
+														.build();
+			service.updateSubmodelElementValueByPath(getIdShortPathString(), paramValue);
+		}
+		return service.getSubmodelElementByPath(getIdShortPathString());
+	}
+
+	@Override
 	public String getSerializationType() {
 		return SERIALIZATION_TYPE;
 	}
@@ -131,18 +170,23 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	public void serializeFields(JsonGenerator gen) throws IOException, JsonProcessingException {
 		gen.writeStringField(FIELD_INSTANCE_ID, m_instanceId);
 		gen.writeStringField(FIELD_PARAMETER_ID, m_parameterId);
+		if ( m_subPath != null ) {
+			gen.writeStringField(FIELD_SUB_PATH, m_subPath);
+		}
 	}
 	
 	public static MDTParameterReference deserializeFields(JsonNode jnode) {
 		String instanceId = jnode.get(FIELD_INSTANCE_ID).asText();
 		String parameterId = jnode.get(FIELD_PARAMETER_ID).asText();
+		String subPath = JacksonUtils.getStringFieldOrNull(jnode, FIELD_SUB_PATH);
 
-		return new MDTParameterReference(instanceId, parameterId);
+		return new MDTParameterReference(instanceId, parameterId, subPath);
 	}
 
 	@Override
 	public String toStringExpr() {
-		return String.format("param:%s:%s", m_instanceId, m_parameterId);
+		String subPathStr = FOption.mapOrElse(m_subPath, p -> ":" + p, "");
+		return String.format("param:%s:%s%s", m_instanceId, m_parameterId, subPathStr);
 	}
 	
 	@Override
@@ -151,41 +195,44 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 		return String.format("%s (%s)", toStringExpr(), actStr);
 	}
 	
-	public static MDTParameterReference newInstance(String instanceId, String parameterId) {
-		return new MDTParameterReference(instanceId, parameterId);
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( obj == null || !(obj instanceof MDTParameterReference) ) {
+			return false;
+		}
+
+		MDTParameterReference other = (MDTParameterReference) obj;
+		return m_instanceId.equals(other.m_instanceId)
+				&& m_parameterId.equals(other.m_parameterId)
+				&& Objects.equals(m_subPath, other.m_subPath);
 	}
 	
-	private String buildIdShortPath(MDTInstanceManager manager) {
-		MDTInstance instance = manager.getInstance(m_instanceId);
-		MDTModelService mdtInfo =  MDTModelService.of(instance);
-		
-		// InformationModel의 MDTInfo에서 assetType을 활용하여
-		// MDTInstance가 Equipment인지 Operation인지를 확인한다.
-		InformationModel infoModel = mdtInfo.getInformationModel();
-		
-		MDTAssetType assetType = infoModel.getMDTInfo().getAssetType();
+	public static MDTParameterReference newInstance(String instanceId, String parameterId, String subPath) {
+		return new MDTParameterReference(instanceId, parameterId, subPath);
+	}
+	public static MDTParameterReference newInstance(String instanceId, String parameterId) {
+		return new MDTParameterReference(instanceId, parameterId, null);
+	}
+	
+	private String buildIdShortPath(MDTInstance instance) {
+		MDTAssetType assetType = instance.getAssetType();
 		if ( assetType == null ) {
-			throw new ModelValidationException("InformationModel.MDTInfo.AssertType is empty");
+			throw new ModelValidationException("AssertType is empty");
 		}
 	
-		Class<? extends ParameterCollection> paramCollCls;
-		String collName;
-		switch ( assetType ) {
-			case Machine:
-				paramCollCls = Equipment.class;
-				collName = "Equipment";
-				break;
-			case Process:
-				paramCollCls = Operation.class;
-				collName = "Operation";
-				break;
-			default:
-				throw new IllegalArgumentException("MDTParameter is not supported for assetType: " + assetType);
-		}
+		String assetTypeName = switch ( assetType ) {
+			case Machine -> "Equipment";
+            case Process -> "Operation";
+            default -> throw new IllegalArgumentException("MDTParameter is not supported for assetType: " + assetType);
+		};
+		String paramCollPathPrefix = String.format("DataInfo.%s.%sParameterValues", assetTypeName, assetTypeName);
 		
 		String idShortPath = null;
 		if ( m_parameterId.equals(ALL) ) {
-			idShortPath = String.format("DataInfo.%s.%sParameterValues", collName, collName);
+			idShortPath = paramCollPathPrefix;
 		}
 		else {
 			int paramIdx;
@@ -195,35 +242,16 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 			catch ( NumberFormatException e ) {
 				// Parameter id가 숫자가 아닌 경우에는 parameter 식별자로 간주하고
 				// 해당 식별자의 Parameter를 찾는다.
-				ParameterCollection paramColl = mdtInfo.getData()
-														.getDataInfo()
-														.getFirstSubmodelElementEntityByClass(paramCollCls);
+				ParameterCollection paramColl = instance.getParameterCollection();
 				paramIdx = paramColl.getParameterIndex(m_parameterId);
 			}
-			idShortPath = String.format("DataInfo.%s.%sParameterValues[%d].ParameterValue",
-													collName, collName, paramIdx);
+			idShortPath = String.format("%s[%d]", paramCollPathPrefix, paramIdx);
+			
+			if ( m_subPath != null && m_subPath.length() > 0 ) {
+				idShortPath += "." + m_subPath;
+			}
 		}
 	
 		return idShortPath;
-	}
-	
-	public static final void main(String... args) throws Exception {
-		HttpMDTManager mdt = HttpMDTManager.connect("http://localhost:12985");
-		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
-		
-		MDTParameterReference ref = MDTParameterReference.newInstance("test", "IncAmount");
-		System.out.println(ref);
-		ref.activate(manager);
-		
-		SubmodelElement sme = ref.read();
-		System.out.println(sme);
-		System.out.println(ref.readAsInt());
-		
-		String json = ref.toJsonString();
-		System.out.println(json);
-		
-		MDTElementReference ref2 = (MDTElementReference)ElementReferences.parseJsonString(json);
-		ref2.activate(manager);
-		System.out.println(ref2.readValue());
 	}
 }

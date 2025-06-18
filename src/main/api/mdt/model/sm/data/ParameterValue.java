@@ -1,5 +1,7 @@
 package mdt.model.sm.data;
 
+import java.time.Instant;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
@@ -56,27 +58,9 @@ public interface ParameterValue extends AasCRUDActions, Keyed<String> {
 		setParameterValue(prev);
 	}
 
-	public String getEventDateTime();
-	public void setEventDateTime(String dateTime);
+	public Instant getEventDateTime();
+	public void setEventDateTime(Instant dateTime);
 
 	public String getValidationResultCode();
 	public void setValidationResultCode(String code);
-
-//	public default void update(String idShortPath, Object value) {
-//		List<String> pathSegs = SubmodelUtils.parseIdShortPath(idShortPath).toList();
-//		Preconditions.checkArgument(pathSegs.size() <= 1,
-//									"Unexpected idShortPath: path={}", idShortPath);
-//		
-//		if ( pathSegs.size() == 0 ) {
-//			
-//		}
-//		else {
-//			try {
-//				PropertyUtils.setSimpleProperty(this, pathSegs.get(0), value);
-//			}
-//			catch ( Exception e ) {
-////				String msg = String.format("Failed to update ParameterValue: %s", value);
-//			}
-//		}
-//	}
 }

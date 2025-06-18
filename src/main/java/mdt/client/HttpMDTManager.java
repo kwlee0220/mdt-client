@@ -37,6 +37,7 @@ import mdt.client.workflow.HttpWorkflowManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.workflow.WorkflowManager;
+
 import okhttp3.OkHttpClient;
 
 /**
@@ -120,21 +121,23 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 			throw new IllegalStateException("MDTInstanceManager's endpoint is missing");
 		}
 		
+//		System.out.println("Connecting to MDTManager with endpoint: " + endpoint);
+		
 		return connect(endpoint);
 	}
 	
 	public static HttpMDTManager connect(String endpoint) {
 		return HttpMDTManager.builder()
-									.endpoint(endpoint)
-									.readTimeout(Duration.ofSeconds(30))
-									.jsonMapper(MDTModelSerDe.getJsonMapper())
-									.build();
+							.endpoint(endpoint)
+							.readTimeout(Duration.ofSeconds(30))
+							.jsonMapper(MDTModelSerDe.getJsonMapper())
+							.build();
 	}
 	
 	public static HttpMDTManager connect(MDTClientConfig clientConfig) {
 		HttpMDTManager.Builder builder = HttpMDTManager.builder()
-																	.endpoint(clientConfig.getMdtEndpoint())
-																	.jsonMapper(MDTModelSerDe.getJsonMapper());
+														.endpoint(clientConfig.getMdtEndpoint())
+														.jsonMapper(MDTModelSerDe.getJsonMapper());
 		if ( clientConfig.getConnectTimeout() != null ) {
 			builder = builder.connectTimeout(clientConfig.getConnectTimeout());
 		}

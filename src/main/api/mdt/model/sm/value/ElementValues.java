@@ -157,7 +157,7 @@ public class ElementValues {
 	public static SubmodelElement update(SubmodelElement sme, ElementValue smev) {
 		if ( sme instanceof Property prop ) {
 			Preconditions.checkArgument(smev instanceof PropertyValue,
-										"Expecing {}, but {}", PropertyValue.class.getName(), smev.getClass().getName());
+										"Expecing %s, but %s", PropertyValue.class.getName(), smev.getClass().getName());
 			update(prop, (PropertyValue)smev);
 		}
 		else if ( sme instanceof SubmodelElementCollection smc ) {

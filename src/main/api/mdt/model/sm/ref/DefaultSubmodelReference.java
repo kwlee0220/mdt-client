@@ -7,6 +7,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 
+import utils.stream.FStream;
+
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.expr.MDTExprParser;
@@ -119,6 +121,14 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		@Override
 		public String getInstanceId() {
 			return m_instanceId;
+		}
+
+		@Override
+		public String getSubmodelId() {
+			return FStream.from(m_instance.getInstanceSubmodelDescriptorAll())
+							.findFirst(ism -> m_submodelIdShort.equals(ism.getIdShort()))
+							.map(ism -> ism.getId())
+							.get();
 		}
 		
 		public String getSubmodelIdShort() {

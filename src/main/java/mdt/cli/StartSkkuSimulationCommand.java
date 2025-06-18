@@ -14,7 +14,7 @@ import utils.UnitUtils;
 import utils.func.Funcs;
 
 import mdt.aas.SubmodelRegistry;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatus;
@@ -86,7 +86,7 @@ public class StartSkkuSimulationCommand extends AbstractMDTCommand {
 		
 		SubmodelRegistry registry = mdt.getSubmodelRegistry();
 		
-		HttpMDTInstance inst;
+		HttpMDTInstanceClient inst;
 		SubmodelDescriptor simulationSubmodelDesc;
 		try {
 			simulationSubmodelDesc = registry.getSubmodelDescriptorById(m_targetId);

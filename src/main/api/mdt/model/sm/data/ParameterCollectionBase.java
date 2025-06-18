@@ -95,6 +95,11 @@ public class ParameterCollectionBase implements ParameterCollection {
 		String path = getIdShortPathOfParameterValue(paramId);
 		return m_service.getSubmodelElementByPath(path);
 	}
+	
+	public SubmodelElementList getParameterValueListAsSubmodelElement() {
+		String idShortPath = String.format("DataInfo.%s.%sParameterValues", m_entityTypeName, m_entityTypeName);
+		return (SubmodelElementList) m_service.getSubmodelElementByPath(idShortPath);
+	}
 
 	@Override
 	public KeyedValueList<String, Parameter> getParameterList() {

@@ -44,9 +44,9 @@ public class Variables {
 		if ( var instanceof ReferenceVariable refVar ) {
 			refVar.activate(manager);
 		}
-		else {
-			throw new IllegalArgumentException("Variable is not a ReferenceVariable: " + var);
-		}
+//		else {
+//			throw new IllegalArgumentException("Variable is not a ReferenceVariable: " + var);
+//		}
 	}
 	
 	public static ReferenceVariable newInstance(String name, String description, ElementReference ref) {

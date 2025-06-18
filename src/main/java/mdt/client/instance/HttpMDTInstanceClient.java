@@ -41,7 +41,11 @@ import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.instance.MDTModelService;
+import mdt.model.sm.data.Data;
+import mdt.model.sm.data.DefaultDataInfo;
+import mdt.model.sm.data.ParameterCollection;
 import mdt.model.sm.info.CompositionItem;
+import mdt.model.sm.info.MDTAssetType;
 import mdt.model.sm.info.TwinComposition;
 
 import okhttp3.Headers;
@@ -55,7 +59,7 @@ import okhttp3.RequestBody;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpMDTInstance implements MDTInstance, HttpClientProxy {
+public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	private static final RequestBody EMPTY_BODY = RequestBody.create("", null);
 	
 	private final String m_id;
@@ -64,7 +68,7 @@ public class HttpMDTInstance implements MDTInstance, HttpClientProxy {
 	private final HttpRESTfulClient m_restfulClient;
 	private final AtomicReference<InstanceDescriptor> m_desc;
 	
-	HttpMDTInstance(HttpMDTInstanceManager manager, InstanceDescriptor desc) {
+	HttpMDTInstanceClient(HttpMDTInstanceManager manager, InstanceDescriptor desc) {
 		m_manager = manager;
 		
 		m_id = desc.getId();
@@ -113,7 +117,7 @@ public class HttpMDTInstance implements MDTInstance, HttpClientProxy {
 	}
 
 	@Override
-	public String getAssetType() {
+	public MDTAssetType getAssetType() {
 		return m_desc.get().getAssetType();
 	}
 
@@ -218,6 +222,25 @@ public class HttpMDTInstance implements MDTInstance, HttpClientProxy {
 						.map(desc -> toSubmodelService(desc.getId()))
 						.toList();
 	}
+	
+	@Override
+	public ParameterCollection getParameterCollection() {
+		SubmodelService svc = FStream.from(getSubmodelServiceAllBySemanticId(Data.SEMANTIC_ID))
+									.findFirst()
+									.getOrThrow(() -> new ResourceNotFoundException("Submodel",
+																				"semanticId=" + Data.SEMANTIC_ID));
+		DefaultDataInfo dataInfo = new DefaultDataInfo();
+		dataInfo.updateFromAasModel(svc.getSubmodelElementByPath("DataInfo"));
+		if ( dataInfo.isEquipment() ) {
+			return dataInfo.getEquipment();
+		}
+		else if ( dataInfo.isOperation() ) {
+			return dataInfo.getOperation();
+		}
+		else {
+			throw new ResourceNotFoundException("ParameterCollection", "id=" + getId());
+		}
+	}
 
     // @GetMapping({"instances/{id}/aas_descriptor"})
 	@Override
@@ -267,11 +290,11 @@ public class HttpMDTInstance implements MDTInstance, HttpClientProxy {
 						.run();
 	}
 	
-	public static void waitWhileStatus(List<HttpMDTInstance> instances, Predicate<MDTInstance> pred,
+	public static void waitWhileStatus(List<HttpMDTInstanceClient> instances, Predicate<MDTInstance> pred,
 										Duration pollInterval, Duration timeout)
 		throws TimeoutException, InterruptedException, ExecutionException {
 		StateChangePoller.pollWhile(() -> {
-			for ( HttpMDTInstance inst: instances ) {
+			for ( HttpMDTInstanceClient inst: instances ) {
 				if ( !pred.test(inst) ) {
 					instances.remove(inst);
 				}
@@ -284,11 +307,11 @@ public class HttpMDTInstance implements MDTInstance, HttpClientProxy {
 		.run();
 	}
 	
-	public List<HttpMDTInstance> getComponentAll() {
+	public List<HttpMDTInstanceClient> getComponentAll() {
 		return getTargetOfDependency("contain");
 	}
 	
-	public List<HttpMDTInstance> getTargetOfDependency(String depType) {
+	public List<HttpMDTInstanceClient> getTargetOfDependency(String depType) {
 		MDTModelService mdtInfo =  MDTModelService.of(this);
 		
 		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();
@@ -305,7 +328,7 @@ public class HttpMDTInstance implements MDTInstance, HttpClientProxy {
 						.toList();
 	}
 	
-	public List<HttpMDTInstance> getSourceInstanceAll(String depType) {
+	public List<HttpMDTInstanceClient> getSourceInstanceAll(String depType) {
 		MDTModelService mdtInfo =  MDTModelService.of(this);
 		
 		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();

@@ -7,6 +7,7 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.expr.LiteralExpr;
 import mdt.model.expr.MDTExprParser;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 
 /**
@@ -55,7 +56,7 @@ public class TestMDTExprParser {
 	
 	private static void printElementReference(MDTInstanceManager manager, String expr) throws IOException {
 		MDTExprParser evaluator = new MDTExprParser();
-		MDTElementReference ref = (MDTElementReference) evaluator.parseElementReference(expr).evaluate();
+		MDTElementReference ref = (MDTElementReference) ElementReferences.parseExpr(expr);
 		ref.activate(manager);
 		System.out.println(ref.read());
 	}

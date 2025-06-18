@@ -3,7 +3,7 @@ package mdt.test;
 import java.io.File;
 
 import mdt.client.HttpMDTManager;
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 
 /**
@@ -17,7 +17,7 @@ public class TestAddZippedInstanceDir {
 		
 		String instId = "heater";
 		File zipFile = new File("/home/kwlee/tmp/models/heater.zip");
-		HttpMDTInstance inst = manager.addZippedInstance(instId, 19090, zipFile);
+		HttpMDTInstanceClient inst = manager.addZippedInstance(instId, 19090, zipFile);
 		System.out.println("instance: aas-id=" + inst.getAasId());
 	}
 }

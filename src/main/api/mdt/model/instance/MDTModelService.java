@@ -1,8 +1,13 @@
 package mdt.model.instance;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -34,6 +39,8 @@ import mdt.model.sm.value.ElementValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public class MDTModelService {
+	private static final Logger s_logger = LoggerFactory.getLogger(MDTModelService.class);
+	
 	private final MDTInstance m_instance;
 	private final InstanceDescriptor m_desc;
 	
@@ -60,9 +67,16 @@ public class MDTModelService {
 	}
 	
 	public List<MDTInstance> getSubComponentAll() {
-		return FStream.from(getTargetInstanceAll("contain"))
-						.filterNot(inst -> inst.getId().equals(m_desc.getId()))
-						.toList();
+		try {
+			return FStream.from(getTargetInstanceAll("contain"))
+							.filterNot(inst -> inst.getId().equals(m_desc.getId()))
+							.toList();
+		}
+		catch ( Exception e ) {
+			// 현 MDTInstance가 RUNNING 상태가 아닌 경우에는 TwinComposition을
+			// 구할 수 없어서 empty list를 반환한다.
+			return Collections.emptyList();
+		}
 	}
 	
 	public List<MDTInstance> getTargetInstanceAll(String depType) {
@@ -71,7 +85,7 @@ public class MDTModelService {
 
 		return FStream.from(tcomp.getCompositionDependencies())
 						.filter(dep -> dep.getDependencyType().equals(depType) && dep.getSourceId().equals(myId))
-						.flatMapNullable(dep -> toInstance(dep.getTargetId()))
+						.mapOrIgnore(dep -> toInstance(dep.getTargetId()))
 						.toList();
 	}
 	
@@ -107,8 +121,8 @@ public class MDTModelService {
 		return paramDesc;
 	}
 	
-	public ElementValue readParameterValue(String paramName) throws IOException {
-		return readParameterValue(getParameterDescriptor(paramName));
+	public SubmodelElement readParameterValueElementValue(String paramName) throws IOException {
+		return readParameterSubmodelElement(getParameterDescriptor(paramName));
 	}
 	
 	public MDTOperationDescriptor getOperationDescriptor(String opName) {
@@ -188,7 +202,7 @@ public class MDTModelService {
 		return tar;
 	}
 	
-	private MDTInstance toInstance(String compId) {
+	private MDTInstance toInstance(String compId) throws ResourceNotFoundException {
 		CompositionItem comp = m_components.get().get(compId);
 		if ( comp == null ) {
 			throw new ResourceNotFoundException("CompositionItem", "id=" + compId);
@@ -231,6 +245,12 @@ public class MDTModelService {
 		MDTParameterReference ref = MDTParameterReference.newInstance(m_instance.getId(), paramDesc.getName());
 		ref.activate(m_instance.getInstanceManager());
 		return ref.readValue();
+	}
+	
+	public SubmodelElement readParameterSubmodelElement(MDTParameterDescriptor paramDesc) throws IOException {
+		MDTParameterReference ref = MDTParameterReference.newInstance(m_instance.getId(), paramDesc.getName());
+		ref.activate(m_instance.getInstanceManager());
+		return ref.read();
 	}
 	
 	private void addValues(ArrayNode args, List<ElementValue> values) {

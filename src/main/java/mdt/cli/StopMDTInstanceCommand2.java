@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import utils.UnitUtils;
 import utils.stream.FStream;
 
-import mdt.client.instance.HttpMDTInstance;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstance;
@@ -65,7 +65,7 @@ public class StopMDTInstanceCommand2 extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 
-		List<HttpMDTInstance> targetInstList;
+		List<HttpMDTInstanceClient> targetInstList;
 		if ( m_stopAll ) {
 			targetInstList = FStream.from(manager.getInstanceAll())
 									.filter(inst -> inst.getStatus() == MDTInstanceStatus.RUNNING)
@@ -80,7 +80,7 @@ public class StopMDTInstanceCommand2 extends AbstractMDTCommand {
 									.toList();
 		}
 		
-		for ( HttpMDTInstance instance: targetInstList ) {
+		for ( HttpMDTInstanceClient instance: targetInstList ) {
 			try {
 				stopInstance(instance);
 			}
@@ -104,7 +104,7 @@ public class StopMDTInstanceCommand2 extends AbstractMDTCommand {
 		}
 		instance.stop(null, null);
 		if ( !m_nowait ) {
-			HttpMDTInstance httpInstance = (HttpMDTInstance)instance;
+			HttpMDTInstanceClient httpInstance = (HttpMDTInstanceClient)instance;
 			httpInstance.waitWhileStatus(status -> status == MDTInstanceStatus.STOPPING, POLL_INTERVAL, TIMEOUT);
 			if ( m_verbose ) {
 				System.out.printf("Stopped MDTInstance[%s]%n", instance.getId());

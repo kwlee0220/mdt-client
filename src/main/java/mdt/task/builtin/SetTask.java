@@ -21,8 +21,8 @@ import mdt.workflow.model.TaskDescriptor;
  */
 public class SetTask extends AbstractMDTTask implements MDTTask {
 	private static final Logger s_logger = LoggerFactory.getLogger(SetTask.class);
-	private static final String VARIABLE_SOURCE = "source";
-	private static final String VARIABLE_TARGET = "target";
+	public static final String VARIABLE_SOURCE = "source";
+	public static final String VARIABLE_TARGET = "target";
 	
 	public SetTask(TaskDescriptor descriptor) {
 		super(descriptor);

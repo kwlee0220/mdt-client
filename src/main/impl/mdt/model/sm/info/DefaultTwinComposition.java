@@ -24,7 +24,7 @@ public class DefaultTwinComposition extends SubmodelElementCollectionEntity
 	@PropertyField(idShort="CompositionType") private String compositionType;
 	
 	@SMListField(idShort="CompositionItems", elementClass=DefaultCompositionItem.class)
-	private List<CompositionItem> CompositionItems = Lists.newArrayList();
+	private List<CompositionItem> compositionItems = Lists.newArrayList();
 	
 	@SMListField(idShort="CompositionDependencies", elementClass=DefaultCompositionDependency.class)
 	private List<CompositionDependency> compositionDependencies = Lists.newArrayList();

@@ -312,7 +312,8 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 			PropertyUtils.setSimpleProperty(this, field.getName(), value);
 		}
 		catch ( Exception e ) {
-			throw new ModelGenerationException("Failed to read a Property into the field: " + field.getName());
+			throw new ModelGenerationException("Failed to read a Property into the field: "
+												+ field.getName() + ", cause=" + e);
 		}
 	}
 
@@ -322,7 +323,8 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 			PropertyUtils.setSimpleProperty(this, field.getName(), mlpv);
 		}
 		catch ( Exception e ) {
-			throw new ModelGenerationException("Failed to read a Property into the field: " + field.getName());
+			throw new ModelGenerationException("Failed to read a Property into the field: "
+												+ field.getName() + ", cause=" + e);
 		}
 	}
 

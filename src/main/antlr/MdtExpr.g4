@@ -9,13 +9,13 @@ start: expr EOF;
 
 expr: valueLiteralSpec
         | fullSubmodelSpec
-        | fullSubmodelElementSpec
+        | fullElementSpec
         | assignmentExpr
         ;
 
 assignmentExpr:
-          fullSubmodelElementSpec '=' valueLiteralSpec
-        | fullSubmodelElementSpec '=' fullSubmodelElementSpec
+          fullElementSpec '=' valueLiteralSpec
+        | fullElementSpec '=' fullElementSpec
         ;
 
 fullInstanceSpec: 'mdt' ':' instanceSpec;
@@ -29,20 +29,23 @@ submodelSpec:
 defaultSubmodelSpec: instanceSpec ':' ( 'idShort' '=' )? idOrString;
 idBasedSubmodelSpec: 'submodel' ':' 'id' '=' idOrString;
 
-fullSubmodelElementSpec:
-          defaultSubmodelElementSpec
+fullElementSpec:
+          defaultElementSpec
         | 'param' ':' parameterSpec
         | 'oparg' ':' argumentSpec
         | 'opvar' ':' opVarSpec
         ;
 
-defaultSubmodelElementSpec: submodelSpec ':' idShortPath;
+defaultElementSpec: submodelSpec ':' idShortPath;
 idShortPath: idOrString (idShortSeg)*;
 idShortSeg: '.' idOrString | '[' INTEGER ']';
 
-parameterSpec: instanceSpec ':' (idOrString | INTEGER | '*');
+parameterSpec: ( parameterPathSpec | parameterAllSpec );
+parameterPathSpec: instanceSpec ':' (idOrString | INTEGER) ( ':' idShortPath )?;
+parameterAllSpec: instanceSpec ':' '*';
+
 argumentSpec: submodelSpec ':' ('in' | 'out') ':' (idOrString | INTEGER | '*');
-opVarSpec: defaultSubmodelElementSpec ':' ('in' | 'out' | 'inout') ':' (INTEGER);
+opVarSpec: defaultElementSpec ':' ('in' | 'out' | 'inout') ':' (INTEGER);
 
 valueLiteralSpec:
         propertyValueLiteralSpec

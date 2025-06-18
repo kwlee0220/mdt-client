@@ -6,7 +6,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import mdt.model.expr.MDTSubmodelExpr.SubmodelByIdShortExpr;
 import mdt.model.expr.MdtExprParser.DefaultSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.ExprContext;
-import mdt.model.expr.MdtExprParser.FullSubmodelElementSpecContext;
+import mdt.model.expr.MdtExprParser.FullElementSpecContext;
+import mdt.model.expr.MdtExprParser.FullSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.IdShortPathContext;
 import mdt.model.expr.MdtExprParser.InstanceSpecContext;
 import mdt.model.expr.MdtExprParser.SubmodelSpecContext;
@@ -68,7 +69,7 @@ public class MDTExprParser {
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 		MdtExprParser parser = new MdtExprParser(tokens);
 
-		FullSubmodelElementSpecContext tree = parser.fullSubmodelElementSpec();
+		FullElementSpecContext tree = parser.fullElementSpec();
 		MDTExprVisitor visitor = new MDTExprVisitor();
 
 		return (MDTElementReferenceExpr)visitor.visit(tree);

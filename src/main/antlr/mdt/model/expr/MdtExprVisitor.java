@@ -67,17 +67,17 @@ public interface MdtExprVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitIdBasedSubmodelSpec(MdtExprParser.IdBasedSubmodelSpecContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link MdtExprParser#fullSubmodelElementSpec}.
+	 * Visit a parse tree produced by {@link MdtExprParser#fullElementSpec}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitFullSubmodelElementSpec(MdtExprParser.FullSubmodelElementSpecContext ctx);
+	T visitFullElementSpec(MdtExprParser.FullElementSpecContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link MdtExprParser#defaultSubmodelElementSpec}.
+	 * Visit a parse tree produced by {@link MdtExprParser#defaultElementSpec}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitDefaultSubmodelElementSpec(MdtExprParser.DefaultSubmodelElementSpecContext ctx);
+	T visitDefaultElementSpec(MdtExprParser.DefaultElementSpecContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link MdtExprParser#idShortPath}.
 	 * @param ctx the parse tree
@@ -96,6 +96,18 @@ public interface MdtExprVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitParameterSpec(MdtExprParser.ParameterSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#parameterPathSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParameterPathSpec(MdtExprParser.ParameterPathSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#parameterAllSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitParameterAllSpec(MdtExprParser.ParameterAllSpecContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link MdtExprParser#argumentSpec}.
 	 * @param ctx the parse tree

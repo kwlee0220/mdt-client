@@ -15,11 +15,11 @@ import mdt.model.expr.MDTSubmodelExpr.SubmodelByIdExpr;
 import mdt.model.expr.MDTSubmodelExpr.SubmodelByIdShortExpr;
 import mdt.model.expr.MdtExprParser.ArgumentSpecContext;
 import mdt.model.expr.MdtExprParser.AssignmentExprContext;
-import mdt.model.expr.MdtExprParser.DefaultSubmodelElementSpecContext;
+import mdt.model.expr.MdtExprParser.DefaultElementSpecContext;
 import mdt.model.expr.MdtExprParser.DefaultSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.FileValueLiteralSpecContext;
+import mdt.model.expr.MdtExprParser.FullElementSpecContext;
 import mdt.model.expr.MdtExprParser.FullInstanceSpecContext;
-import mdt.model.expr.MdtExprParser.FullSubmodelElementSpecContext;
 import mdt.model.expr.MdtExprParser.FullSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.IdBasedSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.IdOrStringContext;
@@ -27,9 +27,12 @@ import mdt.model.expr.MdtExprParser.IdShortSegContext;
 import mdt.model.expr.MdtExprParser.InstanceSpecContext;
 import mdt.model.expr.MdtExprParser.MlpPropertyValueLiteralSpecContext;
 import mdt.model.expr.MdtExprParser.OpVarSpecContext;
+import mdt.model.expr.MdtExprParser.ParameterAllSpecContext;
+import mdt.model.expr.MdtExprParser.ParameterPathSpecContext;
 import mdt.model.expr.MdtExprParser.ParameterSpecContext;
 import mdt.model.expr.MdtExprParser.PropertyValueLiteralSpecContext;
 import mdt.model.expr.MdtExprParser.RangeValueLiteralSpecContext;
+import mdt.model.expr.MdtExprParser.SubmodelSpecContext;
 import mdt.model.expr.TerminalExpr.DoubleExpr;
 import mdt.model.expr.TerminalExpr.IntegerExpr;
 import mdt.model.expr.TerminalExpr.StringExpr;
@@ -65,7 +68,20 @@ public class MDTExprVisitor extends MdtExprBaseVisitor<MDTExpr> {
 
 	@Override
 	public MDTSubmodelExpr visitFullSubmodelSpec(FullSubmodelSpecContext ctx) {
-		return visitDefaultSubmodelSpec((DefaultSubmodelSpecContext)ctx.getChild(0));
+		return visitSubmodelSpec((SubmodelSpecContext)ctx.getChild(0));
+	}
+	@Override
+	public MDTSubmodelExpr visitSubmodelSpec(SubmodelSpecContext ctx) {
+		ParseTree pt = ctx.getChild(0);
+		if ( pt instanceof DefaultSubmodelSpecContext ) {
+			return (MDTSubmodelExpr) ctx.getChild(0).accept(this);
+		}
+		else if ( pt instanceof IdBasedSubmodelSpecContext ) {
+			return (MDTSubmodelExpr) ctx.getChild(0).accept(this);
+		}
+		else {
+			throw new IllegalArgumentException("Unknown submodel spec: " + ctx.getText());
+		}
 	}
 	@Override
 	public MDTSubmodelExpr visitDefaultSubmodelSpec(DefaultSubmodelSpecContext ctx) {
@@ -82,7 +98,7 @@ public class MDTExprVisitor extends MdtExprBaseVisitor<MDTExpr> {
 	}
 	
 	@Override
-	public MDTElementReferenceExpr visitFullSubmodelElementSpec(FullSubmodelElementSpecContext ctx) {
+	public MDTElementReferenceExpr visitFullElementSpec(FullElementSpecContext ctx) {
 		if ( ctx.getChild(0) instanceof TerminalNode ) {
 			return (MDTElementReferenceExpr) ctx.getChild(2).accept(this);
 		}
@@ -92,17 +108,33 @@ public class MDTExprVisitor extends MdtExprBaseVisitor<MDTExpr> {
 	}
 	
 	@Override
-	public DefaultElementReferenceExpr visitDefaultSubmodelElementSpec(DefaultSubmodelElementSpecContext ctx) {
+	public DefaultElementReferenceExpr visitDefaultElementSpec(DefaultElementSpecContext ctx) {
 		MDTSubmodelReference smRef = (MDTSubmodelReference)ctx.getChild(0).accept(this).evaluate();
 		IdShortPath path = (IdShortPath)ctx.getChild(2).accept(this).evaluate();
 		return new DefaultElementReferenceExpr(smRef, path);
 	}
 
 	@Override
-	public MDTExpr visitParameterSpec(ParameterSpecContext ctx) {
+	public ParameterReferenceExpr visitParameterSpec(ParameterSpecContext ctx) {
+		return (ParameterReferenceExpr)ctx.getChild(0).accept(this);
+	}
+	
+	@Override
+	public ParameterReferenceExpr visitParameterPathSpec(ParameterPathSpecContext ctx) {
 		StringExpr instIdExpr = (StringExpr)ctx.getChild(0).accept(this);
-		MDTExpr keyExpr = ctx.getChild(2).accept(this);
-		return new ParameterReferenceExpr(instIdExpr, keyExpr);
+		MDTExpr paramKeyExpr = ctx.getChild(2).accept(this);
+		
+		MDTIdShortPathExpr subPathExpr = null;
+		if ( ctx.getChildCount() > 3 ) {
+			subPathExpr = (MDTIdShortPathExpr)ctx.getChild(4).accept(this);
+		}
+		return new ParameterReferenceExpr(instIdExpr, paramKeyExpr, subPathExpr);
+	}
+	
+	@Override
+	public ParameterReferenceExpr visitParameterAllSpec(ParameterAllSpecContext ctx) {
+		StringExpr instIdExpr = (StringExpr)ctx.getChild(0).accept(this);
+		return new ParameterReferenceExpr(instIdExpr, new SymbolExpr("*"), null);
 	}
 
 	@Override

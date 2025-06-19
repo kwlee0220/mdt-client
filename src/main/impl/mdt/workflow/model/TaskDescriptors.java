@@ -225,11 +225,13 @@ public class TaskDescriptors {
 			return (T)this;
 		}
 		
+		@SuppressWarnings("unchecked")
 		public T addInputVariable(Variable var) {
 			m_descriptor.getInputVariables().addOrReplace(var);
 			return (T) this;
 		}
 		
+		@SuppressWarnings("unchecked")
 		public T addOutputVariable(Variable var) {
 			m_descriptor.getOutputVariables().addOrReplace(var);
 			return (T) this;

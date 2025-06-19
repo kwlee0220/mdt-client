@@ -7,7 +7,10 @@ plugins {
 
 group = 'etri'
 version = '1.1.0'
-mainClassName = 'mdt.cli.MDTCommandsMain'
+
+application {
+	mainClass = 'mdt.cli.MDTCommandsMain'
+}
 
 java {
 	sourceCompatibility = JavaVersion.VERSION_21
@@ -38,13 +41,10 @@ repositories {
 	}
 	mavenCentral()
 }
-	
-[compileJava,compileTestJava]*.options*.encoding = 'UTF-8'
-compileJava {
-	options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
-}
+
 tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ["-Aproject=${project.group}/${project.name}", "-Xlint:deprecation"]
 }
 
 configurations {

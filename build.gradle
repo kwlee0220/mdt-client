@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'etri'
-version = '1.0.0'
+version = '1.1.0'
 mainClassName = 'mdt.cli.MDTCommandsMain'
 
 java {
@@ -60,7 +60,7 @@ dependencies {
 	implementation project(":utils")
 
 	// Guava (from the project :utils)
-	implementation "com.google.guava:guava:${guava_version}"
+//	implementation "com.google.guava:guava:${guava_version}"
 	
 	// Checker framework
 	implementation("org.checkerframework:checker:${checker_version}")
@@ -96,7 +96,6 @@ dependencies {
 	implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jackson_version}"
 	
 	// Tika
-//	implementation "org.apache.tika:tika-parsers-standard-package:${tika_version}"
 	implementation "org.apache.tika:tika-core:${tika_version}"
 
 	// JSLT2
@@ -105,17 +104,17 @@ dependencies {
 	// picocli command line parser
 	implementation "info.picocli:picocli:${picocli_version}"
 	annotationProcessor "info.picocli:picocli-codegen:${picocli_version}"
-//	implementation "info.picocli:picocli-shell-jline3:${picocli_version}"
-	implementation "org.fusesource.jansi:jansi:${jansi_version}"
+//	implementation "org.fusesource.jansi:jansi:${jansi_version}"
 	
 	// MQTT
 	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"
 	
 	// Antlr
-	// antlr "org.antlr:antlr4:${antlr_version}"
 	implementation "org.antlr:antlr4-runtime:${antlr_version}"
 	
+	// CLI에서 테이블 형태로 text 출력할 때 사용
 	implementation "org.nocrala.tools.texttablefmt:text-table-formatter:${text_table_version}"
+	// CLI에서 트리 형태로 text 출력할 때 사용
 	implementation "org.barfuin.texttree:text-tree:${text_tree_version}"
 	
 	testImplementation "junit:junit:${junit_version}"

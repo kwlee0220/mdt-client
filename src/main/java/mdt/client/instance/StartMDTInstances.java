@@ -20,7 +20,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import utils.InternalException;
 import utils.StopWatch;
 import utils.Throwables;
 import utils.UnitUtils;
@@ -140,6 +139,9 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		StartableExecution<Void> exec = Executions.toExecution(() -> {
 			startInstanceInOwnThread(instance);
 		}, m_executor);
+		exec.whenFailed(cause -> {
+			System.out.printf("Failed to start MDTInstance: id=%s, cause=%s%n", instance.getId(), cause);
+		});
 
 		// 비동기적으로 시작시키고 m_pendingCount를 증가시킨다.
 		// 이 작업을 쓰레드 풀이 부족한 경우 바로 시작하지 않고 대기할 수 있다.
@@ -191,14 +193,10 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		
 		try {
 			try {
-				if ( s_logger.isDebugEnabled() ) {
-					s_logger.debug("Starting MDTInstance: id=" + instance.getId());
-				}
+				s_logger.debug("Starting MDTInstance: id={}", instance.getId());
 				
 				instance.start(m_pollingInterval, m_timeout);
-				if ( s_logger.isInfoEnabled() ) {
-					s_logger.info("Started: MDTInstance: id=" + instance.getId());
-				}
+				s_logger.info("Started: MDTInstance: id={}", instance.getId());
 			}
 			catch ( InvalidResourceStatusException e ) {
 				if ( instance.getStatus() == MDTInstanceStatus.RUNNING ) {
@@ -208,7 +206,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 					}
 				}
 				else {
-					throw new InternalException("Failed to start MDTInstance: id=" + instance.getId(), e);
+					throw e;
 				}
 			}
 
@@ -229,7 +227,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		}
 		catch ( InvalidResourceStatusException |  TimeoutException | InterruptedException e ) {
 			Throwable cause = Throwables.unwrapThrowable(e);
-			s_logger.error("Failed: start MDTInstance: id={}, cause={}", instance.getId(), cause);
+			s_logger.error("Failed: start MDTInstance: id={}, cause={}", instance.getId(), ""+cause);
 			throw e;
 		}
 		finally {

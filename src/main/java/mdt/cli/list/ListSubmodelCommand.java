@@ -26,6 +26,7 @@ import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.simulation.Simulation;
+import mdt.model.timeseries.TimeSeries;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -160,6 +161,7 @@ public class ListSubmodelCommand extends AbstractMDTCommand {
 			case InformationModel.SEMANTIC_ID -> "InformationModel";
 			case Simulation.SEMANTIC_ID -> "Simulation";
 			case AI.SEMANTIC_ID -> "AI";
+			case TimeSeries.SEMANTIC_ID -> "TimeSeries";
 			default -> throw new InternalException("Unsupported SemanticID: " + semanticId);
 		};
 	}

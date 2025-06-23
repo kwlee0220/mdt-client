@@ -111,7 +111,7 @@ public class Nodes {
 		public InstanceNode(HttpMDTInstanceClient instance) {
 			m_instance = instance;
 			m_status = instance.getStatus();
-			m_baseUrl = (m_status == MDTInstanceStatus.RUNNING) ? m_instance.getBaseEndpoint() : null;
+			m_baseUrl = (m_status == MDTInstanceStatus.RUNNING) ? m_instance.getServiceEndpoint() : null;
 			m_children = KeyedValueList.with(Node::getKey);
 		}
 

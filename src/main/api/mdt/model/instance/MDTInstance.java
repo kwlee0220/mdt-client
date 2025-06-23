@@ -70,7 +70,7 @@ public interface MDTInstance {
 	 * @return	Endpoint 정보.
 	 * @see MDTInstance#getInstanceDescriptor()
 	 */
-	public @Nullable String getBaseEndpoint();
+	public @Nullable String getServiceEndpoint();
 
 	/**
 	 * MDTInstance가 포함한 AssetAdministrationShell (AAS)의 식별자를 반환한다.

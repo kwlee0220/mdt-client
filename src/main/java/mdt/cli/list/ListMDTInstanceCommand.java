@@ -312,7 +312,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 //		}
 //		assetName = "'" + Utilities.padRight(assetName, 20) + "'";
 		
-		String serviceEndpoint = ObjectUtils.defaultIfNull(instance.getBaseEndpoint(), "");
+		String serviceEndpoint = ObjectUtils.defaultIfNull(instance.getServiceEndpoint(), "");
 		return new Object[] {
 			String.format(format, seqNo),
 			instance.getId(),

@@ -33,7 +33,7 @@ public class TestMDTInstance {
 						.map(InstanceSubmodelDescriptor::getIdShort)
 						.toSet().equals(Set.of("Data", "InformationModel"));
 		assert inst1.getStatus().equals(MDTInstanceStatus.STOPPED);
-		assert inst1.getEndpoint() == null;
+		assert inst1.getServiceEndpoint() == null;
 		assert inst1.getAssetType().equals("Line");
 		
 		HttpMDTInstanceClient inst2 = client.addInstance("CRF", null, new File(dir, "aas_CRF.json"), new File(dir, "conf_CRF.json"));

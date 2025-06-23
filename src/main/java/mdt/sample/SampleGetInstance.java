@@ -28,7 +28,7 @@ public class SampleGetInstance {
 		System.out.printf("%-20s: %s%n", "aasId", inst.getAasId());
 		System.out.printf("%-20s: %s%n", "aasIdShort", inst.getAasIdShort());
 		System.out.printf("%-20s: %s%n", "status", inst.getStatus());
-		System.out.printf("%-20s: %s%n", "endpoint", inst.getBaseEndpoint());
+		System.out.printf("%-20s: %s%n", "endpoint", inst.getServiceEndpoint());
 		System.out.printf("%-20s: %s%n", "globalAssetId", inst.getGlobalAssetId());
 		System.out.printf("%-20s: %s%n", "assetType", inst.getAssetType());
 		System.out.printf("%-20s: %s%n", "assetKind", inst.getAssetKind());

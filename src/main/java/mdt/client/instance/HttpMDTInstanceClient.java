@@ -63,7 +63,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	private static final RequestBody EMPTY_BODY = RequestBody.create("", null);
 	
 	private final String m_id;
-	private final String m_endpoint;
+	private final String m_registryEndpoint;
 	private final HttpMDTInstanceManager m_manager;
 	private final HttpRESTfulClient m_restfulClient;
 	private final AtomicReference<InstanceDescriptor> m_desc;
@@ -72,7 +72,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		m_manager = manager;
 		
 		m_id = desc.getId();
-		m_endpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
+		m_registryEndpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
 		m_restfulClient = HttpRESTfulClient.builder()
 										.httpClient(manager.getHttpClient())
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(InstanceDescriptorSerDe.MAPPER))
@@ -97,7 +97,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 
 	@Override
-	public String getBaseEndpoint() {
+	public String getServiceEndpoint() {
 		return m_desc.get().getBaseEndpoint();
 	}
 	
@@ -185,7 +185,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
 	@Override
 	public HttpAASServiceClient getAssetAdministrationShellService() {
-		String endpoint = DescriptorUtils.toAASServiceEndpointString(getBaseEndpoint(), getAasId());
+		String endpoint = DescriptorUtils.toAASServiceEndpointString(getServiceEndpoint(), getAasId());
 		if ( endpoint == null ) {
 			throw new InvalidResourceStatusException("AssetAdministrationShell",
 													String.format("mdt=%s, id=%s", getId(), getAasId()),
@@ -270,7 +270,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
 	@Override
 	public String getEndpoint() {
-		return m_endpoint;
+		return m_registryEndpoint;
 	}
 	
 	public void waitWhileStatus(Predicate<MDTInstanceStatus> waitCond, Duration pollInterval, Instant due)
@@ -373,7 +373,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 	
 	private SubmodelService toSubmodelService(String id) {
-		String baseEndpoint = getBaseEndpoint();
+		String baseEndpoint = getServiceEndpoint();
 		if ( baseEndpoint == null ) {
 			throw new InvalidResourceStatusException("MDTInstance", "id=" + getId(), getStatus());
 		}
@@ -384,7 +384,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 
 	public String getSubmodelServiceEndpoint(String submodelId) {
-		String instanceServiceEndpoint = getBaseEndpoint();
+		String instanceServiceEndpoint = getServiceEndpoint();
 		if ( instanceServiceEndpoint != null ) {
 			String encodedSubmodelId = AASUtils.encodeBase64UrlSafe(submodelId);
 			return String.format("%s/submodels/%s", instanceServiceEndpoint, encodedSubmodelId);

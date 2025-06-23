@@ -167,7 +167,7 @@ public class MDTModelService {
 		MDTInstanceStatus status = m_instance.getStatus();
 		tar.put("status", status.name());
 		if ( status == MDTInstanceStatus.RUNNING ) {
-			tar.put("baseEndpoint", m_instance.getBaseEndpoint());
+			tar.put("baseEndpoint", m_instance.getServiceEndpoint());
 		}
 		else {
 			tar.putNull("baseEndpoint");

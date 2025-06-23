@@ -148,7 +148,7 @@ public class GetShellCommand extends AbstractMDTCommand {
 					table.addCell(String.format(" SUB_MODEL_REF_[%02d] ", tup.index()));
 					table.addCell(" " + tup.value() + " ");
 				});
-		String aasEp = DescriptorUtils.toAASServiceEndpointString(instance.getEndpoint(), aas.getId());
+		String aasEp = DescriptorUtils.toAASServiceEndpointString(instance.getServiceEndpoint(), aas.getId());
 		table.addCell(" ENDPOINT "); table.addCell(" " + getOrEmpty(aasEp));
 		
 		System.out.println(table.render());

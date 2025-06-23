@@ -58,7 +58,7 @@ public class SetElementCommand extends AbstractMDTCommand {
 	}
 	
 	static class FileElementSpec {
-		@Option(names = {"--file", "-f"}, paramLabel="file path", required=true)
+		@Option(names = {"--file"}, paramLabel="file path", required=true)
 		private File m_file;
 		
 		@Option(names = {"--path"}, paramLabel="value for File", required=false)

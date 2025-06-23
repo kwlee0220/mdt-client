@@ -43,10 +43,16 @@ public class ElementValues {
 		}
 		
 		if ( element instanceof Property prop ) {
-			return new PropertyValue(prop.getValue());
+			if ( prop.getValue() != null ) {
+				return new PropertyValue(prop.getValue());
+			}
+			else {
+				return null;
+			}
 		}
 		else if ( element instanceof SubmodelElementCollection smec ) {
 			Map<String,ElementValue> members = FStream.from(smec.getValue())
+											    .filter(sme -> getValue(sme) != null)
 												.mapToKeyValue(sme -> KeyValue.of(sme.getIdShort(), getValue(sme)))
 												.toMap();
 			return new ElementCollectionValue(members);

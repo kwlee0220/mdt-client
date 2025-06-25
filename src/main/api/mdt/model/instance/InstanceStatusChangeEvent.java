@@ -22,7 +22,7 @@ import mdt.model.MDTManagerEvent;
 public class InstanceStatusChangeEvent extends MDTManagerEvent {
 	private final String m_instanceId;
 	private final String m_statusChange;
-	@Nullable private final String m_serviceEndpoint;
+	private final @Nullable String m_serviceEndpoint;
 	
 	@JsonCreator
 	private InstanceStatusChangeEvent(@JsonProperty("eventType") String eventType,

@@ -17,7 +17,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Preconditions;
 
 import utils.DataUtils;
@@ -32,7 +31,6 @@ import utils.stream.FStream;
 
 import mdt.client.operation.HttpOperationClient;
 import mdt.model.AASUtils;
-import mdt.model.MDTModelSerDe;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.SubmodelUtils;
@@ -109,6 +107,13 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		OperationResult result = invokeOperation(opRef, op);
 		m_guard.run(() -> m_opResult = result);
 		
+		if ( !result.getSuccess() ) {
+			String fullMsg = FStream.from(m_opResult.getMessages())
+									.map(msg -> msg.getText())
+									.join(System.lineSeparator());
+			throw new TaskException(new RESTfulRemoteException("Operation failed: msg=" + fullMsg));
+		}
+		
 		// ASOperation 수행 결과를 output task variable들에 반영한다.
 		updateOutputVariables(m_opResult);
 		
@@ -132,23 +137,11 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		if ( showResult ) {
 			for ( OperationVariable opVar: result.getOutputArguments() ) {
 				ElementValue ev = ElementValues.getValue(opVar.getValue());
-				try {
-					String valJsonStr = MDTModelSerDe.getJsonMapper().writeValueAsString(ev);
-					System.out.printf("[output] %s: %s%n", opVar.getValue().getIdShort(), valJsonStr);
-				}
-				catch ( JsonProcessingException e ) {
-					System.out.println("Failed to serialize OperationVariable: " + opVar.getValue().getIdShort());
-				}
+				System.out.printf("[output] %s: %s%n", opVar.getValue().getIdShort(), ev.toValueString());
 			}
 			for ( OperationVariable opVar: result.getInoutputArguments() ) {
 				ElementValue ev = ElementValues.getValue(opVar.getValue());
-				try {
-					String valJsonStr = MDTModelSerDe.getJsonMapper().writeValueAsString(ev);
-					System.out.printf("[inoutput] %s: %s%n", opVar.getValue().getIdShort(), valJsonStr);
-				}
-				catch ( JsonProcessingException e ) {
-					System.out.println("Failed to serialize OperationVariable: " + opVar.getValue().getIdShort());
-				}
+				System.out.printf("[inoutput] %s: %s%n", opVar.getValue().getIdShort(), ev.toValueString());
 			}
 		}
 	}

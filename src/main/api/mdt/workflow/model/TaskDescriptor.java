@@ -42,9 +42,9 @@ import mdt.model.sm.variable.Variable;
 @JsonInclude(Include.NON_NULL)
 public final class TaskDescriptor {
 	private String m_id;
-	@Nullable private String m_name;
+	private @Nullable String m_name;
 	private String m_type;
-	@Nullable private String m_description;
+	private @Nullable String m_description;
 	
 	private Set<String> m_dependencies = Sets.newHashSet();
 	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);

@@ -145,7 +145,7 @@ public class SubmodelUtils {
 	}
 	
 	public static void updateSubBuffer(String bufferPath, SubmodelElement buffer,
-										String updatePath, SubmodelElement update) {
+										String updatePath, SubmodelElement update) throws IOException {
 		String relPath = toRelativeIdShortPath(bufferPath, updatePath);
 		SubmodelElement subBuffer = traverse(buffer, relPath);
 		ElementValues.update(subBuffer, ElementValues.getValue(update));

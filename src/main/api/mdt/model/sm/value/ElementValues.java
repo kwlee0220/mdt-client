@@ -1,35 +1,48 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.Range;
+import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
+import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Maps;
 
-import utils.KeyValue;
-import utils.func.FOption;
+import utils.json.JacksonDeserializationException;
+import utils.json.JacksonUtils;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
+import mdt.aas.DataType;
+import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
 import mdt.model.expr.MDTExprParser;
+import mdt.model.sm.value.PropertyValue.BooleanPropertyValue;
+import mdt.model.sm.value.PropertyValue.DateTimePropertyValue;
+import mdt.model.sm.value.PropertyValue.DoublePropertyValue;
+import mdt.model.sm.value.PropertyValue.DurationPropertyValue;
+import mdt.model.sm.value.PropertyValue.FloatPropertyValue;
+import mdt.model.sm.value.PropertyValue.IntegerPropertyValue;
+import mdt.model.sm.value.PropertyValue.StringPropertyValue;
 
 
 /**
@@ -44,22 +57,25 @@ public class ElementValues {
 		
 		if ( element instanceof Property prop ) {
 			if ( prop.getValue() != null ) {
-				return new PropertyValue(prop.getValue());
+				return getPropertyValue(prop);
 			}
 			else {
 				return null;
 			}
 		}
 		else if ( element instanceof SubmodelElementCollection smec ) {
-			Map<String,ElementValue> members = FStream.from(smec.getValue())
-											    .filter(sme -> getValue(sme) != null)
-												.mapToKeyValue(sme -> KeyValue.of(sme.getIdShort(), getValue(sme)))
-												.toMap();
+			Map<String,ElementValue> members = Maps.newHashMap();
+			for ( SubmodelElement field : smec.getValue() ) {
+				ElementValue fieldValue = getValue(field);
+				if ( fieldValue != null ) {
+					members.put(field.getIdShort(), fieldValue);
+				}
+			}
 			return new ElementCollectionValue(members);
 		}
 		else if ( element instanceof SubmodelElementList smel ) {
 			List<ElementValue> values = FStream.from(smel.getValue())
-														.map(ElementValues::getValue)
+														.mapOrThrow(ElementValues::getValue)
 														.toList();
 			return new ElementListValue(values);
 		}
@@ -70,7 +86,11 @@ public class ElementValues {
 			return getMLPValue(mlp);
 		}
 		else if ( element instanceof Range rg ) {
-			return new RangeValue(rg.getMin(), rg.getMax());
+			DataType<?> vtype = DataTypes.fromAas4jDatatype(rg.getValueType());		
+			Object min = vtype.parseValueString(rg.getMin());
+			Object max = vtype.parseValueString(rg.getMax());
+	
+			return new RangeValue(vtype, min, max);
 		}
 		else {
 			String msg = String.format("(SubmodelElementValue) type=%s", element.getClass().getSimpleName());
@@ -78,8 +98,8 @@ public class ElementValues {
 		}
 	}
 
-	public static PropertyValue getPropertyValue(Property prop) {
-		return new PropertyValue(prop.getValue());
+	public static PropertyValue<?> getPropertyValue(Property prop) {
+		return PropertyValue.from(prop);
 	}
 	public static FileValue getFileValue(File aasFile) {
 		return new FileValue(aasFile.getContentType(), aasFile.getValue());
@@ -87,69 +107,54 @@ public class ElementValues {
 	public static MultiLanguagePropertyValue getMLPValue(MultiLanguageProperty mlp) {
 		return new MultiLanguagePropertyValue(mlp.getValue());
 	}
-
-	public static String toRawString(SubmodelElement sme) {
-		ElementValue smev = FOption.map(sme, ElementValues::getValue);
-		return toRawString(smev);
-	}
-
-	public static String toRawString(ElementValue smev) {
-		if ( smev != null ) {
-			return ( smev instanceof PropertyValue propv )
-					? FOption.getOrElse(propv.get(), "")
-					: MDTModelSerDe.toJsonString(smev);
-		}
-		else {
-			return null;
-		}
-	}
-
-	public static SubmodelElement updateWithRawString(SubmodelElement sme, String rawString) throws IOException {
-		rawString = rawString.trim();
-		JsonNode rawValue = ( rawString.startsWith("{") )
-							? MDTModelSerDe.readJsonNode(rawString)
-							: new TextNode(rawString);
-		return update(sme, rawValue);
+	
+	public static ElementValue parseValueJsonString(SubmodelElement proto, String valueJsonString) throws IOException {
+		JsonNode jnode = MDTModelSerDe.getJsonMapper().readTree(valueJsonString);
+		return parseValueJsonNode(proto, jnode);
 	}
 	
-	public static SubmodelElement update(SubmodelElement sme, JsonNode valueNode) throws IOException {
-		if ( valueNode.isMissingNode() ) {
-			return sme;
+	public static ElementValue parseValueJsonNode(SubmodelElement proto, JsonNode vnode) {
+		switch ( proto ) {
+			case Property prop:
+				return PropertyValue.parseValueJsonNode(prop, vnode);
+			case SubmodelElementCollection smc:
+				return ElementCollectionValue.parseValueJsonNode(smc, vnode);
+			case SubmodelElementList sml:
+				return ElementListValue.parseValueJsonNode(sml, vnode);
+			case File aasFile:
+				return FileValue.parseValueJsonNode(aasFile, vnode);
+			case MultiLanguageProperty mlp:
+				return MultiLanguagePropertyValue.parseValueJsonNode(mlp, vnode);
+			case Range rg:
+				return RangeValue.parseValueJsonNode(rg, vnode);
+			case ReferenceElement ref:
+				return ReferenceElementValue.parseValueJsonNode(ref, vnode);
+			default:
+				String msg = String.format(
+						"Unsupported SubmodelElement(%s) for 'parseValueString(SubmodelElement, String)'",
+						proto.getClass());
+				throw new IllegalArgumentException(msg);
+		}
+	}
+
+	public static SubmodelElement updateWithRawValueString(@NonNull SubmodelElement sme, String valueJsonString)
+		throws IOException {
+		if ( sme instanceof Property ) {
+			if ( !valueJsonString.startsWith("\"") ) {
+				valueJsonString = "\"" + valueJsonString;
+			}
+			if ( !valueJsonString.endsWith("\"") ) {
+				valueJsonString = valueJsonString + "\"";
+			}
 		}
 		
-		if ( sme instanceof Property prop ) {
-			if ( valueNode.isValueNode()  ) {
-				prop.setValue(valueNode.asText());
-			}
-			else {
-				update(prop, MDTModelSerDe.readValue(valueNode, PropertyValue.class));
-			}
-		}
-		else if ( sme instanceof SubmodelElementCollection smc ) {
-			FStream.from(smc.getValue())
-					.tagKey(v -> v.getIdShort())
-					.innerJoin(FStream.from(valueNode.fields()).toKeyValueStream(Entry::getKey, Entry::getValue))
-					.forEachOrThrow(match -> update(match.value()._1, match.value()._2));
-		}
-		else if ( sme instanceof SubmodelElementList sml ) {
-			FStream.from(sml.getValue())
-					.zipWith(FStream.from(valueNode.elements()))
-					.forEachOrThrow(tup -> update(tup._1, tup._2));
-		}
-		else if ( sme instanceof File aasFile ) {
-			update(aasFile, MDTModelSerDe.readValue(valueNode, FileValue.class));
-		}
-		else if ( sme instanceof Range rg ) {
-			update(rg, MDTModelSerDe.readValue(valueNode, RangeValue.class));
-		}
-		else if ( sme instanceof MultiLanguageProperty mlprop ) {
-			update(mlprop, MDTModelSerDe.readValue(valueNode, MultiLanguagePropertyValue.class));
-		}
-		else {
-			String msg = String.format("Unsupported SubmodelElement(%s) for 'update(SubmodelElement, JsonNode)",
-										sme.getClass());
-			throw new IllegalArgumentException(msg);
-		}
+		ElementValue value = parseValueJsonString(sme, valueJsonString);
+		return update(sme, value);
+	}
+	
+	public static SubmodelElement update(@NonNull SubmodelElement sme, JsonNode valueNode) {
+		ElementValue value = parseValueJsonNode(sme, valueNode);
+		update(sme, value);
 		
 		return sme;
 	}
@@ -216,8 +221,8 @@ public class ElementValues {
 		return sme;
 	}
 	
-	public static Property update(Property prop, PropertyValue newValue) {
-		prop.setValue(newValue.get());
+	public static Property update(Property prop, PropertyValue<?> newValue) {
+		prop.setValue(newValue.toValueString());
 		return prop;
 	}
 	
@@ -227,9 +232,10 @@ public class ElementValues {
 		return aasFile;
 	}
 	
-	public static Range update(Range rg, RangeValue newValue) {
-		rg.setMin(newValue.getMin());
-		rg.setMax(newValue.getMax());
+	public static Range update(Range rg, RangeValue<?> newValue) {
+		DataType<?> vtype = newValue.getValueType();
+		rg.setMin(vtype.toValueString(newValue.getMin()));
+		rg.setMax(vtype.toValueString(newValue.getMax()));
 		return rg;
 	}
 	
@@ -242,52 +248,119 @@ public class ElementValues {
 		return MDTExprParser.parseValueLiteral(expr).evaluate();
 	}
 	
-	private static final BiMap<String,Class<? extends ElementValue>> TYPE_CLASSES = HashBiMap.create();
-	private static final BiMap<Class<? extends ElementValue>, String> CLASS_TYPES = TYPE_CLASSES.inverse();
-	static {
-		TYPE_CLASSES.put(PropertyValue.SERIALIZATION_TYPE, PropertyValue.class);
-		TYPE_CLASSES.put(FileValue.SERIALIZATION_TYPE, FileValue.class);
-		TYPE_CLASSES.put(RangeValue.SERIALIZATION_TYPE, RangeValue.class);
-		TYPE_CLASSES.put(MultiLanguagePropertyValue.SERIALIZATION_TYPE, MultiLanguagePropertyValue.class);
-		TYPE_CLASSES.put(OperationVariableValue.SERIALIZATION_TYPE, OperationVariableValue.class);
-		TYPE_CLASSES.put(ReferenceElementValue.SERIALIZATION_TYPE, ReferenceElementValue.class);
-		TYPE_CLASSES.put(ElementCollectionValue.SERIALIZATION_TYPE, ElementCollectionValue.class);
-		TYPE_CLASSES.put(ElementListValue.SERIALIZATION_TYPE, ElementListValue.class);
-	}
-	
-	public static Class<? extends ElementValue> getElementValueClass(String type) {
-		Class<? extends ElementValue> valCls = TYPE_CLASSES.get(type);
-		if ( valCls != null ) {
-			return valCls;
-		}
-		else {
-			throw new IllegalArgumentException("Unknown ElementValue's type: " + type);
-		}
-	}
-	
-	public static String getTypeCode(Class<? extends ElementValue> valueCls) {
-		String typeCode = CLASS_TYPES.get(valueCls);
-		if ( typeCode != null ) {
-			return typeCode;
-		}
-		else {
-			throw new IllegalArgumentException("Unknown ElementValue class: " + valueCls);
-		}
-	}
+//	private static final BiMap<String,Class<? extends ElementValue>> TYPE_CLASSES = HashBiMap.create();
+//	static {
+//		TYPE_CLASSES.put(StringPropertyValue.SERIALIZATION_TYPE, StringPropertyValue.class);
+//		TYPE_CLASSES.put(IntegerPropertyValue.SERIALIZATION_TYPE, IntegerPropertyValue.class);
+//		TYPE_CLASSES.put(DoublePropertyValue.SERIALIZATION_TYPE, DoublePropertyValue.class);
+//		TYPE_CLASSES.put(FloatPropertyValue.SERIALIZATION_TYPE, FloatPropertyValue.class);
+//		TYPE_CLASSES.put(BooleanPropertyValue.SERIALIZATION_TYPE, BooleanPropertyValue.class);
+//		TYPE_CLASSES.put(DateTimePropertyValue.SERIALIZATION_TYPE, DateTimePropertyValue.class);
+//		TYPE_CLASSES.put(DurationPropertyValue.SERIALIZATION_TYPE, DurationPropertyValue.class);
+//		TYPE_CLASSES.put(FileValue.SERIALIZATION_TYPE, FileValue.class);
+//		TYPE_CLASSES.put(RangeValue.SERIALIZATION_TYPE, RangeValue.class);
+//		TYPE_CLASSES.put(MultiLanguagePropertyValue.SERIALIZATION_TYPE, MultiLanguagePropertyValue.class);
+//		TYPE_CLASSES.put(OperationVariableValue.SERIALIZATION_TYPE, OperationVariableValue.class);
+//		TYPE_CLASSES.put(ReferenceElementValue.SERIALIZATION_TYPE, ReferenceElementValue.class);
+//		TYPE_CLASSES.put(ElementCollectionValue.SERIALIZATION_TYPE, ElementCollectionValue.class);
+//		TYPE_CLASSES.put(ElementListValue.SERIALIZATION_TYPE, ElementListValue.class);
+//	}
+//	
+//	public static Class<? extends ElementValue> getElementValueClass(String type) {
+//		Class<? extends ElementValue> valCls = TYPE_CLASSES.get(type);
+//		if ( valCls != null ) {
+//			return valCls;
+//		}
+//		else {
+//			throw new IllegalArgumentException("Unknown ElementValue's type: " + type);
+//		}
+//	}
 	
 	@SuppressWarnings("serial")
-	public static class Serializer extends StdSerializer<ElementValue> {
+	public static class Serializer extends StdSerializer<AbstractElementValue> {
 		private Serializer() {
 			this(null);
 		}
-		private Serializer(Class<ElementValue> cls) {
+		private Serializer(Class<AbstractElementValue> cls) {
 			super(cls);
 		}
 		
 		@Override
-		public void serialize(ElementValue value, JsonGenerator gen, SerializerProvider provider)
+		public void serialize(AbstractElementValue value, JsonGenerator gen, SerializerProvider provider)
 			throws IOException, JsonProcessingException {
-			value.serialize(gen);
+			serializeJson(value, gen);
 		}
+	}
+
+	@SuppressWarnings("serial")
+	public static class Deserializer extends StdDeserializer<ElementValue> {
+		public Deserializer() {
+			this(null);
+		}
+		public Deserializer(Class<?> vc) {
+			super(vc);
+		}
+	
+		@Override
+		public ElementValue deserialize(JsonParser parser, DeserializationContext ctxt)
+			throws IOException, JacksonException {
+			JsonNode jnode = parser.getCodec().readTree(parser);
+			return parseJsonNode(jnode);
+		}
+	}
+
+	private static final String FIELD_TYPE = "@type";
+	private static final String FIELD_VALUE = "value";
+	public static ElementValue parseJsonNode(JsonNode jnode) {
+		String type = JacksonUtils.getStringFieldOrNull(jnode, FIELD_TYPE);
+		if ( type == null ) {
+			throw new UncheckedIOException(null, new IOException(String.format("'%s' field is missing: json=%s",
+																	FIELD_TYPE, jnode)));
+		}
+		
+		JsonNode valueNode = JacksonUtils.getFieldOrNull(jnode, FIELD_VALUE);
+		switch ( type ) {
+			case StringPropertyValue.SERIALIZATION_TYPE:
+				return StringPropertyValue.deserializeValue(valueNode);
+			case IntegerPropertyValue.SERIALIZATION_TYPE:
+				return IntegerPropertyValue.deserializeValue(valueNode);
+			case DoublePropertyValue.SERIALIZATION_TYPE:
+				return DoublePropertyValue.deserializeValue(valueNode);
+			case FloatPropertyValue.SERIALIZATION_TYPE:
+				return FloatPropertyValue.deserializeValue(valueNode);
+			case BooleanPropertyValue.SERIALIZATION_TYPE:
+				return BooleanPropertyValue.deserializeValue(valueNode);
+			case DateTimePropertyValue.SERIALIZATION_TYPE:
+				return DateTimePropertyValue.deserializeValue(valueNode);
+			case DurationPropertyValue.SERIALIZATION_TYPE:
+				return DurationPropertyValue.deserializeValue(valueNode);
+			case FileValue.SERIALIZATION_TYPE:
+				return FileValue.deserializeValue(valueNode);
+			case RangeValue.SERIALIZATION_TYPE:
+				return RangeValue.deserializeValue(valueNode);
+			case MultiLanguagePropertyValue.SERIALIZATION_TYPE:
+				return MultiLanguagePropertyValue.deserializeValue(valueNode);
+			case OperationVariableValue.SERIALIZATION_TYPE:
+				return OperationVariableValue.deserializeValue(valueNode);
+			case ElementListValue.SERIALIZATION_TYPE:
+				return ElementListValue.deserializeValue(valueNode);
+			case ReferenceElementValue.SERIALIZATION_TYPE:
+				return ReferenceElementValue.deserializeValue(valueNode);
+			default:
+				throw new JacksonDeserializationException("Unregistered ElementValue type: " + type);
+		}
+	}
+	
+	public static ElementValue parseJsonString(String json) throws IOException {
+		JsonNode jnode = MDTModelSerDe.readJsonNode(json);
+		return parseJsonNode(jnode);
+	}
+	
+	public static void serializeJson(AbstractElementValue value, JsonGenerator gen) throws IOException {
+		gen.writeStartObject();
+		gen.writeStringField(FIELD_TYPE, value.getSerializationType());
+		gen.writeFieldName(FIELD_VALUE);
+		value.serializeValue(gen);
+		gen.writeEndObject();
 	}
 }

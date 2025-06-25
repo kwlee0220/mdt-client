@@ -2,6 +2,10 @@ package mdt.aas;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import utils.func.FOption;
+
 
 /**
  *
@@ -36,5 +40,30 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 	@Override
 	public String toString() {
 		return getName();
+	}
+
+	@Override
+	public Object toJsonObject(T value) {
+		return toValueString(value);
+	}
+
+	@Override
+	public T fromJsonNode(JsonNode jnode) {
+		if ( jnode != null && !jnode.isNull() ) {
+			return parseValueString(jnode.asText());
+		}
+		else {
+			return null;
+		}
+	}
+
+	@Override
+	public Object toJdbcObject(T value) {
+		return toValueString(value);
+	}
+
+	@Override
+	public T fromJdbcObject(Object jdbcObj) {
+		return FOption.map((String)jdbcObj, this::parseValueString);
 	}
 }

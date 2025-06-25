@@ -35,12 +35,12 @@ import mdt.model.sm.variable.Variable;
 @JsonInclude(Include.NON_NULL)
 public final class ProgramOperationDescriptor {
 	private List<String> m_commandLine = Collections.emptyList();
-	@Nullable private File m_workingDirectory;
-	@Nullable private MDTSubmodelReference m_operationSubmodelRef;
+	private @Nullable File m_workingDirectory;
+	private @Nullable MDTSubmodelReference m_operationSubmodelRef;
 	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);
 	private KeyedValueList<String,Variable> m_outputVariables = KeyedValueList.with(Variable::getName);
 	private boolean m_concurrent = false;
-	@Nullable private Duration m_timeout;
+	private @Nullable Duration m_timeout;
 	
 	public static ProgramOperationDescriptor load(File descFile, JsonMapper parser)
 		throws StreamReadException, DatabindException, IOException {

@@ -33,8 +33,8 @@ import mdt.workflow.model.TaskDescriptor;
 @JsonInclude(Include.NON_NULL)
 public class WorkflowModel {
 	private String id;
-	@Nullable private String name;
-	@Nullable private String description;
+	private @Nullable String name;
+	private @Nullable String description;
 
 	private List<TaskDescriptor> taskDescriptors = Lists.newArrayList();
 

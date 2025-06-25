@@ -1,16 +1,21 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.Map;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Key;
 import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Maps;
 
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
@@ -20,7 +25,7 @@ import utils.stream.FStream;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class ReferenceElementValue implements DataElementValue {
+public final class ReferenceElementValue extends AbstractElementValue implements DataElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:reference";
 	
 	private final Reference m_reference;
@@ -32,16 +37,17 @@ public final class ReferenceElementValue implements DataElementValue {
 	public Reference getReference() {
 		return m_reference;
 	}
+
+	@Override
+	public String getSerializationType() {
+		return SERIALIZATION_TYPE;
+	}
 	
-	public static ReferenceElementValue parseJsonNode(JsonNode jnode) throws IOException {
-		String type = JacksonUtils.getStringField(jnode, "type");
-		if ( type == null ) {
-			throw new IOException("missing field: Reference type");
-		}
-		
+	public static ReferenceElementValue parseValueJsonNode(ReferenceElement refElm, JsonNode vnode) {
+		ReferenceTypes refTypes = refElm.getValue().getType();
 		DefaultReference.Builder builder = new DefaultReference.Builder()
-												.type(ReferenceTypes.valueOf(type));
-		FStream.from(jnode.get("keys").elements())
+												.type(refTypes);
+		FStream.from(vnode.get("keys").elements())
 	            .map(keyNode -> {
 	                String keyType = JacksonUtils.getStringField(keyNode, "type");
 	                String keyValue = JacksonUtils.getStringField(keyNode, "value");
@@ -56,12 +62,23 @@ public final class ReferenceElementValue implements DataElementValue {
 	}
 
 	@Override
-	public String getSerializationType() {
-		return SERIALIZATION_TYPE;
+	protected Object toValueJsonObject() {
+		List<Map<String,String>> keyList = FStream.from(m_reference.getKeys())
+													.map(key -> {
+														Map<String,String> kvMap = Maps.newLinkedHashMap();
+														kvMap.put("type", key.getType().name());
+														kvMap.put("value", key.getValue());
+														return kvMap;
+													})
+													.toList();
+		Map<String,Object> output = Maps.newLinkedHashMap();
+		output.put("type", m_reference.getType().name());
+		output.put("keys", keyList);
+		return output;
 	}
 
 	@Override
-	public void serialize(JsonGenerator gen) throws IOException {
+	public void serializeValue(JsonGenerator gen) throws IOException {
 		gen.writeStartObject();
 			gen.writeStringField("type", m_reference.getType().name());
 			gen.writeArrayFieldStart("keys");
@@ -73,5 +90,27 @@ public final class ReferenceElementValue implements DataElementValue {
 				}
 			gen.writeEndArray();
 		gen.writeEndObject();
+	}
+	
+	public static ReferenceElementValue deserializeValue(JsonNode vnode) {
+		String type = JacksonUtils.getStringField(vnode, "type");
+		if ( type == null ) {
+			throw new UncheckedIOException(null, new IOException("missing field: Reference type"));
+		}
+		
+		DefaultReference.Builder builder = new DefaultReference.Builder()
+												.type(ReferenceTypes.valueOf(type));
+		FStream.from(vnode.get("keys").elements())
+	            .map(keyNode -> {
+	                String keyType = JacksonUtils.getStringField(keyNode, "type");
+	                String keyValue = JacksonUtils.getStringField(keyNode, "value");
+	                return (Key)new DefaultKey.Builder()
+				                            .type(KeyTypes.valueOf(keyType))
+				                            .value(keyValue)
+				                            .build();
+	            })
+	            .forEach(key -> builder.keys(key));
+		Reference ref = builder.build();
+		return new ReferenceElementValue(ref);
 	}
 }

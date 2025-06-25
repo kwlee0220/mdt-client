@@ -30,13 +30,11 @@ import utils.io.FileUtils;
 import utils.io.IOUtils;
 import utils.stream.FStream;
 
-import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.AASFile;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.FileValue;
-import mdt.model.sm.value.PropertyValue;
 import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.task.MDTTask;
@@ -204,9 +202,7 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 				// PropertyValue인 경우, 바로 JSON으로 출력하면 double-quote가 추가되기 때문에
 				// 이를 막기 위해 값을 직접 저장한다.
 				file = new File(workingDir, var.getName());
-				String extStr = (value instanceof PropertyValue pvalue)
-								? pvalue.get() : MDTModelSerDe.toJsonString(value);
-				IOUtils.toFile(extStr, StandardCharsets.UTF_8, file);
+				IOUtils.toFile(value.toValueJsonString(), StandardCharsets.UTF_8, file);
 				
 				return new FileVariable(var.getName(), file);
 			}

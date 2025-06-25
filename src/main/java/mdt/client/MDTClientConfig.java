@@ -29,10 +29,10 @@ public final class MDTClientConfig {
 	private static final Logger s_logger = LoggerFactory.getLogger(MDTClientConfig.class);
 
 	private String m_mdtEndpoint;
-	@Nullable private Duration m_connectTimeout;
-	@Nullable private Duration m_readTimeout;
-	@Nullable private String m_mqttEndpoint;
-	@Nullable private String m_workflowManagerEndpoint;
+	private @Nullable Duration m_connectTimeout;
+	private @Nullable Duration m_readTimeout;
+	private @Nullable String m_mqttEndpoint;
+	private @Nullable String m_workflowManagerEndpoint;
 	
 	public static MDTClientConfig load(File configFile) throws IOException {
 		if ( s_logger.isInfoEnabled() ) {

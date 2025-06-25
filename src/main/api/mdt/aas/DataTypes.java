@@ -22,6 +22,7 @@ import java.util.Map;
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 
 import com.fasterxml.jackson.core.io.BigDecimalParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 
 import lombok.experimental.UtilityClass;
@@ -115,6 +116,16 @@ public class DataTypes {
 		@Override
 		public Boolean fromJdbcObject(Object jdbcObj) {
 			return (Boolean)jdbcObj;
+		}
+
+		@Override
+		public Object toJsonObject(Boolean value) {
+			return value;
+		}
+
+		@Override
+		public Boolean fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : jnode.asBoolean();
 		}
 	}
 
@@ -226,6 +237,16 @@ public class DataTypes {
 		public Double fromJdbcObject(Object jdbcObj) {
 			return (Double)jdbcObj;
 		}
+
+		@Override
+		public Object toJsonObject(Double value) {
+			return value;
+		}
+
+		@Override
+		public Double fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : jnode.asDouble();
+		}
 	}
 
 	public static class DurationType extends AbstractDataType<Duration> implements DataType<Duration> {
@@ -239,7 +260,7 @@ public class DataTypes {
 	
 		@Override
 		public String toValueString(Object value) {
-			return (value != null) ? value.toString() : "";
+			return (value != null) ? ((Duration)value).toString() : null;
 		}
 	
 		@Override
@@ -307,6 +328,16 @@ public class DataTypes {
 				throw new IllegalArgumentException("Invalid JDBC object type: " + jdbcObj.getClass());
 			}
 		}
+
+		@Override
+		public Object toJsonObject(Float value) {
+			return value;
+		}
+
+		@Override
+		public Float fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : (float)jnode.asDouble();
+		}
 	}
 
 	public static class IntType extends AbstractDataType<Integer> implements DataType<Integer> {
@@ -345,6 +376,16 @@ public class DataTypes {
 				return Integer.parseInt(jdbcObj.toString());
 			}
 		}
+
+		@Override
+		public Object toJsonObject(Integer value) {
+			return value;
+		}
+
+		@Override
+		public Integer fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : jnode.asInt();
+		}
 	}
 
 	public static class LongType extends AbstractDataType<Long> implements DataType<Long> {
@@ -371,6 +412,16 @@ public class DataTypes {
 		@Override
 		public Long fromJdbcObject(Object jdbcObj) {
 			return (Long)jdbcObj;
+		}
+
+		@Override
+		public Object toJsonObject(Long value) {
+			return value;
+		}
+
+		@Override
+		public Long fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : jnode.asLong();
 		}
 	}
 
@@ -399,6 +450,16 @@ public class DataTypes {
 		public Short fromJdbcObject(Object jdbcObj) {
 			return (Short)jdbcObj;
 		}
+
+		@Override
+		public Object toJsonObject(Short value) {
+			return value;
+		}
+
+		@Override
+		public Short fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : (short)jnode.asInt();
+		}
 	}
 
 	public static class StringType extends AbstractDataType<String> implements DataType<String> {
@@ -424,6 +485,16 @@ public class DataTypes {
 		@Override
 		public String fromJdbcObject(Object jdbcObj) {
 			return (String)jdbcObj;
+		}
+
+		@Override
+		public Object toJsonObject(String value) {
+			return value;
+		}
+
+		@Override
+		public String fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : jnode.asText();
 		}
 	}
 

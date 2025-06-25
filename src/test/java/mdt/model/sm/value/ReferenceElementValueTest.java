@@ -10,16 +10,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class ReferenceElementValueTest {
-	private ObjectMapper m_mapper = new ObjectMapper();
-
+	private static final String JSON
+		= "{\"@type\":\"mdt:value:reference\",\"value\":{\"type\":\"MODEL_REFERENCE\","
+				+ "\"keys\":[{\"type\":\"SUBMODEL\",\"value\":\"http://customer.com/demo/aas/1/1/1234859590\"},"
+				+ "{\"type\":\"PROPERTY\",\"value\":\"MaxRotationSpeed\"}]}}";
 	private static final String VALUE_JSON
 		= "{\"type\":\"MODEL_REFERENCE\",\"keys\":["
 				+ "{\"type\":\"SUBMODEL\",\"value\":\"http://customer.com/demo/aas/1/1/1234859590\"},"
@@ -37,16 +36,20 @@ public class ReferenceElementValueTest {
                                                          .build();
 	
 	@Test
-	public void serializeNamedProperty() throws JsonProcessingException {
+	public void serializeNamedProperty() throws IOException {
 		ReferenceElementValue value = new ReferenceElementValue(REFFERENCE);
 		
-		String json = m_mapper.writeValueAsString(value);
-		Assert.assertEquals(VALUE_JSON, json);
+		String json = value.toJsonString();
+//		System.out.println(json);
+		Assert.assertEquals(JSON, json);
+		Assert.assertEquals(VALUE_JSON, value.toValueJsonString());
 	}
 
 	@Test
 	public void testParseJsonNode() throws IOException {
-		ReferenceElementValue value = ReferenceElementValue.parseJsonNode(m_mapper.readTree(VALUE_JSON));
-		Assert.assertEquals(REFFERENCE, value.getReference());
+		ElementValue value = ElementValues.parseJsonString(JSON);
+		Assert.assertTrue(value instanceof ReferenceElementValue);
+		ReferenceElementValue refValue = (ReferenceElementValue)value;
+		Assert.assertEquals(REFFERENCE, refValue.getReference());
 	}
 }

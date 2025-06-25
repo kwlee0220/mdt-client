@@ -1,34 +1,44 @@
 package mdt.model.sm.value;
 
+import java.io.IOException;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultFile;
 import org.junit.Assert;
 import org.junit.Test;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class FileValueTest {
-	private ObjectMapper m_mapper = new ObjectMapper();
-
+	private static final String JSON
+		= "{\"@type\":\"mdt:value:file\",\"value\":{\"contentType\":\"application/jpeg\",\"value\":\"/home/kwlee/image.jpg\"}}";
 	private static final String VALUE_JSON
 		= "{\"contentType\":\"application/jpeg\",\"value\":\"/home/kwlee/image.jpg\"}";
 	
 	@Test
-	public void testSerializeFileValue() throws JsonProcessingException {
+	public void testSerializeFileValue() throws IOException {
 		FileValue nev = new FileValue("application/jpeg", "/home/kwlee/image.jpg");
 		
-		String json = m_mapper.writeValueAsString(nev);
-		Assert.assertEquals(VALUE_JSON, json);
+//		System.out.println(nev.toJson());
+		Assert.assertEquals(JSON, nev.toJsonString());
+		Assert.assertEquals(VALUE_JSON, nev.toValueJsonString());
 	}
 
 	@Test
-	public void testParseJsonNode() throws JsonMappingException, JsonProcessingException {
-		FileValue value = FileValue.parseJsonNode(m_mapper.readTree(VALUE_JSON));
-		Assert.assertEquals("/home/kwlee/image.jpg", value.getValue());
-		Assert.assertEquals("application/jpeg", value.getMimeType());
+	public void testParseJsonNode() throws IOException {
+		ElementValue value = ElementValues.parseJsonString(JSON);
+		Assert.assertTrue(value instanceof FileValue);
+		FileValue fileValue = (FileValue)value;
+		Assert.assertEquals("/home/kwlee/image.jpg", fileValue.getValue());
+		Assert.assertEquals("application/jpeg", fileValue.getMimeType());
+	}
+
+	@Test
+	public void testUpdateWithRawString() throws IOException {
+		DefaultFile aasFile = new DefaultFile();
+		ElementValues.updateWithRawValueString(aasFile, VALUE_JSON);
+		Assert.assertEquals("/home/kwlee/image.jpg", aasFile.getValue());
+		Assert.assertEquals("application/jpeg", aasFile.getContentType());
 	}
 }

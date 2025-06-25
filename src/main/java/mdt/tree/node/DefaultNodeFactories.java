@@ -28,6 +28,7 @@ import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.info.CompositionDependency;
 import mdt.model.sm.info.CompositionItem;
 import mdt.model.sm.info.MDTInfo;
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.MultiLanguagePropertyValue;
 import mdt.model.timeseries.Record;
@@ -187,9 +188,10 @@ public class DefaultNodeFactories {
 	private static DefaultNodeFactory JSON_FACT = new DefaultNodeFactory() {
 		@Override
 		public DefaultNode create(SubmodelElement element) {
-			String value = ElementValues.toRawString(element);
+			ElementValue value = ElementValues.getValue(element);
+			String valStr = (value != null) ? value.toValueString() : "null"; 
 			
-			return new TerminalNode(element.getIdShort(), " (JSON)", value);
+			return new TerminalNode(element.getIdShort(), " (ValueOnlySerialization)", valStr);
 		} 
 	};
 }

@@ -227,7 +227,8 @@ public class MDTExprVisitor extends MdtExprBaseVisitor<MDTExpr> {
 	public RangeValueSpec visitRangeValueLiteralSpec(RangeValueLiteralSpecContext ctx) {
 		PropertyValue min = (PropertyValue)ctx.getChild(1).accept(this).evaluate();
 		PropertyValue max = (PropertyValue)ctx.getChild(3).accept(this).evaluate();
-		return new RangeValueSpec(min.get(), max.get());
+		
+		return new RangeValueSpec(min.getDataType(), min.get(), max.get());
 	}
 	
 	@Override

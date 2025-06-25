@@ -161,7 +161,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		try {
 			String url = String.format("%s/submodel-elements/%s/$value",
 										getEndpoint(), encodeIdShortPath(idShortPath));
-			RequestBody reqBody = createRequestBody(value);
+			RequestBody reqBody = createRequestBody(value.toValueJsonString());
 			
 			Request req = new Request.Builder().url(url).patch(reqBody).build();
 			send(req);

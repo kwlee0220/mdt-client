@@ -28,13 +28,13 @@ import mdt.model.sm.info.MDTAssetType;
 public class DefaultInstanceDescriptor implements InstanceDescriptor {
 	private String m_id;
 	private MDTInstanceStatus m_status;
-	@Nullable private String m_baseEndpoint;
+	private @Nullable String m_baseEndpoint;
 	
 	private String m_aasId;
-	@Nullable private String m_aasIdShort;
-	@Nullable private String m_globalAssetId;
-	@Nullable private MDTAssetType m_assetType;
-	@Nullable private AssetKind m_assetKind;
+	private @Nullable String m_aasIdShort;
+	private @Nullable String m_globalAssetId;
+	private @Nullable MDTAssetType m_assetType;
+	private @Nullable AssetKind m_assetKind;
 
 	@Getter(AccessLevel.NONE)
 	private List<DefaultInstanceSubmodelDescriptor> m_submodels = Lists.newArrayList();

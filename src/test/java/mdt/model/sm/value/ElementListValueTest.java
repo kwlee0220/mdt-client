@@ -6,34 +6,37 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class ElementListValueTest {
-	private ObjectMapper m_mapper = new ObjectMapper();
-
+	private static final String JSON
+			= "{\"@type\":\"mdt:value:list\",\"value\":[{\"@type\":\"mdt:value:string\","
+			+ "\"value\":\"abc\"},{\"@type\":\"mdt:value:string\",\"value\":\"def\"}]}";
 	private static final String VALUE_JSON = "[\"abc\",\"def\"]";
 	
 	@Test
-	public void testSerialize() throws JsonProcessingException {
-		PropertyValue pv1 = new PropertyValue("abc");
-		PropertyValue pv2 = new PropertyValue("def");
+	public void testSerialize() throws IOException {
+		PropertyValue<String> pv1 = PropertyValue.STRING("abc");
+		PropertyValue<String> pv2 = PropertyValue.STRING("def");
 		ElementListValue value = new ElementListValue(List.of(pv1, pv2));
 		
-		String json = m_mapper.writeValueAsString(value);
-		Assert.assertEquals(VALUE_JSON, json);
+		String json = value.toJsonString();
+		Assert.assertEquals(JSON, json);
+		Assert.assertEquals(VALUE_JSON, value.toValueJsonString());
 	}
 
 	@Test
-	public void testParseJsonNode() throws IOException {
-		ElementListValue value = ElementListValue.parseJsonNode(m_mapper.readTree(VALUE_JSON), PropertyValue.class);
-		List<ElementValue> elements = value.getElementAll();
+	public void testParseJsonString() throws IOException {
+		PropertyValue<String> pv1 = PropertyValue.STRING("abc");
+		PropertyValue<String> pv2 = PropertyValue.STRING("def");
 		
-		Assert.assertEquals("abc", ((PropertyValue)elements.get(0)).get());
-		Assert.assertEquals("def", ((PropertyValue)elements.get(1)).get());
+		ElementValue value = ElementValues.parseJsonString(JSON);
+		Assert.assertTrue(value instanceof ElementListValue);
+		ElementListValue listValue = (ElementListValue)value;
+		Assert.assertEquals(2, listValue.getElementAll().size());
+		Assert.assertEquals(pv1, listValue.getElementAll().get(0));
+		Assert.assertEquals(pv2, listValue.getElementAll().get(1));
 	}
 }

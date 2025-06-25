@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 
 import lombok.experimental.UtilityClass;
 
-import mdt.aas.DataTypes;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.expr.MDTExprParser;
@@ -63,8 +62,7 @@ public class TaskUtils {
 		if ( lastExecTimeRef != null ) {
 			Duration execTime = Duration.between(startTime, Instant.now());
 			try {
-				String execTimeStr = DataTypes.DURATION.toString(execTime);
-				lastExecTimeRef.updateValue(new PropertyValue(execTimeStr));
+				lastExecTimeRef.updateValue(PropertyValue.DURATION(execTime));
 			}
 			catch ( ResourceNotFoundException | IOException expected ) {
 				logger.warn("Failed to update 'LastExecutionTime', cause=" + expected);

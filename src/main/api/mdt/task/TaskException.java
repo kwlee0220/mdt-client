@@ -21,10 +21,10 @@ public class TaskException extends Exception {
 	@Override
 	public String getMessage() {
 		if ( getCause() != null ) {
-			return String.format("%s, cause=%s", getClass().getName(), getCause());
+			return String.format("%s, cause=%s", super.getMessage(), getCause());
 		}
 		else {
-			return getClass().getName();
+			return super.getMessage();
 		}
 	}
 }

@@ -2,20 +2,27 @@ package mdt.model.sm.value;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Maps;
+
+import utils.json.JacksonUtils;
+
+import mdt.model.MDTModelSerDe;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class OperationVariableValue implements ElementValue {
+public final class OperationVariableValue extends AbstractElementValue implements ElementValue {
     private final List<ElementValue> m_inputValues;
     private final List<ElementValue> m_outputValues;
     private final List<ElementValue> m_inoutputValues;
     
-    public OperationVariableValue(List<ElementValue> inValues, List<ElementValue> outValues, List<ElementValue> inoutValues) {
+    public OperationVariableValue(List<ElementValue> inValues, List<ElementValue> outValues,
+    								List<ElementValue> inoutValues) {
     	m_inputValues = inValues;
     	m_outputValues = outValues;
     	m_inoutputValues = inoutValues;
@@ -33,58 +40,56 @@ public final class OperationVariableValue implements ElementValue {
 		return m_inoutputValues;
 	}
 
+	@Override
+	public String toJsonString() throws IOException {
+		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
+	}
+
+	@Override
+	protected Object toValueJsonObject() {
+		Map<String, Object> value = Maps.newLinkedHashMap();
+		value.put(FIELD_INPUT_VARIABLES, new ElementListValue(m_inputValues).toValueJsonObject());
+		value.put(FIELD_OUTPUT_VARIABLES, new ElementListValue(m_outputValues).toValueJsonObject());
+		value.put(FIELD_INOUTPUT_VARIABLES, new ElementListValue(m_inoutputValues).toValueJsonObject());
+		return value;
+	}
+
 	public static final String SERIALIZATION_TYPE = "mdt:value:opvars";
 	private static final String FIELD_INPUT_VARIABLES = "inputs";
 	private static final String FIELD_OUTPUT_VARIABLES = "outputs";
 	private static final String FIELD_INOUTPUT_VARIABLES = "inoutputs";
-	
-	public static OperationVariableValue parseJsonNode(JsonNode jnode, OperationVariableValue proto) throws IOException {
-		List<ElementValue> inValues;
-		if ( proto.m_inoutputValues.size() > 0 ) {
-			Class<? extends ElementValue> elmCls = proto.m_inoutputValues.get(0).getClass();
-			inValues = ElementListValue.parseJsonNode(jnode.get(FIELD_INPUT_VARIABLES), elmCls).getElementAll();
-		}
-		else {
-			inValues = List.of();
-		}
-		
-		List<ElementValue> outValues;
-		if ( proto.m_outputValues.size() > 0 ) {
-			Class<? extends ElementValue> elmCls = proto.m_outputValues.get(0).getClass();
-			outValues = ElementListValue.parseJsonNode(jnode.get(FIELD_OUTPUT_VARIABLES), elmCls).getElementAll();
-		}
-		else {
-			outValues = List.of();
-		}
-		
-		List<ElementValue> inoutValues;
-		if ( proto.m_inoutputValues.size() > 0 ) {
-			Class<? extends ElementValue> elmCls = proto.m_inoutputValues.get(0).getClass();
-			inoutValues = ElementListValue.parseJsonNode(jnode.get(FIELD_INOUTPUT_VARIABLES), elmCls).getElementAll();
-		}
-		else {
-			inoutValues = List.of();
-		}
-		
-		return new OperationVariableValue(inValues, outValues, inoutValues);
-	}
 
 	@Override
 	public String getSerializationType() {
 		return SERIALIZATION_TYPE;
 	}
+	
+	public static OperationVariableValue deserializeValue(JsonNode vnode) {
+		JsonNode inVarsNode = JacksonUtils.getFieldOrNull(vnode, FIELD_INPUT_VARIABLES);
+		List<ElementValue> inVars = ((ElementListValue)ElementValues.parseJsonNode(inVarsNode)).getElementAll();
+		
+		JsonNode outVarsNode = JacksonUtils.getFieldOrNull(vnode, FIELD_OUTPUT_VARIABLES);
+		List<ElementValue> outVars = ((ElementListValue)ElementValues.parseJsonNode(outVarsNode)).getElementAll();
+		
+		JsonNode inoutVarsNode = JacksonUtils.getFieldOrNull(vnode, FIELD_INOUTPUT_VARIABLES);
+		List<ElementValue> inoutVars = ((ElementListValue)ElementValues.parseJsonNode(inoutVarsNode)).getElementAll();
+		
+		return new OperationVariableValue(inVars, outVars, inoutVars);
+	}
 
 	@Override
-	public void serialize(JsonGenerator gen) throws IOException {
+	public void serializeValue(JsonGenerator gen) throws IOException {
 		gen.writeStartObject();
 		
 		gen.writeFieldName(FIELD_INPUT_VARIABLES);
-		new ElementListValue(m_inputValues).serialize(gen);
-		gen.writeFieldName(FIELD_OUTPUT_VARIABLES);
-		new ElementListValue(m_outputValues).serialize(gen);
-		gen.writeFieldName(FIELD_INOUTPUT_VARIABLES);
-		new ElementListValue(m_inoutputValues).serialize(gen);
+		ElementValues.serializeJson(new ElementListValue(m_inputValues), gen);
 		
+		gen.writeFieldName(FIELD_OUTPUT_VARIABLES);
+		ElementValues.serializeJson(new ElementListValue(m_outputValues), gen);
+		
+		gen.writeFieldName(FIELD_INOUTPUT_VARIABLES);
+		ElementValues.serializeJson(new ElementListValue(m_inoutputValues), gen);
+
 		gen.writeEndObject();
 	}
 }

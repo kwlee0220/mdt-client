@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
  */
 public final class IdPair {
 	private final String m_id;
-	@Nullable private final String m_idShort;
+	private final @Nullable String m_idShort;
 	
 	public static IdPair of(String id, @Nullable String idShort) {
 		return new IdPair(id, idShort);

@@ -201,7 +201,7 @@ public abstract class AbstractVariable implements Variable {
 
 	public static final class ValueVariable extends AbstractVariable {
 		private static final String FIELD_VALUE = "value";
-		private static final String FIELD_VALUE_TYPE= "valueType";
+		private static final String FIELD_VALUE_TYPE = "valueType";
 		public static final String SERIALIZATION_TYPE = "mdt:variable:value";
 		
 		private ElementValue m_value;
@@ -251,9 +251,8 @@ public abstract class AbstractVariable implements Variable {
 			String name = JacksonUtils.getStringField(jnode, FIELD_NAME);
 			String description = JacksonUtils.getStringFieldOrNull(jnode, FIELD_DESCRIPTION);
 			
-			String valTypeCode = JacksonUtils.getStringField(jnode, FIELD_VALUE_TYPE);
-			Class<? extends ElementValue> valueCls = ElementValues.getElementValueClass(valTypeCode);
-			ElementValue value = MDTModelSerDe.readValue(jnode.get(FIELD_VALUE), valueCls);
+			JsonNode valueNode = JacksonUtils.getFieldOrNull(jnode, FIELD_VALUE);
+			ElementValue value = ElementValues.parseJsonNode(valueNode);
 			return new ValueVariable(name, description, value);
 		}
 
@@ -261,7 +260,6 @@ public abstract class AbstractVariable implements Variable {
 		public void serializeFields(JsonGenerator gen) throws IOException {
 			gen.writeStringField(FIELD_NAME, getName());
 			gen.writeStringField(FIELD_DESCRIPTION, getDescription());
-			gen.writeStringField(FIELD_VALUE_TYPE, ElementValues.getTypeCode(m_value.getClass()));
 			gen.writeObjectField(FIELD_VALUE, m_value);
 		}
 	}

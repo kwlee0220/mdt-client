@@ -68,7 +68,8 @@ public final class DefaultRecord extends SubmodelElementCollectionEntity impleme
 		Preconditions.checkArgument(metadata != null, "'metadata' should not be null");
 		Preconditions.checkArgument(values != null, "'values' should not be null");
 		Preconditions.checkArgument(values.size() == metadata.getFieldCount(),
-									"The size of 'values' should be equal to the field count of 'metadata'");
+									"The size of 'values'(%s) should be equal to the field count (%s) of 'metadata'",
+									values, metadata);
 		
 		setIdShort(idShort);
 		setSemanticId(Record.SEMANTIC_ID_REFERENCE);

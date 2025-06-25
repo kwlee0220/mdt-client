@@ -2,6 +2,7 @@ package mdt.model.expr;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringTextType;
 
+import mdt.aas.DataType;
 import mdt.model.expr.TerminalExpr.DoubleExpr;
 import mdt.model.expr.TerminalExpr.IntegerExpr;
 import mdt.model.expr.TerminalExpr.StringExpr;
@@ -29,15 +30,15 @@ public abstract class LiteralExpr implements MDTExpr {
 		public PropertyValue evaluate() {
 			if ( m_terminal instanceof StringExpr ) {
 				String str = (String) m_terminal.evaluate();
-				return new PropertyValue(str);
+				return PropertyValue.STRING(str);
 			}
 			else if ( m_terminal instanceof IntegerExpr ) {
 				Integer id = (Integer)m_terminal.evaluate();
-				return new PropertyValue(String.format("%d", id.intValue()));
+				return PropertyValue.INTEGER(id.intValue());
 			}
 			else if ( m_terminal instanceof DoubleExpr ) {
 				double value = (Double) m_terminal.evaluate();
-				return new PropertyValue(String.format("%s", value));
+				return PropertyValue.DOUBLE(value);
 			}
 			else {
 				throw new IllegalArgumentException("Unsupported terminal type: " + m_terminal);
@@ -88,10 +89,10 @@ public abstract class LiteralExpr implements MDTExpr {
 	}
 
 	public static class RangeValueSpec extends LiteralExpr {
-		private final RangeValue m_value;
+		private final RangeValue<?> m_value;
 	
-		public RangeValueSpec(String min, String max) {
-			m_value = new RangeValue(min, max);
+		public RangeValueSpec(DataType<?> vtype, Object min, Object max) {
+			m_value = new RangeValue(vtype, min, max);
 		}
 	
 		@Override

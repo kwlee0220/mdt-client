@@ -34,7 +34,7 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 	private final String m_mqttServerUri;
 	private final String m_clientId;
 	private final Duration m_reconnectTrialInterval;
-	@Nullable private final MqttCallback m_mqttCallback;
+	private final @Nullable MqttCallback m_mqttCallback;
 	
 	@Override protected void initializeLoop() throws Exception { }
 	@Override protected void finalizeLoop() throws Exception { }
@@ -100,7 +100,7 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 		private String m_mqttServerUri;
 		private String m_clientId;
 		private Duration m_reconnectTryInterval = Duration.ofSeconds(10);
-		@Nullable private MqttCallback m_mqttCallback;
+		private @Nullable MqttCallback m_mqttCallback;
 		
 		public MqttBrokerReconnect build() {
 			return new MqttBrokerReconnect(this);

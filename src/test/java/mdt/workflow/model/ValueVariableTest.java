@@ -18,14 +18,15 @@ public class ValueVariableTest {
 	private ObjectMapper m_mapper = new ObjectMapper();
 
 	private static final String JSON_STR
-		= "{\"@type\":\"mdt:variable:value\",\"name\":\"id1\",\"description\":\"\",\"valueType\":\"mdt:value:property\",\"value\":\"222\"}";
+		= "{\"@type\":\"mdt:variable:value\",\"name\":\"id1\",\"description\":\"\","
+		+ "\"value\":{\"@type\":\"mdt:value:integer\",\"value\":222}}";
 	
 	@Test
 	public void testSerialize() throws JsonProcessingException {
-		ValueVariable var = new ValueVariable("id1", "", new PropertyValue("222"));
+		ValueVariable var = new ValueVariable("id1", "", PropertyValue.INTEGER(222));
 		
 		String json = m_mapper.writeValueAsString(var);
-		System.out.println(json);
+//		System.out.println(json);
 		Assert.assertEquals(JSON_STR, json);
 	}
 
@@ -33,6 +34,6 @@ public class ValueVariableTest {
 	public void testDeserialize() throws JsonMappingException, JsonProcessingException {
 		ValueVariable value = m_mapper.readValue(JSON_STR, ValueVariable.class);
 		Assert.assertEquals("id1", value.getName());
-		Assert.assertEquals(new PropertyValue("222"), value.readValue());
+		Assert.assertEquals(PropertyValue.INTEGER(222), value.readValue());
 	}
 }

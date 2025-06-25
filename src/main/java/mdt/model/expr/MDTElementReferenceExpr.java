@@ -42,7 +42,7 @@ public abstract class MDTElementReferenceExpr implements MDTExpr {
 	public static class ParameterReferenceExpr extends MDTElementReferenceExpr implements MDTExpr {
 		private final StringExpr m_instanceIdExpr;
 		private final MDTExpr m_paramIdExpr;
-		@Nullable private final MDTIdShortPathExpr m_subPathExpr;
+		private final @Nullable MDTIdShortPathExpr m_subPathExpr;
 		
 		public ParameterReferenceExpr(StringExpr instanceIdExpr, MDTExpr paramIdExpr, MDTIdShortPathExpr subPathExpr) {
 			m_instanceIdExpr = instanceIdExpr;

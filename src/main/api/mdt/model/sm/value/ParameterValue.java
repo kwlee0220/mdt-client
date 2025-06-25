@@ -26,9 +26,10 @@ public class ParameterValue extends ElementCollectionValue {
 		return SERIALIZATION_TYPE;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public Instant getEventDateTime() {
 		return findField("EventDateTime")
-				.map(ev -> DataTypes.DATE_TIME.parseValueString(((PropertyValue)ev).get()))
+				.map(ev -> ((PropertyValue<Instant>)ev).get())
 				.getOrNull();
 	}
 	
@@ -46,7 +47,7 @@ public class ParameterValue extends ElementCollectionValue {
 			return String.format("(unknown): null %s", tsStr);
 		}
 		else if ( value instanceof PropertyValue prop ) {
-			String valueStr = FOption.getOrElse(prop.get(), "N/A");
+			String valueStr = FOption.getOrElse(prop.toValueString(), "N/A");
 			return String.format("[Property] %s%s", valueStr, tsStr);
 		}
 		else if ( value instanceof org.eclipse.digitaltwin.aas4j.v3.model.File file ) {

@@ -54,7 +54,12 @@ public class Fa3stHttpClient implements HttpClientProxy {
 	}
 	
 	protected RequestBody createRequestBody(Object desc) throws IOException {
-		return RequestBody.create(MDTModelSerDe.toJsonString(desc), JSON);
+		if ( desc instanceof String str ) {
+			return RequestBody.create(str, JSON);
+		}
+		else {
+			return RequestBody.create(MDTModelSerDe.toJsonString(desc), JSON);
+		}
 	}
 
 	protected <T> T call(Request req, Class<T> resultCls) {

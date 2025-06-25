@@ -31,9 +31,9 @@ public class OperationResponse {
 	/** 연산의 수행 상태 */
 	private final OperationStatus m_status;
 	/** 연산 수행 결과 (성공적으로 연산이 완료된 경우) */
-	@Nullable private final List<Variable> m_result;
+	private final @Nullable List<Variable> m_result;
 	/** 연산 수행 결과 메시지 (연산 수행이 성공적으로 완료되지 못한 경우) */
-	@Nullable private final String m_message;
+	private final @Nullable String m_message;
 	
 	@JsonCreator
 	public OperationResponse(@JsonProperty("session") String sessionId,
@@ -158,9 +158,9 @@ public class OperationResponse {
 		/** 연산의 수행 상태 */
 		private OperationStatus m_status;
 		/** 연산 수행 결과 (성공적으로 연산이 완료된 경우) */
-		@Nullable private List<Variable> m_result;
+		private @Nullable List<Variable> m_result;
 		/** 연산 수행 결과 메시지 (연산 수행이 성공적으로 완료되지 못한 경우) */
-		@Nullable private String m_message;
+		private @Nullable String m_message;
 		
 		public OperationResponse build() {
 			return new OperationResponse(this);

@@ -258,10 +258,11 @@ public interface SubmodelService {
 			case COMPLETED:
 				return true;
 			case FAILED:
-				String fullMsg = FStream.from(opStatus.getMessages())
-										.map(msg -> msg.getText())
-										.join(System.lineSeparator());
-				throw new ExecutionException(new RESTfulRemoteException("Operation failed: msg=" + fullMsg));
+				return true;
+//				String fullMsg = FStream.from(opStatus.getMessages())
+//										.map(msg -> msg.getText())
+//										.join(System.lineSeparator());
+//				throw new ExecutionException(new RESTfulRemoteException("Operation failed: msg=" + fullMsg));
 			case TIMEOUT:
 				throw new TimeoutException();
 			case CANCELED:

@@ -1,21 +1,24 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Objects;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import utils.InternalException;
 import utils.stream.FStream;
+
+import mdt.model.MDTModelSerDe;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class ElementListValue implements ElementValue {
+public class ElementListValue extends AbstractElementValue implements ElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:list";
 	
 	private final List<ElementValue> m_elementValues;
@@ -27,20 +30,48 @@ public class ElementListValue implements ElementValue {
 	public List<ElementValue> getElementAll() {
 		return m_elementValues;
 	}
+
+	@Override
+	public String toJsonString() throws IOException {
+		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
+	}
 	
-	public static ElementListValue parseJsonNode(JsonNode valueNode, Class<? extends ElementValue> elmClass)
-		throws IOException {
-		try {
-			Method parseElementJsonNode = elmClass.getDeclaredMethod("parseJsonNode", JsonNode.class);
-			List<ElementValue> elements
-						= FStream.from(valueNode.elements())
-								.mapOrThrow(elmNode -> (ElementValue)parseElementJsonNode.invoke(null, elmNode))
-								.toList();
-			return new ElementListValue(elements);
+	public static ElementListValue parseValueJsonNode(SubmodelElementList sml, JsonNode vnode) {
+		List<ElementValue> values = FStream.from(sml.getValue())
+											.zipWith(FStream.from(vnode.elements()))
+											.map(pair -> ElementValues.parseValueJsonNode(pair._1, pair._2))
+											.toList();
+		return new ElementListValue(values);
+	}
+
+	@Override
+	protected Object toValueJsonObject() {
+		return FStream.from(m_elementValues)
+						.map(elm -> ((AbstractElementValue)elm).toValueJsonObject())
+						.toList();
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(m_elementValues);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
 		}
-		catch ( SecurityException | ReflectiveOperationException e ) {
-			throw new InternalException("Failed to parse JSON node: " + valueNode, e);
+		else if ( obj == null || ElementCollectionValue.class != obj.getClass() ) {
+			return false;
 		}
+		
+		ElementListValue other = (ElementListValue) obj;
+		return Objects.equals(m_elementValues, other.m_elementValues);
+	}
+	
+	@Override
+	public String toString() {
+		return m_elementValues.toString();
 	}
 
 	@Override
@@ -49,11 +80,18 @@ public class ElementListValue implements ElementValue {
 	}
 
 	@Override
-	public void serialize(JsonGenerator gen) throws IOException {
+	public void serializeValue(JsonGenerator gen) throws IOException {
 		gen.writeStartArray();
 		for ( ElementValue smev: m_elementValues ) {
 			gen.writeObject(smev);
 		}
 		gen.writeEndArray();
+	}
+	
+	public static ElementListValue deserializeValue(JsonNode vnode) {
+		List<ElementValue> elements = FStream.from(vnode.elements())
+											.mapOrThrow(elmNode -> ElementValues.parseJsonNode(elmNode))
+											.toList();
+		return new ElementListValue(elements);
 	}
 }

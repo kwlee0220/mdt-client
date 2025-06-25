@@ -22,7 +22,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class OperationStatusResponse<T> {
 	private OperationStatus status;
-	@Nullable private String operationLocation;
-	@Nullable private T result;
-	@Nullable private String message;
+	private @Nullable String operationLocation;
+	private @Nullable T result;
+	private @Nullable String message;
 }

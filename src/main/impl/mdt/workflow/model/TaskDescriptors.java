@@ -160,22 +160,6 @@ public class TaskDescriptors {
 		return Variables.newInstance(portName, portDesc, elmRef);
 	}
 	
-	public static void update(MDTInstanceManager manager, TaskDescriptor descriptor,
-							ProgramOperationDescriptor opDesc) {
-		descriptor.getOptions().add(new MultiLineOption("commandLine", opDesc.getCommandLine()));
-		FOption.accept(opDesc.getWorkingDirectory(), workDir -> {
-			descriptor.addOrReplaceOption("workingDirectory", workDir.getAbsolutePath());
-		});
-		
-		FOption.accept(opDesc.getOperationSubmodel(), ref -> {
-			ref.activate(manager);
-			loadVariablesFromSubmodel(descriptor, ref);
-		});
-		FStream.from(opDesc.getInputVariables()).forEach(descriptor.getInputVariables()::addOrReplace);
-		FStream.from(opDesc.getOutputVariables()).forEach(descriptor.getOutputVariables()::addOrReplace);
-		FOption.accept(opDesc.getTimeout(), to -> descriptor.addOrReplaceOption("timeout", to.toString()));
-	}
-	
 	static class BaseBuilder<T extends BaseBuilder<T>> {
 		protected final TaskDescriptor m_descriptor = new TaskDescriptor();
 		

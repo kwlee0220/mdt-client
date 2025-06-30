@@ -189,7 +189,7 @@ public class DefaultNodeFactories {
 		@Override
 		public DefaultNode create(SubmodelElement element) {
 			ElementValue value = ElementValues.getValue(element);
-			String valStr = (value != null) ? value.toValueString() : "null"; 
+			String valStr = (value != null) ? value.toDisplayString() : "null"; 
 			
 			return new TerminalNode(element.getIdShort(), " (ValueOnlySerialization)", valStr);
 		} 

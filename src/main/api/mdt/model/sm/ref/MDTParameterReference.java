@@ -1,10 +1,12 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
@@ -19,6 +21,7 @@ import utils.func.FOption;
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
+import mdt.model.MDTModelSerDe;
 import mdt.model.ModelValidationException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
@@ -28,6 +31,7 @@ import mdt.model.sm.data.ParameterCollection;
 import mdt.model.sm.info.MDTAssetType;
 import mdt.model.sm.value.ElementCollectionValue;
 import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.ParameterValue;
 
 
@@ -47,6 +51,7 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	private final String m_subPath;
 
 	private volatile DefaultElementReference m_ref;
+	private volatile SubmodelElement m_proto;
 	
 	private MDTParameterReference(String instanceId, String parameterId, String subPath) {
 		Preconditions.checkArgument(instanceId != null, "instanceId is null");
@@ -73,6 +78,15 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 		
 		m_ref = DefaultElementReference.newInstance(smRef, idShortPath);
 		m_ref.activate(manager);
+		try {
+			m_proto = m_ref.read();
+		}
+		catch ( IOException e ) {
+			String msg = String.format("Failed to read parameter prototype: instanceId=%s, parameterId=%s, subPath=%s, "
+										+ "cause=%s",
+										m_instanceId, m_parameterId, m_subPath, ""+e);
+			throw new UncheckedIOException(msg, e);
+		}
 	}
 
 	@Override
@@ -139,7 +153,7 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	}
 
 	@Override
-	public SubmodelElement updateValue(ElementValue smev) throws IOException {
+	public void updateValue(ElementValue smev) throws IOException {
 		SubmodelService service = getSubmodelService();
 		
 		// smev의 타입이 ElementCollectionValue가 아닌 경우에는 Parameter의 value 부분만
@@ -158,7 +172,29 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 														.build();
 			service.updateSubmodelElementValueByPath(getIdShortPathString(), paramValue);
 		}
-		return service.getSubmodelElementByPath(getIdShortPathString());
+	}
+
+	@Override
+	public void updateWithValueJsonString(String valueJsonString) throws IOException {
+		ElementValue newVal = null;
+		try {
+			newVal = ElementValues.parseValueJsonString(m_proto, valueJsonString);
+		}
+		catch ( IOException e ) {
+			JsonNode jnode = MDTModelSerDe.getJsonMapper().readTree(valueJsonString);
+			if ( jnode.isValueNode() && m_proto instanceof SubmodelElementCollection ) {
+				Property valProp = SubmodelUtils.getPropertyById((SubmodelElementCollection)m_proto, "ParameterValue").value();
+				newVal = ElementValues.parseValueJsonNode(valProp, jnode);
+				newVal = ParameterValue.builder()
+										.value(newVal)
+										.eventDateTime(Instant.now())
+										.build();
+			}
+			else {
+				throw e;
+			}
+		}
+		updateValue(newVal);
 	}
 
 	@Override

@@ -7,7 +7,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import utils.json.JacksonUtils;
 
@@ -43,18 +42,6 @@ public abstract class AbstractVariable implements Variable {
 	@JsonProperty("description")
 	public String getDescription() {
 		return m_description;
-	}
-
-	public void updateWithValueJsonString(String valueJsonString) throws IOException {
-		updateWithValueJsonNode(MDTModelSerDe.readJsonNode(valueJsonString));
-	}
-
-	public void updateWithRawString(String externStr) throws IOException {
-		externStr = externStr.trim();
-		JsonNode rawValue = ( externStr.startsWith("{") )
-							? MDTModelSerDe.readJsonNode(externStr)
-							: new TextNode(externStr);
-		updateWithValueJsonNode(rawValue);
 	}
 	
 	public JsonNode toJsonNode() throws IOException {
@@ -106,8 +93,8 @@ public abstract class AbstractVariable implements Variable {
 		}
 
 		@Override
-		public void updateWithValueJsonNode(JsonNode valueNode) throws IOException {
-			m_ref.updateWithValueJsonNode(valueNode);
+		public void updateWithValueJsonString(String valueJsonString) throws IOException {
+			m_ref.updateWithValueJsonString(valueJsonString);
 		}
 
 		@Override
@@ -158,18 +145,19 @@ public abstract class AbstractVariable implements Variable {
 		}
 
 		@Override
-		public void update(SubmodelElement sme) throws IOException {
+		public void update(SubmodelElement sme) {
 			m_element = sme;
 		}
 
 		@Override
-		public void updateValue(ElementValue value) throws IOException {
+		public void updateValue(ElementValue value) {
 			ElementValues.update(m_element, value);
 		}
 
 		@Override
-		public void updateWithValueJsonNode(JsonNode valueNode) throws IOException {
-			ElementValues.update(m_element, valueNode);
+		public void updateWithValueJsonString(String valueJsonString) throws IOException {
+			ElementValue newVal = ElementValues.parseValueJsonString(m_element, valueJsonString);
+			updateValue(newVal);
 		}
 		
 		@Override
@@ -201,7 +189,6 @@ public abstract class AbstractVariable implements Variable {
 
 	public static final class ValueVariable extends AbstractVariable {
 		private static final String FIELD_VALUE = "value";
-		private static final String FIELD_VALUE_TYPE = "valueType";
 		public static final String SERIALIZATION_TYPE = "mdt:variable:value";
 		
 		private ElementValue m_value;
@@ -233,8 +220,8 @@ public abstract class AbstractVariable implements Variable {
 		}
 
 		@Override
-		public void updateWithValueJsonNode(JsonNode valueNode) throws IOException {
-			throw new UnsupportedOperationException("ValueVariable cannot be updateValue(ElementValue)");
+		public void updateWithValueJsonString(String valueJsonString) throws IOException {
+			throw new UnsupportedOperationException("ValueVariable cannot be updateWithValueJsonString(valueJsonString)");
 		}
 
 		@Override

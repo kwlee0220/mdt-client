@@ -195,12 +195,10 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 					return new FileVariable(var.getName(), file);
 				}
 				else {
-					throw new TaskException("TaskPort should be a ReferencePort: port=" + var);
+					throw new TaskException("TaskVariable should be a ReferenceVariable: var=" + var);
 				}
 			}
 			else {
-				// PropertyValue인 경우, 바로 JSON으로 출력하면 double-quote가 추가되기 때문에
-				// 이를 막기 위해 값을 직접 저장한다.
 				file = new File(workingDir, var.getName());
 				IOUtils.toFile(value.toValueJsonString(), StandardCharsets.UTF_8, file);
 				
@@ -225,10 +223,8 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 			
 			// 동일 이름을 command-variable이 검색된 경우.
 			try {
-				outVar.updateWithRawString(cmdVar.getValue());
-				if ( getLogger().isInfoEnabled() ) {
-					getLogger().info("Updated: output variable[{}]: {}", outVar.getName(), cmdVar.getValue());
-				}
+				outVar.updateWithValueJsonString(cmdVar.getValue());
+				getLogger().info("Updated: output variable[{}]: {}", outVar.getName(), cmdVar.getValue());
 			}
 			catch ( IOException e ) {
 				getLogger().error("Failed to update output parameter[{}]: {}, cause={}",

@@ -30,6 +30,6 @@ public abstract class AbstractOption<T> implements Option<T> {
 	
 	@Override
 	public String toString() {
-		return String.format("Option[%s]: %s", getName(), getValue());
+		return String.format("%s=%s", getName(), getValue());
 	}
 }

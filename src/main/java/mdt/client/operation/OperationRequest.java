@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import utils.KeyedValueList;
 import utils.stream.FStream;
@@ -20,10 +21,12 @@ import mdt.model.sm.variable.Variable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIncludeProperties({ "operation", "inputVariables", "outputVariables", "async" })
 public class OperationRequest {
-	private String m_opId;
+	@JsonProperty("operation") private String m_opId;
+	@JsonProperty("inputVariables")
 	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);
+	@JsonProperty("outputVariables")
 	private KeyedValueList<String,Variable> m_outputVariables = KeyedValueList.with(Variable::getName);
-	private boolean m_async = true;
+	@JsonProperty("async") private boolean m_async = true;
 	
 	public String getOperation() {
 		return m_opId;

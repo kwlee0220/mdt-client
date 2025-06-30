@@ -33,10 +33,9 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	}
 
 	@Override
-	public SubmodelElement updateValue(ElementValue smev) throws IOException {
+	public void updateValue(ElementValue smev) throws IOException {
 		SubmodelService service = getSubmodelService();
 		service.updateSubmodelElementValueByPath(getIdShortPathString(), smev);
-		return service.getSubmodelElementByPath(getIdShortPathString());
 	}
 
 	@Override

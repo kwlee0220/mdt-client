@@ -204,7 +204,7 @@ public class Fa3stHttpClient implements HttpClientProxy {
 		try {
 			Messages msgs = MDTModelSerDe.getJsonMapper().readValue(respBody, Messages.class);
 			msg = msgs.m_messages.get(0);
-			if ( msg.getCode().length() == 0 ) {
+			if ( msg.getCode() == null || msg.getCode().length() == 0 ) {
 				if ( resp.code() == 404 ) {
 					throw new ResourceNotFoundException(msg.getText());
 				}

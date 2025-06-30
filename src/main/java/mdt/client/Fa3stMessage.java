@@ -28,7 +28,7 @@ import mdt.model.MessageTypeEnum;
 public class Fa3stMessage {
     private MessageTypeEnum messageType;
     private String text;
-    private String code;
+    private String m_code;
     private String timestamp;
 	
 	public static Fa3stMessage from(Throwable e) {
@@ -44,16 +44,20 @@ public class Fa3stMessage {
     					@JsonProperty("timestamp") String timestamp) {
     	this.messageType = messageType;
     	this.text = text;
-    	this.code = code;
+    	m_code = code;
     	this.timestamp = timestamp;
+    }
+    
+    public String getCode() {
+    	return m_code;
     }
 	
 	public RESTfulRemoteException toClientException() {
 		if ( this.text != null ) {
-			throw new RESTfulRemoteException("code=" + this.code + ", details=" + this.text);
+			throw new RESTfulRemoteException("code=" + m_code + ", details=" + this.text);
 		}
 		else {
-			throw new RESTfulRemoteException("code=" + this.code);
+			throw new RESTfulRemoteException("code=" + m_code);
 		}
 	}
 }

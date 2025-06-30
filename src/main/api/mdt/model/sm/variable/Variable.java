@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -26,9 +25,7 @@ public interface Variable {
 	
 	public void update(SubmodelElement sme) throws IOException;
 	public void updateValue(ElementValue value) throws IOException;
-	public void updateWithValueJsonNode(JsonNode valueNode) throws IOException;
 	public void updateWithValueJsonString(String valueJsonString) throws IOException;
-	public void updateWithRawString(String externStr) throws IOException;
 
 	public String getSerializationType();
 	public void serializeFields(JsonGenerator gen) throws IOException;

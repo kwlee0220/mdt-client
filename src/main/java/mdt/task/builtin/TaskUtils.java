@@ -29,7 +29,6 @@ import mdt.workflow.model.TaskDescriptor;
 @UtilityClass
 public class TaskUtils {
 	public static final String LABEL_MDT_OPERATION = "mdt-operation";
-	
 	static DefaultElementReference loadLastExecutionTimeRef(MDTInstanceManager manager,
 															TaskDescriptor descriptor) throws TaskException {
 		DefaultSubmodelReference opSmRef

@@ -3,14 +3,17 @@ package mdt.model.sm.value;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import mdt.model.MDTModelSerDe;
+
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
+@JsonDeserialize(using = ElementValues.Deserializer.class)
 @JsonSerialize(using = ElementValues.Serializer.class)
 public abstract class AbstractElementValue implements ElementValue {
 	abstract protected Object toValueJsonObject();
@@ -35,7 +38,13 @@ public abstract class AbstractElementValue implements ElementValue {
 	}
 
 	@Override
-	public String toValueString() {
+	public String toDisplayString() {
+		// PropertyValue인 경우는 재정의됨.
 		return toValueJsonString();
+	}
+	
+	@Override
+	public String toString() {
+		return toDisplayString();
 	}
 }

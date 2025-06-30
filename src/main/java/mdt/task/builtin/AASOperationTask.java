@@ -137,11 +137,11 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		if ( showResult ) {
 			for ( OperationVariable opVar: result.getOutputArguments() ) {
 				ElementValue ev = ElementValues.getValue(opVar.getValue());
-				System.out.printf("[output] %s: %s%n", opVar.getValue().getIdShort(), ev.toValueString());
+				System.out.printf("[output] %s: %s%n", opVar.getValue().getIdShort(), ev.toDisplayString());
 			}
 			for ( OperationVariable opVar: result.getInoutputArguments() ) {
 				ElementValue ev = ElementValues.getValue(opVar.getValue());
-				System.out.printf("[inoutput] %s: %s%n", opVar.getValue().getIdShort(), ev.toValueString());
+				System.out.printf("[inoutput] %s: %s%n", opVar.getValue().getIdShort(), ev.toDisplayString());
 			}
 		}
 	}

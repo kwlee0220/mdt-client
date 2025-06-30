@@ -48,7 +48,7 @@ import picocli.CommandLine.Parameters;
 public class RunTaskCommand extends MultiVariablesCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(RunTaskCommand.class);
 	private static final String DEFAULT_POLL_INTERVAL = "1s";
-	
+
 	@Parameters(index="0", paramLabel="opRef",
 				description="Operation reference (e.g. <instance-id>/<submodel-idshort>)")
 	private String m_opRefExpr;

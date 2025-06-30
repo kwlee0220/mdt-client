@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
@@ -19,6 +19,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import utils.InternalException;
 import utils.StateChangePoller;
 import utils.Throwables;
+import utils.async.Guard;
 import utils.func.Funcs;
 import utils.func.Try;
 import utils.http.HttpClientProxy;
@@ -61,12 +62,16 @@ import okhttp3.RequestBody;
  */
 public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	private static final RequestBody EMPTY_BODY = RequestBody.create("", null);
+	private static final Duration VALID_PERIOD = Duration.ofSeconds(3);
 	
 	private final String m_id;
 	private final String m_registryEndpoint;
 	private final HttpMDTInstanceManager m_manager;
 	private final HttpRESTfulClient m_restfulClient;
-	private final AtomicReference<InstanceDescriptor> m_desc;
+	
+	private final Guard m_guard = Guard.create();
+	@GuardedBy("m_guard") private InstanceDescriptor m_desc;
+	@GuardedBy("m_guard") private Instant m_updated;
 	
 	HttpMDTInstanceClient(HttpMDTInstanceManager manager, InstanceDescriptor desc) {
 		m_manager = manager;
@@ -78,12 +83,27 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(InstanceDescriptorSerDe.MAPPER))
 										.build();
 		
-		m_desc = new AtomicReference<>(desc);
+		m_guard.run(() -> {
+			m_desc = desc;
+			m_updated = Instant.now();
+		});
 	}
 
 	@Override
 	public MDTInstanceManager getInstanceManager() {
 		return m_manager;
+	}
+
+	@Override
+	public InstanceDescriptor getInstanceDescriptor() {
+		return m_guard.get(() -> {
+			Duration age = Duration.between(m_updated, Instant.now());
+			if ( age.compareTo(VALID_PERIOD) > 0 ) {
+				m_desc = reloadInstanceDescriptor();
+				m_updated = Instant.now();
+			}
+			return m_desc;
+		});
 	}
 	
 	@Override
@@ -93,42 +113,37 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
 	@Override
 	public MDTInstanceStatus getStatus() {
-		return m_desc.get().getStatus();
+		return getInstanceDescriptor().getStatus();
 	}
 
 	@Override
 	public String getServiceEndpoint() {
-		return m_desc.get().getBaseEndpoint();
+		return getInstanceDescriptor().getBaseEndpoint();
 	}
 	
 	@Override
 	public String getAasId() {
-		return m_desc.get().getAasId();
+		return getInstanceDescriptor().getAasId();
 	}
 
 	@Override
 	public String getAasIdShort() {
-		return m_desc.get().getAasIdShort();
+		return getInstanceDescriptor().getAasIdShort();
 	}
 
 	@Override
 	public String getGlobalAssetId() {
-		return m_desc.get().getGlobalAssetId();
+		return getInstanceDescriptor().getGlobalAssetId();
 	}
 
 	@Override
 	public MDTAssetType getAssetType() {
-		return m_desc.get().getAssetType();
+		return getInstanceDescriptor().getAssetType();
 	}
 
 	@Override
 	public AssetKind getAssetKind() {
-		return m_desc.get().getAssetKind();
-	}
-
-	@Override
-	public InstanceDescriptor getInstanceDescriptor() {
-		return m_desc.get();
+		return getInstanceDescriptor().getAssetKind();
 	}
 
 	@Override
@@ -355,9 +370,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 	
 	private InstanceDescriptor reloadInstanceDescriptor() {
-		InstanceDescriptor desc = m_manager.getInstanceDescriptor(m_id);
-		m_desc.set(desc);
-		return desc;
+		return m_manager.getInstanceDescriptor(m_id);
 	}
 	
     // @PutMapping({"instance-manager/instances/{id}/start"})

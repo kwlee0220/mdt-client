@@ -17,5 +17,5 @@ public interface ElementValue {
 	// public ElementValue parseValueJsonString(String json) throws IOException;	// ElementValues에서 정의됨.
 	public String toValueJsonString();
 	
-	public String toValueString();
+	public String toDisplayString();
 }

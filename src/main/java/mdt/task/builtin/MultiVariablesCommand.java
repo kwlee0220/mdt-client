@@ -1,6 +1,5 @@
 package mdt.task.builtin;
 
-import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -61,7 +60,7 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	protected List<UnmatchedOption> collectUnmatchedOptions() throws IOException {
+	protected List<UnmatchedOption> collectUnmatchedOptions() {
 		List<UnmatchedOption> unmatchedOptions = Lists.newArrayList();
 		List<String> remains = Lists.newArrayList(m_unmatcheds);
 		while ( remains.size() > 0 ) {
@@ -81,8 +80,7 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		return unmatchedOptions;
 	}
 	
-	protected void loadTaskVariablesFromArguments(MDTInstanceManager manager, TaskDescriptor descriptor)
-		throws IOException {
+	protected void loadTaskVariablesFromArguments(MDTInstanceManager manager, TaskDescriptor descriptor) {
 		// Command line에서 지정된 옵션을 파싱하여 input/output parameter를 추출한다.
 		// 이때, input/output parameter 관련 정보들은 unmatcheds에 포함되어 있다.
 		// Input/output parameter는 다음과 같은 형식으로 지정된다.
@@ -164,7 +162,7 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	private static void updateTaskVariable(KeyedValueList<String, Variable> varList, Variable paramVar) throws IOException {
+	private static void updateTaskVariable(KeyedValueList<String, Variable> varList, Variable paramVar) {
 		Variable taskVar = varList.getOfKey(paramVar.getName());
 		if ( taskVar != null ) {
 			varList.replace(paramVar);

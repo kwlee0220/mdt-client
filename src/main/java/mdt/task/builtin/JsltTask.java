@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
@@ -20,13 +19,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Maps;
 
 import utils.Throwables;
-import utils.Tuple;
-import utils.async.CommandVariable;
-import utils.stream.FStream;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.data.Parameter;
 import mdt.model.sm.variable.Variable;
 import mdt.task.AbstractMDTTask;
 import mdt.task.MDTTask;
@@ -120,13 +115,15 @@ public class JsltTask extends AbstractMDTTask implements MDTTask {
 	private void updateOutputVariables(JsonNode results) throws IOException {
 		TaskDescriptor descriptor = getTaskDescriptor();
 		
-		for ( Variable outPort: descriptor.getOutputVariables() ) {
-			JsonNode result = results.get(outPort.getName());
+		for ( Variable outVar: descriptor.getOutputVariables() ) {
+			JsonNode result = results.get(outVar.getName());
 			if ( s_logger.isInfoEnabled() ) {
 				String valueStr = MDTModelSerDe.toJsonString(result);
-				s_logger.info("update variable[{}] with {}", outPort.getName(), valueStr);
+				s_logger.info("update variable[{}] with {}", outVar.getName(), valueStr);
 			}
-			outPort.updateWithValueJsonNode(result);
+			// TODO: 어떻게 구현해야 할지 몰라서 일단 comment-out 시킴.
+//			outVar.updateWithValueJsonNode(result);
+			throw new UnsupportedOperationException("JsltTask does not support updateWithValueJsonNode");
 		}
 	}
 }

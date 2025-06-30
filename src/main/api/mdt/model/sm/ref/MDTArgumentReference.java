@@ -33,6 +33,7 @@ import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.IdShortPath;
 
 
@@ -163,10 +164,17 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 	}
 
 	@Override
-	public SubmodelElement updateValue(ElementValue smev) throws IOException {
+	public void updateValue(ElementValue smev) throws IOException {
 		Preconditions.checkState(m_argRef != null, "not activated");
 		
-		return m_argRef.updateValue(smev);
+		m_argRef.updateValue(smev);
+	}
+
+	@Override
+	public void updateWithValueJsonString(String valueJsonString) throws IOException {
+		SubmodelElement proto = read();
+		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
+		updateValue(newVal);
 	}
 	
 	public MDTSubmodelReference getSubmodelReference() {

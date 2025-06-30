@@ -10,7 +10,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.value.ElementValue;
@@ -23,30 +22,9 @@ import mdt.model.sm.value.ElementValues;
  */
 public abstract class AbstractElementReference implements ElementReference {
 	@Override
-	public SubmodelElement update(SubmodelElement sme) throws IOException {
+	public void update(SubmodelElement sme) throws IOException {
 		ElementValue newValue = ElementValues.getValue(sme);
-		return updateValue(newValue);
-	}
-
-	@Override
-	public SubmodelElement updateWithValueJsonNode(JsonNode valueNode) throws IOException {
-		SubmodelElement sme = read();
-		ElementValues.update(sme, valueNode);
-		return updateValue(ElementValues.getValue(sme));
-	}
-
-	@Override
-	public SubmodelElement updateWithValueJsonString(String valueJsonString) throws IOException {
-		return updateWithValueJsonNode(MDTModelSerDe.readJsonNode(valueJsonString));
-	}
-
-	@Override
-	public SubmodelElement updateWithRawString(String externStr) throws IOException {
-		externStr = externStr.trim();
-		JsonNode rawValue = ( externStr.startsWith("{") )
-							? MDTModelSerDe.readJsonNode(externStr)
-							: new TextNode(externStr);
-		return updateWithValueJsonNode(rawValue);
+		updateValue(newValue);
 	}
 
 	@Override

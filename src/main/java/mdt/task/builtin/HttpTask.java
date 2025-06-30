@@ -48,7 +48,7 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpTask.class);
 	private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 	
-	public static final String OPTION_SERVER_ENDPOINT = "server";
+	public static final String OPTION_SERVER_ENDPOINT = "endpoint";
 	public static final String OPTION_OPERATION = "opId";
 	public static final String OPTION_SYNC = "sync";
 	public static final String OPTION_POLL_INTERVAL = "poll";

@@ -113,7 +113,7 @@ public class ElementValues {
 		return parseValueJsonNode(proto, jnode);
 	}
 	
-	public static ElementValue parseValueJsonNode(SubmodelElement proto, JsonNode vnode) {
+	public static ElementValue parseValueJsonNode(SubmodelElement proto, JsonNode vnode) throws IOException {
 		switch ( proto ) {
 			case Property prop:
 				return PropertyValue.parseValueJsonNode(prop, vnode);
@@ -136,23 +136,8 @@ public class ElementValues {
 				throw new IllegalArgumentException(msg);
 		}
 	}
-
-	public static SubmodelElement updateWithRawValueString(@NonNull SubmodelElement sme, String valueJsonString)
-		throws IOException {
-		if ( sme instanceof Property ) {
-			if ( !valueJsonString.startsWith("\"") ) {
-				valueJsonString = "\"" + valueJsonString;
-			}
-			if ( !valueJsonString.endsWith("\"") ) {
-				valueJsonString = valueJsonString + "\"";
-			}
-		}
-		
-		ElementValue value = parseValueJsonString(sme, valueJsonString);
-		return update(sme, value);
-	}
 	
-	public static SubmodelElement update(@NonNull SubmodelElement sme, JsonNode valueNode) {
+	public static SubmodelElement update(@NonNull SubmodelElement sme, JsonNode valueNode) throws IOException {
 		ElementValue value = parseValueJsonNode(sme, valueNode);
 		update(sme, value);
 		
@@ -221,8 +206,9 @@ public class ElementValues {
 		return sme;
 	}
 	
-	public static Property update(Property prop, PropertyValue<?> newValue) {
-		prop.setValue(newValue.toValueString());
+	public static Property update(Property prop, @NonNull PropertyValue<?> newValue) {
+		String value = newValue.getDataType().toValueString(newValue.get());
+		prop.setValue(value);
 		return prop;
 	}
 	
@@ -242,6 +228,11 @@ public class ElementValues {
 	public static MultiLanguageProperty update(MultiLanguageProperty mlprop, MultiLanguagePropertyValue newValue) {
 		mlprop.setValue(newValue.getLangTextAll());
 		return mlprop;
+	}
+	
+	public static void updateWithValueJsonString(SubmodelElement target, String valueJsonString) throws IOException {
+		ElementValue smev = parseValueJsonString(target, valueJsonString);
+		update(target, smev);
 	}
 	
 	public static ElementValue parseExpr(String expr) {
@@ -363,4 +354,22 @@ public class ElementValues {
 		value.serializeValue(gen);
 		gen.writeEndObject();
 	}
+	
+	public static String unquote(String str) {
+		if (str == null) return null;
+		str = str.trim();
+		if (str.length() >= 2 && str.startsWith("\"") && str.endsWith("\"")) {
+			return str.substring(1, str.length() - 1);
+		}
+		return str;
+	}
+	
+//	private String quote(String value) {
+//		if ( value != null ) {
+//			return "\"" + value + "\"";
+//		}
+//		else {
+//			return "null";
+//		}
+//	}
 }

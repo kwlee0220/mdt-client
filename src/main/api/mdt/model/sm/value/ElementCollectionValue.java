@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Maps;
 
 import utils.KeyValue;
 import utils.func.FOption;
@@ -50,20 +52,19 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 						.getOrThrow(() -> new IllegalArgumentException("No field found: " + fieldName));
 	}
 	
-	public static ElementCollectionValue parseValueJsonNode(SubmodelElementCollection smc, JsonNode vnode) {
-		Map<String,ElementValue> values
-			= FStream.from(smc.getValue())
-					.flatMapNullable(elmNode -> {
-						JsonNode field = JacksonUtils.getFieldOrNull(vnode, elmNode.getIdShort());
-						if ( field != null ) {
-							return KeyValue.of(elmNode.getIdShort(), ElementValues.parseValueJsonNode(elmNode, field));
-						}
-						else {
-							return null;
-						}
-					})
-					.toKeyValueStream(kv -> kv)
-					.toMap();
+	public static ElementCollectionValue parseValueJsonNode(SubmodelElementCollection smc, JsonNode vnode)
+		throws IOException {
+		if ( !vnode.isObject() ) {
+			throw new IOException("JsonNode is not 'Object' node, JsonNode=" + vnode);
+		}
+		
+		Map<String,ElementValue> values = Maps.newLinkedHashMap();
+		for ( SubmodelElement elmNode : smc.getValue() ) {
+			JsonNode field = JacksonUtils.getFieldOrNull(vnode, elmNode.getIdShort());
+			if ( field != null ) {
+				values.put(elmNode.getIdShort(), ElementValues.parseValueJsonNode(elmNode, field));
+			}
+		}
 		return new ElementCollectionValue(values);
 	}
 

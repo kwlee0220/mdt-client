@@ -2,7 +2,6 @@ package mdt.model.sm.ref;
 
 import java.io.IOException;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -56,7 +55,7 @@ public interface ElementReference {
 	 * @return    갱신된 SubmodelElement 객체.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
-	public SubmodelElement update(SubmodelElement sme) throws IOException;
+	public void update(SubmodelElement sme) throws IOException;
 
 	/**
 	 * 참조가 가리키는 SubmodelElement의 값 부분을 주어진 ElementValue으로 갱신한다.
@@ -65,16 +64,7 @@ public interface ElementReference {
 	 * @return    갱신된 SubmodelElement 객체.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
-	public SubmodelElement updateValue(ElementValue smev) throws IOException;
-	
-	/**
-	 * 주어진 {@link JsonNode}을 이용하여 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
-	 * 
-	 * @param valueNode		New JsonNode
-	 * @return    갱신된 SubmodelElement 객체.
-	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
-	 */
-	public SubmodelElement updateWithValueJsonNode(JsonNode valueNode) throws IOException;
+	public void updateValue(ElementValue smev) throws IOException;
 
 	/**
 	 * 주어진 Json 문자열을 이용하여 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
@@ -83,25 +73,7 @@ public interface ElementReference {
 	 * @return    갱신된 SubmodelElement 객체.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
-	public SubmodelElement updateWithValueJsonString(String valueJsonString) throws IOException;
-	
-	 /**
-	  * Updates the value of the SubmodelElement with the given string value.
-	  * <p>
-	  * While {@link #updateWithValueJsonString(String)}, which assumes the input string is Json,
-	  * this method assumes the input string is the actual raw string.
-	  * For example, to update the value of an int type Property to 10,
-	  * {@link #updateWithValueJsonString(String)} requires a string {@code "10"},
-	  * but this method can update it with string {@code 10}.
-	  * <p>
-	  * If the target {@link SubmodelElement} is not a {@link Property},
-	  * this method takes a Json string as an argument, similar to {@link #updateWithValueJsonString(String)}.
-	  *
-	  * @param rawString    String to update.
-	 * @return	Updated SubmodelElement.
-	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
-	  */
-	public SubmodelElement updateWithRawString(String rawString) throws IOException;
+	public void updateWithValueJsonString(String valueJsonString) throws IOException;
 
 	public String toStringExpr();
 

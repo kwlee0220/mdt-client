@@ -298,6 +298,6 @@ public final class TaskDescriptor {
 //		String optList = FStream.from(m_options)
 //								.flatMapIterable(Option::toCommandOptionSpec)
 //								.join(", ", "[", "]");
-		return String.format("%s: %s, opts=%s", taskName, toSignatureString(), m_options);
+		return String.format("%s: %s, opts:%s", taskName, toSignatureString(), m_options);
 	}
 }

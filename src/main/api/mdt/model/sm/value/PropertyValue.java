@@ -13,8 +13,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import utils.func.FOption;
-
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
@@ -39,7 +37,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	}
 
 	@Override
-	public String toValueString() {
+	public String toDisplayString() {
 		return getDataType().toValueString(m_value);
 	}
 	
@@ -96,11 +94,6 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		PropertyValue<?> other = (PropertyValue<?>) obj;
 		return Objects.equals(m_value, other.m_value)
 				&& Objects.equals(getDataType(), other.getDataType());
-	}
-	
-	@Override
-	public String toString() {
-		return toValueString();
 	}
 	
 	public static PropertyValue<?> from(@NonNull Property prop) {
@@ -166,11 +159,6 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		}
 
 		@Override
-		public String toValueJsonString() {
-			return FOption.map(m_value, v -> Integer.toString(v));
-		}
-
-		@Override
 		public String getSerializationType() {
 			return SERIALIZATION_TYPE;
 		}
@@ -193,11 +181,6 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		@Override
 		public DataType<Float> getDataType() {
 			return DataTypes.FLOAT;
-		}
-
-		@Override
-		public String toValueJsonString() {
-			return FOption.map(m_value, v -> Float.toString(v));
 		}
 
 		@Override
@@ -226,11 +209,6 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		}
 
 		@Override
-		public String toValueJsonString() {
-			return FOption.map(m_value, v -> Double.toString(v));
-		}
-
-		@Override
 		public String getSerializationType() {
 			return SERIALIZATION_TYPE;
 		}
@@ -254,12 +232,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		public DataType<Boolean> getDataType() {
 			return DataTypes.BOOLEAN;
 		}
-
-		@Override
-		public String toValueJsonString() {
-			return FOption.map(m_value, v -> Boolean.toString(v));
-		}
-
+		
 		@Override
 		public String getSerializationType() {
 			return SERIALIZATION_TYPE;
@@ -317,15 +290,6 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		
 		public static DurationPropertyValue deserializeValue(JsonNode vnode) {
 			return new DurationPropertyValue(DataTypes.DURATION.fromJsonNode(vnode));
-		}
-	}
-	
-	private String quote(String value) {
-		if ( value != null ) {
-			return "\"" + value + "\"";
-		}
-		else {
-			return "null";
 		}
 	}
 }

@@ -150,7 +150,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 	}
 
 	@Override
-	public SubmodelElement updateValue(ElementValue value) throws ResourceNotFoundException, IOException {
+	public void updateValue(ElementValue value) throws ResourceNotFoundException, IOException {
 		Preconditions.checkArgument(value != null);
 		Preconditions.checkState(m_opRef != null, "OperationVariableReference is not activated");
 		
@@ -162,7 +162,13 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 		SubmodelElement opValue = opv.getValue();
 		ElementValues.update(opValue, value);
 		m_opRef.write(op);
-		return opValue;
+	}
+
+	@Override
+	public void updateWithValueJsonString(String valueJsonString) throws IOException {
+		SubmodelElement proto = read();
+		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
+		updateValue(newVal);
 	}
 
 	@Override

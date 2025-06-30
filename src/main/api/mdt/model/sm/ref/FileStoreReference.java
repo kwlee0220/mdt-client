@@ -54,12 +54,17 @@ public final class FileStoreReference extends AbstractElementReference implement
 	}
 
 	@Override
-	public SubmodelElement updateValue(ElementValue smev) throws IOException {
+	public void updateValue(ElementValue smev) throws IOException {
 		SubmodelElement holder = read();
 		ElementValues.update(holder, smev);
 		write(holder);
-		
-		return holder;
+	}
+
+	@Override
+	public void updateWithValueJsonString(String valueJsonString) throws IOException {
+		SubmodelElement proto = read();
+		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
+		updateValue(newVal);
 	}
 
 	public static FileStoreReference parseString(String valueExpr) {

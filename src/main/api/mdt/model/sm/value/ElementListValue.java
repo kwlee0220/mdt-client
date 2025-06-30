@@ -36,10 +36,10 @@ public class ElementListValue extends AbstractElementValue implements ElementVal
 		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
 	
-	public static ElementListValue parseValueJsonNode(SubmodelElementList sml, JsonNode vnode) {
+	public static ElementListValue parseValueJsonNode(SubmodelElementList sml, JsonNode vnode) throws IOException {
 		List<ElementValue> values = FStream.from(sml.getValue())
 											.zipWith(FStream.from(vnode.elements()))
-											.map(pair -> ElementValues.parseValueJsonNode(pair._1, pair._2))
+											.mapOrThrow(pair -> ElementValues.parseValueJsonNode(pair._1, pair._2))
 											.toList();
 		return new ElementListValue(values);
 	}

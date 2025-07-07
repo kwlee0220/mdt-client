@@ -153,7 +153,7 @@ public class ElementValues {
 	public static SubmodelElement update(SubmodelElement sme, ElementValue smev) {
 		if ( sme instanceof Property prop ) {
 			Preconditions.checkArgument(smev instanceof PropertyValue,
-										"Expecing %s, but %s", PropertyValue.class.getName(), smev.getClass().getName());
+										"Expecting %s, but %s", PropertyValue.class.getName(), smev.getClass().getName());
 			update(prop, (PropertyValue)smev);
 		}
 		else if ( sme instanceof SubmodelElementCollection smc ) {
@@ -183,17 +183,17 @@ public class ElementValues {
 		}
 		else if ( sme instanceof File aasFile ) {
 			Preconditions.checkArgument(smev instanceof FileValue,
-										"Expecing {}, but {}", FileValue.class.getName(), smev.getClass().getName());
+										"Expecting %s, but %s", FileValue.class.getName(), smev.getClass().getName());
 			update(aasFile, (FileValue)smev);
 		}
 		else if ( sme instanceof Range rg ) {
 			Preconditions.checkArgument(smev instanceof RangeValue,
-										"Expecing {}, but {}", RangeValue.class.getName(), smev.getClass().getName());
+										"Expecting %s, but %s", RangeValue.class.getName(), smev.getClass().getName());
 			update(rg, (RangeValue)smev);
 		}
 		else if ( sme instanceof MultiLanguageProperty mlprop ) {
 			Preconditions.checkArgument(smev instanceof MultiLanguagePropertyValue,
-										"Expecing {}, but {}", MultiLanguagePropertyValue.class.getName(),
+										"Expecting %s, but %s", MultiLanguagePropertyValue.class.getName(),
 																smev.getClass().getName());
 			update(mlprop, (MultiLanguagePropertyValue)smev);
 		}

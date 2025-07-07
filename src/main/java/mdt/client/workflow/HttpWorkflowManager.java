@@ -3,6 +3,8 @@ package mdt.client.workflow;
 import java.io.IOException;
 import java.util.List;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
 
@@ -79,8 +81,10 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	}
 
 	@Override
-	public Workflow startWorkflow(String wfTemplateId) throws ResourceNotFoundException {
-		String url = String.format("%s/models/%s/start", m_endpoint, wfTemplateId);
+	public Workflow startWorkflow(@NonNull String wfModelId) throws ResourceNotFoundException {
+		Preconditions.checkArgument(wfModelId != null, "WorkflowModel id is null");
+		
+		String url = String.format("%s/models/%s/start", m_endpoint, wfModelId);
 		
 		RequestBody reqBody = RequestBody.create("", HttpRESTfulClient.MEDIA_TYPE_JSON);
 		return m_restfulClient.put(url, reqBody, m_wfDeser);

@@ -2,6 +2,7 @@ package mdt.workflow;
 
 import java.util.List;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -29,7 +30,7 @@ public interface WorkflowManager {
 	 */
 	public Workflow getWorkflow(String name) throws ResourceNotFoundException;
 	
-	public Workflow startWorkflow(String wfModelId) throws ResourceNotFoundException;
+	public Workflow startWorkflow(@NonNull String wfModelId) throws ResourceNotFoundException;
 	public void stopWorkflow(String wfName) throws ResourceNotFoundException;
 	
 	public Workflow suspendWorkflow(String wfName) throws ResourceNotFoundException;

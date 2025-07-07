@@ -19,7 +19,7 @@ import utils.stream.FStream;
  * @author Kang-Woo Lee (ETRI)
  */
 @JsonInclude(Include.NON_NULL)
-@JsonIncludeProperties({"name", "modelId", "status", "creationTime", "startTime", "finishTime", "nodeTasks"})
+@JsonIncludeProperties({"name", "modelId", "status", "creationTime", "startTime", "finishTime", "tasks"})
 public class Workflow {
 	private final String m_name;
 	private final String m_modelId;
@@ -27,7 +27,7 @@ public class Workflow {
 	private final LocalDateTime m_creationTime;
 	private final LocalDateTime m_startTime;
 	private final LocalDateTime m_finishTime;
-	private final List<NodeTask> m_nodeTasks;
+	private final List<NodeTask> m_tasks;
 	
 	public Workflow(@JsonProperty("name") String name,
 							@JsonProperty("modelId") String modelId,
@@ -35,14 +35,14 @@ public class Workflow {
 							@JsonProperty("creationTime") LocalDateTime creationTime,
 							@JsonProperty("startTime") LocalDateTime startTime,
 							@JsonProperty("finishTime") LocalDateTime finishTime,
-							@JsonProperty("nodeTasks") List<NodeTask> nodeTasks) {
+							@JsonProperty("tasks") List<NodeTask> tasks) {
         m_name = name;
         m_modelId = modelId;
         m_status = status;
         m_creationTime = creationTime;
         m_startTime = startTime;
         m_finishTime = finishTime;
-        m_nodeTasks = sortTopologically(nodeTasks);
+        m_tasks = sortTopologically(tasks);
     }
 	
 	public Workflow(Builder builder) {
@@ -55,7 +55,7 @@ public class Workflow {
 		m_creationTime = builder.m_creationTime;
 		m_startTime = builder.m_startTime;
 		m_finishTime = builder.m_finishTime;
-		m_nodeTasks = sortTopologically(builder.m_nodeTasks);
+		m_tasks = sortTopologically(builder.m_tasks);
 	}
 
 	public String getName() {
@@ -82,14 +82,14 @@ public class Workflow {
 		return m_finishTime;
 	}
 
-	public List<NodeTask> getNodeTasks() {
-		return m_nodeTasks;
+	public List<NodeTask> getTasks() {
+		return m_tasks;
 	}
 	
 	@Override
 	public String toString() {
-		String nodesStatusStr = FStream.from(m_nodeTasks)
-										.map(nt -> String.format("%s(%s)", nt.getTaskName(), nt.getStatus()))
+		String nodesStatusStr = FStream.from(m_tasks)
+										.map(nt -> String.format("%s(%s)", nt.getTaskId(), nt.getStatus()))
 										.join(", ");
 		return String.format("Workflow[name=%s, model=%s, status=%s, nodes={%s}]",
 							m_name, m_modelId, m_status, nodesStatusStr);
@@ -99,7 +99,7 @@ public class Workflow {
 		List<NodeTask> remains = Lists.newArrayList(nodeTasks);
 		List<NodeTask> sorted = Lists.newArrayList();
 		Set<String> sortedNames = FStream.from(sorted)
-                                            .map(NodeTask::getTaskName)
+                                            .map(NodeTask::getTaskId)
                                             .toSet();
 		
 		while ( remains.size() > 0 ) {
@@ -111,7 +111,7 @@ public class Workflow {
 			}
 			else {
 				sorted.add(task);
-				sortedNames.add(task.getTaskName());
+				sortedNames.add(task.getTaskId());
 			}
 		}
 		
@@ -128,7 +128,7 @@ public class Workflow {
 		private LocalDateTime m_creationTime;
 		private LocalDateTime m_startTime;
 		private LocalDateTime m_finishTime;
-		private final List<NodeTask> m_nodeTasks = Lists.newArrayList();
+		private final List<NodeTask> m_tasks = Lists.newArrayList();
 		
 		private Builder() { }
 		
@@ -171,8 +171,8 @@ public class Workflow {
 			return this;
 		}
 		
-		public Builder nodeTasks(List<NodeTask> nodeTasks) {
-			m_nodeTasks.addAll(nodeTasks);
+		public Builder tasks(List<NodeTask> tasks) {
+			m_tasks.addAll(tasks);
 			return this;
 		}
 	}

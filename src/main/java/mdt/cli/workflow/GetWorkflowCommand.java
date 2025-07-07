@@ -107,13 +107,13 @@ public class GetWorkflowCommand extends AbstractMDTCommand {
 		table.addCell(" START_TIME "); table.addCell(" " + FOption.getOrElse(workflow.getStartTime(), ""));
 		table.addCell(" FINISH_TIME "); table.addCell(" " + FOption.getOrElse(workflow.getFinishTime(), ""));
 		
-		FStream.from(workflow.getNodeTasks()).zipWithIndex().forEach(tup -> {
+		FStream.from(workflow.getTasks()).zipWithIndex().forEach(tup -> {
 			NodeTask task = tup.value();
 			
 			table.addCell(String.format(" TASK[%02d] ", tup.index()));
 			String depListStr = FStream.from(task.getDependents())
 										.join(", ", "[", "]");
-			String msg = String.format(" %s (%s) <- %s", task.getTaskName(), task.getStatus(), depListStr);
+			String msg = String.format(" %s (%s) <- %s", task.getTaskId(), task.getStatus(), depListStr);
 			table.addCell(msg);
 		});
 		

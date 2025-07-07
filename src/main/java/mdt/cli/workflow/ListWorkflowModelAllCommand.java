@@ -134,7 +134,7 @@ public class ListWorkflowModelAllCommand extends AbstractMDTCommand {
 			pw.append(""+seqNo).append(m_delimiter);
 			pw.append(workflow.getName()).append(m_delimiter);
 			pw.append(workflow.getModelId()).append(m_delimiter);
-			pw.append(""+workflow.getNodeTasks().size()).append(m_delimiter);
+			pw.append(""+workflow.getTasks().size()).append(m_delimiter);
 			pw.append(workflow.getStatus().toString());
 			pw.println();
 			++seqNo;
@@ -154,7 +154,7 @@ public class ListWorkflowModelAllCommand extends AbstractMDTCommand {
 			table.addCell(String.format("%3d", seqNo));
 			table.addCell(workflow.getName());
 			table.addCell(workflow.getModelId());
-			table.addCell(""+workflow.getNodeTasks().size());
+			table.addCell(""+workflow.getTasks().size());
 			table.addCell(workflow.getStatus().toString());
 			++seqNo;
 		}
@@ -168,9 +168,9 @@ public class ListWorkflowModelAllCommand extends AbstractMDTCommand {
 			pw.append(workflow.getName()).append(m_delimiter);
 			pw.append(workflow.getModelId()).append(m_delimiter);
 			pw.append(workflow.getStatus().toString());
-			pw.append(String.format(" %3d ", workflow.getNodeTasks().size())).append(m_delimiter);
-			String tasksStr = FStream.from(workflow.getNodeTasks())
-										.map(task -> task.getTaskName())
+			pw.append(String.format(" %3d ", workflow.getTasks().size())).append(m_delimiter);
+			String tasksStr = FStream.from(workflow.getTasks())
+										.map(task -> task.getTaskId())
 										.join(", ");
 			pw.append(tasksStr);
 			pw.println();
@@ -196,10 +196,10 @@ public class ListWorkflowModelAllCommand extends AbstractMDTCommand {
 			table.addCell(workflow.getName());
 			table.addCell(workflow.getModelId());
 			table.addCell(workflow.getStatus().toString());
-			table.addCell(String.format(" %3d ", workflow.getNodeTasks().size()));
+			table.addCell(String.format(" %3d ", workflow.getTasks().size()));
 			
-			String tasksStr = FStream.from(workflow.getNodeTasks())
-									.map(task -> task.getTaskName())
+			String tasksStr = FStream.from(workflow.getTasks())
+									.map(task -> task.getTaskId())
 									.join(", ");
 			table.addCell(tasksStr);
 			++seqNo;
@@ -326,21 +326,21 @@ public class ListWorkflowModelAllCommand extends AbstractMDTCommand {
 	
 	private String[] toInstanceRow(int seqNo, Workflow workflow) {
 		if ( m_long ) {
-			String tasksStr = FStream.from(workflow.getNodeTasks())
-									.map(task -> task.getTaskName())
+			String tasksStr = FStream.from(workflow.getTasks())
+									.map(task -> task.getTaskId())
 									.join(", ");
 			return new String[] { ""+seqNo,
 									workflow.getName(),
 									workflow.getModelId(),
 									workflow.getStatus().toString(),
-									""+workflow.getNodeTasks().size(),
+									""+workflow.getTasks().size(),
 									tasksStr };
 		}
 		else {
 			return new String[] { ""+seqNo,
 									workflow.getName(),
 									workflow.getModelId(),
-									" "+workflow.getNodeTasks().size(),
+									" "+workflow.getTasks().size(),
 									workflow.getStatus().toString() };
 		}
 	}

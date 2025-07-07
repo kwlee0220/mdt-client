@@ -179,7 +179,7 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 			pw.append(""+seqNo).append(m_delimiter);
 			pw.append(workflow.getName()).append(m_delimiter);
 			pw.append(workflow.getModelId()).append(m_delimiter);
-			pw.append(""+workflow.getNodeTasks().size()).append(m_delimiter);
+			pw.append(""+workflow.getTasks().size()).append(m_delimiter);
 			pw.append(String.format("%s", workflow.getStatus()));
 			pw.println();
 			++seqNo;
@@ -201,7 +201,7 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 			table.addCell(String.format("%3d", seqNo));
 			table.addCell(workflow.getName());
 			table.addCell(workflow.getModelId());
-			table.addCell(String.format("%6d", workflow.getNodeTasks().size()));
+			table.addCell(String.format("%6d", workflow.getTasks().size()));
 			table.addCell(String.format("%-7s", ""+workflow.getStatus()));
 			++seqNo;
 		}
@@ -215,9 +215,9 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 			pw.append(workflow.getName()).append(m_delimiter);
 			pw.append(workflow.getModelId()).append(m_delimiter);
 			pw.append(String.format("%s", workflow.getStatus())).append(m_delimiter);
-			pw.append(String.format("%d", workflow.getNodeTasks().size())).append(m_delimiter);
-			String tasksStr = FStream.from(workflow.getNodeTasks())
-										.map(task -> task.getTaskName())
+			pw.append(String.format("%d", workflow.getTasks().size())).append(m_delimiter);
+			String tasksStr = FStream.from(workflow.getTasks())
+										.map(task -> task.getTaskId())
 										.join(", ");
 			pw.append(tasksStr);
 			pw.println();
@@ -245,10 +245,10 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 			table.addCell(workflow.getName());
 			table.addCell(workflow.getModelId());
 			table.addCell(String.format("%7s", workflow.getStatus()));
-			table.addCell(String.format("%6d", workflow.getNodeTasks().size()));
+			table.addCell(String.format("%6d", workflow.getTasks().size()));
 			
-			String tasksStr = FStream.from(workflow.getNodeTasks())
-									.map(task -> task.getTaskName())
+			String tasksStr = FStream.from(workflow.getTasks())
+									.map(task -> task.getTaskId())
 									.join(", ");
 			table.addCell(tasksStr);
 			++seqNo;

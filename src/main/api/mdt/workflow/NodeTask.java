@@ -1,6 +1,7 @@
 package mdt.workflow;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -53,6 +54,22 @@ public class NodeTask {
 	
 	public LocalDateTime getFinishTime() {
 		return m_finishTime;
+	}
+	
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		else if ( obj == null || !(obj instanceof NodeTask) ) {
+			return false;
+		}
+
+		NodeTask other = (NodeTask) obj;
+		return m_taskId.equals(other.m_taskId);
+	}
+	
+	public int hashCode() {
+		return Objects.hash(m_taskId);
 	}
 	
 	@Override

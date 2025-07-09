@@ -34,12 +34,18 @@ public class WorkflowStatusMonitor extends PeriodicLoopExecution<Void> {
 	public WorkflowStatus getStatus() {
 		return m_status;
 	}
+	
+	@Override
+	protected void finalizeLoop() throws Exception {
+		getLogger().info("[{}]: finalize loop for monitoring workflow: {} ({})",
+							getClass().getSimpleName(), m_wfName, m_status);
+	}
 
 	@Override
 	protected FOption<Void> performPeriodicAction(long loopIndex) throws Exception {
 		Workflow workflow = m_wfManager.getWorkflow(m_wfName);
 		WorkflowStatus status = workflow.getStatus();
-		System.out.println("loop index: " + loopIndex + ", status=" + status);
+		getLogger().debug("[#%03d] Workflow: {}, status={}", loopIndex, m_wfName, status);
 		
 		status = statusChanged(status);
 		if ( isFinished(status) ) {

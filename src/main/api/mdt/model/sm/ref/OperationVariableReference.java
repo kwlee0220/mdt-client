@@ -49,21 +49,6 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 					case "*" -> null;
 					default -> throw new IllegalArgumentException("Invalid OperationVariable's kind: " + kindStr);
 				};
-//				if ( kindStr.startsWith("in") ) {
-//					return INPUT;
-//				}
-//				else if ( kindStr.startsWith("out") ) {
-//	                return OUTPUT;
-//	            }
-//				else if ( kindStr.startsWith("inout") ) {
-//	                return INOUTPUT;
-//	            }
-//				else if ( kindStr.equals("*") ) {
-//					return null;
-//				}
-//				else {
-//					throw new IllegalArgumentException("Invalid OperationVariable's kind: " + kindStr);
-//				}
 			}
 		}
 	};
@@ -117,6 +102,19 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 	@Override
 	public SubmodelService getSubmodelService() {
 		return m_opRef.getSubmodelService();
+	}
+
+	@Override
+	public MDTSubmodelReference getSubmodelReference() {
+		Preconditions.checkState(m_opRef != null, "OperationVariableReference is not activated");
+		if ( m_opRef instanceof SubmodelBasedElementReference subRef ) {
+			return subRef.getSubmodelReference();
+		}
+		else {
+			throw new IllegalStateException(
+					"OperationVariableReference's operation reference is not SubmodelBasedElementReference: "
+							+ m_opRef);
+		}
 	}
 
 	@Override

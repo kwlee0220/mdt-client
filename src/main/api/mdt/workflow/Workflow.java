@@ -30,12 +30,12 @@ public class Workflow {
 	private final List<NodeTask> m_tasks;
 	
 	public Workflow(@JsonProperty("name") String name,
-							@JsonProperty("modelId") String modelId,
-							@JsonProperty("status") WorkflowStatus status,
-							@JsonProperty("creationTime") LocalDateTime creationTime,
-							@JsonProperty("startTime") LocalDateTime startTime,
-							@JsonProperty("finishTime") LocalDateTime finishTime,
-							@JsonProperty("tasks") List<NodeTask> tasks) {
+					@JsonProperty("modelId") String modelId,
+					@JsonProperty("status") WorkflowStatus status,
+					@JsonProperty("creationTime") LocalDateTime creationTime,
+					@JsonProperty("startTime") LocalDateTime startTime,
+					@JsonProperty("finishTime") LocalDateTime finishTime,
+					@JsonProperty("tasks") List<NodeTask> tasks) {
         m_name = name;
         m_modelId = modelId;
         m_status = status;

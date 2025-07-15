@@ -39,6 +39,7 @@ import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.sm.ref.DefaultElementReference;
+import mdt.model.sm.ref.ResolvedElementReference;
 
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -343,6 +344,22 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		elmRef.activate(this);
 		return elmRef.read();
 	}
+
+    // @GetMapping({"/utils/resolveElementReference?ref={ref}&encode={encode}"})
+	@Override
+	public ResolvedElementReference resolveElementReference(String ref) {
+		String url = String.format("%s/utils/resolveElementReference", getEndpoint());
+		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
+						 		.addQueryParameter("ref", ref)
+					 			.build();
+		return m_restfulClient.get(httpUrl, RESOLVED_REFERENCE_DESER);
+	}
+	private static ResponseBodyDeserializer<ResolvedElementReference> RESOLVED_REFERENCE_DESER = new ResponseBodyDeserializer<>() {
+		@Override
+		public ResolvedElementReference deserialize(Headers headers, String respBody) throws IOException {
+			return MAPPER.readValue(respBody, ResolvedElementReference.class);
+		}
+	};
 
 	public static Builder builder() {
 		return new Builder();

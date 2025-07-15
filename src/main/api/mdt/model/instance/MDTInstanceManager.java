@@ -8,6 +8,7 @@ import utils.InternalException;
 
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
+import mdt.model.sm.ref.ResolvedElementReference;
 
 
 /**
@@ -246,4 +247,12 @@ public interface MDTInstanceManager {
 	 * @throws MDTInstanceManagerException	등록 해제가 실패한 경우.
 	 */
 	public void removeInstanceAll() throws MDTInstanceManagerException;
+	
+	/**
+	 * 주어진 element reference를 해석하여 이를 접근하기 위한 restful URI를 반환한다.
+	 *
+	 * @param ref	element reference expression.
+	 * @return	해석된 element reference에 해당하는 restful URI.
+	 */
+	public ResolvedElementReference resolveElementReference(String ref);
 }

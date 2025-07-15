@@ -40,6 +40,7 @@ import picocli.CommandLine.Command;
 		SetCommands.class,
 		TaskCommands.class,
 		WorkflowCommands.class,
+		ResolveCommands.class,
 		SimulationCommands.class,
 	})
 public class MDTCommandsMain {

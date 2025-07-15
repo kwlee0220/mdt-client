@@ -122,6 +122,13 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 		
 		return m_ref.getSubmodelService();
 	}
+
+	@Override
+	public MDTSubmodelReference getSubmodelReference() {
+		Preconditions.checkState(m_ref != null, "MDTParameterReference is not activated");
+		
+		return m_ref.getSubmodelReference();
+	}
 	
 	public SubmodelElement read() throws IOException {
 		Preconditions.checkState(m_ref != null, "MDTParameterReference is not activated");

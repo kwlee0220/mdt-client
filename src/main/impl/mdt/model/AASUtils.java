@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Base64.Decoder;
@@ -29,6 +30,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.collect.Sets;
 
+import lombok.experimental.UtilityClass;
+
 import utils.Throwables;
 import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
@@ -36,7 +39,6 @@ import utils.http.JacksonErrorEntityDeserializer;
 import utils.http.OkHttpClientUtils;
 import utils.stream.FStream;
 
-import lombok.experimental.UtilityClass;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.instance.MDTInstanceManagerException;
 
@@ -80,6 +82,10 @@ public class AASUtils {
 			return new String(BASE64URL_DECODER.decode(src), StandardCharsets.UTF_8);
 		}
 	};
+	
+	public static String encodeIdShortPath(String idShortPath) {
+		return URLEncoder.encode(idShortPath, StandardCharsets.UTF_8);
+	}
 
 	public static AssetAdministrationShell getAssetAdministrationShell(OkHttpClient httpClient, String faastUrl) {
 		JsonMapper mapper = MDTModelSerDe.getJsonMapper();

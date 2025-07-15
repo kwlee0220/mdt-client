@@ -24,7 +24,7 @@ import mdt.model.sm.value.IdShortPath.IdShort.KeyIdShort;
 */
 public class IdShortPath {
 	private static final Pattern ID_PATTERN = Pattern.compile("([a-zA-Z0-9_]+)");
-	private static final Pattern INDEX_PATTERN = Pattern.compile("\\[(\\d+)\\]");
+	private static final Pattern INDEX_PATTERN = Pattern.compile("([a-zA-Z0-9_]+)\\[(\\d+)\\]");
 	
 	private final List<IdShort> m_idShortList;
 	private final Lazy<String> m_path = Lazy.of(this::buildPath);
@@ -51,7 +51,7 @@ public class IdShortPath {
 	public static IdShortPath fromString(String path) {
 		Builder builder = IdShortPath.builder();
 		
-		String[] parts = path.split(path);
+		String[] parts = path.split("\\.");
 		for ( int i =0; i < parts.length; ++i ) {
 			Matcher idMatcher = ID_PATTERN.matcher(parts[i]);
 			if ( idMatcher.matches() ) {
@@ -60,7 +60,8 @@ public class IdShortPath {
 			}
 			Matcher indexMatcher = INDEX_PATTERN.matcher(parts[i]);
 			if ( indexMatcher.matches() ) {
-				int index = Integer.parseInt(indexMatcher.group(1));
+				builder = builder.idShort(indexMatcher.group(1));
+				int index = Integer.parseInt(indexMatcher.group(2));
 				builder = builder.index(index);
 				continue;
 			}

@@ -23,6 +23,8 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 													implements MDTElementReference {
 	private final Lazy<IdShortPath> m_idShortPath = Lazy.of(this::parseIdShortPath);
 	
+	abstract public MDTSubmodelReference getSubmodelReference();
+	
 	public IdShortPath getIdShortPath() {
 		return m_idShortPath.get();
 	}

@@ -23,6 +23,7 @@ import mdt.model.expr.MDTExpr;
 import mdt.model.expr.MDTExprParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.model.sm.variable.Variables;
 import mdt.workflow.model.TaskDescriptor;
@@ -61,13 +62,15 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 	}
 	
 	protected List<UnmatchedOption> collectUnmatchedOptions() {
+		s_logger.debug("unmatched options: {}", m_unmatcheds);
+		
 		List<UnmatchedOption> unmatchedOptions = Lists.newArrayList();
 		List<String> remains = Lists.newArrayList(m_unmatcheds);
 		while ( remains.size() > 0 ) {
 			String optName = remains.remove(0);
 			
 			optName = trimHeadingDashes(optName);
-			Tuple<String, String> tup = Utilities.split(optName, '.', Tuple.of(null, optName));
+			Tuple<String, String> tup = Utilities.split(optName, '.', Tuple.of("in", optName));
 			if ( remains.size() == 0 || remains.get(0).startsWith("-") ) {
 				// 옵션의 value가 지정되지 않은 경우
 				unmatchedOptions.add(new UnmatchedOption(tup._1, tup._2, null));
@@ -89,21 +92,7 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		//   --inout.<parameter-name> <element-reference> (input/output parameter의 경우)
 		//
 		List<UnmatchedOption> unmatchedOptions = collectUnmatchedOptions();
-//		Map<String,String> unmatchedOptions
-//				= FStream.from(m_unmatcheds)
-//						.buffer(2, 2)
-//						.peek(b -> {
-//							if ( b.size() != 2 ) {
-//								String msg = String.format("invalid variable specification: %s", b.get(0));
-//								throw new IllegalArgumentException(msg);
-//							}
-//						})
-//						// 첫번째 항목  앞에 붙은 '-'는 제거하여 key로 사용하고,
-//						// 두번째 항묵을 value로 사용한다. 
-//						.toKeyValueStream(b -> trimHeadingDashes(b.get(0)), b -> b.get(1))
-//						.toMap();
-		
-		for ( UnmatchedOption unmatchedOpt: collectUnmatchedOptions() ) {
+		for ( UnmatchedOption unmatchedOpt: unmatchedOptions ) {
 			Variable var;
 			MDTExpr expr = MDTExprParser.parseExpr(unmatchedOpt.getValue());
 			if ( expr instanceof MDTElementReferenceExpr refExpr ) {
@@ -115,8 +104,8 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 				catch ( Exception e ) {
 					Throwable cause = Throwables.unwrapThrowable(e);
 					String msg = String.format("Failed to parse %s variable(\"%s\"), ref=%s, cause=%s",
-												unmatchedOpt.getType(), unmatchedOpt.getName(), unmatchedOpt.getValue(),
-												cause);
+												unmatchedOpt.getType(), unmatchedOpt.getName(),
+												unmatchedOpt.getValue(), cause);
 					throw new IllegalArgumentException(msg);
 				}
 			}
@@ -124,7 +113,8 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 				var = Variables.newInstance(unmatchedOpt.getName(), "", lit.evaluate());
 			}
 			else {
-				throw new IllegalArgumentException("Unexpected variable expression: name=" + unmatchedOpt.getName()
+				throw new IllegalArgumentException("Unexpected variable expression: name="
+													+ unmatchedOpt.getName()
 													+ ", expr=" + unmatchedOpt.getValue());
 			}
 			
@@ -140,12 +130,14 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 					}
 					break;
 				case "out":
+					checkForOutputVariable(var);
 					updateTaskVariable(descriptor.getOutputVariables(), var);
 					if ( getLogger().isDebugEnabled() ) {
 						getLogger().debug("set output parameter variable[{}]", kind, unmatchedOpt.getName());
 					}
 					break;
 				case "inout":
+					checkForOutputVariable(var);
 					updateTaskVariable(descriptor.getInputVariables(), var);
 					updateTaskVariable(descriptor.getOutputVariables(), var);
 					if ( getLogger().isDebugEnabled() ) {
@@ -159,6 +151,13 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 				default:
 					throw new AssertionError("invalid kind: " + kind);
 			}
+		}
+	}
+	
+	private void checkForOutputVariable(Variable var) {
+		if ( !(var instanceof ReferenceVariable) ) {
+			getLogger().error("Output variable must be a reference variable: {}", var);
+			throw new IllegalArgumentException("Output variable must be a reference variable: " + var);
 		}
 	}
 	

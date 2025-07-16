@@ -38,14 +38,14 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(AbstractTaskCommand.class);
 
 	@Option(names={"--submodel"}, paramLabel="submodel reference",
-			description="Target submodel reference (e.g. <instance-id>/<submodel-idshort>)")
+			description="Target AI/Simulation submodel reference (e.g. <instance-id>/<submodel-idshort>)")
 	private String m_opSmRefExpr;
 	
 	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\")")
 	private String m_timeout = null;
 
-	@Option(names={"--sync"}, defaultValue="false", description="invoke synchronously")
-	private boolean m_sync = false;
+//	@Option(names={"--sync"}, defaultValue="false", description="invoke synchronously")
+//	private boolean m_sync = false;
 	
 	public AbstractTaskCommand() {
 		setLogger(s_logger);
@@ -53,11 +53,10 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 	
 	protected TaskDescriptor createTaskDescriptor(MDTInstanceManager manager) {
 		TaskDescriptor descriptor;
+		
+        // Submodel reference가 지정된 경우, 해당 SubmodelReference에 대한 Task descriptor를 생성한다.
 		if ( m_opSmRefExpr != null ) {
-            // Submodel reference가 지정된 경우, 해당 SubmodelReference에 대한 Task descriptor를 생성한다.
-			DefaultSubmodelReference smRef = MDTExprParser.parseSubmodelReference(m_opSmRefExpr).evaluate();
-			descriptor = from(smRef);
-            descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, m_opSmRefExpr);
+			descriptor = loadFromMDTOperationSubmodel(m_opSmRefExpr);
         }
         else {
             // Submodel reference가 지정되지 않은 경우, 단순한 Task descriptor를 생성한다.
@@ -68,33 +67,38 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 		loadTaskVariablesFromArguments(manager, descriptor);
 		
 		FOption.accept(m_timeout, to -> descriptor.addOrReplaceOption(HttpTask.OPTION_TIMEOUT, to));
-		descriptor.addOrReplaceOption(HttpTask.OPTION_SYNC, ""+m_sync);
+//		descriptor.addOrReplaceOption(HttpTask.OPTION_SYNC, ""+m_sync);
 		
 		return descriptor;
 	}
 
-	private TaskDescriptor from(MDTSubmodelReference opSubmodelRef) throws ModelValidationException {
-		Submodel submodel = opSubmodelRef.get().getSubmodel();
+	private TaskDescriptor loadFromMDTOperationSubmodel(String opSmRefExpr) throws ModelValidationException {
+		DefaultSubmodelReference opSmRef = MDTExprParser.parseSubmodelReference(opSmRefExpr).evaluate();
+		Submodel opSubmodel = opSmRef.get().getSubmodel();
 		
-		List<LangStringNameType> lsntList = submodel.getDisplayName();
+		// Submodel의 displayName과 description을 이용하여 TaskDescriptor의 id와 name을 설정한다.
+		List<LangStringNameType> lsntList = opSubmodel.getDisplayName();
 		String name = (lsntList != null && lsntList.size() > 0) ? lsntList.get(0).getText() : "";
-		List<LangStringTextType> lsttList = submodel.getDescription();
+		List<LangStringTextType> lsttList = opSubmodel.getDescription();
 		String desc = (lsttList != null && lsttList.size() > 0) ? lsttList.get(0).getText() : "";
-        TaskDescriptor descriptor = new TaskDescriptor(submodel.getIdShort(), name, desc);
+        TaskDescriptor descriptor = new TaskDescriptor(opSubmodel.getIdShort(), name, desc);
 		
-		List<Qualifier> qualifiers = submodel.getQualifiers();
+        // Submodel의 qualifiers를 이용하여 TaskDescriptor의 옵션들을 설정한다.
+		List<Qualifier> qualifiers = opSubmodel.getQualifiers();
 		String method = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_METHOD)
 								.getOrThrow(() -> new ModelValidationException(
-										"Submodel operation method not found: submodel idShort=" + submodel.getIdShort()));
+									"Submodel operation method not found: submodel idShort=" + opSubmodel.getIdShort()));
 		switch ( method ) {
 			case "http":
-				descriptor = loadHttpTask(descriptor, submodel);
+				descriptor = loadHttpTask(descriptor, opSubmodel);
 				break;
 			default:
                 throw new ModelValidationException("Unsupported operation method: " + method);
 		}
 		
-		loadVariablesFromSubmodel(descriptor, opSubmodelRef);
+		// AI/Simulation Submodel의 경우, input/output parameter들을 TaskDescriptor에 반영한다.
+		loadVariablesFromSubmodel(descriptor, opSmRef);
+        descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, opSmRefExpr);
 		
 		return descriptor;
 	}

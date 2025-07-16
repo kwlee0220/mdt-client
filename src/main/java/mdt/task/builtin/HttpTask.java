@@ -14,7 +14,6 @@ import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.DataUtils;
 import utils.Throwables;
 import utils.UnitUtils;
 import utils.async.AbstractThreadedExecution;
@@ -29,6 +28,7 @@ import mdt.client.operation.HttpOperationClient;
 import mdt.client.operation.OperationRequest;
 import mdt.client.operation.OperationResponse;
 import mdt.model.MDTException;
+import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.variable.AbstractVariable.ElementVariable;
 import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
@@ -50,7 +50,7 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 	
 	public static final String OPTION_SERVER_ENDPOINT = "endpoint";
 	public static final String OPTION_OPERATION = "opId";
-	public static final String OPTION_SYNC = "sync";
+//	public static final String OPTION_SYNC = "sync";
 	public static final String OPTION_POLL_INTERVAL = "poll";
 	public static final String OPTION_TIMEOUT = "timeout";
 
@@ -151,10 +151,10 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 								.getOrThrow(() -> new IllegalArgumentException("operationId option is not provided"));
 		reqBody.setOperation(opId);
 		
-		boolean sync = descriptor.findStringOption(OPTION_SYNC)
-									.map(DataUtils::asBoolean)
-									.getOrElse(false);
-		reqBody.setAsync(!sync);
+//		boolean sync = descriptor.findStringOption(OPTION_SYNC)
+//									.map(DataUtils::asBoolean)
+//									.getOrElse(false);
+//		reqBody.setAsync(!sync);
 
 		Duration pollInterval = descriptor.findOption(OPTION_POLL_INTERVAL)
 											.map(opt -> UnitUtils.parseDuration(opt.getValue().toString()))
@@ -165,6 +165,9 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 		
 		reqBody.setInputVariables(descriptor.getInputVariables());
 		reqBody.setOutputVariables(descriptor.getOutputVariables());
+		
+		String json = MDTModelSerDe.MAPPER.writeValueAsString(reqBody);
+		System.out.println(json);
 		
 		return HttpOperationClient.builder()
 									.setHttpClient(OkHttpClientUtils.newClient())

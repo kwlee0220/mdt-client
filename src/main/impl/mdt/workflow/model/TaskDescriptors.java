@@ -17,14 +17,12 @@ import com.google.common.base.Preconditions;
 import lombok.experimental.UtilityClass;
 
 import utils.KeyedValueList;
-import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.ModelValidationException;
 import mdt.model.NameValue;
 import mdt.model.Qualifiers;
 import mdt.model.ReferenceUtils;
-import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
@@ -41,7 +39,6 @@ import mdt.model.sm.variable.Variable;
 import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.AASOperationTask;
 import mdt.task.builtin.HttpTask;
-import mdt.task.builtin.ProgramOperationDescriptor;
 import mdt.task.builtin.SetTask;
 import mdt.task.builtin.TaskUtils;
 
@@ -298,10 +295,10 @@ public class TaskDescriptors {
 			return this;
 		}
 		
-		public HttpTaskBuilder sync(boolean flag) {
-			m_descriptor.addOrReplaceOption(HttpTask.OPTION_SYNC, ""+flag);
-			return this;
-		}
+//		public HttpTaskBuilder sync(boolean flag) {
+//			m_descriptor.addOrReplaceOption(HttpTask.OPTION_SYNC, ""+flag);
+//			return this;
+//		}
 		
 		public HttpTaskBuilder operationSubmodelRef(DefaultSubmodelReference ref) {
 			Preconditions.checkArgument(ref.isActivated(), "Operation (AI or Simulation) SubmodelReference is not activated");

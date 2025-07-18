@@ -36,7 +36,7 @@ import mdt.model.InvalidResourceStatusException;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelService;
+import mdt.model.instance.MDTModelServiceOld;
 import mdt.model.sm.info.CompositionItem;
 import mdt.model.sm.info.TwinComposition;
 
@@ -155,7 +155,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 
 	@SuppressWarnings("unused")
 	private List<MDTInstance> listDependentInstanceAll(HttpMDTInstanceClient inst) {
-		MDTModelService mdtInfo =  MDTModelService.of(inst);
+		MDTModelServiceOld mdtInfo =  MDTModelServiceOld.of(inst);
 		
 		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();
 		String parent = tcomp.getCompositionID();
@@ -212,7 +212,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 
 			// 시작된 인스턴스의 종속 인스턴스들을 시작한다.
 			List<MDTInstance> dependents = (m_recursive)
-											? MDTModelService.of(instance).getSubComponentAll()
+											? MDTModelServiceOld.of(instance).getSubComponentAll()
 											: Collections.emptyList();
 			if ( dependents.size() > 0 ) {
 				if ( s_logger.isInfoEnabled() ) {

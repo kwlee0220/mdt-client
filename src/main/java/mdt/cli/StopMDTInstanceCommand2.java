@@ -16,7 +16,8 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelService;
+import mdt.model.instance.MDTModelServiceOld;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -93,7 +94,7 @@ public class StopMDTInstanceCommand2 extends AbstractMDTCommand {
 	private void stopInstance(MDTInstance instance) throws TimeoutException, InterruptedException,
 																		ExecutionException {
 		if ( m_recursive ) {
-			List<MDTInstance> components = MDTModelService.of(instance).getSubComponentAll();
+			List<MDTInstance> components = MDTModelServiceOld.of(instance).getSubComponentAll();
 			for ( MDTInstance comp: components ) {
 				stopInstance(comp);
 			}

@@ -41,7 +41,7 @@ import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelService;
+import mdt.model.instance.MDTModelServiceOld;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.DefaultDataInfo;
 import mdt.model.sm.data.ParameterCollection;
@@ -327,7 +327,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 	
 	public List<HttpMDTInstanceClient> getTargetOfDependency(String depType) {
-		MDTModelService mdtInfo =  MDTModelService.of(this);
+		MDTModelServiceOld mdtInfo =  MDTModelServiceOld.of(this);
 		
 		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();
 		String myId = tcomp.getCompositionID();
@@ -344,7 +344,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 	
 	public List<HttpMDTInstanceClient> getSourceInstanceAll(String depType) {
-		MDTModelService mdtInfo =  MDTModelService.of(this);
+		MDTModelServiceOld mdtInfo =  MDTModelServiceOld.of(this);
 		
 		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();
 		String myId = tcomp.getCompositionID();

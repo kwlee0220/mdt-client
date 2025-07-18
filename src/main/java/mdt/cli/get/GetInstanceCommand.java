@@ -24,7 +24,7 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.SubmodelService;
 import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.instance.MDTModelService;
+import mdt.model.instance.MDTModelServiceOld;
 import mdt.model.instance.MDTOperationDescriptor;
 import mdt.model.instance.MDTParameterDescriptor;
 import mdt.model.sm.SubmodelUtils;
@@ -131,7 +131,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	}
 	
 	private void displayAsJson(HttpMDTInstanceClient instance) throws SerializationException, IOException {
-		MDTModelService info = MDTModelService.of(instance);
+		MDTModelServiceOld info = MDTModelServiceOld.of(instance);
 		System.out.println(info.toJsonString(true));
 	}
 	

@@ -34,7 +34,7 @@ import utils.stream.KeyValueFStream;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelService;
+import mdt.model.instance.MDTModelServiceOld;
 
 /**
  * 
@@ -173,7 +173,7 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	private void buildDependencies(MDTInstance start) {
 		Set<String> dependents = m_dependencyMap.computeIfAbsent(start.getId(), k -> Sets.newHashSet());
 		
-		List<MDTInstance> components = MDTModelService.of(start).getSubComponentAll();
+		List<MDTInstance> components = MDTModelServiceOld.of(start).getSubComponentAll();
 		for ( MDTInstance comp: components ) {
 			m_instanceMap.putIfAbsent(comp.getId(), comp);
 			dependents.add(comp.getId());

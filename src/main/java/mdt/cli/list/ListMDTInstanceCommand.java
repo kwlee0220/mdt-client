@@ -37,7 +37,7 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelService;
+import mdt.model.instance.MDTModelServiceOld;
 import mdt.model.sm.SubmodelUtils;
 
 import picocli.CommandLine.Command;
@@ -231,7 +231,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		ArrayNode array = MDTModelSerDe.MAPPER.createArrayNode();
 		try {
 			FStream.from(instances)
-			        .mapOrThrow(inst -> MDTModelService.of(inst).toJsonNode())
+			        .mapOrThrow(inst -> MDTModelServiceOld.of(inst).toJsonNode())
 			        .collect(array, ArrayNode::add);
 			
 			String json;

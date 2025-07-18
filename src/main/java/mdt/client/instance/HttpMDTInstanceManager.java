@@ -38,6 +38,7 @@ import mdt.model.instance.InstanceStatusChangeEvent;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceManagerException;
+import mdt.model.instance.MDTModel;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.ResolvedElementReference;
 
@@ -345,16 +346,31 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return elmRef.read();
 	}
 
-    // @GetMapping({"/utils/resolveElementReference?ref={ref}&encode={encode}"})
+    // @GetMapping("/instances/{id}/$mdt-model")
+	@Override
+	public MDTModel getMDTModel(String instanceId) throws ResourceNotFoundException, IOException {
+		String requestUrl = String.format("%s/instances/%s/$mdt-model", getEndpoint(), instanceId);
+		return m_restfulClient.get(requestUrl, MDT_MODEL_DESER);
+		
+	}
+	private static ResponseBodyDeserializer<MDTModel> MDT_MODEL_DESER = new ResponseBodyDeserializer<>() {
+		@Override
+		public MDTModel deserialize(Headers headers, String respBody) throws IOException {
+			return MAPPER.readValue(respBody, MDTModel.class);
+		}
+	};
+
+    // @GetMapping({"/resolveElementReference?reference={ref}"})
 	@Override
 	public ResolvedElementReference resolveElementReference(String ref) {
 		String url = String.format("%s/utils/resolveElementReference", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
-						 		.addQueryParameter("ref", ref)
+						 		.addQueryParameter("reference", ref)
 					 			.build();
 		return m_restfulClient.get(httpUrl, RESOLVED_REFERENCE_DESER);
 	}
-	private static ResponseBodyDeserializer<ResolvedElementReference> RESOLVED_REFERENCE_DESER = new ResponseBodyDeserializer<>() {
+	private static ResponseBodyDeserializer<ResolvedElementReference> RESOLVED_REFERENCE_DESER
+																			= new ResponseBodyDeserializer<>() {
 		@Override
 		public ResolvedElementReference deserialize(Headers headers, String respBody) throws IOException {
 			return MAPPER.readValue(respBody, ResolvedElementReference.class);

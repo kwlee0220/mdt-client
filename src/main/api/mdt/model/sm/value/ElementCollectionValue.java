@@ -69,7 +69,7 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		return KeyValueFStream.from(m_fields)
 								.mapValue(elmVal -> ((AbstractElementValue)elmVal).toValueJsonObject())
 								.toMap();

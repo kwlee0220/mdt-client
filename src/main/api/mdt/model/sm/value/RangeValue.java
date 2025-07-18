@@ -61,7 +61,7 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		Map<String,Object> value = Maps.newLinkedHashMap();
 		value.put(FIELD_MIN, m_vtype.toJdbcObject(m_min));
 		value.put(FIELD_MAX, m_vtype.toJdbcObject(m_max));

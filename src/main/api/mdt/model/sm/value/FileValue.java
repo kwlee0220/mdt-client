@@ -53,7 +53,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		Map<String,String> value = Maps.newLinkedHashMap();
 		value.put(FIELD_CONTENT_TYPE, m_contentType);
 		value.put(FIELD_VALUE, FOption.getOrElse(m_value, "null"));

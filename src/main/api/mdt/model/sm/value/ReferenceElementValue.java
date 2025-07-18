@@ -62,7 +62,7 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		List<Map<String,String>> keyList = FStream.from(m_reference.getKeys())
 													.map(key -> {
 														Map<String,String> kvMap = Maps.newLinkedHashMap();

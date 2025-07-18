@@ -46,7 +46,7 @@ public final class OperationVariableValue extends AbstractElementValue implement
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		Map<String, Object> value = Maps.newLinkedHashMap();
 		value.put(FIELD_INPUT_VARIABLES, new ElementListValue(m_inputValues).toValueJsonObject());
 		value.put(FIELD_OUTPUT_VARIABLES, new ElementListValue(m_outputValues).toValueJsonObject());

@@ -45,7 +45,7 @@ public class ElementListValue extends AbstractElementValue implements ElementVal
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		return FStream.from(m_elementValues)
 						.map(elm -> ((AbstractElementValue)elm).toValueJsonObject())
 						.toList();

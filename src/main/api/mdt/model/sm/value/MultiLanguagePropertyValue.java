@@ -58,7 +58,7 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		return FStream.from(m_langTexts)
 						.map(langText -> Map.of(langText.getLanguage(), langText.getText()))
 						.toList();

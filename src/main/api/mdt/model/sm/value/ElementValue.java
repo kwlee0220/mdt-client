@@ -13,6 +13,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 public interface ElementValue {
 	// public static ElementValue parseJsonString(String json);	// ElementValues에서 정의됨.
 	public String toJsonString() throws IOException;
+	public Object toValueJsonObject();
 	
 	// public ElementValue parseValueJsonString(String json) throws IOException;	// ElementValues에서 정의됨.
 	public String toValueJsonString();

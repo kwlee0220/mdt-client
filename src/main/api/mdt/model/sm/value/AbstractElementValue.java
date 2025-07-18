@@ -16,8 +16,6 @@ import mdt.model.MDTModelSerDe;
 @JsonDeserialize(using = ElementValues.Deserializer.class)
 @JsonSerialize(using = ElementValues.Serializer.class)
 public abstract class AbstractElementValue implements ElementValue {
-	abstract protected Object toValueJsonObject();
-	
 	abstract public String getSerializationType();
 	abstract public void serializeValue(JsonGenerator gen) throws IOException;
 	// public static ElementValue deserializeValue(JsonNode vnode) throws IOException;	// ElementValues 클래스에서 정의됨.

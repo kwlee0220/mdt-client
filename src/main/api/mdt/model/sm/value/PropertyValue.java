@@ -63,7 +63,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	}
 
 	@Override
-	protected Object toValueJsonObject() {
+	public Object toValueJsonObject() {
 		return getDataType().toJsonObject(m_value);
 	}
 

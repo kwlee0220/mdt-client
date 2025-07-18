@@ -55,8 +55,9 @@ public class HttpTaskCommand extends AbstractTaskCommand {
 		
 		MDTInstanceManager manager = mdt.getInstanceManager();
 		
-		TaskDescriptor descriptor = createTaskDescriptor(manager);
+		TaskDescriptor descriptor = new TaskDescriptor();
 		descriptor.setType(HttpTask.class.getName());
+		loadTaskDescriptor(descriptor, manager);
 		
 		FOption.accept(m_endpoint, ep -> descriptor.addOrReplaceOption(HttpTask.OPTION_SERVER_ENDPOINT, ep));
 		Preconditions.checkArgument(descriptor.findStringOption(HttpTask.OPTION_SERVER_ENDPOINT).isPresent(),

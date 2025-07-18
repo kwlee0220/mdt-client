@@ -51,8 +51,9 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 		
 		MDTInstanceManager manager = mdt.getInstanceManager();
 		
-		TaskDescriptor descriptor = createTaskDescriptor(manager);
+		TaskDescriptor descriptor = new TaskDescriptor();
 		descriptor.setType(ProgramTask.class.getName());
+		loadTaskDescriptor(descriptor, manager);
 
 		if ( m_opDescFile != null ) {
 			ProgramOperationDescriptor opDesc = ProgramOperationDescriptor.load(m_opDescFile, MDTModelSerDe.MAPPER);

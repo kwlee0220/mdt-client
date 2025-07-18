@@ -43,45 +43,37 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 	
 	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\")")
 	private String m_timeout = null;
-
-//	@Option(names={"--sync"}, defaultValue="false", description="invoke synchronously")
-//	private boolean m_sync = false;
 	
 	public AbstractTaskCommand() {
 		setLogger(s_logger);
 	}
 	
-	protected TaskDescriptor createTaskDescriptor(MDTInstanceManager manager) {
-		TaskDescriptor descriptor;
-		
+	protected void loadTaskDescriptor(TaskDescriptor descriptor, MDTInstanceManager manager) {
         // Submodel reference가 지정된 경우, 해당 SubmodelReference에 대한 Task descriptor를 생성한다.
 		if ( m_opSmRefExpr != null ) {
-			descriptor = loadFromMDTOperationSubmodel(m_opSmRefExpr);
-        }
-        else {
-            // Submodel reference가 지정되지 않은 경우, 단순한 Task descriptor를 생성한다.
-        	descriptor = new TaskDescriptor();
+			loadFromMDTOperationSubmodel(descriptor, m_opSmRefExpr);
         }
 
 		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
 		loadTaskVariablesFromArguments(manager, descriptor);
 		
 		FOption.accept(m_timeout, to -> descriptor.addOrReplaceOption(HttpTask.OPTION_TIMEOUT, to));
-//		descriptor.addOrReplaceOption(HttpTask.OPTION_SYNC, ""+m_sync);
-		
-		return descriptor;
 	}
 
-	private TaskDescriptor loadFromMDTOperationSubmodel(String opSmRefExpr) throws ModelValidationException {
+	private void loadFromMDTOperationSubmodel(TaskDescriptor descriptor, String opSmRefExpr)
+		throws ModelValidationException {
 		DefaultSubmodelReference opSmRef = MDTExprParser.parseSubmodelReference(opSmRefExpr).evaluate();
 		Submodel opSubmodel = opSmRef.get().getSubmodel();
+		descriptor.setId(opSubmodel.getIdShort());
 		
 		// Submodel의 displayName과 description을 이용하여 TaskDescriptor의 id와 name을 설정한다.
 		List<LangStringNameType> lsntList = opSubmodel.getDisplayName();
 		String name = (lsntList != null && lsntList.size() > 0) ? lsntList.get(0).getText() : "";
+		descriptor.setName(name);
+		
 		List<LangStringTextType> lsttList = opSubmodel.getDescription();
 		String desc = (lsttList != null && lsttList.size() > 0) ? lsttList.get(0).getText() : "";
-        TaskDescriptor descriptor = new TaskDescriptor(opSubmodel.getIdShort(), name, desc);
+		descriptor.setDescription(desc);
 		
         // Submodel의 qualifiers를 이용하여 TaskDescriptor의 옵션들을 설정한다.
 		List<Qualifier> qualifiers = opSubmodel.getQualifiers();
@@ -99,8 +91,6 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 		// AI/Simulation Submodel의 경우, input/output parameter들을 TaskDescriptor에 반영한다.
 		loadVariablesFromSubmodel(descriptor, opSmRef);
         descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, opSmRefExpr);
-		
-		return descriptor;
 	}
 
 	private static final String DEFAULT_POLL_INTERVAL = "1s";

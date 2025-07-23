@@ -1,26 +1,28 @@
 package mdt.sample.workflow;
 
-import org.apache.commons.text.StringSubstitutor;
-
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ref.DefaultElementReference;
+import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.variable.Variable;
 import mdt.model.sm.variable.Variables;
-import mdt.task.builtin.HttpTask;
+import mdt.task.builtin.AASOperationTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
 import mdt.workflow.model.TaskDescriptor;
+import mdt.workflow.model.TaskDescriptors;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class SampleWorkflowDescriptor3 {
-	private static final String WORKFLOW_ID = "sample-workflow-3";
-	private static final String HTTP_OP_SERVER_ENDPOINT = "http://${LOCAL_HOST}:12987";
+public class SampleWorkflowDescriptor3_1 {
+	private static final String WORKFLOW_ID = "sample-workflow-3-1";
 	
 	public static final void main(String... args) throws Exception {
 		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();
@@ -46,22 +48,18 @@ public class SampleWorkflowDescriptor3 {
 	}
 	
 	private static TaskDescriptor newHttpTask(MDTInstanceManager manager, String taskId) {
-		TaskDescriptor task = new TaskDescriptor(taskId, "", HttpTask.class.getName());
+		TaskDescriptor task = new TaskDescriptor(taskId, "", AASOperationTask.class.getName());
 		
-		StringSubstitutor subst = new StringSubstitutor(System.getenv());
-		String resolvedEndpoint = subst.replace(HTTP_OP_SERVER_ENDPOINT);
-
-		task.addOrReplaceOption(HttpTask.OPTION_OPERATION, "test/AddAndSleep");
-		task.addOrReplaceOption(HttpTask.OPTION_SERVER_ENDPOINT, resolvedEndpoint);
-		task.addOrReplaceOption(HttpTask.OPTION_POLL_INTERVAL, "1.0");
-		task.addOrReplaceOption(HttpTask.OPTION_TIMEOUT, "60");
-		task.addOrReplaceOption(HttpTask.OPTION_LOG_LEVEL, "info");
+		MDTElementReference opRef = DefaultElementReference.newInstance("test", "AddAndSleep", "Operation");
+		task.addOrReplaceOption(AASOperationTask.OPTION_OPERATION, opRef);
+		task.addOrReplaceOption(AASOperationTask.OPTION_POLL_INTERVAL, "1.0");
+		task.addOrReplaceOption(AASOperationTask.OPTION_TIMEOUT, "60");
+		task.addOrReplaceOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
 		
 		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data:ParameterValue"));
-		task.getInputVariables().addOrReplace(Variables.newValueVariable("IncAmount", "", "11"));
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("SleepTime", "",
-				"test:Data:DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue"));
+		task.getInputVariables().addOrReplace(Variables.newValueVariable("IncAmount", "", "7"));
+		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("SleepTime", "", "param:test:SleepTime:ParameterValue"));
 		task.getOutputVariables().addOrReplace(Variables.newReferenceVariable("Output", "", "param:test:Data"));
 		
 		return task;

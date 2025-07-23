@@ -42,6 +42,8 @@ import mdt.model.sm.value.PropertyValue.DoublePropertyValue;
 import mdt.model.sm.value.PropertyValue.DurationPropertyValue;
 import mdt.model.sm.value.PropertyValue.FloatPropertyValue;
 import mdt.model.sm.value.PropertyValue.IntegerPropertyValue;
+import mdt.model.sm.value.PropertyValue.LongPropertyValue;
+import mdt.model.sm.value.PropertyValue.ShortPropertyValue;
 import mdt.model.sm.value.PropertyValue.StringPropertyValue;
 
 
@@ -327,6 +329,10 @@ public class ElementValues {
 				return DurationPropertyValue.deserializeValue(valueNode);
 			case FileValue.SERIALIZATION_TYPE:
 				return FileValue.deserializeValue(valueNode);
+			case LongPropertyValue.SERIALIZATION_TYPE:
+				return LongPropertyValue.deserializeValue(valueNode);
+			case ShortPropertyValue.SERIALIZATION_TYPE:
+				return ShortPropertyValue.deserializeValue(valueNode);
 			case RangeValue.SERIALIZATION_TYPE:
 				return RangeValue.deserializeValue(valueNode);
 			case MultiLanguagePropertyValue.SERIALIZATION_TYPE:

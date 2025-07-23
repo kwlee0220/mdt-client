@@ -12,7 +12,6 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import mdt.model.sm.info.MDTAssetType;
-import mdt.model.sm.value.ElementValue;
 
 /**
  *
@@ -44,7 +43,8 @@ public class MDTModel {
 	public static class MDTParameterModel {
 		private String m_name;
 		private String m_reference;
-		private ElementValue m_value;
+		private Object m_value;
+//		private ElementValue m_value;
 	}
 
 	@Getter @Setter
@@ -62,7 +62,8 @@ public class MDTModel {
 		public static class Argument {
 			private String m_name;
 			private String m_reference;
-			private ElementValue m_value;
+			private Object m_value;
+//			private ElementValue m_value;
 		}
 	}
 }

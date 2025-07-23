@@ -156,7 +156,9 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 
 	@Override
 	public void write(SubmodelElement sme) throws IOException {
-		throw new UnsupportedOperationException("Cannot update MDTParameter entirely: ref=" + this);
+		ElementValue smev = ElementValues.getValue(sme);
+		updateValue(smev);
+//		throw new UnsupportedOperationException("Cannot update MDTParameter entirely: ref=" + this);
 	}
 
 	@Override

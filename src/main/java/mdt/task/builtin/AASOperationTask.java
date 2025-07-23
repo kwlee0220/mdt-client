@@ -58,7 +58,7 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 	public static final String OPTION_OPERATION = "operation";
 	public static final String OPTION_POLL_INTERVAL = "poll";
 	public static final String OPTION_TIMEOUT = "timeout";	// optional
-	public static final String OPTION_SYNC = "sync";
+	public static final String OPTION_LOG_LEVEL = "loglevel";
 	public static final String OPTION_UPDATE_OPVARS = "updateOperationVariables";
 	public static final String OPTION_SHOW_RESULT = "showResult";
 	
@@ -220,18 +220,15 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		SubmodelService svc = opRef.getSubmodelService();
 		String opIdShortPath = opRef.getIdShortPathString();
 
-		boolean sync = descriptor.findStringOption(OPTION_SYNC)
-									.map(DataUtils::asBoolean)
-									.getOrElse(false);
 		Duration pollInterval = descriptor.findStringOption(OPTION_POLL_INTERVAL)
-											.map(UnitUtils::parseDuration)
+											.map(this::parseDuration)
 											.getOrElse(DEFAULT_POLL_INTERVAL);
 		Duration timeout = descriptor.findStringOption(OPTION_TIMEOUT)
-									.map(UnitUtils::parseDuration)
+									.map(this::parseDuration)
 									.getOrNull();
 		
 		OperationResult result = null;
-		if ( !sync ) {
+//		if ( !sync ) {
 			getLogger().info("invoking AASOperation asynchronously: op={}, timeout={}, pollInterval={}",
 							opRef, timeout, pollInterval);	
 			try {
@@ -248,15 +245,15 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 				Throwables.throwIfInstanceOf(cause, TaskException.class);
 				throw new TaskException(cause);
 			}
-		}
-		else {
-			getLogger().info("invoking AASOperation synchronously: op={}, timeout={}", opRef, timeout);	
-			javax.xml.datatype.Duration jtimeout
-								= FOption.mapOrElse(timeout,
-													to -> AASUtils.DATATYPE_FACTORY.newDuration(to.toMillis()), INFINITE);
-			result = svc.invokeOperationSync(opIdShortPath, op.getInputVariables(),
-														op.getInoutputVariables(), jtimeout);
-		}
+//		}
+//		else {
+//			getLogger().info("invoking AASOperation synchronously: op={}, timeout={}", opRef, timeout);	
+//			javax.xml.datatype.Duration jtimeout
+//								= FOption.mapOrElse(timeout,
+//													to -> AASUtils.DATATYPE_FACTORY.newDuration(to.toMillis()), INFINITE);
+//			result = svc.invokeOperationSync(opIdShortPath, op.getInputVariables(),
+//														op.getInoutputVariables(), jtimeout);
+//		}
 		
 		return result;
 	}
@@ -271,7 +268,8 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 					if ( taskVar != null ) {
 						taskVar.update(resultSme);
 						if ( getLogger().isInfoEnabled() ) {
-							getLogger().info("Updated: output variable[{}]: {}", taskVar.getName(), resultSme);
+							getLogger().info("Updated: output variable[{}]: {}",
+											taskVar.getName(), ElementValues.getValue(resultSme));
 						}
 					}
 				});
@@ -282,9 +280,19 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 					if ( taskVar != null ) {
 						taskVar.update(resultSme);
 						if ( getLogger().isInfoEnabled() ) {
-							getLogger().info("Updated: output variable[{}]: {}", taskVar.getName(), resultSme);
+							getLogger().info("Updated: output variable[{}]: {}",
+											taskVar.getName(), ElementValues.getValue(resultSme));
 						}
 					}
 				});
+	}
+	private Duration parseDuration(Object seconds) {
+		try {
+			long millSeconds = Math.round(DataUtils.asDouble(seconds) * 1000);
+			return Duration.ofMillis(millSeconds);
+		}
+		catch ( NumberFormatException e ) {
+			return UnitUtils.parseDuration("" + seconds);
+		}
 	}
 }

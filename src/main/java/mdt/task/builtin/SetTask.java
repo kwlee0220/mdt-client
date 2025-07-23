@@ -23,6 +23,7 @@ public class SetTask extends AbstractMDTTask implements MDTTask {
 	private static final Logger s_logger = LoggerFactory.getLogger(SetTask.class);
 	public static final String VARIABLE_SOURCE = "source";
 	public static final String VARIABLE_TARGET = "target";
+	public static final String OPTION_LOG_LEVEL = "loglevel";
 	
 	public SetTask(TaskDescriptor descriptor) {
 		super(descriptor);
@@ -34,11 +35,11 @@ public class SetTask extends AbstractMDTTask implements MDTTask {
 	public void run(MDTInstanceManager manager) throws TimeoutException, InterruptedException,
 														CancellationException, TaskException {
 		try {
-			Variable target = getTaskDescriptor().getOutputVariables().getOfKey(VARIABLE_TARGET);
-			Variables.activate(target, manager);
-			
 			Variable source = getTaskDescriptor().getInputVariables().getOfKey(VARIABLE_SOURCE);
 			Variables.activate(source, manager);
+			
+			Variable target = getTaskDescriptor().getOutputVariables().getOfKey(VARIABLE_TARGET);
+			Variables.activate(target, manager);
 			
 			target.updateValue(source.readValue());
 		}

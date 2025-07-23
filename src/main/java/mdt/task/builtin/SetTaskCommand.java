@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 
 import mdt.model.MDTManager;
-import mdt.model.instance.MDTInstanceManager;
 import mdt.workflow.model.TaskDescriptor;
 
 import picocli.CommandLine.Command;
@@ -26,12 +25,11 @@ public class SetTaskCommand extends MultiVariablesCommand {
 	protected void run(MDTManager mdt) throws Exception {
 		Instant started = Instant.now();
 		
-		MDTInstanceManager manager = mdt.getInstanceManager();
-		
 		TaskDescriptor descriptor = new TaskDescriptor();
-
-		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
-		loadTaskVariablesFromArguments(manager, descriptor);
+		descriptor.setId("set");
+		descriptor.setType(SetTask.class.getName());
+		
+		loadTaskVariablesFromArguments(mdt.getInstanceManager(), descriptor);
 		
 		SetTask setTask = new SetTask(descriptor);
 		setTask.run(mdt.getInstanceManager());

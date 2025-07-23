@@ -69,7 +69,6 @@ public class MDTCommandsMain {
 			ProgramTaskCommand.class,
 			HttpTaskCommand.class,
 			SetTaskCommand.class,
-//			JsltTaskCommand.class,
 		})
 	public static class TaskCommands extends CommandCollection {}
 	

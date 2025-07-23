@@ -30,7 +30,6 @@ import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 
@@ -53,8 +52,8 @@ public class RunTaskCommand extends MultiVariablesCommand {
 				description="Operation reference (e.g. <instance-id>/<submodel-idshort>)")
 	private String m_opRefExpr;
 
-	@Option(names={"--sync"}, defaultValue="false", description="invoke synchronously")
-	private boolean m_sync = false;
+//	@Option(names={"--sync"}, defaultValue="false", description="invoke synchronously")
+//	private boolean m_sync = false;
 	
 	public RunTaskCommand() {
 		setLogger(s_logger);
@@ -112,7 +111,7 @@ public class RunTaskCommand extends MultiVariablesCommand {
 			descriptor.addOrReplaceOption(AASOperationTask.OPTION_TIMEOUT, timeout);
 		}
 		descriptor.addOrReplaceOption(AASOperationTask.OPTION_UPDATE_OPVARS, updateOpVar);
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_SYNC, ""+m_sync);
+//		descriptor.addOrReplaceOption(AASOperationTask.OPTION_SYNC, ""+m_sync);
 		
 		AASOperationTask aasOpTask = new AASOperationTask(descriptor);
 		aasOpTask.run(manager);

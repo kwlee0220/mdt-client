@@ -341,11 +341,6 @@ public class TaskDescriptors {
 			return this;
 		}
 		
-		public AASOperationTaskBuilder sync(boolean flag) {
-			m_descriptor.addOrReplaceOption(AASOperationTask.OPTION_SYNC, ""+flag);
-			return this;
-		}
-		
 		public AASOperationTaskBuilder updateOperationVariables(boolean flag) {
 			m_descriptor.addOrReplaceOption(AASOperationTask.OPTION_UPDATE_OPVARS, ""+flag);
 			return this;

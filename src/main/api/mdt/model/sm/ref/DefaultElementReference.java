@@ -141,6 +141,11 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 		return DefaultElementReference.newInstance(smRef, idShortPath);
 	}
 	
+	public static DefaultElementReference newInstance(String instanceId, String smIdShort, String elementPath) {
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort(instanceId, smIdShort);
+		return new DefaultElementReference(smRef, elementPath);
+	}
+	
 	public static DefaultElementReference newInstance(MDTSubmodelReference smRef, String elementPath) {
 		return new DefaultElementReference(smRef, elementPath);
 	}

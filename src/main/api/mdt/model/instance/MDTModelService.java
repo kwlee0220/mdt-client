@@ -76,7 +76,8 @@ public class MDTModelService {
 
 		MDTParameterReference ref = MDTParameterReference.newInstance(m_desc.getId(), paramDesc.getName());
 		ref.activate(m_manager);
-		paramModel.setValue(ref.readValue());
+		
+		paramModel.setValue(ref.readValue().toValueJsonObject());
 		
 		return paramModel;
 	}
@@ -108,7 +109,7 @@ public class MDTModelService {
 									arg.setName(nv.getName());
 									arg.setReference(String.format("oparg:%s:%s:in:%s",
 													m_desc.getId(), opDesc.getName(), nv.getName()));
-									arg.setValue(argRef.readValue());
+									arg.setValue(argRef.readValue().toValueJsonObject());
 									
 									return arg;
 								})

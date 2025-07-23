@@ -19,10 +19,14 @@ import com.google.common.collect.HashBiMap;
 
 import lombok.experimental.UtilityClass;
 
+import utils.Throwables;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
 import mdt.model.MDTModelSerDe;
+import mdt.model.expr.LiteralExpr;
+import mdt.model.expr.MDTElementReferenceExpr;
+import mdt.model.expr.MDTExpr;
 import mdt.model.expr.MDTExprParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.ElementReference;
@@ -59,6 +63,33 @@ public class Variables {
 	
 	public static ElementVariable newInstance(String name, String description, SubmodelElement element) {
 		return new ElementVariable(name, description, element);
+	}
+	
+	public static Variable newValueVariable(String name, String description, String valueExpr) {
+		ElementValue elmValue = MDTExprParser.parseValueLiteral(valueExpr).evaluate();
+		return Variables.newInstance(name, description, elmValue);
+	}
+	
+	public static Variable newReferenceVariable(String name, String description, String refExpr) {
+		MDTExpr expr = MDTExprParser.parseExpr(refExpr);
+		if ( expr instanceof MDTElementReferenceExpr elmRef ) {
+			try {
+				return Variables.newInstance(name, "", elmRef.evaluate());
+			}
+			catch ( Exception e ) {
+				Throwable cause = Throwables.unwrapThrowable(e);
+				String msg = String.format("Failed to parse variable expr: (\"%s\"), ref=%s, cause=%s",
+											name, refExpr, cause);
+				throw new IllegalArgumentException(msg);
+			}
+		}
+		else if ( expr instanceof LiteralExpr lit ) {
+			return Variables.newInstance(name, "", lit.evaluate());
+		}
+		else {
+			throw new IllegalArgumentException("Unexpected variable expression: name="
+												+ name + ", expr=" + refExpr);
+		}
 	}
 	
 	public static AbstractVariable newInstance(String name, String description, String expr) {

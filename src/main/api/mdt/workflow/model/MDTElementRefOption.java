@@ -18,7 +18,7 @@ import mdt.model.sm.ref.MDTElementReference;
  * @author Kang-Woo Lee (ETRI)
  */
 public final class MDTElementRefOption extends AbstractOption<MDTElementReference> {
-	public static final String SERIALIZATION_TYPE = "mdt:option:element_ref";
+	public static final String SERIALIZATION_TYPE = "mdt:option:element-ref";
 	
 	public MDTElementRefOption(String name, MDTElementReference ref) {
 		super(name, ref);
@@ -26,7 +26,7 @@ public final class MDTElementRefOption extends AbstractOption<MDTElementReferenc
 
 	@Override
 	public String getSerializationType() {
-		return "mdt:option:element_ref";
+		return SERIALIZATION_TYPE;
 	}
 
 	@Override

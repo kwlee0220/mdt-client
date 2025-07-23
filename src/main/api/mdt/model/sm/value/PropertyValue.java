@@ -113,6 +113,8 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 				return DATE_TIME(DataTypes.DATE_TIME.parseValueString(value));
 			case DURATION:
 				return DURATION(DataTypes.DURATION.parseValueString(value));
+			case LONG:
+				return LONG(DataTypes.LONG.parseValueString(value));
 			default:
 				throw new IllegalArgumentException("unknown data type: " + prop.getValueType());
 		}
@@ -290,6 +292,56 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		
 		public static DurationPropertyValue deserializeValue(JsonNode vnode) {
 			return new DurationPropertyValue(DataTypes.DURATION.fromJsonNode(vnode));
+		}
+	}
+
+	public static LongPropertyValue LONG(Long value) {
+		return new LongPropertyValue(value);
+	}
+	public static class LongPropertyValue extends PropertyValue<Long> {
+		public static final String SERIALIZATION_TYPE = "mdt:value:long";
+		
+		public LongPropertyValue(Long value) {
+			super(value);
+		}
+
+		@Override
+		public DataType<Long> getDataType() {
+			return DataTypes.LONG;
+		}
+
+		@Override
+		public String getSerializationType() {
+			return SERIALIZATION_TYPE;
+		}
+		
+		public static LongPropertyValue deserializeValue(JsonNode vnode) {
+			return new LongPropertyValue(DataTypes.LONG.fromJsonNode(vnode));
+		}
+	}
+
+	public static ShortPropertyValue SHORT(Short value) {
+		return new ShortPropertyValue(value);
+	}
+	public static class ShortPropertyValue extends PropertyValue<Short> {
+		public static final String SERIALIZATION_TYPE = "mdt:value:short";
+		
+		public ShortPropertyValue(Short value) {
+			super(value);
+		}
+
+		@Override
+		public DataType<Short> getDataType() {
+			return DataTypes.SHORT;
+		}
+
+		@Override
+		public String getSerializationType() {
+			return SERIALIZATION_TYPE;
+		}
+		
+		public static ShortPropertyValue deserializeValue(JsonNode vnode) {
+			return new ShortPropertyValue(DataTypes.SHORT.fromJsonNode(vnode));
 		}
 	}
 }

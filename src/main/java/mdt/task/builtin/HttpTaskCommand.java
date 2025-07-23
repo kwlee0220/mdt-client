@@ -31,7 +31,7 @@ import picocli.CommandLine.Option;
 )
 public class HttpTaskCommand extends AbstractTaskCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpTaskCommand.class);
-	private static final String DEFAULT_POLL_INTERVAL = "1s";
+	private static final String DEFAULT_POLL_INTERVAL = "1.0";
 
 	@Option(names={"--endpoint"}, paramLabel="endpoint",
 			description="The endpoint for the HTTP-based MDTOperationServer.")
@@ -41,7 +41,7 @@ public class HttpTaskCommand extends AbstractTaskCommand {
 			description="target operation-id (<instance-id>/<submodel-idshort>")
 	private String m_opId;
 
-	@Option(names={"--poll"}, paramLabel="duration", defaultValue=DEFAULT_POLL_INTERVAL,
+	@Option(names={"--poll"}, paramLabel="interval", defaultValue=DEFAULT_POLL_INTERVAL,
 			description="Status polling interval (e.g. default=" + DEFAULT_POLL_INTERVAL + ")")
 	private String m_pollInterval;
 	

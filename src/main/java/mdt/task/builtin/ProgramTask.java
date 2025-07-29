@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -39,7 +40,6 @@ import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
-import mdt.workflow.model.MultiLineOption;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -146,14 +146,14 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 		//
 		TaskDescriptor descriptor = getTaskDescriptor();
 		
-		File workingDir = descriptor.findStringOption("workingDirectory")
+		File workingDir = descriptor.findOptionValue("workingDirectory")
 									.map(File::new)
 									.getOrElse(FileUtils::getCurrentWorkingDirectory);
-		List<String> commandLine = descriptor.findOption("commandLine", MultiLineOption.class)
-									.map(MultiLineOption::getValue)
+		List<String> commandLine = descriptor.findOptionValue("commandLine")
+									.map(v -> Arrays.asList(v.split("\n")))
 									.getOrThrow(() -> new IllegalArgumentException("Option is not specified: commandLine"));
-		Duration timeout = descriptor.findStringOption("timeout")
-									.map(UnitUtils::parseDuration)
+		Duration timeout = descriptor.findOptionValue("timeout")
+									.map(UnitUtils::parseSecondDuration)
 									.getOrNull();
 		
 		CommandExecution.Builder builder = CommandExecution.builder()

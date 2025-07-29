@@ -3,13 +3,16 @@ package mdt.workflow.model;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -17,9 +20,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import utils.DataUtils;
 import utils.InternalException;
 import utils.KeyedValueList;
 import utils.func.FOption;
@@ -28,8 +31,6 @@ import utils.stream.FStream;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.NameValue;
-import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.variable.Variable;
 
 
@@ -49,7 +50,7 @@ public final class TaskDescriptor {
 	private Set<String> m_dependencies = Sets.newHashSet();
 	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);
 	private KeyedValueList<String,Variable> m_outputVariables = KeyedValueList.with(Variable::getName);
-	private KeyedValueList<String, Option<?>> m_options = KeyedValueList.with(Option::getName);
+	private Map<String, Option> m_options = Maps.newHashMap();
 	private List<NameValue> m_labels = Lists.newArrayList();
 	
 	public TaskDescriptor() { }
@@ -126,27 +127,30 @@ public final class TaskDescriptor {
 		m_outputVariables = KeyedValueList.from(variables, Variable::getName);
 	}
 	
-	public KeyedValueList<String,Option<?>> getOptions() {
+	public Map<String,Option> getOptions() {
 		return m_options;
 	}
-
-	public void setOptions(Iterable<Option<?>> options) {
-		Preconditions.checkArgument(options != null, "options must not be null");
-		
-		m_options = KeyedValueList.from(options, Option::getName);
+	
+	public FOption<String> findOptionValue(String optName) {
+		return FOption.ofNullable(m_options.get(optName)).map(Option::getValue);
 	}
 	
-	public void addOrReplaceOption(String name, String value) {
-		m_options.addOrReplace(new StringOption(name, value));
+	public void addOption(String name, String value) {
+		m_options.put(name, new Option(name, value));
 	}
-	public void addOrReplaceOption(String name, Boolean value) {
-		m_options.addOrReplace(new StringOption(name, ""+value));
+	
+	@JsonProperty("options")
+	public Collection<Option> getOptionsForJackson() {
+		return m_options.values();
 	}
-	public void addOrReplaceOption(String name, MDTElementReference ref) {
-		m_options.addOrReplace(new MDTElementRefOption(name, ref));
-	}
-	public void addOrReplaceOption(String name, MDTSubmodelReference ref) {
-		m_options.addOrReplace(new MDTSubmodelRefOption(name, ref));
+	
+	@JsonProperty("options")
+	public void setOptionsForJackson(Collection<Option> options) {
+		Preconditions.checkArgument(options != null, "options must not be null");
+		
+		m_options = FStream.from(options)
+							.tagKey(Option::getName)
+							.toMap();
 	}
 	
 	public List<NameValue> getLabels() {
@@ -169,40 +173,6 @@ public final class TaskDescriptor {
 		Preconditions.checkArgument(labels != null, "labels must not be null");
 		
 		m_labels = Lists.newArrayList(labels);
-	}
-	
-	public FOption<String> findStringOption(String optName) {
-		return FStream.from(m_options)
-						.findFirst(opt -> opt.getName().equals(optName))
-						.map(opt -> (String)opt.getValue());
-	}
-	public FOption<Boolean> findBooleanOption(String optName) {
-		return FStream.from(m_options)
-						.findFirst(opt -> opt.getName().equals(optName))
-						.map(opt -> DataUtils.asBoolean(opt.getValue()));
-	}
-	public FOption<Integer> findIntegerOption(String optName) {
-		return FStream.from(m_options)
-						.findFirst(opt -> opt.getName().equals(optName))
-						.map(opt -> DataUtils.asInt(opt.getValue()));
-	}
-	
-	public FOption<Option<?>> findOption(String optName) {
-		return FStream.from(m_options)
-						.findFirst(opt -> opt.getName().equals(optName));
-	}
-	
-	public <T extends Option<?>> FOption<T> findOption(String optName, Class<T> optionType) {
-		return findOption(optName)
-						.mapOrThrow(opt -> {
-							if ( optionType.isInstance(opt) ) {
-								return optionType.cast(opt);
-							}
-							
-							String details = String.format("Invalid option type: %s (expected type: %s)",
-															opt, optionType);
-							throw new IllegalArgumentException(details);
-						});
 	}
 
 	public static TaskDescriptor parseJsonString(String json) throws IOException {

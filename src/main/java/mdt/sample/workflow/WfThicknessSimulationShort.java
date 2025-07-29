@@ -13,7 +13,6 @@ import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.Options;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -76,7 +75,7 @@ public class WfThicknessSimulationShort {
 		smRef.activate(manager);
 		
 		TaskDescriptor descriptor = TaskDescriptors.from(smRef);
-		descriptor.addOrReplaceOption("loglevel", "info");
+		descriptor.addOption("loglevel", "info");
 		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
 		
 		return descriptor;
@@ -91,7 +90,7 @@ public class WfThicknessSimulationShort {
 								.operationRef(opElmRef)
 								.pollInterval("1s")
 								.timeout("1m")
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.addInputVariable(Variables.newInstance("UpperImage", "",
 																		"param:inspector:UpperImage:ParameterValue"))
@@ -109,7 +108,7 @@ public class WfThicknessSimulationShort {
 								.pollInterval("1s")
 								.timeout("1m")
 								.operationSubmodelRef(smRef)
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
@@ -123,7 +122,7 @@ public class WfThicknessSimulationShort {
 								.operationRef(opElmRef)
 								.pollInterval("1s")
 								.timeout("1m")
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
@@ -138,7 +137,7 @@ public class WfThicknessSimulationShort {
 								.operationRef(opElmRef)
 								.pollInterval("1s")
 								.timeout("1m")
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
@@ -154,7 +153,7 @@ public class WfThicknessSimulationShort {
 								.pollInterval("2s")
 								.timeout("1m")
 								.operationSubmodelRef(smRef)
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}

@@ -57,7 +57,7 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
 		loadTaskVariablesFromArguments(manager, descriptor);
 		
-		FOption.accept(m_timeout, to -> descriptor.addOrReplaceOption(HttpTask.OPTION_TIMEOUT, to));
+		FOption.accept(m_timeout, to -> descriptor.addOption(HttpTask.OPTION_TIMEOUT, to));
 	}
 
 	private void loadFromMDTOperationSubmodel(TaskDescriptor descriptor, String opSmRefExpr)
@@ -103,21 +103,21 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
                 = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_SERVER_ENDPOINT)
                             .getOrThrow(() -> new ModelValidationException("Submodel operation server endpoint not found: submodel idShort="
                                                                             + submodel.getIdShort()));
-        descriptor.addOrReplaceOption(HttpTask.OPTION_SERVER_ENDPOINT, serverEndpoint);
+        descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, serverEndpoint);
         
         String opId = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_ID)
                                 .getOrThrow(() -> new ModelValidationException("Submodel operation id is missing: submodel idShort="
                                                                                 + submodel.getIdShort()));
-        descriptor.addOrReplaceOption(HttpTask.OPTION_OPERATION, opId);
+        descriptor.addOption(HttpTask.OPTION_OPERATION, opId);
         
         String pollInterval = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_POLL_INTERVAL)
                                         	.getOrElse(DEFAULT_POLL_INTERVAL);
-        descriptor.addOrReplaceOption(HttpTask.OPTION_POLL_INTERVAL, pollInterval);
+        descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL, pollInterval);
         
         String timeout = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_TIMEOUT)
                                 	.getOrNull();
         if ( timeout != null ) {
-            descriptor.addOrReplaceOption(HttpTask.OPTION_TIMEOUT, timeout);
+            descriptor.addOption(HttpTask.OPTION_TIMEOUT, timeout);
         }
         
         return descriptor;

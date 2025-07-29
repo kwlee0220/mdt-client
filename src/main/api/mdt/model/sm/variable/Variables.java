@@ -112,6 +112,14 @@ public class Variables {
 	public static AbstractVariable parseJsonString(String jsonString) throws IOException {
 		return MDTModelSerDe.readValue(jsonString, AbstractVariable.class);
 	}
+	
+	public static JsonNode toJsonNode(Variable variable) {
+		return MDTModelSerDe.toJsonNode(variable);
+	}
+	
+	public static String toJsonString(Variable variable) {
+		return MDTModelSerDe.toJsonString(variable);
+	}
 
 	private static final String FIELD_TYPE = "@type";
 	private static final BiMap<String,Class<? extends Variable>> SERIALIZABLES = HashBiMap.create();

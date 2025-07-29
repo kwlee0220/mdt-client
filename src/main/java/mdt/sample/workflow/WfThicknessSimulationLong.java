@@ -2,16 +2,11 @@ package mdt.sample.workflow;
 
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
-import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.Options;
-import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -106,7 +101,7 @@ public class WfThicknessSimulationLong {
 								.pollInterval("2s")
 								.timeout("1m")
 								.operationSubmodelRef(smRef)
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
@@ -122,7 +117,7 @@ public class WfThicknessSimulationLong {
 								.pollInterval("2s")
 								.timeout("1m")
 								.operationSubmodelRef(smRef)
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}
@@ -138,7 +133,7 @@ public class WfThicknessSimulationLong {
 								.pollInterval("2s")
 								.timeout("1m")
 								.operationSubmodelRef(smRef)
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.build();
 	}

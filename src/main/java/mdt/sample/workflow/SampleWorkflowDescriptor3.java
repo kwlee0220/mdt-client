@@ -51,11 +51,11 @@ public class SampleWorkflowDescriptor3 {
 		StringSubstitutor subst = new StringSubstitutor(System.getenv());
 		String resolvedEndpoint = subst.replace(HTTP_OP_SERVER_ENDPOINT);
 
-		task.addOrReplaceOption(HttpTask.OPTION_OPERATION, "test/AddAndSleep");
-		task.addOrReplaceOption(HttpTask.OPTION_SERVER_ENDPOINT, resolvedEndpoint);
-		task.addOrReplaceOption(HttpTask.OPTION_POLL_INTERVAL, "1.0");
-		task.addOrReplaceOption(HttpTask.OPTION_TIMEOUT, "60");
-		task.addOrReplaceOption(HttpTask.OPTION_LOG_LEVEL, "info");
+		task.addOption(HttpTask.OPTION_OPERATION, "test/AddAndSleep");
+		task.addOption(HttpTask.OPTION_SERVER_ENDPOINT, resolvedEndpoint);
+		task.addOption(HttpTask.OPTION_POLL_INTERVAL, "1.0");
+		task.addOption(HttpTask.OPTION_TIMEOUT, "60");
+		task.addOption(HttpTask.OPTION_LOG_LEVEL, "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
 		
 		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data:ParameterValue"));

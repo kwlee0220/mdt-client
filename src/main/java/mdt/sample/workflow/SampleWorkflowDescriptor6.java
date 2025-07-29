@@ -9,7 +9,6 @@ import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -82,10 +81,10 @@ public class SampleWorkflowDescriptor6 {
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
 
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "ktech_inspector/SurfaceErrorDetection"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "ktech_inspector/SurfaceErrorDetection");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:SurfaceErrorDetection"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("ktech_inspector", "SurfaceErrorDetection");
@@ -102,10 +101,10 @@ public class SampleWorkflowDescriptor6 {
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
 
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "ktech_inspector/STErrorPrediction"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "ktech_inspector/STErrorPrediction");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:STErrorPrediction"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("ktech_inspector", "STErrorPrediction");
@@ -122,10 +121,10 @@ public class SampleWorkflowDescriptor6 {
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
 
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "ktech_inspector/LTErrorPrediction"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "ktech_inspector/LTErrorPrediction");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:LTErrorPrediction"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("ktech_inspector", "LTErrorPrediction");

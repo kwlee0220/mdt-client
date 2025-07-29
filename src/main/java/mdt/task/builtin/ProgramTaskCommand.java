@@ -13,7 +13,6 @@ import utils.stream.FStream;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.workflow.model.MultiLineOption;
 import mdt.workflow.model.TaskDescriptor;
 
 import picocli.CommandLine.Command;
@@ -59,7 +58,7 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 			ProgramOperationDescriptor opDesc = ProgramOperationDescriptor.load(m_opDescFile, MDTModelSerDe.MAPPER);
 			update(manager, descriptor, opDesc);
 		}
-		FOption.accept(m_workingDir, dir -> descriptor.addOrReplaceOption(ProgramTask.OPTION_WORKING_DIRECTORY,
+		FOption.accept(m_workingDir, dir -> descriptor.addOption(ProgramTask.OPTION_WORKING_DIRECTORY,
 																			dir.getAbsolutePath()));
 
 		ProgramTask task = new ProgramTask(descriptor);
@@ -74,13 +73,14 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 	}
 	
 	private void update(MDTInstanceManager manager, TaskDescriptor descriptor, ProgramOperationDescriptor opDesc) {
-		descriptor.getOptions().add(new MultiLineOption("commandLine", opDesc.getCommandLine()));
+		String multiLine = FStream.from(opDesc.getCommandLine()).join('\n');
+		descriptor.addOption("commandLine", multiLine);
 		FOption.accept(opDesc.getWorkingDirectory(), workDir -> {
-			descriptor.addOrReplaceOption("workingDirectory", workDir.getAbsolutePath());
+			descriptor.addOption("workingDirectory", workDir.getAbsolutePath());
 		});
 		
 		FStream.from(opDesc.getInputVariables()).forEach(descriptor.getInputVariables()::addOrReplace);
 		FStream.from(opDesc.getOutputVariables()).forEach(descriptor.getOutputVariables()::addOrReplace);
-		FOption.accept(opDesc.getTimeout(), to -> descriptor.addOrReplaceOption("timeout", to.toString()));
+		FOption.accept(opDesc.getTimeout(), to -> descriptor.addOption("timeout", to.toString()));
 	}
 }

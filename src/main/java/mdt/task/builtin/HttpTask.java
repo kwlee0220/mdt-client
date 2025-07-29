@@ -36,7 +36,6 @@ import mdt.model.sm.variable.AbstractVariable.ValueVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
-import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -144,19 +143,17 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 		
 		OperationRequest reqBody = new OperationRequest();
 		
-		String endpoint = descriptor.findOption(OPTION_SERVER_ENDPOINT, StringOption.class)
-									.map(StringOption::getValue)
+		String endpoint = descriptor.findOptionValue(OPTION_SERVER_ENDPOINT)
 									.getOrThrow(() -> new IllegalArgumentException("serverEndpoint option is not provided"));
-		String opId = descriptor.findOption(OPTION_OPERATION, StringOption.class)
-								.map(StringOption::getValue)
+		String opId = descriptor.findOptionValue(OPTION_OPERATION)
 								.getOrThrow(() -> new IllegalArgumentException("operationId option is not provided"));
 		reqBody.setOperation(opId);
 
-		Duration pollInterval = descriptor.findOption(OPTION_POLL_INTERVAL)
-											.map(opt -> parseDuration(opt.getValue().toString()))
+		Duration pollInterval = descriptor.findOptionValue(OPTION_POLL_INTERVAL)
+											.map(this::parseDuration)
 											.getOrElse(DEFAULT_POLL_INTERVAL);
-		Duration timeout = descriptor.findOption(OPTION_TIMEOUT)
-									.map(opt -> parseDuration(opt.getValue().toString()))
+		Duration timeout = descriptor.findOptionValue(OPTION_TIMEOUT)
+									.map(this::parseDuration)
 									.getOrNull();
 		
 		reqBody.setInputVariables(descriptor.getInputVariables());

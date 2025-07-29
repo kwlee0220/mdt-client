@@ -9,7 +9,6 @@ import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -63,10 +62,10 @@ public class WfProcessSimulation {
 		
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "inspector/ProcessSimulation"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "inspector/ProcessSimulation");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "inspector:ProcessSimulation"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ProcessSimulation");

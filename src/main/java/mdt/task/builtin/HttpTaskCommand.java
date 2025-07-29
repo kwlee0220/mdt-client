@@ -59,20 +59,20 @@ public class HttpTaskCommand extends AbstractTaskCommand {
 		descriptor.setType(HttpTask.class.getName());
 		loadTaskDescriptor(descriptor, manager);
 		
-		FOption.accept(m_endpoint, ep -> descriptor.addOrReplaceOption(HttpTask.OPTION_SERVER_ENDPOINT, ep));
-		Preconditions.checkArgument(descriptor.findStringOption(HttpTask.OPTION_SERVER_ENDPOINT).isPresent(),
+		FOption.accept(m_endpoint, ep -> descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, ep));
+		Preconditions.checkArgument(descriptor.findOptionValue(HttpTask.OPTION_SERVER_ENDPOINT).isPresent(),
 				                    "HTTP server endpoint is not specified: use '--endpoint' option");
 		
-		FOption.accept(m_opId, oid -> descriptor.addOrReplaceOption(HttpTask.OPTION_OPERATION, oid));
-		Preconditions.checkArgument(descriptor.findStringOption(HttpTask.OPTION_OPERATION).isPresent(),
+		FOption.accept(m_opId, oid -> descriptor.addOption(HttpTask.OPTION_OPERATION, oid));
+		Preconditions.checkArgument(descriptor.findOptionValue(HttpTask.OPTION_OPERATION).isPresent(),
                                                     "Operation ID is not specified: use '--opId' option");
 		
 		if ( m_pollInterval != null ) {
-			descriptor.addOrReplaceOption(HttpTask.OPTION_POLL_INTERVAL, m_pollInterval);
+			descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL, m_pollInterval);
 		}
 		else {
-			descriptor.findStringOption(HttpTask.OPTION_POLL_INTERVAL)
-						.ifAbsent(() -> descriptor.addOrReplaceOption(HttpTask.OPTION_POLL_INTERVAL,
+			descriptor.findOptionValue(HttpTask.OPTION_POLL_INTERVAL)
+						.ifAbsent(() -> descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL,
 																		DEFAULT_POLL_INTERVAL));
 		}
 		

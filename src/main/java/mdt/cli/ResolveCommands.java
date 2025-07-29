@@ -14,7 +14,7 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description="Resolve MDT-related target",
 	subcommands= {
-		ResolveElementReferenceCommand.class,
+		ResolveReferenceToUrlCommand.class,
 	})
 public class ResolveCommands extends CommandCollection { }
 

@@ -34,6 +34,7 @@ import mdt.model.AASUtils;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
@@ -42,7 +43,6 @@ import mdt.model.sm.variable.AbstractVariable.ValueVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
-import mdt.workflow.model.MDTElementRefOption;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -87,8 +87,8 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		
 		TaskDescriptor descriptor = getTaskDescriptor();
 		MDTElementReference opRef
-					= descriptor.findOption(OPTION_OPERATION, MDTElementRefOption.class)
-								.map(MDTElementRefOption::getValue)
+					= descriptor.findOptionValue(OPTION_OPERATION)
+								.map(ElementReferences::parseExpr)
 								.getOrThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
 		Operation op;
 		try {
@@ -117,7 +117,8 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		// ASOperation 수행 결과를 output task variable들에 반영한다.
 		updateOutputVariables(m_opResult);
 		
-		boolean updateOperationVariables = descriptor.findBooleanOption(OPTION_UPDATE_OPVARS)
+		boolean updateOperationVariables = descriptor.findOptionValue(OPTION_UPDATE_OPVARS)
+														.map(DataUtils::asBoolean)
 														.getOrElse(false);
 		if ( updateOperationVariables ) {
 			try {
@@ -133,7 +134,9 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		// LastExecutionTime 정보가 제공된 경우 task의 수행 시간을 계산하여 해당 SubmodelElement를 갱신한다.
 		TaskUtils.updateLastExecutionTime(manager, m_descriptor, started, getLogger());
 		
-		boolean showResult = descriptor.findBooleanOption(OPTION_SHOW_RESULT).getOrElse(false);
+		boolean showResult = descriptor.findOptionValue(OPTION_SHOW_RESULT)
+										.map(DataUtils::asBoolean)
+										.getOrElse(false);
 		if ( showResult ) {
 			for ( OperationVariable opVar: result.getOutputArguments() ) {
 				ElementValue ev = ElementValues.getValue(opVar.getValue());
@@ -220,11 +223,11 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		SubmodelService svc = opRef.getSubmodelService();
 		String opIdShortPath = opRef.getIdShortPathString();
 
-		Duration pollInterval = descriptor.findStringOption(OPTION_POLL_INTERVAL)
-											.map(this::parseDuration)
+		Duration pollInterval = descriptor.findOptionValue(OPTION_POLL_INTERVAL)
+											.map(UnitUtils::parseSecondDuration)
 											.getOrElse(DEFAULT_POLL_INTERVAL);
-		Duration timeout = descriptor.findStringOption(OPTION_TIMEOUT)
-									.map(this::parseDuration)
+		Duration timeout = descriptor.findOptionValue(OPTION_TIMEOUT)
+									.map(UnitUtils::parseSecondDuration)
 									.getOrNull();
 		
 		OperationResult result = null;

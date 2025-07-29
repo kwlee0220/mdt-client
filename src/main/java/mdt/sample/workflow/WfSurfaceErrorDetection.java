@@ -9,7 +9,6 @@ import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -54,10 +53,10 @@ public class WfSurfaceErrorDetection {
 	private static TaskDescriptor SurfaceErrorDetection(MDTInstanceManager manager, String id) {
 		TaskDescriptor task = new TaskDescriptor(id, null, HttpTask.class.getName());
 		
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "ktech_inspector/SurfaceErrorDetection"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "ktech_inspector/SurfaceErrorDetection");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:SurfaceErrorDetection"));
 		
 		task.getInputVariables().add(Variables.newInstance("TestImage", "", "inspector:Data:0"));
@@ -69,10 +68,10 @@ public class WfSurfaceErrorDetection {
 	private static TaskDescriptor STErrorPrediction(MDTInstanceManager manager, String id) {
 		TaskDescriptor task = new TaskDescriptor(id, null, HttpTask.class.getName());
 		
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "ktech_inspector/STErrorPrediction"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "ktech_inspector/STErrorPrediction");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:STErrorPrediction"));
 
 		task.getOutputVariables().add(Variables.newInstance("STErrorPossibility", "", "inspector:Data:2"));
@@ -83,10 +82,10 @@ public class WfSurfaceErrorDetection {
 	private static TaskDescriptor LTErrorPrediction(MDTInstanceManager manager, String id) {
 		TaskDescriptor task = new TaskDescriptor(id, null, HttpTask.class.getName());
 		
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "ktech_inspector/LTErrorPrediction"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "ktech_inspector/LTErrorPrediction");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:LTErrorPrediction"));
 
 		task.getOutputVariables().add(Variables.newInstance("LTErrorPrediction", "", "inspector:Data:3"));

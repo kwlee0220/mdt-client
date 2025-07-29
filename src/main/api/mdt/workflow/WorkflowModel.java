@@ -8,8 +8,7 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
@@ -17,6 +16,7 @@ import com.google.common.collect.Lists;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 import utils.InternalException;
 import utils.stream.FStream;
@@ -30,16 +30,17 @@ import mdt.workflow.model.TaskDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
-@JsonInclude(Include.NON_NULL)
+@Accessors(prefix = "m_")
+@JsonPropertyOrder({"id", "name", "description", "taskDescriptors"})
 public class WorkflowModel {
-	private String id;
-	private @Nullable String name;
-	private @Nullable String description;
+	private String m_id;
+	private @Nullable String m_name;
+	private @Nullable String m_description;
 
-	private List<TaskDescriptor> taskDescriptors = Lists.newArrayList();
+	private List<TaskDescriptor> m_taskDescriptors = Lists.newArrayList();
 
 	public void setTasks(Collection<TaskDescriptor> tasks) {
-		this.taskDescriptors = sortTopologically(tasks);
+		this.m_taskDescriptors = sortTopologically(tasks);
 	}
 	
 	public String toJsonString() {

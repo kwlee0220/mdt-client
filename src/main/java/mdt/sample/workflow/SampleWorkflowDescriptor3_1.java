@@ -5,16 +5,13 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultElementReference;
-import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.variable.Variable;
 import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.AASOperationTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
 import mdt.workflow.model.TaskDescriptor;
-import mdt.workflow.model.TaskDescriptors;
 
 
 /**
@@ -51,10 +48,10 @@ public class SampleWorkflowDescriptor3_1 {
 		TaskDescriptor task = new TaskDescriptor(taskId, "", AASOperationTask.class.getName());
 		
 		MDTElementReference opRef = DefaultElementReference.newInstance("test", "AddAndSleep", "Operation");
-		task.addOrReplaceOption(AASOperationTask.OPTION_OPERATION, opRef);
-		task.addOrReplaceOption(AASOperationTask.OPTION_POLL_INTERVAL, "1.0");
-		task.addOrReplaceOption(AASOperationTask.OPTION_TIMEOUT, "60");
-		task.addOrReplaceOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
+		task.addOption(AASOperationTask.OPTION_OPERATION, opRef.toStringExpr());
+		task.addOption(AASOperationTask.OPTION_POLL_INTERVAL, "1.0");
+		task.addOption(AASOperationTask.OPTION_TIMEOUT, "60");
+		task.addOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
 		
 		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data:ParameterValue"));

@@ -9,7 +9,6 @@ import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -78,10 +77,10 @@ public class WfThicknessDefectInspection {
 		
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "inspector/ThicknessInspection"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "inspector/ThicknessInspection");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "inspector:ThicknessInspection"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
@@ -97,10 +96,10 @@ public class WfThicknessDefectInspection {
 		
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "inspector/UpdateDefectList"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "inspector/UpdateDefectList");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "inspector:UpdateDefectList"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "UpdateDefectList");

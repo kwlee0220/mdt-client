@@ -65,10 +65,10 @@ public class AASOperationTaskCommand extends AbstractTaskCommand {
 		
 		loadTaskDescriptor(descriptor, manager);
 		
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_OPERATION, m_operationRef);
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_POLL_INTERVAL, m_pollInterval);
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_UPDATE_OPVARS, ""+m_updateOperation);
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_SHOW_RESULT, ""+m_showResult);
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, m_operationRef.toStringExpr());
+		descriptor.addOption(AASOperationTask.OPTION_POLL_INTERVAL, m_pollInterval);
+		descriptor.addOption(AASOperationTask.OPTION_UPDATE_OPVARS, ""+m_updateOperation);
+		descriptor.addOption(AASOperationTask.OPTION_SHOW_RESULT, ""+m_showResult);
 		
 		AASOperationTask aasOpTask = new AASOperationTask(descriptor);
 		aasOpTask.run(mdt.getInstanceManager());

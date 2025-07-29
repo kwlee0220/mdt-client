@@ -105,12 +105,12 @@ public class RunTaskCommand extends MultiVariablesCommand {
 		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
 		loadTaskVariablesFromArguments(manager, descriptor);
 		
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_OPERATION, opElmRef);
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_POLL_INTERVAL, pollInterval);
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, opElmRef.toStringExpr());
+		descriptor.addOption(AASOperationTask.OPTION_POLL_INTERVAL, pollInterval);
 		if ( timeout != null ) {
-			descriptor.addOrReplaceOption(AASOperationTask.OPTION_TIMEOUT, timeout);
+			descriptor.addOption(AASOperationTask.OPTION_TIMEOUT, timeout);
 		}
-		descriptor.addOrReplaceOption(AASOperationTask.OPTION_UPDATE_OPVARS, updateOpVar);
+		descriptor.addOption(AASOperationTask.OPTION_UPDATE_OPVARS, updateOpVar);
 //		descriptor.addOrReplaceOption(AASOperationTask.OPTION_SYNC, ""+m_sync);
 		
 		AASOperationTask aasOpTask = new AASOperationTask(descriptor);
@@ -169,11 +169,11 @@ public class RunTaskCommand extends MultiVariablesCommand {
 //		
 //		descriptor.addOption(HttpTask.OPTION_OPERATION, opId);
 //		descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, serverEndpoint);
-//		descriptor.getOptions().add(new DurationOption(HttpTask.OPTION_POLL_INTERVAL, pollInterval));
+//		descriptor.addOption(new DurationOption(HttpTask.OPTION_POLL_INTERVAL, pollInterval));
 //		if ( timeout != null ) {
-//			descriptor.getOptions().add(new DurationOption(HttpTask.OPTION_TIMEOUT, timeout));
+//			descriptor.addOption(new DurationOption(HttpTask.OPTION_TIMEOUT, timeout));
 //		}
-//		descriptor.getOptions().add(new BooleanOption(HttpTask.OPTION_SYNC, m_sync));
+//		descriptor.addOption(new BooleanOption(HttpTask.OPTION_SYNC, m_sync));
 //
 //		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
 //		loadTaskVariablesFromParameters(manager, descriptor);

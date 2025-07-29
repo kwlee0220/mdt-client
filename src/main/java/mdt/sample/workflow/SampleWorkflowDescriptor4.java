@@ -8,7 +8,6 @@ import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.Options;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -84,7 +83,7 @@ public class SampleWorkflowDescriptor4 {
 								.operationId(smRef.getInstanceId() + "/" + smRef.getSubmodelIdShort())
 								.pollInterval("3s")
 								.timeout("1m")
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.operationSubmodelRef(smRef)
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.addDependency("copy-data", "copy-inc-amount", "set-sleeptime")
@@ -98,7 +97,7 @@ public class SampleWorkflowDescriptor4 {
 								.operationRef(opElmRef)
 								.pollInterval("3s")
 								.timeout("1m")
-								.addOption(Options.newOption("loglevel", "info"))
+								.addOption("loglevel", "info")
 								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
 								.addDependency("copy-data", "copy-inc-amount", "set-sleeptime")
 								.build();

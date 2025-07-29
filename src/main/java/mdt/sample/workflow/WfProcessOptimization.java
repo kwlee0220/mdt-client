@@ -9,7 +9,6 @@ import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.StringOption;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -77,10 +76,10 @@ public class WfProcessOptimization {
 		task.setId(id);
 		task.setType(HttpTask.class.getName());
 		
-		task.getOptions().add(new StringOption("server", HTTP_OP_SERVER_ENDPOINT));
-		task.getOptions().add(new StringOption("id", "innercase/ProcessOptimization"));
-		task.getOptions().add(new StringOption("timeout", "1m"));
-		task.getOptions().add(new StringOption("loglevel", "info"));
+		task.addOption("server", HTTP_OP_SERVER_ENDPOINT);
+		task.addOption("id", "innercase/ProcessOptimization");
+		task.addOption("timeout", "1m");
+		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "innercase:ProcessOptimization"));
 		
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("innercase", "ProcessOptimization");

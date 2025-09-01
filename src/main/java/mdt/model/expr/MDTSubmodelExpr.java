@@ -8,10 +8,10 @@ import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class MDTSubmodelExpr implements MDTExpr {
+public abstract class MDTSubmodelExpr implements MDTExpression {
 	public abstract DefaultSubmodelReference evaluate();
 	
-	public static class SubmodelByIdShortExpr extends MDTSubmodelExpr implements MDTExpr {
+	public static class SubmodelByIdShortExpr extends MDTSubmodelExpr implements MDTExpression {
 		private final StringExpr m_instanceIdExpr;
 		private final StringExpr m_idShortExpr;
 
@@ -26,7 +26,7 @@ public abstract class MDTSubmodelExpr implements MDTExpr {
 		}
 	}
 	
-	public static class SubmodelByIdExpr extends MDTSubmodelExpr implements MDTExpr {
+	public static class SubmodelByIdExpr extends MDTSubmodelExpr implements MDTExpression {
 		private final StringExpr m_smIdExpr;
 
 		public SubmodelByIdExpr(StringExpr smIdExpr) {

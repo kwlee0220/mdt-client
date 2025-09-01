@@ -25,8 +25,8 @@ public class SampleWorkflowDescriptor0 {
 		
 		wfModel = new WorkflowModel();
 		wfModel.setId(WORKFLOW_ID);
-		wfModel.setName("테스트 시뮬레이션");
-		wfModel.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
+		wfModel.setName("Set 동작 시험용 task");
+		wfModel.setDescription("본 워크플로우는 Set 동작 확인하기 위한 테스트 목적으로 작성됨.");
 
 		TaskDescriptor descriptor = new TaskDescriptor();
 		descriptor.setId("set-inc-amount");
@@ -48,11 +48,11 @@ public class SampleWorkflowDescriptor0 {
 		descriptor.getOutputVariables().addOrReplace(tar);
 		
 		wfModel.getTaskDescriptors().add(descriptor);
+		wfModel.getGui().put("layoutSize", 50);
+		wfModel.getGui().put("layoutType", "grid");
 		
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
-		
-		wfModel = wfManager.getWorkflowModel(wfId);
+		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
 		System.out.println(wfModel.toJsonString());
 	}
 }

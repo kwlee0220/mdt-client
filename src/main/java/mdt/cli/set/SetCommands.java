@@ -14,7 +14,7 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="\nList all MDT-related entities",
+	description="\nUpdate MDT entity",
 	subcommands= {
 		SetElementCommand.class,
 	})

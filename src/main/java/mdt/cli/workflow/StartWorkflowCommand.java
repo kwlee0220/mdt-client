@@ -25,8 +25,8 @@ import picocli.CommandLine.Parameters;
 public class StartWorkflowCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(StartWorkflowCommand.class);
 	
-	@Parameters(index="0", paramLabel="template-id", description="Workflow template id to start")
-	private String m_wfTemplateId;
+	@Parameters(index="0", paramLabel="model-id", description="Workflow model id to start")
+	private String m_wfModelId;
 
 	public static final void main(String... args) throws Exception {
 		main(new StartWorkflowCommand(), args);
@@ -40,7 +40,7 @@ public class StartWorkflowCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
 		
-		Workflow wf = wfMgr.startWorkflow(m_wfTemplateId);
+		Workflow wf = wfMgr.startWorkflow(m_wfModelId);
 		System.out.println(wf);
 	}
 }

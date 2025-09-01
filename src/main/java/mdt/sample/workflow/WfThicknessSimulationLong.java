@@ -18,7 +18,7 @@ import mdt.workflow.model.TaskDescriptors;
 public class WfThicknessSimulationLong {
 //	private static final String ENDPOINT = "http://129.254.91.134:12985";
 //	private static final String ENDPOINT = "http://localhost:12985";
-	private static final String HTTP_OP_SERVER_ENDPOINT = "http://129.254.91.134:12987";
+	private static final String HTTP_OP_SERVER_ENDPOINT = "http://10.254.91.134:12987";
 //	private static final String HTTP_OP_SERVER_ENDPOINT = "http://218.158.72.211:12987";
 	
 	public static final void main(String... args) throws Exception {
@@ -49,7 +49,7 @@ public class WfThicknessSimulationLong {
 		descriptor.getDependencies().add("inspect-thickness");
 		wfDesc.getTaskDescriptors().add(descriptor);
 
-		descriptor = TaskDescriptors.newSetTaskDescriptor("copy-defect-list", "param:inspector:DefectList:ParameterValue",
+		descriptor = TaskDescriptors.newSetTaskDescriptor("copy-defect-list", "param:inspector:DefectList",
 															"oparg:inspector:UpdateDefectList:in:DefectList");
 		wfDesc.getTaskDescriptors().add(descriptor);
 
@@ -59,15 +59,15 @@ public class WfThicknessSimulationLong {
 		wfDesc.getTaskDescriptors().add(descriptor);
 		
 		descriptor = TaskDescriptors.newSetTaskDescriptor("copy-updated-defect-list",
-															"oparg:inspector:UpdateDefectList:out:DefectList",
-															"param:inspector:DefectList:ParameterValue");
+															"oparg:inspector:UpdateDefectList:out:UpdatedDefectList",
+															"param:inspector:DefectList");
 		descriptor.getDependencies().add("update-defect-list");
 		wfDesc.getTaskDescriptors().add(descriptor);
 		
 		// Phase 2.
 
 		descriptor = TaskDescriptors.newSetTaskDescriptor("copy-defect-list-to-simulator",
-															"param:inspector:DefectList:ParameterValue",
+															"param:inspector:DefectList",
 															"oparg:inspector:ProcessSimulation:in:DefectList");
 		descriptor.getDependencies().add("copy-updated-defect-list");
 		wfDesc.getTaskDescriptors().add(descriptor);
@@ -78,16 +78,16 @@ public class WfThicknessSimulationLong {
 		
 		descriptor = TaskDescriptors.newSetTaskDescriptor("copy-avg-cycle-time",
 														"oparg:inspector:ProcessSimulation:out:AverageCycleTime",
-														"param:inspector:CycleTime:ParameterValue");
+														"param:inspector:CycleTime");
 		descriptor.getDependencies().add("simulate-process");
 		wfDesc.getTaskDescriptors().add(descriptor);
 		
 //		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
+		wfDesc = wfManager.addOrReplaceWorkflowModel(wfDesc);
 		
-		System.out.println("Workflow id: " + wfId);
+		System.out.println("Workflow id: " + wfDesc.getId());
 	}
 	
 	private static TaskDescriptor inspectSurfaceThickness(MDTInstanceManager manager, String id) {

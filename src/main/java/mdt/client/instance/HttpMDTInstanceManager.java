@@ -21,7 +21,6 @@ import com.google.common.io.Files;
 
 import utils.async.Guard;
 import utils.http.HttpRESTfulClient;
-import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.io.ZipFile;
 import utils.stream.FStream;
@@ -38,10 +37,8 @@ import mdt.model.instance.InstanceStatusChangeEvent;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceManagerException;
-import mdt.model.instance.MDTModel;
 import mdt.model.sm.ref.DefaultElementReference;
 
-import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -63,7 +60,6 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	
 	private final String m_endpoint;
 	private final HttpRESTfulClient m_restfulClient;
-	private final InstanceDescriptorSerDe m_serde = new InstanceDescriptorSerDe();
 	
 	private final Guard m_guard = Guard.create();
 	@GuardedBy("m_guard") private final Map<String,HttpMDTInstanceClient> m_instances = Maps.newHashMap();
@@ -73,7 +69,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		m_restfulClient = HttpRESTfulClient.builder()
 										.httpClient(builder.m_httpClient)
 										.jsonMapper(MDTModelSerDe.getJsonMapper())
-										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(InstanceDescriptorSerDe.MAPPER))
+										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER))
 										.build();
 		
 		HttpMDTManager.register(this);
@@ -121,34 +117,30 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return m_endpoint;
 	}
 
-    // @GetMapping({"instances/{id}"})
 	InstanceDescriptor getInstanceDescriptor(String id) {
 		String url = String.format("%s/instances/%s", getEndpoint(), id);
-		return m_restfulClient.get(url, m_descDeser);
+		return m_restfulClient.get(url, MDTModelSerDes.INSTANCE_DESC_RESP);
 	}
 
 	@Override
 	public HttpMDTInstanceClient getInstance(String id) throws MDTInstanceManagerException {
 		InstanceDescriptor desc = getInstanceDescriptor(id);
 		return new HttpMDTInstanceClient(this, desc);
-//		return createInstance(desc);
 	}
 
-    // @GetMapping({"/instances"})
 	@Override
 	public List<HttpMDTInstanceClient> getInstanceAll() throws MDTInstanceManagerException {
 		String url = String.format("%s/instances", getEndpoint());
-		return toInstances(m_restfulClient.get(url, m_descListDeser));
+		return toInstances(m_restfulClient.get(url, MDTModelSerDes.INSTANCE_DESC_LIST));
 	}
 
-    // @GetMapping({"/instances?filter={filter}"})
 	@Override
 	public List<HttpMDTInstanceClient> getInstanceAllByFilter(String filter) {
 		String url = String.format("%s/instances", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
 						 		.addQueryParameter("filter", filter)
 					 			.build();
-		return toInstances(m_restfulClient.get(httpUrl, m_descListDeser));
+		return toInstances(m_restfulClient.get(httpUrl, MDTModelSerDes.INSTANCE_DESC_LIST));
 	}
 	
 	@Override
@@ -207,7 +199,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 
 		String url = String.format("%s/instances", getEndpoint());
 		RequestBody reqBody = builder.build();
-		InstanceDescriptor desc = m_restfulClient.post(url, reqBody, m_descDeser);
+		InstanceDescriptor desc = m_restfulClient.post(url, reqBody, MDTModelSerDes.INSTANCE_DESC_RESP);
 		
 //		return new HttpMDTInstanceClient(this, desc);
 		return createInstance(desc);
@@ -242,7 +234,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 
 			String url = String.format("%s/instances", getEndpoint());
 			RequestBody reqBody = builder.build();
-			InstanceDescriptor desc = m_restfulClient.post(url, reqBody, m_descDeser);
+			InstanceDescriptor desc = m_restfulClient.post(url, reqBody, MDTModelSerDes.INSTANCE_DESC_RESP);
 			
 			return createInstance(desc);
 		}
@@ -270,7 +262,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 
 		String url = String.format("%s/instances", getEndpoint());
 		RequestBody reqBody = builder.build();
-		InstanceDescriptor desc = m_restfulClient.post(url, reqBody, m_descDeser);
+		InstanceDescriptor desc = m_restfulClient.post(url, reqBody, MDTModelSerDes.INSTANCE_DESC_RESP);
 		
 		return createInstance(desc);
 	}
@@ -345,20 +337,6 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return elmRef.read();
 	}
 
-    // @GetMapping("/instances/{id}/$mdt-model")
-	@Override
-	public MDTModel getMDTModel(String instanceId) throws ResourceNotFoundException, IOException {
-		String requestUrl = String.format("%s/instances/%s/$mdt-model", getEndpoint(), instanceId);
-		return m_restfulClient.get(requestUrl, MDT_MODEL_DESER);
-		
-	}
-	private static ResponseBodyDeserializer<MDTModel> MDT_MODEL_DESER = new ResponseBodyDeserializer<>() {
-		@Override
-		public MDTModel deserialize(Headers headers, String respBody) throws IOException {
-			return MAPPER.readValue(respBody, MDTModel.class);
-		}
-	};
-
 	public String resolveReferenceToUrl(String ref) {
 		String url = String.format("%s/resolveReference/$url", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
@@ -399,18 +377,4 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 						.map(desc -> new HttpMDTInstanceClient(HttpMDTInstanceManager.this, desc))
 						.toList();
 	}
-	
-	private ResponseBodyDeserializer<InstanceDescriptor> m_descDeser = new ResponseBodyDeserializer<>() {
-		@Override
-		public InstanceDescriptor deserialize(Headers headers, String respBody) throws IOException {
-			return m_serde.readInstanceDescriptor(respBody);
-		}
-	};
-	
-	private ResponseBodyDeserializer<List<InstanceDescriptor>> m_descListDeser = new ResponseBodyDeserializer<>() {
-		@Override
-		public List<InstanceDescriptor> deserialize(Headers headers, String respBody) throws IOException {
-			return m_serde.readInstanceDescriptorList(respBody);
-		}
-	};
 }

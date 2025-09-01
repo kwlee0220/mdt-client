@@ -26,22 +26,21 @@ public class SampleWorkflowDescriptor2 {
 
 		TaskDescriptor taskDesc;
 
-		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-data", "param:test:Data:ParameterValue",
-															"oparg:test:AddAndSleep:in:Data");
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-data", "param:test:Data",
+														"oparg:test:AddAndSleep:in:Data");
 		wfModel.getTaskDescriptors().add(taskDesc);
 
-		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-inc-amount", "param:test:IncAmount:ParameterValue",
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-inc-amount", "param:test:IncAmount",
 														"oparg:test:AddAndSleep:in:IncAmount");
 		wfModel.getTaskDescriptors().add(taskDesc);
 
 		taskDesc = TaskDescriptors.newSetTaskDescriptor("set-sleeptime", "'3'",
-															"oparg:test:AddAndSleep:in:SleepTime");
+														"oparg:test:AddAndSleep:in:SleepTime");
 		wfModel.getTaskDescriptors().add(taskDesc);
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
+		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
 
-		wfModel = wfManager.getWorkflowModel(wfId);
 		System.out.println(wfModel.toJsonString());
 	}
 }

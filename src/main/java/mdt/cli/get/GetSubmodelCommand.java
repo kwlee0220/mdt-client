@@ -2,21 +2,21 @@ package mdt.cli.get;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
-import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.func.Funcs;
+
 import mdt.cli.AbstractMDTCommand;
+import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.DescriptorUtils;
 import mdt.model.MDTManager;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.SubmodelUtils;
-import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.model.sm.ref.ElementReferences;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -36,12 +36,13 @@ import picocli.CommandLine.Parameters;
 public class GetSubmodelCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelCommand.class);
 
-	@Parameters(index="0", arity="0..1", paramLabel="ref",
-				description="SubmodelReference (<twin-id>:<submodel_idshort>) to show")
-	private String m_submodelRefString = null;
-	
-	@Option(names={"--id"}, paramLabel="id", description="Submodel id to show")
-	private String m_submodelId = null;
+	@Parameters(index="0", arity="1", paramLabel="ref",
+				description="SubmodelReference (<submodel-id> | <instance-id>) to show")
+	private String m_id = null;
+
+	@Parameters(index="1", arity="0..1", paramLabel="idShort",
+				description="Submodel idShort to show")
+	private String m_smIdShort = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: table or json)")
@@ -55,29 +56,16 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
-		if ( m_submodelRefString == null && m_submodelId == null ) {
-			System.err.println("Either SubmodelReference ('ref') or SubmodelId ('id') "
-								+ "should be provided");
-			System.exit(-1);
+		SubmodelDescriptor smDesc = null;
+		if ( m_smIdShort != null ) {
+			// 'm_id'는 MDTInstance의 식별자로 간주하고, 'm_idShort'는 Submodel의 idShort로 간주한다.
+			HttpMDTInstanceClient instance = manager.getInstance(m_id);
+			smDesc = Funcs.findFirst(instance.getAASSubmodelDescriptorAll(), desc -> m_smIdShort.equals(desc.getIdShort()))
+							.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + m_smIdShort));
 		}
-		
-		String submodelId = m_submodelId;
-		if ( m_submodelRefString != null ) {
-			try {
-				DefaultSubmodelReference ref = ElementReferences.parseSubmodelReference(m_submodelRefString);
-				ref.activate(manager);
-				
-				Submodel submodel = ref.get().getSubmodel();
-				submodelId = submodel.getId();
-			}
-			catch ( ResourceNotFoundException e ) {
-				System.err.printf("Unknown SubmodelReference: %s", m_submodelRefString);
-				System.exit(-1);
-			}
-			catch ( Throwable e ) { }
+		else {
+			smDesc = mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_id);
 		}
-		
-		SubmodelDescriptor smDesc = mdt.getSubmodelRegistry().getSubmodelDescriptorById(submodelId);
 			
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {

@@ -31,7 +31,7 @@ public class StartMDTInstanceCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(StartMDTInstanceCommand.class);
 
 	@Parameters(index="0..*", paramLabel="id", description="MDTInstance id to start.")
-	private List<String> m_instanceIdList;
+	private List<String> m_instanceIdList = List.of();
 
 	private Duration m_pollingInterval = UnitUtils.parseDuration("1s");
 	@Option(names={"--poll"}, paramLabel="duration",

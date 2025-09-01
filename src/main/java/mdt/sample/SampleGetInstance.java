@@ -9,7 +9,7 @@ import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.AssetAdministrationShellService;
 import mdt.model.MDTModelSerDe;
-import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 
 /**
@@ -33,9 +33,9 @@ public class SampleGetInstance {
 		System.out.printf("%-20s: %s%n", "assetType", inst.getAssetType());
 		System.out.printf("%-20s: %s%n", "assetKind", inst.getAssetKind());
 		
-		List<InstanceSubmodelDescriptor> smDescList = inst.getInstanceSubmodelDescriptorAll();
+		List<MDTSubmodelDescriptor> smDescList = inst.getMDTSubmodelDescriptorAll();
 		for ( int i =0; i < smDescList.size(); ++i ) {
-			InstanceSubmodelDescriptor d = smDescList.get(i);
+			MDTSubmodelDescriptor d = smDescList.get(i);
 
 			System.out.printf("%-20s: %s%n",
 								String.format("submodel[%02d].id", i), d.getId());

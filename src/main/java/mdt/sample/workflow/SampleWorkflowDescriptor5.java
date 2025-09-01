@@ -24,35 +24,35 @@ public class SampleWorkflowDescriptor5 {
 		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();
 		HttpMDTInstanceManager manager = mdt.getInstanceManager();
 		
-		WorkflowModel wfDesc;
+		WorkflowModel wfModel;
 		
-		wfDesc = new WorkflowModel();
-		wfDesc.setId("sample-workflow-5");
-		wfDesc.setName("테스트 시뮬레이션");
-		wfDesc.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
+		wfModel = new WorkflowModel();
+		wfModel.setId("sample-workflow-5");
+		wfModel.setName("테스트 시뮬레이션");
+		wfModel.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
 
 		TaskDescriptor taskDesc;
 
 		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-image", "param:ktech_inspector:0",
 												"oparg:ktech_inspector:SurfaceErrorDetection:in:0");
-		wfDesc.getTaskDescriptors().add(taskDesc);
+		wfModel.getTaskDescriptors().add(taskDesc);
 
 		taskDesc = newHttpTask(manager, "detect-surface-error");
 		taskDesc.getDependencies().add("copy-image");
-		wfDesc.getTaskDescriptors().add(taskDesc);
+		wfModel.getTaskDescriptors().add(taskDesc);
 		
 		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy-result",
 													"oparg:ktech_inspector:SurfaceErrorDetection:out:0",
 													"param:ktech_inspector:1");
 		taskDesc.getDependencies().add("detect-surface-error");
-		wfDesc.getTaskDescriptors().add(taskDesc);
+		wfModel.getTaskDescriptors().add(taskDesc);
 		
 //		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
+		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
 		
-		System.out.println("Workflow id: " + wfId);
+		System.out.println("Workflow id: " + wfModel.getId());
 	}
 	
 	private static TaskDescriptor newHttpTask(MDTInstanceManager manager, String id) {

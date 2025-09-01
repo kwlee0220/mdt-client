@@ -31,6 +31,7 @@ import mdt.model.sm.info.MDTInfo;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.MultiLanguagePropertyValue;
+import mdt.model.timeseries.Metadata;
 import mdt.model.timeseries.Record;
 import mdt.tree.node.data.ParameterInfoNode;
 import mdt.tree.node.data.ParameterValueNode;
@@ -39,6 +40,7 @@ import mdt.tree.node.info.CompositionItemNode;
 import mdt.tree.node.info.MDTInfoNode;
 import mdt.tree.node.op.InputArgumentNode;
 import mdt.tree.node.op.OutputArgumentNode;
+import mdt.tree.node.timeseries.TimeseriesSubmodelNodeFactories.MetadataNodeFactory;
 import mdt.tree.node.timeseries.TimeseriesSubmodelNodeFactories.RecordTransform;
 
 
@@ -66,6 +68,7 @@ public class DefaultNodeFactories {
 		FACTORY_REGISTRY.put(Input.SEMANTIC_ID, InputArgumentNode.FACTORY);
 		FACTORY_REGISTRY.put(Output.SEMANTIC_ID, OutputArgumentNode.FACTORY);
 		FACTORY_REGISTRY.put(Record.SEMANTIC_ID, new RecordTransform());
+		FACTORY_REGISTRY.put(Metadata.SEMANTIC_ID, new MetadataNodeFactory());
 	}
 	
 	public static DefaultNodeFactory getNodeFactory(String semanticId) {

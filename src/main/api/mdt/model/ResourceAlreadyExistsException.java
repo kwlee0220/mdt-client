@@ -4,7 +4,7 @@ package mdt.model;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class ResourceAlreadyExistsException extends MDTException {
+public class ResourceAlreadyExistsException extends ResourceException {
     private static final long serialVersionUID = 1L;
 
     public ResourceAlreadyExistsException(String msg) {

@@ -52,9 +52,9 @@ public class WfProcessSimulation {
 //		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
+		wfDesc = wfManager.addOrReplaceWorkflowModel(wfDesc);
 		
-		System.out.println("Workflow id: " + wfId);
+		System.out.println("Workflow id: " + wfDesc.getId());
 	}
 	
 	private static TaskDescriptor simulateProcess(MDTInstanceManager manager, String id) {

@@ -8,6 +8,7 @@ import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.AASOperationTask;
+import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
@@ -38,14 +39,13 @@ public class SampleWorkflowDescriptor3_1 {
 		wfModel.getTaskDescriptors().add(taskDesc);
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
+		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
 
-		wfModel = wfManager.getWorkflowModel(wfId);
 		System.out.println(wfModel.toJsonString());
 	}
 	
 	private static TaskDescriptor newHttpTask(MDTInstanceManager manager, String taskId) {
-		TaskDescriptor task = new TaskDescriptor(taskId, "", AASOperationTask.class.getName());
+		TaskDescriptor task = new TaskDescriptor(taskId, "", HttpTask.class.getName());
 		
 		MDTElementReference opRef = DefaultElementReference.newInstance("test", "AddAndSleep", "Operation");
 		task.addOption(AASOperationTask.OPTION_OPERATION, opRef.toStringExpr());
@@ -54,9 +54,9 @@ public class SampleWorkflowDescriptor3_1 {
 		task.addOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
 		
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data:ParameterValue"));
+		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data"));
 		task.getInputVariables().addOrReplace(Variables.newValueVariable("IncAmount", "", "7"));
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("SleepTime", "", "param:test:SleepTime:ParameterValue"));
+		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("SleepTime", "", "param:test:SleepTime"));
 		task.getOutputVariables().addOrReplace(Variables.newReferenceVariable("Output", "", "param:test:Data"));
 		
 		return task;

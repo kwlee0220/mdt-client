@@ -12,11 +12,12 @@ import org.barfuin.texttree.api.TextTree;
 import org.barfuin.texttree.api.TreeOptions;
 import org.barfuin.texttree.api.style.TreeStyle;
 import org.barfuin.texttree.api.style.TreeStyles;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 
 import utils.InternalException;
@@ -32,12 +33,12 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.cli.list.Nodes.InstanceNode;
 import mdt.cli.list.Nodes.RootNode;
 import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
+import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelServiceOld;
 import mdt.model.sm.SubmodelUtils;
 
 import picocli.CommandLine.Command;
@@ -98,7 +99,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		MDTInstanceManager manager = mdt.getInstanceManager();
+		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
 		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
 		while ( true ) {
@@ -106,7 +107,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			
 			try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
 					PrintWriter pw = new PrintWriter(baos) ) {
-				List<? extends MDTInstance> instances = (m_filter != null)
+				List<HttpMDTInstanceClient> instances = (m_filter != null)
 														? manager.getInstanceAllByFilter(m_filter)
 														: manager.getInstanceAll();
 				
@@ -226,21 +227,24 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		}
 		pw.println(table.render());
 	}
+	
 
-	public void printJson(List<? extends MDTInstance> instances, PrintWriter pw) {
-		ArrayNode array = MDTModelSerDe.MAPPER.createArrayNode();
+	public static final JsonSerializer JSON_SERIALIZER = new JsonSerializer();
+	public void printJson(List<HttpMDTInstanceClient> instances, PrintWriter pw) {
 		try {
-			FStream.from(instances)
-			        .mapOrThrow(inst -> MDTModelServiceOld.of(inst).toJsonNode())
-			        .collect(array, ArrayNode::add);
+			List<InstanceDescriptor> modelList = FStream.from(instances)
+												        .map(inst -> inst.getInstanceDescriptor())
+												        .toList();
+			
+			JsonNode modelsNode = JSON_SERIALIZER.toNode(modelList);
 			
 			String json;
 			if ( m_prettyPrint ) {
 				json = MDTModelSerDe.MAPPER.writerWithDefaultPrettyPrinter()
-											.writeValueAsString(array) + System.lineSeparator();
+											.writeValueAsString(modelsNode) + System.lineSeparator();
 			}
 			else {
-				json = MDTModelSerDe.MAPPER.writeValueAsString(array) + System.lineSeparator();
+				json = MDTModelSerDe.MAPPER.writeValueAsString(modelsNode) + System.lineSeparator();
 			}
 			pw.println(json);
 		}
@@ -271,7 +275,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		
 		FStream.from(runningNodes)
 				.forEach(node -> {
-					for ( HttpMDTInstanceClient comp: node.getInstance().getTargetOfDependency("contain") ) {
+					for ( MDTInstance comp: node.getInstance().getComponentInstanceAll() ) {
 						InstanceNode depNode = nodes.get(comp.getId());
 						if ( depNode != null && depNode.getStatus() == MDTInstanceStatus.RUNNING ) {
 							node.addChild(depNode);
@@ -289,7 +293,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 
 	private Object[] toLongColumns(int seqNo, MDTInstance instance, String format) {
 		List<String> outputs = Lists.newArrayList();
-		FStream.from(instance.getInstanceSubmodelDescriptorAll())
+		FStream.from(instance.getMDTSubmodelDescriptorAll())
 				.map(isdesc -> SubmodelUtils.getShortSubmodelSemanticId(isdesc.getSemanticId()))
 				.tagKey(n -> n)
 				.groupByKey()

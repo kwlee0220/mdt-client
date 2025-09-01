@@ -34,7 +34,6 @@ import utils.stream.KeyValueFStream;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelServiceOld;
 
 /**
  * 
@@ -55,7 +54,8 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	private boolean m_recursive;
 	
 	private final Guard m_guard = Guard.create();
-	@GuardedBy("m_guard") private int m_nstoppeds = 0;
+	@GuardedBy("m_guard") private int m_nfinished = 0;
+	// 종료 대상 instance에 해당하는 dependent instance들의 집합을 관리
 	@GuardedBy("m_guard") private final Map<String,Set<String>> m_dependencyMap = Maps.newConcurrentMap();
 	@GuardedBy("m_guard") private final Map<String,MDTInstance> m_instanceMap = Maps.newHashMap();
 	
@@ -86,41 +86,43 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 		}
 		else {
 			targetInstList = FStream.from(m_instanceIdList)
-									.flatMapTry(this::getInstance)
+									// 식별자에 해당하는 인스턴스를 접근하지 못할 수도 있음.
+									.flatMapTry(this::tryGetInstance)
 									.toList();
 		}
 
 		if ( !m_recursive ) {
 			List<StartableExecution<Void>> execList
 				= FStream.from(targetInstList)
-							.map(inst -> {
-								StartableExecution<Void> exec = Executions.toExecution(() -> stopInstance(inst), m_executor);
-								exec.start();
-								
-								return exec;
-							})
-							.toList();
+						.map(inst -> {
+							StartableExecution<Void> exec = Executions.toExecution(() -> stopInstance(inst),
+																					m_executor);
+							exec.start();
+							return exec;
+						})
+						.toList();
 			FStream.from(execList).forEachOrThrow(StartableExecution::waitForFinished);
 			return;
 		} 
 		
 		for ( MDTInstance instance: targetInstList ) {
 			m_instanceMap.putIfAbsent(instance.getId(), instance);
-			
 			buildDependencies(instance);
 		}
 		
 		try {
-			int targetCount = m_guard.get(() -> m_instanceMap.size());
-			while ( targetCount > 0 ) {
-				List<MDTInstance> freeAgents = m_guard.get(this::collectFreeAgent);
+			int remains = m_guard.get(() -> m_instanceMap.size());
+			while ( remains > 0 ) {
+				// Dependency가 없는 instance를 찾는다.
+				List<MDTInstance> freeAgents = m_guard.get(this::collectFreeAgentInGuard);
 				if ( freeAgents.isEmpty() ) {
 					throw new InternalException("failed to find free MDTInstance for stopping");
 				}
 				
 				for ( MDTInstance freeAgent: freeAgents ) {
 					if ( freeAgent.getStatus() == MDTInstanceStatus.RUNNING ) {
-						StartableExecution<Void> exec = Executions.toExecution(() -> stopInstance(freeAgent), m_executor);
+						StartableExecution<Void> exec = Executions.toExecution(() -> stopInstance(freeAgent),
+																				m_executor);
 						exec.whenFinished(result -> onInstanceFinished(freeAgent));
 						exec.start();
 					}
@@ -129,8 +131,8 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 					}
 				}
 				
-				targetCount = m_guard.awaitCondition(() -> wakeUpCondition())
-									.andGet(() -> m_instanceMap.size());
+				remains = m_guard.awaitCondition(() -> wakeUpCondition())
+								.andGet(() -> m_instanceMap.size());
 			}
 		}
 		finally {
@@ -138,32 +140,32 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 		}
 	}
 	
-	private List<MDTInstance> collectFreeAgent() {
-		m_nstoppeds = 0;
+	private List<MDTInstance> collectFreeAgentInGuard() {
+		m_nfinished = 0;
 		return KeyValueFStream.from(m_dependencyMap)
-						.filterValue(deps -> deps.isEmpty())
-						.map(kv -> m_instanceMap.get(kv.key()))
-						.toList();
+								.filterValue(deps -> deps.isEmpty())
+								.map(kv -> m_instanceMap.get(kv.key()))
+								.toList();
 	}
-	private void onInstanceFinished(MDTInstance freeAgent) {
-		String finishedId = freeAgent.getId();
+	private void onInstanceFinished(MDTInstance instance) {
+		String finishedId = instance.getId();
 		m_guard.run(() -> {
-			for ( Map.Entry<String, Set<String>> entry : m_dependencyMap.entrySet() ) {
-				entry.getValue().remove(finishedId);
-			}
+			// 종료된 instance에 dependent한 instance들의 dependencyMap에서 제거한다.
+			KeyValueFStream.from(m_dependencyMap)
+							.forEach(kv -> kv.value().remove(finishedId));
 			m_instanceMap.remove(finishedId);
 			m_dependencyMap.remove(finishedId);
-			++m_nstoppeds;
+			++m_nfinished;
 		});
 	}
 	private boolean wakeUpCondition() {
-		return m_instanceMap.isEmpty() || (m_nstoppeds > 0 && existsFreeAgents());
+		return m_instanceMap.isEmpty() || (m_nfinished > 0 && existsFreeAgentsInGuard());
 	}
-	private boolean existsFreeAgents() {
+	private boolean existsFreeAgentsInGuard() {
 		return KeyValueFStream.from(m_dependencyMap).exists(kv -> kv.value().isEmpty());
 	}
 	
-	private Try<MDTInstance> getInstance(String id) {
+	private Try<MDTInstance> tryGetInstance(String id) {
 		return Try.get(() -> m_manager.getInstance(id))
 					.ifFailed(error -> {
 						System.out.printf("Cannot get MDTInstance: id=%s, cause=%s%n", id, error);
@@ -173,7 +175,7 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	private void buildDependencies(MDTInstance start) {
 		Set<String> dependents = m_dependencyMap.computeIfAbsent(start.getId(), k -> Sets.newHashSet());
 		
-		List<MDTInstance> components = MDTModelServiceOld.of(start).getSubComponentAll();
+		List<MDTInstance> components = start.getComponentInstanceAll();
 		for ( MDTInstance comp: components ) {
 			m_instanceMap.putIfAbsent(comp.getId(), comp);
 			dependents.add(comp.getId());

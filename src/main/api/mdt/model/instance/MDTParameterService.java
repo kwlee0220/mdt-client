@@ -51,7 +51,7 @@ public class MDTParameterService {
 	}
 	
 	private MDTParameterReference createReference() {
-		MDTParameterReference ref = MDTParameterReference.newInstance(m_instance.getId(), m_descriptor.getName());
+		MDTParameterReference ref = MDTParameterReference.newInstance(m_instance.getId(), m_descriptor.getId());
 		ref.activate(m_instance.getInstanceManager());
 		return ref;
 	}

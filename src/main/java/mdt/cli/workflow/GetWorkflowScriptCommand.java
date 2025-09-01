@@ -7,6 +7,7 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.workflow.WorkflowManager;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParentCommand;
@@ -26,7 +27,8 @@ import picocli.CommandLine.ParentCommand;
 public class GetWorkflowScriptCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetWorkflowScriptCommand.class);
 	
-	@ParentCommand GetWorkflowCommand m_parent;
+	@ParentCommand
+	private GetWorkflowModelCommand m_parent;
 	
 	@Option(names={"--mdt-endpoint"}, paramLabel="url", required=false,
 			description="endpoint URL to the MDTManager")

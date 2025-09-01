@@ -1,9 +1,5 @@
 package mdt.model.expr;
 
-import javax.annotation.Nullable;
-
-import utils.func.FOption;
-
 import mdt.model.expr.TerminalExpr.IntegerExpr;
 import mdt.model.expr.TerminalExpr.StringExpr;
 import mdt.model.sm.ref.DefaultElementReference;
@@ -21,10 +17,10 @@ import mdt.model.sm.value.IdShortPath;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class MDTElementReferenceExpr implements MDTExpr {
+public abstract class MDTElementReferenceExpr implements MDTExpression {
 	public abstract MDTElementReference evaluate();
 	
-	public static class DefaultElementReferenceExpr extends MDTElementReferenceExpr implements MDTExpr {
+	public static class DefaultElementReferenceExpr extends MDTElementReferenceExpr implements MDTExpression {
 		private final MDTSubmodelReference m_smRef;
 		private final IdShortPath m_idShortPath;
 
@@ -39,32 +35,28 @@ public abstract class MDTElementReferenceExpr implements MDTExpr {
 		}
 	}
 	
-	public static class ParameterReferenceExpr extends MDTElementReferenceExpr implements MDTExpr {
+	public static class ParameterReferenceExpr extends MDTElementReferenceExpr implements MDTExpression {
 		private final StringExpr m_instanceIdExpr;
-		private final MDTExpr m_paramIdExpr;
-		private final @Nullable MDTIdShortPathExpr m_subPathExpr;
+		private final MDTExpression m_paramPath;
 		
-		public ParameterReferenceExpr(StringExpr instanceIdExpr, MDTExpr paramIdExpr, MDTIdShortPathExpr subPathExpr) {
+		public ParameterReferenceExpr(StringExpr instanceIdExpr, MDTExpression paramPath) {
 			m_instanceIdExpr = instanceIdExpr;
-			m_paramIdExpr = paramIdExpr;
-			m_subPathExpr = subPathExpr;
+			m_paramPath = paramPath;
 		}
 
 		@Override
 		public MDTParameterReference evaluate() {
-			String idShortPathStr = FOption.map(m_subPathExpr, e -> e.evaluate().toString());
 			return MDTParameterReference.newInstance(m_instanceIdExpr.evaluate(),
-													m_paramIdExpr.evaluate().toString(),
-													idShortPathStr);
+													m_paramPath.evaluate().toString());
 		}
 	}
 	
-	public static class ArgumentReferenceExpr extends MDTElementReferenceExpr implements MDTExpr {
+	public static class ArgumentReferenceExpr extends MDTElementReferenceExpr implements MDTExpression {
 		private final MDTSubmodelExpr m_smExpr;
 		private final MDTArgumentKind m_kind;
-		private final MDTExpr m_argNameExpr;
+		private final MDTExpression m_argNameExpr;
 		
-		public ArgumentReferenceExpr(MDTSubmodelExpr smExpr, MDTArgumentKind kind, MDTExpr argNameExpr) {
+		public ArgumentReferenceExpr(MDTSubmodelExpr smExpr, MDTArgumentKind kind, MDTExpression argNameExpr) {
 			m_smExpr = smExpr;
 			m_kind = kind;
 			m_argNameExpr = argNameExpr;
@@ -77,7 +69,7 @@ public abstract class MDTElementReferenceExpr implements MDTExpr {
 		}
 	}
 	
-	public static class OperationVariableReferenceExpr extends MDTElementReferenceExpr implements MDTExpr {
+	public static class OperationVariableReferenceExpr extends MDTElementReferenceExpr implements MDTExpression {
 		private final MDTElementReferenceExpr m_opVarRef;
 		private final Kind m_kind;
 		private final IntegerExpr m_opVarIdx;

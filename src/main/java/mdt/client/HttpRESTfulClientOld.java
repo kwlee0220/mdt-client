@@ -2,6 +2,8 @@ package mdt.client;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -95,6 +97,9 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 			Response resp =  m_client.newCall(req).execute();
 			return parseResponse(resp, cls);
 		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
+		}
 		catch ( IOException e ) {
 			throw new RESTfulIOException("" + e);
 		}
@@ -105,6 +110,9 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 			Response resp =  m_client.newCall(req).execute();
 			return parseResponse(resp, typeRef);
 		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
+		}
 		catch ( IOException e ) {
 			throw new RESTfulIOException("" + e);
 		}
@@ -114,6 +122,9 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 		try {
 			Response resp =  m_client.newCall(req).execute();
 			return Tuple.of(resp.headers(), parseResponse(resp, typeRef));
+		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
 		}
 		catch ( IOException e ) {
 			throw new RESTfulIOException("" + e);
@@ -126,6 +137,9 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 			if ( !resp.isSuccessful() ) {
 				throwErrorResponse(resp.body().string());
 			}
+		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
 		}
 		catch ( IOException e ) {
 			throw new RESTfulIOException("" + e);

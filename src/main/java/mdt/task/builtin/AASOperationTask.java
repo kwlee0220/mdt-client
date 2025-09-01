@@ -3,6 +3,7 @@ package mdt.task.builtin;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -12,7 +13,6 @@ import javax.annotation.concurrent.GuardedBy;
 import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +33,11 @@ import mdt.client.operation.HttpOperationClient;
 import mdt.model.AASUtils;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
-import mdt.model.sm.variable.AbstractVariable.ValueVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
@@ -114,6 +112,16 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 			throw new TaskException(new RESTfulRemoteException("Operation failed: msg=" + fullMsg));
 		}
 		
+		if ( getLogger().isInfoEnabled() ) {
+			List<ElementValue> outArgs =  FStream.from(result.getOutputArguments())
+												.map(opv -> ElementValues.getValue(opv.getValue()))
+												.toList();
+			List<ElementValue> inoutArgs =  FStream.from(result.getInoutputArguments())
+													.map(opv -> ElementValues.getValue(opv.getValue()))
+													.toList();
+			getLogger().info("AASOperation completed: ref={}, out={}, inout={}", opRef, outArgs, inoutArgs);
+		}
+		
 		// ASOperation 수행 결과를 output task variable들에 반영한다.
 		updateOutputVariables(m_opResult);
 		
@@ -186,16 +194,11 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 				String opvId = opv.getValue().getIdShort();
 				Variable taskVar = descriptor.getInputVariables().getOfKey(opvId);
 				if ( taskVar != null ) {
+					ElementValue srcVal = taskVar.readValue();
 					SubmodelElement opvSme = opv.getValue();
-					if ( taskVar instanceof ValueVariable valVar ) {
-						ElementValues.update(opvSme, valVar.readValue());
-					}
-					else {
-						SubmodelElement varSme = taskVar.read();
-						if ( SubmodelUtils.isParameterValue(varSme) && opv.getValue() instanceof Property ) {
-							varSme = SubmodelUtils.traverse(varSme, "ParameterValue");
-						}
-						ElementValues.update(opvSme, ElementValues.getValue(varSme));
+					ElementValues.update(opvSme, srcVal);
+					if ( getLogger().isInfoEnabled() ) {
+						getLogger().info("Set: input OperationVariable[{}]: {}", opvId, srcVal);
 					}
 				}
 			}
@@ -204,9 +207,6 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 				Variable taskVar = descriptor.getInputVariables().getOfKey(opvId);
 				if ( taskVar != null ) {
 					SubmodelElement varSme = taskVar.read();
-					if ( SubmodelUtils.isParameterValue(varSme) && opv.getValue() instanceof Property ) {
-						varSme = SubmodelUtils.traverse(varSme, "ParameterValue");
-					}
 					ElementValues.update(opv.getValue(), ElementValues.getValue(varSme));
 				}
 			}

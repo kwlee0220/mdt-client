@@ -16,14 +16,17 @@ import java.util.Set;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
+import org.checkerframework.com.google.common.base.Preconditions;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShell;
+import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.Environment;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -104,8 +107,43 @@ public class AASUtils {
 	}
 	
 	public static SubmodelService newSubmodelService(OkHttpClient httpClient, String faastUrl, String submodelId) {
-		String url = DescriptorUtils.toSubmodelServiceEndpointString(faastUrl, submodelId);
+		String url = AASUtils.toSubmodelServiceEndpointString(faastUrl, submodelId);
 		return new HttpSubmodelServiceClient(httpClient, url);
+	}
+
+	public static String toSubmodelServiceEndpointString(String instanceServiceEndpoint, String submodelId) {
+		if ( instanceServiceEndpoint != null ) {
+			String encodedSubmodelId = encodeBase64UrlSafe(submodelId);
+			return String.format("%s/submodels/%s", instanceServiceEndpoint, encodedSubmodelId);
+		}
+		else {
+			return null;
+		}
+	}
+	
+	public static AssetAdministrationShellDescriptor attachEndpoint(AssetAdministrationShellDescriptor shell,
+																	String serviceEndpoint) {
+		Preconditions.checkArgument(serviceEndpoint != null, "serviceEndpoint is null");
+		
+		if ( serviceEndpoint != null ) {
+			String aasEp = DescriptorUtils.toAASServiceEndpointString(serviceEndpoint, shell.getId());
+			shell.setEndpoints(DescriptorUtils.newEndpoints(aasEp, "AAS-3.0"));
+			
+			for ( SubmodelDescriptor smDesc: shell.getSubmodelDescriptors() ) {
+				attachEndpoint(smDesc, serviceEndpoint);
+			}
+		}
+		
+		return shell;
+	}
+	
+	public static SubmodelDescriptor attachEndpoint(SubmodelDescriptor smDesc, String serviceEndpoint) {
+		Preconditions.checkArgument(serviceEndpoint != null, "serviceEndpoint is null");
+		
+		String smEp = AASUtils.toSubmodelServiceEndpointString(serviceEndpoint ,smDesc.getId());
+		smDesc.setEndpoints(DescriptorUtils.newEndpoints(smEp, "SUBMODEL-3.0"));
+		
+		return smDesc;
 	}
 	
 	public static Environment readEnvironment(OkHttpClient httpClient, String faastUrl) {
@@ -113,7 +151,7 @@ public class AASUtils {
 		List<Submodel> submodels = FStream.from(shell.getSubmodels())
 										.map(ref -> {
 											String smId = ref.getKeys().get(0).getValue();
-											String smUrl = DescriptorUtils.toSubmodelServiceEndpointString(faastUrl, smId);
+											String smUrl = AASUtils.toSubmodelServiceEndpointString(faastUrl, smId);
 											SubmodelService smSvc = new HttpSubmodelServiceClient(httpClient, smUrl);
 											return smSvc.getSubmodel();
 										})

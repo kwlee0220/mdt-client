@@ -21,24 +21,22 @@ public class SampleWorkflowDescriptor1 {
 		
 		wfModel = new WorkflowModel();
 		wfModel.setId(WORKFLOW_ID);
-		wfModel.setName("테스트 시뮬레이션");
-		wfModel.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
+		wfModel.setName("Set/Copy 동작 시험용 task");
+		wfModel.setDescription("본 워크플로우는 Set/Copy 동작 확인하기 위한 테스트 목적으로 작성됨.");
 
 		TaskDescriptor taskDesc;
 
-		taskDesc = TaskDescriptors.newSetTaskDescriptor("set", "'222'", "param:test:1:ParameterValue");
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("set", "'222'", "param:test:1");
 		wfModel.getTaskDescriptors().add(taskDesc);
 		
-		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy", "param:test:1:ParameterValue",
+		taskDesc = TaskDescriptors.newSetTaskDescriptor("copy", "param:test:IncAmount",
 														"oparg:test:AddAndSleep:in:1"); 
 		taskDesc.getDependencies().add("set");
 		
 		wfModel.getTaskDescriptors().add(taskDesc);
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
-		
-		wfModel = wfManager.getWorkflowModel(wfId);
+		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
 		System.out.println(wfModel.toJsonString());
 	}
 }

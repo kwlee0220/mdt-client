@@ -15,6 +15,9 @@ import javax.annotation.concurrent.GuardedBy;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
+import org.slf4j.Logger;
+
+import com.google.common.collect.Lists;
 
 import utils.InternalException;
 import utils.StateChangePoller;
@@ -24,7 +27,6 @@ import utils.func.Funcs;
 import utils.func.Try;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
-import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.stream.FStream;
 
@@ -37,19 +39,19 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.InstanceDescriptor;
-import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
-import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelServiceOld;
+import mdt.model.instance.MDTOperationDescriptor;
+import mdt.model.instance.MDTParameterDescriptor;
+import mdt.model.instance.MDTSubmodelDescriptor;
+import mdt.model.instance.MDTTwinCompositionDescriptor;
+import mdt.model.instance.MDTTwinCompositionDescriptor.MDTCompositionDependency;
+import mdt.model.instance.MDTTwinCompositionDescriptor.MDTCompositionItem;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.DefaultDataInfo;
 import mdt.model.sm.data.ParameterCollection;
-import mdt.model.sm.info.CompositionItem;
 import mdt.model.sm.info.MDTAssetType;
-import mdt.model.sm.info.TwinComposition;
 
-import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 
@@ -61,6 +63,8 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
+	private static final Logger s_logger = org.slf4j.LoggerFactory.getLogger(HttpMDTInstanceClient.class);
+	
 	private static final RequestBody EMPTY_BODY = RequestBody.create("", null);
 	private static final Duration VALID_PERIOD = Duration.ofSeconds(3);
 	
@@ -80,7 +84,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		m_registryEndpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
 		m_restfulClient = HttpRESTfulClient.builder()
 										.httpClient(manager.getHttpClient())
-										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(InstanceDescriptorSerDe.MAPPER))
+										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER))
 										.build();
 		
 		m_guard.run(() -> {
@@ -90,17 +94,17 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 
 	@Override
-	public MDTInstanceManager getInstanceManager() {
+	public HttpMDTInstanceManager getInstanceManager() {
 		return m_manager;
 	}
 
 	@Override
 	public InstanceDescriptor getInstanceDescriptor() {
+		Instant now = Instant.now();
 		return m_guard.get(() -> {
-			Duration age = Duration.between(m_updated, Instant.now());
+			Duration age = Duration.between(m_updated, now);
 			if ( age.compareTo(VALID_PERIOD) > 0 ) {
-				m_desc = reloadInstanceDescriptor();
-				m_updated = Instant.now();
+				reloadInstanceDescriptor();
 			}
 			return m_desc;
 		});
@@ -208,31 +212,55 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		}
 		return new HttpAASServiceClient(getHttpClient(), endpoint);
 	}
+	
+	@Override
+	public List<MDTSubmodelDescriptor> getMDTSubmodelDescriptorAll() {
+		String url = String.format("%s/model/submodels", getEndpoint());
+		return m_restfulClient.get(url, MDTModelSerDes.MDT_SUBMODEL_LIST);
+	}
+	
+	@Override
+	public List<MDTParameterDescriptor> getMDTParameterDescriptorAll() {
+		String url = String.format("%s/model/parameters", getEndpoint());
+		return m_restfulClient.get(url, MDTModelSerDes.MDT_PARAM_LIST);
+	}
+	
+	@Override
+	public List<MDTOperationDescriptor> getMDTOperationDescriptorAll() {
+		String url = String.format("%s/model/operations", getEndpoint());
+		return m_restfulClient.get(url, MDTModelSerDes.MDT_OP_LIST);
+	}
+	
+	@Override
+	public MDTTwinCompositionDescriptor getMDTTwinCompositionDescriptor() {
+		String url = String.format("%s/model/compositions", getEndpoint());
+		return m_restfulClient.get(url, MDTModelSerDes.MDT_TWIN_COMP);
+	}
 
 	@Override
 	public List<SubmodelService> getSubmodelServiceAll() throws InvalidResourceStatusException {
-		return FStream.from(getInstanceSubmodelDescriptorAll())
+		return FStream.from(getMDTSubmodelDescriptorAll())
 						.map(desc -> toSubmodelService(desc.getId()))
 						.toList();
 	}
 
 	@Override
 	public SubmodelService getSubmodelServiceById(String submodelId) {
-		return Funcs.findFirst(getInstanceSubmodelDescriptorAll(), isd -> isd.getId().equals(submodelId))
+		return Funcs.findFirst(getMDTSubmodelDescriptorAll(), isd -> isd.getId().equals(submodelId))
 						.map(desc -> toSubmodelService(desc.getId()))
 						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
 	}
 
 	@Override
 	public SubmodelService getSubmodelServiceByIdShort(String submodelIdShort) {
-		return Funcs.findFirst(getInstanceSubmodelDescriptorAll(), isd -> isd.getIdShort().equals(submodelIdShort))
+		return Funcs.findFirst(getMDTSubmodelDescriptorAll(), isd -> isd.getIdShort().equals(submodelIdShort))
 						.map(desc -> toSubmodelService(desc.getId()))
 						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + submodelIdShort));
 	}
 
 	@Override
 	public List<SubmodelService> getSubmodelServiceAllBySemanticId(String semanticId) {
-		return FStream.from(getInstanceSubmodelDescriptorAll())
+		return FStream.from(getMDTSubmodelDescriptorAll())
 						.filter(isd -> isd.getSemanticId().equals(semanticId))
 						.map(desc -> toSubmodelService(desc.getId()))
 						.toList();
@@ -257,21 +285,18 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		}
 	}
 
-    // @GetMapping({"instances/{id}/aas_descriptor"})
 	@Override
-	public AssetAdministrationShellDescriptor getAASDescriptor() {
-		String url = String.format("%s/aas_descriptor", getEndpoint());
-		return m_restfulClient.get(url, m_aasDeser);
+	public AssetAdministrationShellDescriptor getAASShellDescriptor() {
+		String url = String.format("%s/aas/shell_descriptor", getEndpoint());
+		return m_restfulClient.get(url, MDTModelSerDes.AAS_SHELL_RESP);
 	}
 
-    // @GetMapping({"instances/{id}/submodel_descriptors"})
 	@Override
-	public List<SubmodelDescriptor> getSubmodelDescriptorAll() {
-		String url = String.format("%s/submodel_descriptors", getEndpoint());
-		return m_restfulClient.get(url, m_smListDeser);
+	public List<SubmodelDescriptor> getAASSubmodelDescriptorAll() {
+		String url = String.format("%s/aas/submodel_descriptors", getEndpoint());
+		return m_restfulClient.get(url, MDTModelSerDes.AAS_SM_LIST_RESP);
 	}
 
-    // @GetMapping({"instances/{id}/log"})
 	@Override
 	public String getOutputLog() throws IOException {
 		String url = String.format("%s/log", getEndpoint());
@@ -322,67 +347,83 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		.run();
 	}
 	
-	public List<HttpMDTInstanceClient> getComponentAll() {
-		return getTargetOfDependency("contain");
-	}
-	
-	public List<HttpMDTInstanceClient> getTargetOfDependency(String depType) {
-		MDTModelServiceOld mdtInfo =  MDTModelServiceOld.of(this);
-		
-		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();
-		String myId = tcomp.getCompositionID();
+	@Override
+	public List<MDTInstance> getTargetInstanceAllOfDependency(String depType) {
+		MDTTwinCompositionDescriptor twinComp = getMDTTwinCompositionDescriptor();
+		Map<String, MDTCompositionItem> itemMap = FStream.from(twinComp.getCompositionItems())
+														.tagKey(MDTCompositionItem::getId)
+														.toMap();
 
-		Map<String,CompositionItem> itemMap = FStream.from(tcomp.getCompositionItems())
-													.tagKey(item -> item.getID())
-													.toMap();
-		return FStream.from(tcomp.getCompositionDependencies())
-						.filter(dep -> dep.getDependencyType().equals(depType) && dep.getSourceId().equals(myId))
-						.flatMapNullable(dep -> itemMap.get(dep.getTargetId()))
-						.map(CompositionItem::getReference)
-						.flatMapTry(aasId -> Try.get(() -> m_manager.getInstanceByAasId(aasId)))
-						.toList();
-	}
-	
-	public List<HttpMDTInstanceClient> getSourceInstanceAll(String depType) {
-		MDTModelServiceOld mdtInfo =  MDTModelServiceOld.of(this);
+		String myId = twinComp.getId();
+		List<MDTInstance> dependents = Lists.newArrayList();
+		for ( MDTCompositionDependency dep: twinComp.getCompositionDependencies() ) {
+			if ( !dep.getType().equals(depType) || !dep.getSourceItem().equals(myId) ) {
+				continue;
+			}
+			
+			MDTCompositionItem depItem = itemMap.get(dep.getTargetItem());
+			if ( depItem == null ) {
+				continue;
+			}
+			
+			try {
+				MDTInstance depInst = m_manager.getInstanceByAasId(depItem.getReference());
+				dependents.add(depInst);
+			}
+			catch ( Exception e ) {
+				s_logger.warn("failed to get dependent MDTInstance: aasId={}", depItem.getReference(), e);
+			}
+		}
 		
-		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();
-		String myId = tcomp.getCompositionID();
+		return dependents;
+	}
 
-		Map<String,CompositionItem> itemMap = FStream.from(tcomp.getCompositionItems())
-													.tagKey(item -> item.getID())
-													.toMap();
-		return FStream.from(tcomp.getCompositionDependencies())
-						.filter(dep -> dep.getDependencyType().equals(depType) && dep.getSourceId().equals(myId))
-						.flatMapNullable(dep -> itemMap.get(dep.getTargetId()))
-						.map(CompositionItem::getReference)
+	@Override
+	public List<MDTInstance> getSourceInstanceAllOfDependency(String depType) {
+		MDTTwinCompositionDescriptor twinComp = getMDTTwinCompositionDescriptor();
+		Map<String, MDTCompositionItem> itemMap = FStream.from(twinComp.getCompositionItems())
+																	.tagKey(MDTCompositionItem::getId)
+																	.toMap();
+
+		String myId = twinComp.getId();
+		return FStream.from(twinComp.getCompositionDependencies())
+						.filter(dep -> dep.getType().equals(depType) && dep.getTargetItem().equals(myId))
+						.flatMapNullable(dep -> itemMap.get(dep.getSourceItem()))
+						.map(MDTCompositionItem::getReference)
 						.flatMapTry(aasId -> Try.get(() -> m_manager.getInstanceByAasId(aasId)))
+						.cast(MDTInstance.class)
 						.toList();
 	}
 	
 	@Override
 	public String toString() {
-		String submodelIdStr = FStream.from(getInstanceSubmodelDescriptorAll())
-										.map(InstanceSubmodelDescriptor::getIdShort)
+		String submodelIdStr = FStream.from(getMDTSubmodelDescriptorAll())
+										.map(MDTSubmodelDescriptor::getIdShort)
 										.join(", ");
 		return String.format("[%s] AAS=%s SubmodelIdShorts=(%s) status=%s",
 								getId(), getAasId(), submodelIdStr, getStatus());
 	}
 	
 	private InstanceDescriptor reloadInstanceDescriptor() {
-		return m_manager.getInstanceDescriptor(m_id);
+		InstanceDescriptor desc = m_manager.getInstanceDescriptor(m_id);
+		m_guard.run(() -> {
+			m_desc = desc;
+			m_updated = Instant.now();
+		});
+		
+		return desc;
 	}
 	
     // @PutMapping({"instance-manager/instances/{id}/start"})
 	private InstanceDescriptor sendStartRequest() {
 		String url = String.format("%s/start", getEndpoint());
-		return m_restfulClient.put(url, EMPTY_BODY, m_descDeser);
+		return m_restfulClient.put(url, EMPTY_BODY, MDTModelSerDes.INSTANCE_DESC_RESP);
 	}
 
     // @PutMapping({"instance-manager/instances/{id}/stop"})
 	private InstanceDescriptor sendStopRequest() {
 		String url = String.format("%s/stop", getEndpoint());
-		return m_restfulClient.put(url, EMPTY_BODY, m_descDeser);
+		return m_restfulClient.put(url, EMPTY_BODY, MDTModelSerDes.INSTANCE_DESC_RESP);
 	}
 	
 	private SubmodelService toSubmodelService(String id) {
@@ -406,25 +447,4 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 			return null;
 		}
 	}
-	
-	private ResponseBodyDeserializer<AssetAdministrationShellDescriptor> m_aasDeser = new ResponseBodyDeserializer<>() {
-		@Override
-		public AssetAdministrationShellDescriptor deserialize(Headers headers, String respBody) throws IOException {
-			return MDTModelSerDe.readValue(respBody, AssetAdministrationShellDescriptor.class);
-		}
-	};
-	private ResponseBodyDeserializer<List<SubmodelDescriptor>> m_smListDeser = new ResponseBodyDeserializer<>() {
-		@Override
-		public List<SubmodelDescriptor> deserialize(Headers headers, String respBody) throws IOException {
-			return MDTModelSerDe.readValueList(respBody, SubmodelDescriptor.class);
-		}
-	};
-
-	private static final InstanceDescriptorSerDe INST_DESC_SERDE = new InstanceDescriptorSerDe();
-	private ResponseBodyDeserializer<InstanceDescriptor> m_descDeser = new ResponseBodyDeserializer<>() {
-		@Override
-		public InstanceDescriptor deserialize(Headers headers, String respBody) throws IOException {
-			return INST_DESC_SERDE.readInstanceDescriptor(respBody);
-		}
-	};
 }

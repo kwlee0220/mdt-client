@@ -87,7 +87,7 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		String url = String.format("%s/models/%s/start", m_endpoint, wfModelId);
 		
 		RequestBody reqBody = RequestBody.create("", HttpRESTfulClient.MEDIA_TYPE_JSON);
-		return m_restfulClient.put(url, reqBody, m_wfDeser);
+		return m_restfulClient.post(url, reqBody, m_wfDeser);
 	}
 
 	@Override
@@ -155,21 +155,21 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	}
 
 	@Override
-	public String addWorkflowModel(WorkflowModel desc) throws ResourceAlreadyExistsException {
+	public WorkflowModel addWorkflowModel(WorkflowModel desc) throws ResourceAlreadyExistsException {
 		String url = String.format("%s/models", m_endpoint);
 		
 		String requestJson = MDTModelSerDe.toJsonString(desc);
 		RequestBody reqBody = RequestBody.create(requestJson, HttpRESTfulClient.MEDIA_TYPE_JSON);
-		return m_restfulClient.post(url, reqBody, HttpRESTfulClient.STRING_DESER);
+		return m_restfulClient.post(url, reqBody, m_wfModelDeser);
 	}
 
 	@Override
-	public String addOrUpdateWorkflowModel(WorkflowModel desc) {
+	public WorkflowModel addOrReplaceWorkflowModel(WorkflowModel desc) {
 		String url = String.format("%s/models?updateIfExists=true", m_endpoint);
 		
 		String requestJson = MDTModelSerDe.toJsonString(desc);
 		RequestBody reqBody = RequestBody.create(requestJson, HttpRESTfulClient.MEDIA_TYPE_JSON);
-		return m_restfulClient.post(url, reqBody, HttpRESTfulClient.STRING_DESER);
+		return m_restfulClient.post(url, reqBody, m_wfModelDeser);
 	}
 
 	@Override

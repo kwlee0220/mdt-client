@@ -11,7 +11,7 @@ import lombok.experimental.UtilityClass;
 
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.ref.DefaultElementReference;
@@ -33,7 +33,7 @@ public class TaskUtils {
 															TaskDescriptor descriptor) throws TaskException {
 		DefaultSubmodelReference opSmRef
 						= descriptor.findLabel(LABEL_MDT_OPERATION)
-									.map(smExprStr -> MDTExprParser.parseSubmodelReference(smExprStr).evaluate())
+									.map(smExprStr -> MDTExpressionParser.parseSubmodelReference(smExprStr).evaluate())
 									.getOrNull();
 		if ( opSmRef != null ) {
 			opSmRef.activate(manager);

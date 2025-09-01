@@ -15,13 +15,14 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description="MDT Workflow related commands",
 	subcommands= {
+		WorkflowModelCommands.class,
+		
 		ListWorkflowAllCommand.class,
 		GetWorkflowCommand.class,
-		AddWorkflowModelCommand.class,
-		RemoveWorkflowCommand.class,
 		StartWorkflowCommand.class,
 		StopWorkflowCommand.class,
 		SuspendWorkflowCommand.class,
 		ResumeWorkflowCommand.class,
+		RemoveWorkflowCommand.class,
 	})
 public class WorkflowCommands extends CommandCollection {}

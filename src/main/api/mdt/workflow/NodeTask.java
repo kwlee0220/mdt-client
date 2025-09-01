@@ -4,18 +4,22 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@JsonInclude(Include.NON_NULL)
-@JsonIncludeProperties({"taskId", "status", "dependents", "startTime", "finishTime"})
+//@JsonInclude(Include.NON_NULL)
+//@JsonIncludeProperties({"taskId", "status", "dependents", "startTime", "finishTime"})
+@JsonPropertyOrder({"taskId", "status", "dependents", "startTime", "finishTime"})
+@Accessors(prefix = "m_")
+@Getter
 public class NodeTask {
 	private final String m_taskId;
 	private final WorkflowStatus m_status;
@@ -36,25 +40,25 @@ public class NodeTask {
 		m_finishTime = finishTime;
 	}
 	
-	public String getTaskId() {
-		return m_taskId;
-	}
-	
-	public WorkflowStatus getStatus() {
-		return m_status;
-	}
-	
-	public Set<String> getDependents() {
-		return m_dependents;
-	}
-	
-	public LocalDateTime getStartTime() {
-		return m_startTime;
-	}
-	
-	public LocalDateTime getFinishTime() {
-		return m_finishTime;
-	}
+//	public String getTaskId() {
+//		return m_taskId;
+//	}
+//	
+//	public WorkflowStatus getStatus() {
+//		return m_status;
+//	}
+//	
+//	public Set<String> getDependents() {
+//		return m_dependents;
+//	}
+//	
+//	public LocalDateTime getStartTime() {
+//		return m_startTime;
+//	}
+//	
+//	public LocalDateTime getFinishTime() {
+//		return m_finishTime;
+//	}
 	
 	public boolean equals(Object obj) {
 		if ( this == obj ) {

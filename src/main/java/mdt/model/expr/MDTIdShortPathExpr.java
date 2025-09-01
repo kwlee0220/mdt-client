@@ -6,7 +6,7 @@ import mdt.model.sm.value.IdShortPath;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MDTIdShortPathExpr implements MDTExpr {
+public class MDTIdShortPathExpr implements MDTExpression {
 	private final IdShortPath m_path;
 	
 	public MDTIdShortPathExpr(IdShortPath path) {

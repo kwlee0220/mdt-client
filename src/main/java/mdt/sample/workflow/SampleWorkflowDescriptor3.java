@@ -39,9 +39,8 @@ public class SampleWorkflowDescriptor3 {
 		wfModel.getTaskDescriptors().add(taskDesc);
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
+		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
 
-		wfModel = wfManager.getWorkflowModel(wfId);
 		System.out.println(wfModel.toJsonString());
 	}
 	
@@ -51,14 +50,14 @@ public class SampleWorkflowDescriptor3 {
 		StringSubstitutor subst = new StringSubstitutor(System.getenv());
 		String resolvedEndpoint = subst.replace(HTTP_OP_SERVER_ENDPOINT);
 
-		task.addOption(HttpTask.OPTION_OPERATION, "test/AddAndSleep");
+		task.addOption(HttpTask.OPTION_OPERATION, "test:AddAndSleep");
 		task.addOption(HttpTask.OPTION_SERVER_ENDPOINT, resolvedEndpoint);
 		task.addOption(HttpTask.OPTION_POLL_INTERVAL, "1.0");
 		task.addOption(HttpTask.OPTION_TIMEOUT, "60");
 		task.addOption(HttpTask.OPTION_LOG_LEVEL, "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
 		
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data:ParameterValue"));
+		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data"));
 		task.getInputVariables().addOrReplace(Variables.newValueVariable("IncAmount", "", "11"));
 		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("SleepTime", "",
 				"test:Data:DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue"));

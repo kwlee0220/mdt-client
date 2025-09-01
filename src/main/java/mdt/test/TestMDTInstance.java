@@ -12,7 +12,7 @@ import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
 
@@ -29,8 +29,8 @@ public class TestMDTInstance {
 		HttpMDTInstanceClient inst1 = client.addInstance("KR3", null, new File(dir, "aas_KR3.json"), new File(dir, "conf_KR3.json"));
 		assert inst1.getId().equals("KR3");
 		assert inst1.getAasIdShort().equals("KR3");
-		assert FStream.from(inst1.getInstanceSubmodelDescriptorAll())
-						.map(InstanceSubmodelDescriptor::getIdShort)
+		assert FStream.from(inst1.getMDTSubmodelDescriptorAll())
+						.map(MDTSubmodelDescriptor::getIdShort)
 						.toSet().equals(Set.of("Data", "InformationModel"));
 		assert inst1.getStatus().equals(MDTInstanceStatus.STOPPED);
 		assert inst1.getServiceEndpoint() == null;
@@ -39,8 +39,8 @@ public class TestMDTInstance {
 		HttpMDTInstanceClient inst2 = client.addInstance("CRF", null, new File(dir, "aas_CRF.json"), new File(dir, "conf_CRF.json"));
 		assert inst2.getId().equals("CRF");
 		assert inst2.getAasIdShort().equals("CRF");
-		assert FStream.from(inst1.getInstanceSubmodelDescriptorAll())
-						.map(InstanceSubmodelDescriptor::getIdShort)
+		assert FStream.from(inst1.getMDTSubmodelDescriptorAll())
+						.map(MDTSubmodelDescriptor::getIdShort)
 						.toSet().equals(Set.of("Data", "InformationModel"));
 		assert inst2.getStatus().equals(MDTInstanceStatus.STOPPED);
 		assert inst2.getEndpoint() == null;
@@ -50,8 +50,8 @@ public class TestMDTInstance {
 														new File(dir, "conf_KRCW-01EATT018.json"));
 		assert inst3.getId().equals("KRCW-01EATT018");
 		assert inst3.getAasIdShort().equals("KRCW-01EATT018");
-		assert FStream.from(inst1.getInstanceSubmodelDescriptorAll())
-						.map(InstanceSubmodelDescriptor::getIdShort)
+		assert FStream.from(inst1.getMDTSubmodelDescriptorAll())
+						.map(MDTSubmodelDescriptor::getIdShort)
 						.toSet().equals(Set.of("Data", "InformationModel"));
 		assert inst3.getStatus().equals(MDTInstanceStatus.STOPPED);
 		assert inst3.getEndpoint() == null;

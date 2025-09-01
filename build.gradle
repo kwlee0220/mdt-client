@@ -1,7 +1,6 @@
 plugins {
 	id 'java'
 	id 'application'
-	id 'eclipse'
 	id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
@@ -15,20 +14,29 @@ application {
 java {
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
-//	withSourcesJar()
-//	withJavadocJar()
+}
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
 }
 
 sourceSets {
 	main {
 		java {
-			srcDirs 'src/main/api'
-			srcDirs 'src/main/impl'
-			srcDirs 'src/main/antlr'
+			srcDirs = [
+				'src/main/java',
+				'src/main/api', 
+				'src/main/impl',
+				'src/main/antlr'
+			]
 			
-			// .antlr 디렉토리를 명시적으로 제외
-			// exclude '**/.antlr/**'
-			// exclude '.antlr/**'
+			// .antlr 디렉토리를 명시적으로 제외 (ANTLR 생성 파일)
+			exclude '**/.antlr/**'
 		}
 	}
 }
@@ -42,20 +50,6 @@ repositories {
 	mavenCentral()
 }
 
-tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
-    options.compilerArgs += ["-Aproject=${project.group}/${project.name}", "-Xlint:deprecation"]
-}
-
-configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
-}
-
-repositories {
-	mavenCentral()
-}
 dependencies {
 	implementation project(":utils")
 
@@ -81,7 +75,6 @@ dependencies {
 	// AAS model
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
 	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"
-	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-parent:${aas4j_version}"
 	
 	implementation ("commons-beanutils:commons-beanutils:${commons_beanutils_version}") {
 		exclude group: 'commons-logging', module: 'commons-logging'
@@ -121,55 +114,18 @@ dependencies {
 	testImplementation "org.mockito:mockito-core:${mockito_version}"
 }
 
-//task sourceJar(type: Jar) {
-//	from sourceSets.main.allSource
-//}
-
-test {
-	useJUnitPlatform()
+jar {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	// 다른 프로젝트의 logback.xml만 제외하고, 자신의 것은 포함
+	exclude 'logback-test.xml'
+	exclude 'logback-spring.xml'
 }
 
 shadowJar {
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 	mergeServiceFiles()
 	
 	exclude 'META-INF/*.SF'
 	exclude 'META-INF/*.DSA'
 	exclude 'META-INF/*.RSA'
-}
-
-eclipse {
-	classpath {
-		file {
-			withXml {
-				def node = it.asNode()
-				node.appendNode('classpathentry', [kind: 'output', path: 'build/classes'])
-			}
-			
-			whenMerged { cp ->
-				Map entryByPath = cp.entries.groupBy { entry -> entry.path }
-				entryByPath.each { key, values ->
-					if ( values.size() > 1 ) {
-						def entry = values.first()
-						if ( entry.kind == 'src' ) {
-							entry.includes = []
-							entry.excludes = []
-						}
-						int index = cp.entries.indexOf entry
-						cp.entries.removeAll values
-						cp.entries.add index, entry
-					}
-				}
-				cp.entries.each { entry ->
-					if ( entry.kind == 'src' && entry.hasProperty('output') ) {
-						if ( entry.path.contains('/test/') ) {
-							entry.output = 'build/test_classes'
-						}
-						else {
-							entry.output = 'build/classes'
-						}
-					}
-				}
-			}
-		}
-	}
 }

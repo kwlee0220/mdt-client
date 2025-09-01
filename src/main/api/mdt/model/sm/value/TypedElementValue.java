@@ -14,8 +14,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
-import mdt.model.instance.InstanceDescriptorSerDe.Deserializer;
-import mdt.model.instance.InstanceDescriptorSerDe.Serializer;
+import mdt.model.sm.value.ElementValues.Deserializer;
+import mdt.model.sm.value.ElementValues.Serializer;
 
 /**
  *

@@ -52,7 +52,7 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
 	private static final String INSTANCE_MANAGER_SUFFIX = "/instance-manager";
 	private static final String SHELL_REGISTRY_SUFFIX = "/shell-registry";
-	public static final String SUBMODEL_REGISTRY_SUFFIX = "/submodel-registry";
+	public static final String SUBMODEL_REGISTRY_SUFFIX = "";
 	private static final String WORKFLOW_MANAGER_SUFFIX = "/workflow-manager";
 	
 	private final HttpServiceClientFactoryRegistry m_serviceFactoryRegistry;

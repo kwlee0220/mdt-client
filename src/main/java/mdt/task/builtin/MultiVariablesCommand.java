@@ -19,8 +19,8 @@ import utils.Utilities;
 import mdt.cli.AbstractMDTCommand;
 import mdt.model.expr.LiteralExpr;
 import mdt.model.expr.MDTElementReferenceExpr;
-import mdt.model.expr.MDTExpr;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpression;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
@@ -94,7 +94,7 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		List<UnmatchedOption> unmatchedOptions = collectUnmatchedOptions();
 		for ( UnmatchedOption unmatchedOpt: unmatchedOptions ) {
 			Variable var;
-			MDTExpr expr = MDTExprParser.parseExpr(unmatchedOpt.getValue());
+			MDTExpression expr = MDTExpressionParser.parseExpr(unmatchedOpt.getValue());
 			if ( expr instanceof MDTElementReferenceExpr refExpr ) {
 				try {
 					MDTElementReference ref = refExpr.evaluate();

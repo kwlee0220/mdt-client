@@ -22,11 +22,12 @@ import mdt.cli.IdPair;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
+import mdt.model.MDTModelSerDe;
 import mdt.model.SubmodelService;
-import mdt.model.instance.InstanceSubmodelDescriptor;
-import mdt.model.instance.MDTModelServiceOld;
+import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTOperationDescriptor;
 import mdt.model.instance.MDTParameterDescriptor;
+import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.sm.SubmodelUtils;
 
 import picocli.CommandLine.Command;
@@ -69,6 +70,12 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	String getInstanceId() {
 		return m_instanceId;
 	}
+	
+	HttpMDTInstanceClient getInstance(MDTManager mdt) {
+		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
+		
+		return manager.getInstance(m_instanceId);
+	}
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
@@ -97,26 +104,27 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		table.addCell(" FIELD "); table.addCell(" VALUE");
 		table.addCell(" INSTANCE "); table.addCell(" " + instance.getId());
 		
-		AssetAdministrationShellDescriptor aasDesc = instance.getAASDescriptor();
+		AssetAdministrationShellDescriptor aasDesc = instance.getAASShellDescriptor();
 		table.addCell(" AAS_ID "); table.addCell(" " + IdPair.of(aasDesc.getId(), aasDesc.getIdShort()) + " ");
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(aasDesc.getIdShort()) + " ");
 		table.addCell(" GLOBAL_ASSET_ID "); table.addCell(" " + getOrEmpty(aasDesc.getGlobalAssetId()) + " ");
 		table.addCell(" ASSET_TYPE "); table.addCell(" " + getOrEmpty(aasDesc.getAssetType()) + " ");
 		table.addCell(" ASSET_KIND "); table.addCell(" " + getOrEmpty(aasDesc.getAssetKind()) + " ");
-		FStream.from(instance.getInstanceSubmodelDescriptorAll())
+		
+		FStream.from(instance.getMDTSubmodelDescriptorAll())
 				.zipWithIndex()
 				.forEach(tup -> {
 					table.addCell(String.format(" SUB_MODEL[%02d] ", tup.index()));
 					table.addCell(" " + toDisplayName(tup.value()) + " ");
 				});
 		
-		FStream.from(instance.getInstanceDescriptor().getMDTParameterDescriptorAll())
+		FStream.from(instance.getMDTParameterDescriptorAll())
 				.zipWithIndex()
 				.forEach(tup -> {
 					table.addCell(String.format(" PARAMETER[%02d] ", tup.index()));
 					table.addCell(" " + toDisplayName(tup.value()) + " ");
 				});
-		FStream.from(instance.getInstanceDescriptor().getMDTOperationDescriptorAll())
+		FStream.from(instance.getMDTOperationDescriptorAll())
 				.zipWithIndex()
 				.forEach(tup -> {
 					table.addCell(String.format(" %s ", tup.value().getOperationType().toUpperCase()));
@@ -130,9 +138,11 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		System.out.println(table.render());
 	}
 	
+	JsonSerializer SERIALIZER = MDTModelSerDe.JSON_SERIALIZER;
 	private void displayAsJson(HttpMDTInstanceClient instance) throws SerializationException, IOException {
-		MDTModelServiceOld info = MDTModelServiceOld.of(instance);
-		System.out.println(info.toJsonString(true));
+		InstanceDescriptor desc = instance.getInstanceDescriptor();
+		String json = MDTModelSerDe.JSON_SERIALIZER.write(desc);
+		System.out.println(json);
 	}
 	
 	private void displayEnvironment(HttpMDTInstanceClient instance) throws SerializationException {	
@@ -151,12 +161,12 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		System.out.println(jsonStr);
 	}
 	
-	private static String toDisplayName(InstanceSubmodelDescriptor ismdesc) {
+	private static String toDisplayName(MDTSubmodelDescriptor ismdesc) {
 		return String.format("(%s) %s (%s)", SubmodelUtils.getShortSubmodelSemanticId(ismdesc.getSemanticId()),
 							ismdesc.getId(), ismdesc.getIdShort());
 	}
 	private static String toDisplayName(MDTParameterDescriptor paramDesc) {
-		return String.format("%s (%s)", paramDesc.getName(), paramDesc.getValueType());
+		return String.format("%s (%s)", paramDesc.getId(), paramDesc.getValueType());
 	}
 	private static String toDisplayName(MDTOperationDescriptor opDesc) {
 		return String.format("%s", opDesc.toSignatureString());

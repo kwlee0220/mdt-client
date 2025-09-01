@@ -17,7 +17,7 @@ import utils.stream.FStream;
 import mdt.model.ModelValidationException;
 import mdt.model.Qualifiers;
 import mdt.model.ReferenceUtils;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ref.DefaultElementReference;
@@ -51,7 +51,7 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 	protected void loadTaskDescriptor(TaskDescriptor descriptor, MDTInstanceManager manager) {
         // Submodel reference가 지정된 경우, 해당 SubmodelReference에 대한 Task descriptor를 생성한다.
 		if ( m_opSmRefExpr != null ) {
-			loadFromMDTOperationSubmodel(descriptor, m_opSmRefExpr);
+			loadFromMDTOperationSubmodel(manager, descriptor, m_opSmRefExpr);
         }
 
 		// 명령어 인자로 지정된 input/output parameter 값을 Task variable들에 반영한다.
@@ -60,9 +60,10 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 		FOption.accept(m_timeout, to -> descriptor.addOption(HttpTask.OPTION_TIMEOUT, to));
 	}
 
-	private void loadFromMDTOperationSubmodel(TaskDescriptor descriptor, String opSmRefExpr)
-		throws ModelValidationException {
-		DefaultSubmodelReference opSmRef = MDTExprParser.parseSubmodelReference(opSmRefExpr).evaluate();
+	private void loadFromMDTOperationSubmodel(MDTInstanceManager manager, TaskDescriptor descriptor,
+												String opSmRefExpr) throws ModelValidationException {
+		DefaultSubmodelReference opSmRef = MDTExpressionParser.parseSubmodelReference(opSmRefExpr).evaluate();
+		opSmRef.activate(manager);
 		Submodel opSubmodel = opSmRef.get().getSubmodel();
 		descriptor.setId(opSubmodel.getIdShort());
 		
@@ -78,8 +79,9 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
         // Submodel의 qualifiers를 이용하여 TaskDescriptor의 옵션들을 설정한다.
 		List<Qualifier> qualifiers = opSubmodel.getQualifiers();
 		String method = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_METHOD)
-								.getOrThrow(() -> new ModelValidationException(
-									"Submodel operation method not found: submodel idShort=" + opSubmodel.getIdShort()));
+									.getOrThrow(() -> new ModelValidationException(
+															"Submodel operation method is not found: submodel idShort="
+															+ opSubmodel.getIdShort()));
 		switch ( method ) {
 			case "http":
 				descriptor = loadHttpTask(descriptor, opSubmodel);

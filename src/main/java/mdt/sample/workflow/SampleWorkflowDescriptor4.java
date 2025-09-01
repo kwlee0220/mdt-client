@@ -36,14 +36,14 @@ public class SampleWorkflowDescriptor4 {
 		taskDesc = TaskDescriptors.setTaskBuilder()
 									.id("copy-data")
 									.target("oparg:test:AddAndSleep:in:Data")
-									.source("param:test:Data:ParameterValue")
+									.source("param:test:Data")
 									.build();
 		wfModel.getTaskDescriptors().add(taskDesc);
 		
 		taskDesc = TaskDescriptors.setTaskBuilder()
 									.id("copy-inc-amount")
 									.target("oparg:test:AddAndSleep:in:IncAmount")
-									.source("param:test:IncAmount:ParameterValue")
+									.source("param:test:IncAmount")
 									.build();
 		wfModel.getTaskDescriptors().add(taskDesc);
 		
@@ -63,16 +63,15 @@ public class SampleWorkflowDescriptor4 {
 		
 		taskDesc = TaskDescriptors.setTaskBuilder()
 									.id("copy-result")
-									.target("param:test:Data:ParameterValue")
+									.target("param:test:Data")
 									.source("oparg:test:AddAndSleep:out:Output")
 									.addDependency("sleep-and-add")
 									.build();
 		wfModel.getTaskDescriptors().add(taskDesc);
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfModel);
+		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
 
-		wfModel = wfManager.getWorkflowModel(wfId);
 		System.out.println(wfModel.toJsonString());
 	}
 	

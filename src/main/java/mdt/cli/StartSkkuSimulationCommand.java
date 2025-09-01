@@ -101,7 +101,7 @@ public class StartSkkuSimulationCommand extends AbstractMDTCommand {
 			// Simulation Submodel의 갯수가 1개 인 경우에는 이것을 사용한다.
 			inst = client.getInstance(m_targetId);
 			List<SubmodelDescriptor> simulations 
-					= Funcs.filter(inst.getSubmodelDescriptorAll(),
+					= Funcs.filter(inst.getAASSubmodelDescriptorAll(),
 									desc -> Simulation.SEMANTIC_ID_REFERENCE.equals(desc.getSemanticId()));
 			if ( simulations.size() == 0 ) {
 				System.err.printf("Invalid Simulation Submodel id: %s%n", m_targetId);

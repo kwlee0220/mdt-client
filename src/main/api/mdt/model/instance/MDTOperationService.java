@@ -34,7 +34,7 @@ public class MDTOperationService {
 	}
 
 	public List<ElementValue> readArgumentValueAll(MDTArgumentKind kind) throws IOException {
-		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort(m_instance.getId(), m_descriptor.getName());
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort(m_instance.getId(), m_descriptor.getId());
 		MDTArgumentReference argsRef = MDTArgumentReference.builder()
 															.submodelReference(smRef)
 															.kind(kind)

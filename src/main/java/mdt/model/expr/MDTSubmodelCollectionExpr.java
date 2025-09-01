@@ -9,7 +9,7 @@ import mdt.model.instance.MDTInstance;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MDTSubmodelCollectionExpr implements MDTExpr {
+public class MDTSubmodelCollectionExpr implements MDTExpression {
 	private final MDTInstanceExpr m_instExpr;
 	
 	public MDTSubmodelCollectionExpr(MDTInstanceExpr instExpr) {

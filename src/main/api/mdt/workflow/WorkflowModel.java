@@ -4,15 +4,21 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
 
+import org.checkerframework.com.google.common.base.Preconditions;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -31,16 +37,24 @@ import mdt.workflow.model.TaskDescriptor;
  */
 @Getter @Setter
 @Accessors(prefix = "m_")
-@JsonPropertyOrder({"id", "name", "description", "taskDescriptors"})
+@JsonInclude(Include.NON_NULL)
+@JsonPropertyOrder({"id", "name", "description", "taskDescriptors", "gui"})
 public class WorkflowModel {
 	private String m_id;
 	private @Nullable String m_name;
 	private @Nullable String m_description;
 
 	private List<TaskDescriptor> m_taskDescriptors = Lists.newArrayList();
-
-	public void setTasks(Collection<TaskDescriptor> tasks) {
-		this.m_taskDescriptors = sortTopologically(tasks);
+	private Map<String, Object> m_gui = Maps.newHashMap();
+	
+	public void addTaskDescriptor(TaskDescriptor taskDesc) {
+		Preconditions.checkArgument(taskDesc != null, "taskDesc must not be null");
+		
+		if ( m_taskDescriptors.contains(taskDesc) ) {
+			throw new IllegalArgumentException("taskDesc already exists: " + taskDesc.getId());
+		}
+		
+		m_taskDescriptors.add(taskDesc);
 	}
 	
 	public String toJsonString() {

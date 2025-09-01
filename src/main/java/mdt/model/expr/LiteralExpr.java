@@ -16,7 +16,7 @@ import mdt.model.sm.value.RangeValue;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class LiteralExpr implements MDTExpr {
+public abstract class LiteralExpr implements MDTExpression {
 	public abstract ElementValue evaluate();
 	
 	public static class PropertyValueSpec extends LiteralExpr {

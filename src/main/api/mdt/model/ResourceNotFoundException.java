@@ -4,7 +4,7 @@ package mdt.model;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class ResourceNotFoundException extends MDTException {
+public class ResourceNotFoundException extends ResourceException {
     private static final long serialVersionUID = 1L;
 
     public static ResourceNotFoundException ofSemanticId(String target, String semanticId) {

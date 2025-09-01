@@ -12,7 +12,7 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.SubmodelService;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.DefaultAASFile;
 import mdt.model.sm.SubmodelUtils;
@@ -37,7 +37,7 @@ import picocli.CommandLine.Parameters;
 		parameterListHeading = "Parameters:%n",
 		optionListHeading = "Options:%n",
 		mixinStandardHelpOptions = true,
-		description = "set Element value."
+		description = "set SubmodelElement value."
 	)
 public class SetElementCommand extends AbstractMDTCommand {
 	@Parameters(index="0", arity="1", paramLabel="element-ref", description="target SubmodelElementReference to set")
@@ -101,7 +101,7 @@ public class SetElementCommand extends AbstractMDTCommand {
 	private void setWithExpr(MDTInstanceManager manager, ElementReference target, String expr) throws IOException {
 		ElementValue newValue;
 		
-		Object src = MDTExprParser.parseExpr(expr).evaluate();
+		Object src = MDTExpressionParser.parseExpr(expr).evaluate();
 		if ( src instanceof MDTElementReference ref ) {
 			ref.activate(manager);
 			newValue = ref.readValue();

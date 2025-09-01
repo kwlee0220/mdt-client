@@ -1,10 +1,12 @@
 package mdt.model.instance;
 
-import java.util.LinkedHashMap;
+import java.util.List;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import javax.annotation.Nullable;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import lombok.Getter;
@@ -17,53 +19,36 @@ import mdt.model.sm.info.MDTAssetType;
  *
  * @author Kang-Woo Lee (ETRI)
  */
+@JsonInclude(JsonInclude.Include.ALWAYS)
+@JsonPropertyOrder({"id", "status", "baseEndpoint", "aasId", "aasIdShort", "globalAssetId", "assetType", "assetKind",
+					"submodels", "parameters", "operations", "twinComposition"})
+@Accessors(prefix="m_")
 @Getter @Setter
-@JsonPropertyOrder({
-	"instanceId", "status", "baseEndpoint", "aasId", "aasIdShort", "globalAssetId", "assetType", "assetKind",
-	"submodels", "parameters", "operations"
-})
-@Accessors(prefix = "m_")
 public class MDTModel {
-	private String m_instanceId;
+	private String m_id;
 	private MDTInstanceStatus m_status;
-	private String m_baseEndpoint;
-	private String m_aasId;
-	private String m_aasIdShort;
-	private String m_globalAssetId;
-	private MDTAssetType m_assetType;
-	private AssetKind m_assetKind;
+	private @Nullable String m_baseEndpoint;
 	
-	private @Nullable LinkedHashMap<String,InstanceSubmodelDescriptor> m_submodels;
-	private @Nullable LinkedHashMap<String, MDTParameterModel> m_parameters;
-	private @Nullable LinkedHashMap<String, MDTOperationModel> m_operations;
-
-	@Getter @Setter
-	@JsonPropertyOrder({ "name", "reference", "value" })
-	@Accessors(prefix = "m_")
-	public static class MDTParameterModel {
-		private String m_name;
-		private String m_reference;
-		private Object m_value;
-//		private ElementValue m_value;
-	}
-
-	@Getter @Setter
-	@JsonPropertyOrder({ "name", "operationType", "inputArguments", "outputArguments" })
-	@Accessors(prefix = "m_")
-	public static class MDTOperationModel {
-		private String m_name;
-		private String m_operationType;
-		private LinkedHashMap<String, Argument> m_inputArguments;
-		private LinkedHashMap<String, Argument> m_outputArguments;
-
-		@Getter @Setter
-		@JsonPropertyOrder({ "name", "reference", "value" })
-		@Accessors(prefix = "m_")
-		public static class Argument {
-			private String m_name;
-			private String m_reference;
-			private Object m_value;
-//			private ElementValue m_value;
-		}
+	private String m_aasId;
+	private @Nullable String m_aasIdShort;
+	private @Nullable String m_globalAssetId;
+	private MDTAssetType m_assetType;
+	private @Nullable AssetKind m_assetKind;
+	
+	private List<MDTSubmodelDescriptor> m_submodels;
+	private List<MDTParameterDescriptor> m_parameters;
+	private List<MDTOperationDescriptor> m_operations;
+	private MDTTwinCompositionDescriptor m_twinComposition;
+	
+	public MDTModel(InstanceDescriptor desc) {
+		m_id = desc.getId();
+		m_status = desc.getStatus();
+		m_baseEndpoint = desc.getBaseEndpoint();
+		
+		m_aasId = desc.getAasId();
+		m_aasIdShort = desc.getAasIdShort();
+		m_globalAssetId = desc.getGlobalAssetId();
+		m_assetType = desc.getAssetType();
+		m_assetKind = desc.getAssetKind();
 	}
 }

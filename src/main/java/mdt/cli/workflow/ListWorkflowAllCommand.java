@@ -23,7 +23,6 @@ import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
-import mdt.workflow.WorkflowModel;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -37,14 +36,11 @@ import picocli.CommandLine.Option;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "List all MDT Workflow instances (or models)."
+	description = "List all MDT Workflow instances."
 )
 public class ListWorkflowAllCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListWorkflowAllCommand.class);
 	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
-
-	@Option(names={"--model", "-m"}, description="show workflow model.")
-	private boolean m_model = false;
 	
 	@Option(names={"--table", "-t"}, description="display instances in a table format.")
 	private boolean m_tableFormat = false;
@@ -84,44 +80,23 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 			StopWatch watch = StopWatch.start();
 			
 			try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					PrintWriter pw = new PrintWriter(baos) ) {
-				if ( m_model ) {
-					List<WorkflowModel> wfModelList = listWorkflowModels(svc);
-                    if ( m_long ) {
-    					if ( m_tableFormat ) {
-    						printModelsLongTable(wfModelList, pw);
-    					}
-    					else {
-                        	printModelsLongList(wfModelList, pw);
-    					}
-                    }
-                    else {
-						if ( m_tableFormat ) {
-							printModelsShortTable(wfModelList, pw);
-						}
-						else {
-							printModelsShortList(wfModelList, pw);
-						}
-                    }
+				PrintWriter pw = new PrintWriter(baos) ) {
+                List<Workflow> wfList = listWorkflows(svc);
+                if ( m_long ) {
+					if ( m_tableFormat ) {
+						printInstancesLongTable(wfList, pw);
+					}
+					else {
+                    	printInstancesLongList(wfList, pw);
+					}
                 }
                 else {
-                    List<Workflow> wfList = listWorkflows(svc);
-                    if ( m_long ) {
-    					if ( m_tableFormat ) {
-    						printInstancesLongTable(wfList, pw);
-    					}
-    					else {
-                        	printInstancesLongList(wfList, pw);
-    					}
-                    }
-                    else {
-						if ( m_tableFormat ) {
-							printInstancesShortTable(wfList, pw);
-						}
-						else {
-							printInstancesShortList(wfList, pw);
-						}
-                    }
+					if ( m_tableFormat ) {
+						printInstancesShortTable(wfList, pw);
+					}
+					else {
+						printInstancesShortList(wfList, pw);
+					}
                 }
 				pw.flush();
 				String outputString = baos.toString();
@@ -156,20 +131,6 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 		}
 		else {
 			return wfMgr.getWorkflowAll();
-		}
-	}
-	
-	private List<WorkflowModel> listWorkflowModels(WorkflowManager wfMgr) {
-		if ( m_glob != null ) {
-			String pattern = "glob:" + m_glob;
-	        PathMatcher matcher = FileSystems.getDefault().getPathMatcher(pattern);
-	        
-	        return FStream.from(wfMgr.getWorkflowModelAll())
-					        .filter(wf -> matcher.matches(Paths.get(wf.getName())))
-					        .toList();
-		}
-		else {
-			return wfMgr.getWorkflowModelAll();
 		}
 	}
 	
@@ -251,66 +212,6 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 									.map(task -> task.getTaskId())
 									.join(", ");
 			table.addCell(tasksStr);
-			++seqNo;
-		}
-		pw.println(table.render());
-	}
-	
-	
-
-	
-	private void printModelsShortList(List<WorkflowModel> wfModelList, PrintWriter pw) {
-		int seqNo = 1;
-		for ( WorkflowModel wfModel : wfModelList ) {
-			pw.append(""+seqNo).append(m_delimiter);
-			pw.append(wfModel.getId()).append(m_delimiter);
-			pw.append(""+wfModel.getTaskDescriptors().size());
-			pw.println();
-			++seqNo;
-		}
-	}
-	
-	private void printModelsShortTable(List<WorkflowModel> wfModelList, PrintWriter pw) {
-		Table table = new Table(3);
-		table.addCell(" # ");
-		table.addCell(" ID ");
-		table.addCell(" COUNT ");
-		
-		int seqNo = 1;
-		for ( WorkflowModel wfModel : wfModelList ) {
-			table.addCell(String.format("%3d", seqNo));
-			table.addCell(wfModel.getId());
-			table.addCell(String.format("%6d", wfModel.getTaskDescriptors().size()));
-			++seqNo;
-		}
-		pw.println(table.render());
-	}
-	
-	private void printModelsLongList(List<WorkflowModel> wfModelList, PrintWriter pw) {
-		int seqNo = 1;
-		for ( WorkflowModel wfModel : wfModelList ) {
-			pw.append(""+seqNo).append(m_delimiter);
-			pw.append(wfModel.getId()).append(m_delimiter);
-			pw.append(wfModel.getName()).append(m_delimiter);
-			pw.append(""+wfModel.getTaskDescriptors().size());
-			pw.println();
-			++seqNo;
-		}
-	}
-	
-	private void printModelsLongTable(List<WorkflowModel> wfModelList, PrintWriter pw) {
-		Table table = new Table(4);
-		table.addCell(" # ");
-		table.addCell(" ID ");
-		table.addCell(" NAME ");
-		table.addCell(" COUNT ");
-		
-		int seqNo = 1;
-		for ( WorkflowModel wfModel : wfModelList ) {
-			table.addCell(String.format("%3d", seqNo));
-			table.addCell(wfModel.getId());
-			table.addCell(wfModel.getName());
-			table.addCell(String.format("%6d", wfModel.getTaskDescriptors().size()));
 			++seqNo;
 		}
 		pw.println(table.render());

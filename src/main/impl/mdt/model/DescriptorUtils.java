@@ -116,16 +116,6 @@ public class DescriptorUtils {
 		}
 	}
 
-	public static String toSubmodelServiceEndpointString(String instanceServiceEndpoint, String submodelId) {
-		if ( instanceServiceEndpoint != null ) {
-			String encodedSubmodelId = AASUtils.encodeBase64UrlSafe(submodelId);
-			return String.format("%s/submodels/%s", instanceServiceEndpoint, encodedSubmodelId);
-		}
-		else {
-			return null;
-		}
-	}
-
 	public static String toAasRepositoryEndpointString(String instanceServiceEndpoint) {
 		return (instanceServiceEndpoint != null)
 				? String.format("%s/shells", instanceServiceEndpoint)

@@ -116,18 +116,7 @@ public class ElementReferences {
 						
 		String instanceId = tokens.nextToken().getOrThrow(errorMsg);
 		String paramSpec = tokens.nextToken().getOrThrow(errorMsg);
-		
-		switch ( paramSpec ) {
-			case "*":
-				return MDTParameterReference.newInstance(instanceId, "*");
-			default:
-				if ( tokens.hasNext() ) {
-					return MDTParameterReference.newInstance(instanceId, paramSpec, tokens.next());
-				}
-				else {
-					return MDTParameterReference.newInstance(instanceId, paramSpec);
-				}
-		}
+		return MDTParameterReference.newInstance(instanceId, paramSpec);
 	}
 	private static MDTArgumentReference parseArgumentReference(SplitStream tokens) {
 		String fullExpr = tokens.remaining();

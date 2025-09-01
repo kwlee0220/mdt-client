@@ -1,6 +1,5 @@
 package mdt.model.instance;
 
-import java.io.IOException;
 import java.util.List;
 
 import com.google.common.base.Preconditions;
@@ -247,14 +246,4 @@ public interface MDTInstanceManager {
 	 * @throws MDTInstanceManagerException	등록 해제가 실패한 경우.
 	 */
 	public void removeInstanceAll() throws MDTInstanceManagerException;
-	
-	/**
-	 * 주어진 MDTInstance 식별자에 해당하는 MDTModel 객체를 반환한다.
-	 *
-	 * @param instanceId	MDTInstance 식별자.
-	 * @return	MDTModel 객체.
-	 * @throws ResourceNotFoundException	식별자에 해당하는 MDTInstance가 없는 경우.
-	 * @throws IOException	MDTModel 객체를 생성하는 과정에서 입출력 오류가 발생한 경우.
-	 */
-	public MDTModel getMDTModel(String instanceId) throws ResourceNotFoundException, IOException;
 }

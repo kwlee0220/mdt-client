@@ -86,6 +86,9 @@ public class Fa3stHttpClient implements HttpClientProxy {
 				return Tuple.of(null, result);
 			}
 		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
+		}
 		catch ( IOException e ) {
 			throw new RESTfulIOException("" + e);
 		}
@@ -95,6 +98,9 @@ public class Fa3stHttpClient implements HttpClientProxy {
 		try {
 			Response resp =  m_client.newCall(req).execute();
 			return parseResponseToList(resp, resultCls);
+		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
 		}
 		catch ( IOException e ) {
 			throw new RESTfulIOException("" + e);
@@ -107,6 +113,9 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			if ( !resp.isSuccessful() ) {
 				throwErrorResponse(resp, resp.body().string());
 			}
+		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
 		}
 		catch ( IOException e ) {
 			throw new RESTfulIOException("" + e);

@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 import mdt.model.MDTManager;
 import mdt.model.Qualifiers;
 import mdt.model.expr.MDTElementReferenceExpr;
-import mdt.model.expr.MDTExpr;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpression;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.expr.MDTSubmodelExpr;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
@@ -63,7 +63,7 @@ public class RunTaskCommand extends MultiVariablesCommand {
 	public void run(MDTManager mdt) throws Exception {
 		MDTInstanceManager manager = mdt.getInstanceManager();
 		
-		MDTExpr expr = MDTExprParser.parseExpr(m_opRefExpr);
+		MDTExpression expr = MDTExpressionParser.parseExpr(m_opRefExpr);
 		if ( expr instanceof MDTSubmodelExpr smExpr ) {
 			DefaultSubmodelReference smRef = smExpr.evaluate();
 			smRef.activate(manager);

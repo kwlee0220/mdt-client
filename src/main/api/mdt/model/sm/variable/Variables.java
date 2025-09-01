@@ -26,8 +26,8 @@ import utils.json.JacksonUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.model.expr.LiteralExpr;
 import mdt.model.expr.MDTElementReferenceExpr;
-import mdt.model.expr.MDTExpr;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpression;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.value.ElementValue;
@@ -66,12 +66,12 @@ public class Variables {
 	}
 	
 	public static Variable newValueVariable(String name, String description, String valueExpr) {
-		ElementValue elmValue = MDTExprParser.parseValueLiteral(valueExpr).evaluate();
+		ElementValue elmValue = MDTExpressionParser.parseValueLiteral(valueExpr).evaluate();
 		return Variables.newInstance(name, description, elmValue);
 	}
 	
 	public static Variable newReferenceVariable(String name, String description, String refExpr) {
-		MDTExpr expr = MDTExprParser.parseExpr(refExpr);
+		MDTExpression expr = MDTExpressionParser.parseExpr(refExpr);
 		if ( expr instanceof MDTElementReferenceExpr elmRef ) {
 			try {
 				return Variables.newInstance(name, "", elmRef.evaluate());
@@ -93,7 +93,7 @@ public class Variables {
 	}
 	
 	public static AbstractVariable newInstance(String name, String description, String expr) {
-		Object valObj = MDTExprParser.parseExpr(expr).evaluate();
+		Object valObj = MDTExpressionParser.parseExpr(expr).evaluate();
 		if ( valObj instanceof ElementReference ref ) {
 			return newInstance(name, description, ref);
 		}

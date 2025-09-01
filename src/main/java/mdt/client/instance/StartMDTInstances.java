@@ -1,9 +1,7 @@
 package mdt.client.instance;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -29,16 +27,12 @@ import utils.async.StartableExecution;
 import utils.func.CheckedRunnableX;
 import utils.func.FOption;
 import utils.func.Funcs;
-import utils.func.Try;
 import utils.stream.FStream;
 
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.instance.MDTModelServiceOld;
-import mdt.model.sm.info.CompositionItem;
-import mdt.model.sm.info.TwinComposition;
 
 /**
  * 
@@ -81,25 +75,27 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	@Override
 	public void run() throws InterruptedException {
 		// 시작시킬 MDTInstance 목록을 구성한다.
-		List<? extends MDTInstance> initialInstances;
+		List<MDTInstance> initialInstances;
 		if ( m_startAll ) {
-			initialInstances = FStream.from(m_manager.getInstanceAll())
-										.filter(inst -> inst.getStatus() != MDTInstanceStatus.RUNNING)
+			initialInstances = FStream.from(m_manager.getInstanceAllByFilter("instance.status != 'RUNNING'"))
+										.cast(MDTInstance.class)
 										.toList();
 		}
 		else {
-			initialInstances = FStream.from(m_instanceIdList)
-										.flatMapTry(this::getInstance)
-										.toList();
+			initialInstances = Lists.newArrayList();
+			for ( String id: m_instanceIdList ) {
+				try {
+					initialInstances.add(m_manager.getInstance(id));
+				}
+				catch ( Exception e ) {
+					System.out.printf("Failed to get MDTInstance: id=%s, cause=%s%n", id, e);
+				}
+			}
 		}
 
 		try {
 			for ( MDTInstance instance : initialInstances ) {
 				if ( m_triedInstances.add(instance.getId()) ) {
-					if ( s_logger.isDebugEnabled() ) {
-						s_logger.debug("Submitting to start MDTInstance: id=" + instance.getId());
-					}
-					
 					startInstanceAsync(instance);
 				}
 			}
@@ -122,23 +118,14 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		}
 	}
 	
-	private Try<MDTInstance> getInstance(String id) {
-		return Try.get(() -> m_manager.getInstance(id))
-					.ifFailed(error -> {
-						System.out.printf("Cannot find MDTInstance: id=%s, cause=%s%n", id, error);
-					});
-	}
-	
 	private StartableExecution<Void> startInstanceAsync(MDTInstance instance) {
 		if ( s_logger.isDebugEnabled() ) {
 			String instId = instance.getId();
 			String toStr = FOption.mapOrElse(m_timeout, to -> to.toString(), "none");
-            s_logger.debug("Submit MDTInstance: id={}, poll={}, timeout={} ...", instId, m_pollingInterval, toStr);
+            s_logger.debug("Submitting to start MDTInstance: id={}, poll={}, timeout={} ...", instId, m_pollingInterval, toStr);
 		}
-	    
-		StartableExecution<Void> exec = Executions.toExecution(() -> {
-			startInstanceInOwnThread(instance);
-		}, m_executor);
+		
+		StartableExecution<Void> exec = Executions.toExecution(() -> startInstanceInOwnThread(instance), m_executor);
 		exec.whenFailed(cause -> {
 			System.out.printf("Failed to start MDTInstance: id=%s, cause=%s%n", instance.getId(), cause);
 		});
@@ -151,32 +138,6 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		exec.start();
 		
 		return exec;
-	}
-
-	@SuppressWarnings("unused")
-	private List<MDTInstance> listDependentInstanceAll(HttpMDTInstanceClient inst) {
-		MDTModelServiceOld mdtInfo =  MDTModelServiceOld.of(inst);
-		
-		TwinComposition tcomp = mdtInfo.getInformationModel().getTwinComposition();
-		String parent = tcomp.getCompositionID();
-		
-		Map<String,CompositionItem> itemMap = FStream.from(tcomp.getCompositionItems())
-													.tagKey(item -> item.getID())
-													.toMap();
-		List<String> childAasIdList = FStream.from(tcomp.getCompositionDependencies())
-											.filter(dep -> dep.getDependencyType().equals("contain"))
-											.filter(dep -> dep.getSourceId().equals(parent))
-											.flatMapNullable(dep -> itemMap.get(dep.getTargetId()))
-											.map(CompositionItem::getReference)
-											.toList();
-		return FStream.from(childAasIdList)
-						.flatMapTry(aasId -> Try.get(() -> m_manager.getInstanceByAasId(aasId))
-												.ifFailed(error -> {
-													s_logger.error("Cannot find MDTInstance of AAS-ID={}: cause={}",
-																		aasId, error);
-												}))
-						.toList();
-		
 	}
 	
 	private void startInstanceInOwnThread(MDTInstance instance)
@@ -201,7 +162,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 			catch ( InvalidResourceStatusException e ) {
 				if ( instance.getStatus() == MDTInstanceStatus.RUNNING ) {
 					if ( s_logger.isDebugEnabled() ) {
-						s_logger.debug("Ignore already running instance: {}, elapsed={}s%n",
+						s_logger.debug("Ignore already running instance: {}, elapsed={}s",
 										instance.getId(), watch.stopAndGetElpasedTimeString());
 					}
 				}
@@ -211,21 +172,20 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 			}
 
 			// 시작된 인스턴스의 종속 인스턴스들을 시작한다.
-			List<MDTInstance> dependents = (m_recursive)
-											? MDTModelServiceOld.of(instance).getSubComponentAll()
-											: Collections.emptyList();
-			if ( dependents.size() > 0 ) {
+			if ( m_recursive ) {
+				List<MDTInstance> dependents = instance.getComponentInstanceAll();
 				if ( s_logger.isInfoEnabled() ) {
-					s_logger.info("Starting dependent instances: " + Funcs.map(dependents, MDTInstance::getId));
+					List<String> depInstIdList = Funcs.map(dependents, MDTInstance::getId);
+					s_logger.info("On finished: {} -> Starting dependent instances: {}", instance.getId(), depInstIdList);
 				}
-			}
-			for ( MDTInstance dependent: dependents ) {
-				if ( m_triedInstances.add(dependent.getId()) ) {
-					startInstanceAsync(dependent);
+				for ( MDTInstance dependent: dependents ) {
+					if ( m_triedInstances.add(dependent.getId()) ) {
+						startInstanceAsync(dependent);
+					}
 				}
 			}
 		}
-		catch ( InvalidResourceStatusException |  TimeoutException | InterruptedException e ) {
+		catch ( TimeoutException | InterruptedException e ) {
 			Throwable cause = Throwables.unwrapThrowable(e);
 			s_logger.error("Failed: start MDTInstance: id={}, cause={}", instance.getId(), ""+cause);
 			throw e;
@@ -255,51 +215,127 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 			return new StartMDTInstances(this);
 		}
 		
+		/**
+		 * MDT 인스턴스 구동에 사용할 MDTInstanceManager를 설정한다.
+		 *
+		 * @param manager	MDTInstanceManager
+		 * @return		빌더 자신
+		 */
 		public Builder mdtInstanceManager(MDTInstanceManager manager) {
+			Preconditions.checkArgument(manager != null, "MDTInstanceManager is null");
+			
             m_manager = manager;
             return this;
 		}
 	
+		/**
+		 * 구동시킬 MDTInstance의 ID 목록을 설정한다.
+		 *
+		 * @param idList	MDTInstance ID 목록
+		 * @return		빌더 자신
+		 */
 		public Builder instanceIdList(List<String> idList) {
+			Preconditions.checkArgument(idList != null, "MDTInstance id list is null or empty");
+			
 			m_instanceIdList = idList;
 			return this;
 		}
+		/**
+		 * 구동시킬 MDTInstance의 ID 목록을 설정한다.
+		 *
+		 * @param ids	MDTInstance ID 목록
+		 * @return		빌더 자신
+		 */
 		public Builder instanceIds(String... ids) {
+			Preconditions.checkArgument(ids != null, "MDTInstance id list is null or empty");
+			
 			m_instanceIdList = Lists.newArrayList(ids);
 			return this;
 		}
 		
+		/**
+		 * 각 MDTInstance 시작 요청 후, 해당 인스턴스의 상태를 주기적으로 확인하는 간격을 설정한다.
+		 * <p>
+		 * 별도로 지정하지 않는 경우에는 {@link #DEFAULT_POLLING_INTERVAL}이 사용된다.
+		 *
+		 * @param interval	상태 확인 간격
+		 * @return		빌더 자신
+		 */
 		public Builder pollingInterval(Duration interval) {
 			m_pollingInterval = interval;
 			return this;
 		}
 		
+		/**
+		 * 각 MDTInstance 시작 요청 후, 해당 인스턴스의 실행 결과가 판정될 때까지 대기하는 최대 시간을 설정한다.
+		 * <p>
+		 * 별도로 지정하지 않는 경우에는 제한 시간이 없다.
+		 *
+		 * @param timeout	최대 대기 시간. {@code null}인 경우에는 무제한을 의미함.
+		 * @return	빌더 자신
+		 */
 		public Builder timeout(Duration timeout) {
 			m_timeout = timeout;
 			return this;
 		}
 		
+		/**
+		 * 모든 MDTInstance 시작 요청 후, 해당 인스턴스의 실행 결과가 판정될 때까지 대기하지 않도록 설정한다.
+		 *
+		 * @param flag	{@code true}이면 대기하지 않음.
+		 * @return	빌더 자신
+		 */
 		public Builder nowait(boolean flag) {
 			m_nowait = flag;
 			return this;
 		}
 		
+		/**
+		 * MDTInstance 관리자에 등록된 모든 비실행중인 MDTInstance들을 시작시키도록 설정한다.
+		 *
+		 * @param flag	{@code true}이면 모든 비실행중인 MDTInstance들을 시작시킴.
+		 * @return	빌더 자신
+		 */
 		public Builder startAll(boolean flag) {
 			m_startAll = flag;
 			return this;
 		}
 		
+		/**
+		 * MDTInstance 시작 작업을 수행할 쓰레드 풀의 크기를 설정한다.
+		 * <p>
+		 * 별도로 지정하지 않는 경우에는 1로 설정된다.
+		 *
+		 * @param nthreads	쓰레드 풀 크기
+		 * @return	빌더 자신
+		 */
 		public Builder nthreads(int nthreads) {
 			Preconditions.checkArgument(nthreads > 0, "invalid nthreads: " + nthreads);
             m_executor = Executors.newFixedThreadPool(nthreads);
             return this;
 		}
 		
+		/**
+		 * MDTInstance 시작 작업을 수행할 {@link ExecutorService} 객체를 설정한다.
+		 * <p>
+		 * 별도로 지정하지 않는 경우에는 단일 쓰레드로 구성된 {@link ExecutorService}가 사용된다.
+		 * 지정된 ExecutorService를 통해 사용할 수 있는 모든 쓰레드들이 동시에 MDTInstance
+		 * 시작 작업을 수행할 수 있다. 이 경우에는 {@link #nthreads(int)}의 설정은 무시된다.
+		 *
+		 * @param executor	작업을 실행할 {@link ExecutorService} 객체
+		 * @return	빌더 자신
+		 */
 		public Builder executor(ExecutorService executor) {
 			m_executor = executor;
 			return this;
 		}
 		
+		/**
+		 * 종속된 MDTInstance들도 재귀적으로 시작시키도록 설정한다.
+		 *
+		 * @param flag	{@code true}이면 종속된 MDTInstance들도 재귀적으로 시작시킴.
+		 * @return	빌더 자신
+		 */
 		public Builder recursive(boolean flag) {
 			m_recursive = flag;
 			return this;

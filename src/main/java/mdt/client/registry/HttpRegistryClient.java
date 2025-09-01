@@ -2,6 +2,8 @@ package mdt.client.registry;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
@@ -9,6 +11,7 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
+import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 
 import mdt.client.Fa3stMessage;
@@ -50,6 +53,9 @@ class HttpRegistryClient {
 			Response resp =  m_client.newCall(req).execute();
 			return parseResponse(resp, resultCls);
 		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
+		}
 		catch ( IOException e ) {
 			throw new RESTfulRemoteException("" + e);
 		}
@@ -59,6 +65,9 @@ class HttpRegistryClient {
 		try {
 			Response resp =  m_client.newCall(req).execute();
 			return parseResponseToList(resp, resultCls);
+		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
 		}
 		catch ( IOException e ) {
 			throw new RESTfulRemoteException("" + e);
@@ -71,6 +80,9 @@ class HttpRegistryClient {
 			if ( !resp.isSuccessful() ) {
 				throwErrorResponse(resp.body().string());
 			}
+		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + req.url(), e);
 		}
 		catch ( IOException e ) {
 			throw new RESTfulRemoteException("" + e);

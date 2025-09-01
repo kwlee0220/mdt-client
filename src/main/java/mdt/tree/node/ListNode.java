@@ -13,6 +13,7 @@ import utils.stream.FStream;
  */
 public abstract class ListNode extends DefaultNode {
 	private List<? extends DefaultNode> m_children;
+	private boolean m_repeatable = false;
 	
 	abstract protected List<? extends DefaultNode> getElementNodes();
 
@@ -22,10 +23,14 @@ public abstract class ListNode extends DefaultNode {
 	public ListNode(String title) {
 		super(title, null, "");
 	}
+	
+	public void setRepeatable(boolean repeatable) {
+		m_repeatable = repeatable;
+	}
 
 	@Override
 	public List<? extends Node> getChildren() {
-		if ( m_children == null ) {
+		if ( m_repeatable || m_children == null ) {
 			m_children = FStream.from(getElementNodes())
 								.zipWithIndex()
 								.map(idxed -> {

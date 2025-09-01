@@ -45,9 +45,9 @@ public class WfSurfaceErrorDetection {
 		wfDesc.getTaskDescriptors().add(taskDesc);
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
+		wfDesc = wfManager.addOrReplaceWorkflowModel(wfDesc);
 		
-		System.out.println("Workflow id: " + wfId);
+		System.out.println("Workflow id: " + wfDesc.getId());
 	}
 	
 	private static TaskDescriptor SurfaceErrorDetection(MDTInstanceManager manager, String id) {

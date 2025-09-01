@@ -35,7 +35,7 @@ import utils.stream.KeyValueFStream;
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.sm.value.PropertyValue.BooleanPropertyValue;
 import mdt.model.sm.value.PropertyValue.DateTimePropertyValue;
 import mdt.model.sm.value.PropertyValue.DoublePropertyValue;
@@ -238,7 +238,7 @@ public class ElementValues {
 	}
 	
 	public static ElementValue parseExpr(String expr) {
-		return MDTExprParser.parseValueLiteral(expr).evaluate();
+		return MDTExpressionParser.parseValueLiteral(expr).evaluate();
 	}
 	
 //	private static final BiMap<String,Class<? extends ElementValue>> TYPE_CLASSES = HashBiMap.create();

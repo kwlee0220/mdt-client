@@ -6,6 +6,7 @@ import lombok.experimental.UtilityClass;
 
 import utils.stream.FStream;
 
+import mdt.model.timeseries.DefaultMetadata;
 import mdt.model.timeseries.DefaultRecord;
 import mdt.model.timeseries.Record.FieldValue;
 import mdt.tree.node.DefaultNode;
@@ -39,6 +40,24 @@ public final class TimeseriesSubmodelNodeFactories {
 		
 		private String toString(FieldValue fv) {
 			return String.format("%s:%s", fv.getField().getName(), fv.getValue());
+		}
+	}
+	
+	public static class MetadataNodeFactory implements DefaultNodeFactory {
+		@Override
+		public DefaultNode create(SubmodelElement sme) {
+			DefaultMetadata meta = new DefaultMetadata();
+			meta.updateFromAasModel(sme);
+
+			TerminalNode node = new TerminalNode();
+			String csv = FStream.from(meta.getRecordMetadata().getFieldAll())
+								.map(field -> String.format("%s:%s", field.getName(), field.getType()))
+								.join(", ");
+			node.setTitle(meta.getIdShort());
+			node.setValueType(" (METADATA)");
+			node.setValue(csv);
+			
+			return node;
 		}
 	}
 }

@@ -22,11 +22,11 @@ import mdt.model.sm.info.MDTAssetType;
 
 
 /**
- * {@code MDTInstance}는 MDT 프레임워크에 의해 관리/운영되는 MDT 트윈을
+ * {@code MDTInstance}는 MDT 프레임워크에 의해 관리/운영되는 MDT 인스턴스를
  * 다루기 위한 인터페이스를 정의한다.
  * <p>
  * {@code MDTInstance}에 의해 관리되는 속성은 {@link InstanceDescriptor}에 의해 정의되고,
- * {@link #getInstanceDescriptor()}를 통해 접근할 수 있다.
+ * 이는 {@link #getInstanceDescriptor()}를 통해 접근할 수 있다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -270,7 +270,7 @@ public interface MDTInstance {
 	 * @see	AssetAdministrationShellDescriptor
 	 * @see	AssetAdministrationShellRegistry
 	 */
-	public AssetAdministrationShellDescriptor getAASDescriptor();
+	public AssetAdministrationShellDescriptor getAASShellDescriptor();
 	
 	/**
 	 * MDTInstance에 포함된 모든 하위 모델 (Submodel)들의 기술자 리스트를 반환한다.
@@ -283,7 +283,7 @@ public interface MDTInstance {
 	 * 
 	 * @see	SubmodelService
 	 */
-	public List<SubmodelDescriptor> getSubmodelDescriptorAll();
+	public List<SubmodelDescriptor> getAASSubmodelDescriptorAll();
 	
 	public ParameterCollection getParameterCollection() throws ResourceNotFoundException;
 	
@@ -299,9 +299,17 @@ public interface MDTInstance {
 	 * 
 	 *  @return		MDTInstance 하위 모델 기술자 리스트.
 	 */
-	public default List<InstanceSubmodelDescriptor> getInstanceSubmodelDescriptorAll() {
-		return getInstanceDescriptor().getInstanceSubmodelDescriptorAll();
+	public List<MDTSubmodelDescriptor> getMDTSubmodelDescriptorAll();
+	
+	public List<MDTParameterDescriptor> getMDTParameterDescriptorAll();
+	public List<MDTOperationDescriptor> getMDTOperationDescriptorAll();
+	public @Nullable MDTTwinCompositionDescriptor getMDTTwinCompositionDescriptor();
+	
+	public default List<MDTInstance> getComponentInstanceAll() {
+		return getTargetInstanceAllOfDependency("contain");
 	}
+	public List<MDTInstance> getTargetInstanceAllOfDependency(String depType);
+	public List<MDTInstance> getSourceInstanceAllOfDependency(String depType);
 	
 	public String getOutputLog() throws IOException;
 }

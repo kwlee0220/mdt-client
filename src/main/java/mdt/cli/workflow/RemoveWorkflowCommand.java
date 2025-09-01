@@ -35,9 +35,6 @@ public class RemoveWorkflowCommand extends AbstractMDTCommand {
 
 	@Parameters(index="0..*", paramLabel="ids", description="WorkflowDescriptor ids to remove")
 	private List<String> m_wfIds;
-
-	@Option(names={"--model", "-m"}, description="remove workflow model.")
-	private boolean m_model = false;
 	
 	@Option(names={"--model-filter"}, paramLabel="model-id", description="target model id to remove")
 	private String m_modelFilter = null;
@@ -62,27 +59,15 @@ public class RemoveWorkflowCommand extends AbstractMDTCommand {
 		WorkflowManager svc = ((HttpMDTManager)mdt).getWorkflowManager();
 
 		if ( m_removeAll ) {
-			if ( m_model ) {
-				svc.removeWorkflowModelAll();
-			}
-			else {
-				svc.removeWorkflowAll();
-			}
+			svc.removeWorkflowAll();
 		}
 		else if ( m_glob != null ) {
 			String pattern = "glob:" + m_glob;
 	        PathMatcher matcher = FileSystems.getDefault().getPathMatcher(pattern);
-	        
-			if ( m_model ) {
-		        FStream.from(svc.getWorkflowModelAll())
-				        .filter(wf -> matcher.matches(Paths.get(wf.getId())))
-				        .forEach(wf -> svc.removeWorkflow(wf.getId()));
-			}
-			else {
-		        FStream.from(svc.getWorkflowAll())
-				        .filter(wf -> matcher.matches(Paths.get(wf.getName())))
-				        .forEach(wf -> svc.removeWorkflow(wf.getName()));
-			}
+
+	        FStream.from(svc.getWorkflowAll())
+			        .filter(wf -> matcher.matches(Paths.get(wf.getName())))
+			        .forEach(wf -> svc.removeWorkflow(wf.getName()));
 		}
 		else if ( m_modelFilter != null ) {
 			FStream.from(svc.getWorkflowAll())
@@ -91,21 +76,11 @@ public class RemoveWorkflowCommand extends AbstractMDTCommand {
 		}
 		else {
 			if ( m_wfIds == null || m_wfIds.isEmpty() ) {
-				if ( m_model ) {
-					throw new IllegalArgumentException("no workflow template id specified");
-				}
-				else {
-					throw new IllegalArgumentException("no workflow id specified");
-				}
+				throw new IllegalArgumentException("no workflow id specified");
 			}
 			
 			for ( String wfId: m_wfIds ) {
-				if ( m_model ) {
-                    svc.removeWorkflowModel(wfId);
-                }
-                else {
-                	svc.removeWorkflow(wfId);
-                }
+            	svc.removeWorkflow(wfId);
 			}
 		}
 	}

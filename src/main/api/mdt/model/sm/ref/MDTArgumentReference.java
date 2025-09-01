@@ -24,7 +24,7 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
-import mdt.model.instance.InstanceSubmodelDescriptor;
+import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.SubmodelUtils;
@@ -267,8 +267,8 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 	}
 	
 	private String buildIdShortPath() {
-		List<InstanceSubmodelDescriptor> ismDescList = m_submodelRef.getInstance().getInstanceSubmodelDescriptorAll();
-		InstanceSubmodelDescriptor found = null;
+		List<MDTSubmodelDescriptor> ismDescList = m_submodelRef.getInstance().getMDTSubmodelDescriptorAll();
+		MDTSubmodelDescriptor found = null;
 		if ( m_submodelRef instanceof ByIdSubmodelReference byId ) {
 			found = FStream.from(ismDescList)
 							.findFirst(ism -> byId.getSubmodelId().equals(ism.getId()))

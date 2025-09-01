@@ -37,9 +37,9 @@ public class WfPredictProductivity {
 //		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
+		wfDesc = wfManager.addOrReplaceWorkflowModel(wfDesc);
 		
-		System.out.println("Workflow id: " + wfId);
+		System.out.println("Workflow id: " + wfDesc.getId());
 	}
 	
 	private static TaskDescriptor predictProductivity(MDTInstanceManager manager, String id) {
@@ -59,10 +59,10 @@ public class WfPredictProductivity {
 		descriptor.addOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
 		descriptor.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "welder:ProductivityPrediction"));
 		
-		Variable ts = Variables.newReferenceVariable("Timestamp", "", "param:welder:NozzleProduction:EventDateTime");
+		Variable ts = Variables.newReferenceVariable("Timestamp", "", "param:welder:NozzleProduction.Timestamp");
 		descriptor.getInputVariables().addOrReplace(ts);
 		Variable nozzleProduction = Variables.newReferenceVariable("NozzleProduction", "",
-																	"param:welder:NozzleProduction:ParameterValue");
+																	"param:welder:NozzleProduction");
 		descriptor.getInputVariables().addOrReplace(nozzleProduction);
 		
 		Variable totalThroughput = Variables.newReferenceVariable("TotalThroughput", "",

@@ -10,12 +10,12 @@ import mdt.model.sm.value.ElementValue;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class AssignmentExpr implements MDTExpr {
+public class AssignmentExpr implements MDTExpression {
 	private final MDTElementReferenceExpr m_lhs;
-	private final MDTExpr m_rhs;
+	private final MDTExpression m_rhs;
 	private MDTInstanceManager m_instanceManager;
 
-	public AssignmentExpr(MDTElementReferenceExpr lhs, MDTExpr rhs) {
+	public AssignmentExpr(MDTElementReferenceExpr lhs, MDTExpression rhs) {
 		m_lhs = lhs;
 		m_rhs = rhs;
 	}

@@ -70,9 +70,9 @@ public class SampleWorkflowDescriptor6 {
 //		System.out.println(MDTModelSerDe.toJsonString(wfDesc));
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
-		String wfId = wfManager.addOrUpdateWorkflowModel(wfDesc);
+		wfDesc = wfManager.addOrReplaceWorkflowModel(wfDesc);
 		
-		System.out.println("Workflow id: " + wfId);
+		System.out.println("Workflow id: " + wfDesc.getId());
 	}
 	
 	private static TaskDescriptor createSurfaceErrorDetection(MDTInstanceManager manager, String id) {

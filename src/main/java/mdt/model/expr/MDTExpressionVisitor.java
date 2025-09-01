@@ -20,15 +20,12 @@ import mdt.model.expr.MdtExprParser.DefaultSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.FileValueLiteralSpecContext;
 import mdt.model.expr.MdtExprParser.FullElementSpecContext;
 import mdt.model.expr.MdtExprParser.FullInstanceSpecContext;
-import mdt.model.expr.MdtExprParser.FullSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.IdBasedSubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.IdOrStringContext;
 import mdt.model.expr.MdtExprParser.IdShortSegContext;
 import mdt.model.expr.MdtExprParser.InstanceSpecContext;
 import mdt.model.expr.MdtExprParser.MlpPropertyValueLiteralSpecContext;
 import mdt.model.expr.MdtExprParser.OpVarSpecContext;
-import mdt.model.expr.MdtExprParser.ParameterAllSpecContext;
-import mdt.model.expr.MdtExprParser.ParameterPathSpecContext;
 import mdt.model.expr.MdtExprParser.ParameterSpecContext;
 import mdt.model.expr.MdtExprParser.PropertyValueLiteralSpecContext;
 import mdt.model.expr.MdtExprParser.RangeValueLiteralSpecContext;
@@ -48,11 +45,11 @@ import mdt.model.sm.value.PropertyValue;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MDTExprVisitor extends MdtExprBaseVisitor<MDTExpr> {
+public class MDTExpressionVisitor extends MdtExprBaseVisitor<MDTExpression> {
 	@Override
 	public AssignmentExpr visitAssignmentExpr(AssignmentExprContext ctx) {
 		MDTElementReferenceExpr lhs = (MDTElementReferenceExpr)ctx.getChild(0).accept(this);
-		MDTExpr rhs = ctx.getChild(2).accept(this);
+		MDTExpression rhs = ctx.getChild(2).accept(this);
 		
 		return new AssignmentExpr(lhs, rhs);
 	}
@@ -66,10 +63,6 @@ public class MDTExprVisitor extends MdtExprBaseVisitor<MDTExpr> {
 		return (StringExpr)ctx.getChild(0).accept(this);
 	}
 
-	@Override
-	public MDTSubmodelExpr visitFullSubmodelSpec(FullSubmodelSpecContext ctx) {
-		return visitSubmodelSpec((SubmodelSpecContext)ctx.getChild(0));
-	}
 	@Override
 	public MDTSubmodelExpr visitSubmodelSpec(SubmodelSpecContext ctx) {
 		ParseTree pt = ctx.getChild(0);
@@ -116,25 +109,9 @@ public class MDTExprVisitor extends MdtExprBaseVisitor<MDTExpr> {
 
 	@Override
 	public ParameterReferenceExpr visitParameterSpec(ParameterSpecContext ctx) {
-		return (ParameterReferenceExpr)ctx.getChild(0).accept(this);
-	}
-	
-	@Override
-	public ParameterReferenceExpr visitParameterPathSpec(ParameterPathSpecContext ctx) {
 		StringExpr instIdExpr = (StringExpr)ctx.getChild(0).accept(this);
-		MDTExpr paramKeyExpr = ctx.getChild(2).accept(this);
-		
-		MDTIdShortPathExpr subPathExpr = null;
-		if ( ctx.getChildCount() > 3 ) {
-			subPathExpr = (MDTIdShortPathExpr)ctx.getChild(4).accept(this);
-		}
-		return new ParameterReferenceExpr(instIdExpr, paramKeyExpr, subPathExpr);
-	}
-	
-	@Override
-	public ParameterReferenceExpr visitParameterAllSpec(ParameterAllSpecContext ctx) {
-		StringExpr instIdExpr = (StringExpr)ctx.getChild(0).accept(this);
-		return new ParameterReferenceExpr(instIdExpr, new SymbolExpr("*"), null);
+		MDTExpression paramExpr = ctx.getChild(2).accept(this);
+		return new ParameterReferenceExpr(instIdExpr, paramExpr);
 	}
 
 	@Override

@@ -1,6 +1,8 @@
 package mdt.client.operation;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +12,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import utils.LoggerSettable;
 import utils.func.FOption;
 import utils.http.HttpClientProxy;
+import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 
 import mdt.client.HttpRESTfulClientOld;
@@ -64,6 +67,9 @@ public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 			}
 			
 			return statusResp;
+		}
+		catch ( SocketTimeoutException | ConnectException e ) {
+			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + getEndpoint(), e);
 		}
 		catch ( IOException e ) {
 			throw new RESTfulRemoteException("" + e);

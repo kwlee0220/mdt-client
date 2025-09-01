@@ -4,7 +4,7 @@ package mdt.model.expr;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class SimpleValueExpr<T> implements MDTExpr {
+public class SimpleValueExpr<T> implements MDTExpression {
 	private final T m_value;
 	
 	public SimpleValueExpr(T value) {

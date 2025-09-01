@@ -11,7 +11,7 @@ import utils.stream.FStream;
 
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
-import mdt.model.expr.MDTExprParser;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 
@@ -125,7 +125,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 
 		@Override
 		public String getSubmodelId() {
-			return FStream.from(m_instance.getInstanceSubmodelDescriptorAll())
+			return FStream.from(m_instance.getMDTSubmodelDescriptorAll())
 							.findFirst(ism -> m_submodelIdShort.equals(ism.getIdShort()))
 							.map(ism -> ism.getId())
 							.get();
@@ -211,6 +211,6 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	public static DefaultSubmodelReference parseStringExpr(String refExpr) {
 		Preconditions.checkArgument(refExpr != null, "Submodel reference is null");
 		
-		return MDTExprParser.parseSubmodelReference(refExpr).evaluate();
+		return MDTExpressionParser.parseSubmodelReference(refExpr).evaluate();
 	}
 }

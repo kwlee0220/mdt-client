@@ -3,6 +3,7 @@ package mdt.model.sm;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -262,6 +263,16 @@ public class SubmodelUtils {
 			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
 		}
 	}
+	public static <T extends SubmodelElement> FOption<Indexed<T>>
+	findFieldById(SubmodelElement smc, String fieldName, Class<T> outputClass) {
+		if ( smc instanceof SubmodelElementCollection coll ) {
+			return Funcs.findFirstIndexed(coll.getValue(), field -> field.getIdShort().equals(fieldName))
+						.map(idxed -> Indexed.with(cast(idxed.value(), outputClass), idxed.index()));
+		}
+		else {
+			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
+		}
+	}
 	public static FOption<Indexed<Property>> findPropertyById(SubmodelElement smc, String fieldName) {
 		return findFieldById(smc, fieldName)
 				.filter(idxed -> idxed.value() instanceof Property)
@@ -279,8 +290,10 @@ public class SubmodelUtils {
 						return new IllegalArgumentException(msg);
 					});
 	}
-	public static <T extends SubmodelElement> Indexed<T> getFieldById(SubmodelElementCollection smc, String fieldName,
-                                            						Class<T> outputClass) throws IllegalArgumentException {
+	public static <T extends SubmodelElement> Indexed<T> getFieldById(SubmodelElement smc,
+																		String fieldName,
+	                                            						Class<T> outputClass)
+        throws IllegalArgumentException {
 		Indexed<SubmodelElement> idxed = getFieldById(smc, fieldName);
 		return Indexed.with(cast(idxed.value(), outputClass), idxed.index());
 	}
@@ -357,6 +370,11 @@ public class SubmodelUtils {
 												.build();
 	}
 	
+	public static boolean isInformationModel(Submodel sm) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		return InformationModel.SEMANTIC_ID.equals(semanticId);
+	}
+	
 	public static boolean isDataSubmodel(Submodel sm) {
 		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return Data.SEMANTIC_ID.equals(semanticId);
@@ -378,6 +396,39 @@ public class SubmodelUtils {
 		else {
 			throw new IllegalArgumentException("Invalid DataInfo: " + dataInfo.getIdShort());
 		}
+	}
+	
+	public static String resolveParameterValueElementPath(String paramPathPrefix, String paramExpr,
+															Function<String,Integer> resolveParameterIndex) {
+		// parameter expression에서 parameter ID를 추출하여 해당 parameter의 인덱스를 구한다.
+		String subPath = "";
+		int paramIdx;
+		try {
+			// 일단 parmeter-id가 숫자인 것으로 가정하고 파싱을 실시하여
+			// parameter의 idShortPath를 생성하고, 숫자가 아니어서 예외가 발생한 경우에는
+			// 일반적인 id 기반의 idShortPath를 생성한다.
+			paramIdx = Integer.parseInt(paramExpr);
+		}
+		catch ( NumberFormatException e ) {
+			String paramId;
+			int idx = paramExpr.indexOf('.');
+			if ( idx >= 0 ) {
+				paramId = paramExpr.substring(0, idx);
+				subPath = paramExpr.substring(idx);
+			}
+			else {
+				idx = paramExpr.indexOf('[');
+				if ( idx >= 0 ) {
+					paramId = paramExpr.substring(0, idx);
+					subPath = paramExpr.substring(idx);
+				}
+				else {
+					paramId = paramExpr;
+				}
+			}
+			paramIdx = resolveParameterIndex.apply(paramId);
+		}
+		return String.format("%s[%d].ParameterValue%s", paramPathPrefix, paramIdx, subPath);
 	}
 	
 	public static boolean isAISubmodel(Submodel sm) {

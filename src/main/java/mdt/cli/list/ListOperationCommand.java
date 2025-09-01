@@ -20,7 +20,6 @@ import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTOperationDescriptor;
-import mdt.model.sm.value.NamedValueType;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -126,7 +125,7 @@ public class ListOperationCommand extends AbstractMDTCommand {
 	private String collect(List<? extends MDTInstance> instances, ListCollector collector) {
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {
-			for ( MDTOperationDescriptor opDesc: inst.getInstanceDescriptor().getMDTOperationDescriptorAll() ) {
+			for ( MDTOperationDescriptor opDesc: inst.getMDTOperationDescriptorAll() ) {
 				String[] cols = toOperationColumns(seqNo, inst, opDesc);
 				collector.collectLine(cols);
 				++seqNo;
@@ -138,12 +137,12 @@ public class ListOperationCommand extends AbstractMDTCommand {
 	
 	private String[] toOperationColumns(int seqNo, MDTInstance inst, MDTOperationDescriptor opDesc) {
 		String inArgNameCsv = FStream.from(opDesc.getInputArguments())
-					                .map(NamedValueType::getName)
+					                .map(MDTOperationDescriptor.ArgumentDescriptor::getId)
 					                .join(",");
 		String outArgNameCsv = FStream.from(opDesc.getOutputArguments())
-				                    .map(NamedValueType::getName)
+				                    .map(MDTOperationDescriptor.ArgumentDescriptor::getId)
                                     .join(",");
-		return new String[] { String.format("%3d", seqNo), inst.getId(), opDesc.getName(), opDesc.getOperationType(),
+		return new String[] { String.format("%3d", seqNo), inst.getId(), opDesc.getId(), opDesc.getOperationType(),
 								inArgNameCsv, outArgNameCsv };
 	}
 }

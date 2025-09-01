@@ -101,6 +101,12 @@ public final class TaskDescriptor {
 		return m_dependencies;
 	}
 	
+	public void addDependency(String dependency) {
+		Preconditions.checkArgument(dependency != null, "dependency must not be null");
+
+		m_dependencies.add(dependency);
+	}
+	
 	public void setDependencies(Iterable<String> dependencies) {
 		Preconditions.checkArgument(dependencies != null, "dependencies must not be null");
 
@@ -188,9 +194,10 @@ public final class TaskDescriptor {
 	}
 	
 	public String toSignatureString() {
+		String taskTypeId = TaskDescriptors.toShortTaskTypeId(m_type);
 		String inPortNames = FStream.from(m_inputVariables).map(Variable::getName).join(", ");
 		String outPortNames = FStream.from(m_outputVariables).map(Variable::getName).join(", ");
-		return String.format("%s(%s) -> (%s)", getId(), inPortNames, outPortNames);
+		return String.format("%s[%s]: (%s) -> (%s)", taskTypeId, getId(), inPortNames, outPortNames);
 	}
 	
 	public String toJsonString() {

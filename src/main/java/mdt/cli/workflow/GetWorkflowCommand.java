@@ -17,8 +17,6 @@ import mdt.model.MDTModelSerDe;
 import mdt.workflow.NodeTask;
 import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
-import mdt.workflow.WorkflowModel;
-import mdt.workflow.model.TaskDescriptor;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -35,8 +33,7 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Get an MDT Workflow instance (or model).",
 	subcommands = {
-		GetWorkflowScriptCommand.class,
-		GetWorkflowLogCommand.class,
+		GetWorkflowLogCommand.class
 	}
 )
 public class GetWorkflowCommand extends AbstractMDTCommand {
@@ -44,9 +41,6 @@ public class GetWorkflowCommand extends AbstractMDTCommand {
 	
 	@Parameters(index="0", paramLabel="id", description="Workflow id to get")
 	private String m_id;
-
-	@Option(names={"--model", "-m"}, description="show workflow model.")
-	private boolean m_model = false;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: table (default) or json)")
@@ -68,31 +62,16 @@ public class GetWorkflowCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
 		
-		if ( m_model ) {
-			WorkflowModel wfModel = wfMgr.getWorkflowModel(m_id);
-			switch ( m_output ) {
-				case "table":
-					displayAsTable(wfModel);
-					break;
-				case "json":
-					displayAsJson(wfModel);
-					break;
-				default:
-					throw new IllegalArgumentException("invalid output type: " + m_output);
-			}
-		}
-		else {
-			Workflow workflow = wfMgr.getWorkflow(m_id);
-			switch (m_output) {
-				case "table":
-					displayAsTable(workflow);
-					break;
-				case "json":
-					displayAsJson(workflow);
-					break;
-				default:
-					throw new IllegalArgumentException("invalid output type: " + m_output);
-			}
+		Workflow workflow = wfMgr.getWorkflow(m_id);
+		switch (m_output) {
+			case "table":
+				displayAsTable(workflow);
+				break;
+			case "json":
+				displayAsJson(workflow);
+				break;
+			default:
+				throw new IllegalArgumentException("invalid output type: " + m_output);
 		}
 	}
 	
@@ -118,28 +97,6 @@ public class GetWorkflowCommand extends AbstractMDTCommand {
 		});
 		
 		System.out.println(table.render());
-	}
-	
-	private void displayAsTable(WorkflowModel wfModel) {
-		Table table = new Table(2);
-
-		table.addCell(" FIELD "); table.addCell(" VALUE");
-		table.addCell(" ID "); table.addCell(" " + wfModel.getId());
-		table.addCell(" NAME "); table.addCell(" " + wfModel.getName());
-		table.addCell(" DEESCRIPTION "); table.addCell(" " + FOption.getOrElse(wfModel.getDescription(), ""));
-		
-		FStream.from(wfModel.getTaskDescriptors()).zipWithIndex().forEach(tup -> {
-			TaskDescriptor task = tup.value();
-			
-			table.addCell(String.format(" TASK[%02d] ", tup.index()));
-			table.addCell(" " + task.toSignatureString());
-		});
-		
-		System.out.println(table.render());
-	}
-	
-	private void displayAsJson(WorkflowModel wfModel) {
-		System.out.println(wfModel.toJsonString());
 	}
 	
 	private void displayAsJson(Workflow workflow) throws JsonProcessingException {

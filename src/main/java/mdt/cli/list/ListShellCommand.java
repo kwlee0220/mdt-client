@@ -21,9 +21,10 @@ import mdt.cli.list.ListCommands.ListCollector;
 import mdt.cli.list.ListCommands.TableCollector;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.MDTManager;
-import mdt.model.instance.InstanceSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.instance.MDTSubmodelDescriptor;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -136,7 +137,7 @@ public class ListShellCommand extends AbstractMDTCommand {
 				collector.collectLine(cols);
 			}
 			catch ( InvalidResourceStatusException expected ) {
-				AssetAdministrationShellDescriptor aasDesc = inst.getAASDescriptor();
+				AssetAdministrationShellDescriptor aasDesc = inst.getAASShellDescriptor();
 				Object[] cols = toColumns(seqNo, aasDesc, inst);
 				collector.collectLine(cols);
 			}
@@ -147,8 +148,8 @@ public class ListShellCommand extends AbstractMDTCommand {
 	}
 	
 	private String[] toColumns(int seqNo, AssetAdministrationShell aas, MDTInstance inst) {
-		String smIdCsv = FStream.from(inst.getInstanceDescriptor().getInstanceSubmodelDescriptorAll())
-								.map(InstanceSubmodelDescriptor::getIdShort)
+		String smIdCsv = FStream.from(inst.getMDTSubmodelDescriptorAll())
+								.map(MDTSubmodelDescriptor::getIdShort)
 								.join(", ");
 		
 		return new String[] {

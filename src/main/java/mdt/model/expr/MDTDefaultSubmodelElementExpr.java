@@ -10,7 +10,7 @@ import mdt.model.sm.SubmodelUtils;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MDTDefaultSubmodelElementExpr implements MDTExpr {
+public class MDTDefaultSubmodelElementExpr implements MDTExpression {
 	private final MDTInstanceExpr m_instanceExpr;
 	private final String m_submodelIdShort;
 	private final String m_idShortPath;

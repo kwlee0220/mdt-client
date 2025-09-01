@@ -172,7 +172,7 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 
 		// stdout/stderr redirection
 		builder.redirectErrorStream();
-		builder.redictStdoutToFile(new File(workingDir, "output.log"));
+		builder.redirectStdoutToFile(new File(workingDir, "output.log"));
 		
 		return builder.build();
 	}

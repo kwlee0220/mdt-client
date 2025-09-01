@@ -132,7 +132,7 @@ public class ListSubmodelCommand extends AbstractMDTCommand {
 	private String collect(List<? extends MDTInstance> instances, ListCollector collector) {
 		int seqNo = 1;
 		for ( MDTInstance inst: instances ) {
-			for ( SubmodelDescriptor smDesc: inst.getSubmodelDescriptorAll() ) {
+			for ( SubmodelDescriptor smDesc: inst.getAASSubmodelDescriptorAll() ) {
 				String[] cols = toColumns(seqNo, (HttpMDTInstanceClient)inst, smDesc);
 				collector.collectLine(cols);
 				

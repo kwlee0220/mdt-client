@@ -15,12 +15,12 @@ public class MDTParameterReferenceTest {
 	private ObjectMapper m_mapper = new ObjectMapper();
 
 	private static final String JSON_STRING
-		= "{\"@type\":\"mdt:ref:param\",\"instanceId\":\"test\",\"parameterId\":\"IncAmount\"}";
+		= "{\"@type\":\"mdt:ref:param\",\"instanceId\":\"test\",\"parameterExpr\":\"IncAmount\"}";
 	private static final String EXPR = "param:test:SleepTime";
 	
 	private static final String JSON_STRING2
-	= "{\"@type\":\"mdt:ref:param\",\"instanceId\":\"test\",\"parameterId\":\"Data\",\"subPath\":\"ParameterValue.intValue\"}";
-	private static final String EXPR2 = "param:test:Data:ParameterValue.intValue";
+	= "{\"@type\":\"mdt:ref:param\",\"instanceId\":\"welder\",\"parameterExpr\":\"NozzleProduction.DefectVolume\"}";
+	private static final String EXPR2 = "param:welder:NozzleProduction.DefectVolume";
 	
 	@Test
 	public void testSerializeMDTParameterReference() throws JsonProcessingException {
@@ -32,7 +32,7 @@ public class MDTParameterReferenceTest {
 	
 	@Test
 	public void testSerializeMDTParameterReference2() throws JsonProcessingException {
-		MDTParameterReference ref = MDTParameterReference.newInstance("test", "Data", "ParameterValue.intValue");
+		MDTParameterReference ref = MDTParameterReference.newInstance("welder", "NozzleProduction.DefectVolume");
 		
 		String json = m_mapper.writeValueAsString(ref);
 		System.out.println(json);
@@ -43,15 +43,14 @@ public class MDTParameterReferenceTest {
 	public void testDeserialize() throws JsonMappingException, JsonProcessingException {
 		MDTParameterReference ref = m_mapper.readValue(JSON_STRING, MDTParameterReference.class);
 		Assert.assertEquals("test", ref.getInstanceId());
-		Assert.assertEquals("IncAmount", ref.getParameterId());
+		Assert.assertEquals("IncAmount", ref.getParameterExpr());
 	}
 
 	@Test
 	public void testDeserialize2() throws JsonMappingException, JsonProcessingException {
 		MDTParameterReference ref = m_mapper.readValue(JSON_STRING2, MDTParameterReference.class);
-		Assert.assertEquals("test", ref.getInstanceId());
-		Assert.assertEquals("Data", ref.getParameterId());
-		Assert.assertNotNull(ref.getSubPath());
+		Assert.assertEquals("welder", ref.getInstanceId());
+		Assert.assertEquals("NozzleProduction.DefectVolume", ref.getParameterExpr());
 	}
 	
 	@Test
@@ -62,8 +61,7 @@ public class MDTParameterReferenceTest {
 		
 		MDTParameterReference paramRef = (MDTParameterReference)ref;
 		Assert.assertEquals("test", ref.getInstanceId());
-		Assert.assertEquals("SleepTime", paramRef.getParameterId());
-		Assert.assertNull(paramRef.getSubPath());
+		Assert.assertEquals("SleepTime", paramRef.getParameterExpr());
 	}
 
 	@Test
@@ -84,14 +82,13 @@ public class MDTParameterReferenceTest {
 		Assert.assertTrue(ref instanceof MDTParameterReference);
 		
 		MDTParameterReference paramRef = (MDTParameterReference)ref;
-		Assert.assertEquals("test", paramRef.getInstanceId());
-		Assert.assertEquals("Data", paramRef.getParameterId());
-		Assert.assertEquals("ParameterValue.intValue", paramRef.getSubPath());
+		Assert.assertEquals("welder", paramRef.getInstanceId());
+		Assert.assertEquals("NozzleProduction.DefectVolume", paramRef.getParameterExpr());
 	}
 
 	@Test
 	public void testExpr2() {
-		MDTParameterReference ref = MDTParameterReference.newInstance("test", "Data", "ParameterValue.intValue");
+		MDTParameterReference ref = MDTParameterReference.newInstance("welder", "NozzleProduction.DefectVolume");
 		
 		String expr = ref.toStringExpr();
 		Assert.assertEquals(EXPR2, expr);
@@ -108,7 +105,7 @@ public class MDTParameterReferenceTest {
 	
 	@Test
 	public void testToStringExpr2() throws JsonProcessingException {
-		MDTParameterReference ref = MDTParameterReference.newInstance("test", "Data", "ParameterValue.intValue");
+		MDTParameterReference ref = MDTParameterReference.newInstance("welder", "NozzleProduction.DefectVolume");
 		Assert.assertEquals(EXPR2, ref.toStringExpr());
 	}
 }

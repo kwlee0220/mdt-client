@@ -9,7 +9,7 @@ import mdt.model.instance.MDTInstanceManager;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MDTInstanceExpr implements MDTExpr {
+public class MDTInstanceExpr implements MDTExpression {
 	private final MDTInstanceManager m_mdt;
 	private final String m_instId;
 	private final Lazy<MDTInstance> m_lazyInstance = Lazy.of(this::getInstance);

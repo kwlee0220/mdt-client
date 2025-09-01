@@ -6,7 +6,7 @@ import mdt.model.instance.MDTInstanceStatus;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class InvalidResourceStatusException extends MDTException {
+public class InvalidResourceStatusException extends ResourceException {
     private static final long serialVersionUID = 1L;
 
     public InvalidResourceStatusException(String msg) {

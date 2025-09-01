@@ -10,6 +10,7 @@ import javax.xml.datatype.Duration;
 import org.eclipse.digitaltwin.aas4j.v3.model.BaseOperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.ExecutionState;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
+import org.eclipse.digitaltwin.aas4j.v3.model.Message;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationHandle;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
@@ -218,7 +219,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		private List<OperationVariable> outputArguments = Lists.newArrayList();
 		private ExecutionState executionState;
 		private boolean success;
-		private List<String> messages;
+		private List<Message> messages;
 	}
 
 	@Override
@@ -269,7 +270,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(url).post(reqBody).build();
 			Tuple<String,String> ret = callAsync(req, String.class);
 			
-			return new MDTOperationHandle(encodeIdShortPath(idShortPath), ret._1);
+			return new MDTOperationHandle(idShortPath, encodeIdShortPath(idShortPath), ret._1);
 		}
 		catch ( IOException e ) {
 			throw new InternalException("" + e);
@@ -283,9 +284,18 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		MDTOperationHandle mdtHandle = (MDTOperationHandle)handle;
 		String url = String.format("%s/submodel-elements/%s/operation-results/%s",
 									getEndpoint(), mdtHandle.getIdShortPathEncoded(), mdtHandle.getHandleId());
-		
+	
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, OperationResult.class);
+//		OperationResultResponse resp = call(req, OperationResultResponse.class);
+//		
+//		return new DefaultOperationResult.Builder()
+//					.executionState(resp.executionState)
+//					.success(resp.success)
+//					.messages(resp.messages)
+//					.inoutputArguments(resp.inoutputArguments)
+//					.outputArguments(resp.outputArguments)
+//					.build();
 	}
 
 	@Override

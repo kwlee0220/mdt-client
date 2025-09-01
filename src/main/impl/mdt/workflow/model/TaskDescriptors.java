@@ -49,6 +49,21 @@ import mdt.task.builtin.TaskUtils;
  */
 @UtilityClass
 public class TaskDescriptors {
+	private final static Map<String,String> CLASS_TO_SHORT_ID_MAP = Map.of(
+		AASOperationTask.class.getName(), "AASOperation",
+		HttpTask.class.getName(), "Http",
+		SetTask.class.getName(), "Set"
+	);
+	
+	public static String toShortTaskTypeId(String taskClassName) {
+		String shortId = CLASS_TO_SHORT_ID_MAP.get(taskClassName);;
+		if ( shortId == null ) {
+			throw new IllegalArgumentException("unregistered task class: " + taskClassName);
+		}
+		
+		return shortId;
+	}
+		
 	public static TaskDescriptor newSetTaskDescriptor(String id, String srcPortExpr, String tarPortExpr) {
 		TaskDescriptor taskDesc = new TaskDescriptor(id, "", SetTask.class.getName());
 		taskDesc.getInputVariables().add(Variables.newInstance("source", "", srcPortExpr));
@@ -212,10 +227,18 @@ public class TaskDescriptors {
 			return (T) this;
 		}
 		
+		public T addInputVariable(String name, String description, String expr) {
+			return addInputVariable(Variables.newInstance(name, description, expr));
+		}
+		
 		@SuppressWarnings("unchecked")
 		public T addOutputVariable(Variable var) {
 			m_descriptor.getOutputVariables().addOrReplace(var);
 			return (T) this;
+		}
+		
+		public T addOutputVariable(String name, String description, String expr) {
+			return addOutputVariable(Variables.newInstance(name, description, expr));
 		}
 	}
 	

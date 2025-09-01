@@ -8,7 +8,7 @@ package mdt.model.expr;
 start: expr EOF;
 
 expr: valueLiteralSpec
-        | fullSubmodelSpec
+        | submodelSpec
         | fullElementSpec
         | assignmentExpr
         ;
@@ -21,7 +21,6 @@ assignmentExpr:
 fullInstanceSpec: 'mdt' ':' instanceSpec;
 instanceSpec: idOrString;
 
-fullSubmodelSpec: submodelSpec;
 submodelSpec:
           defaultSubmodelSpec
         | idBasedSubmodelSpec
@@ -40,9 +39,7 @@ defaultElementSpec: submodelSpec ':' idShortPath;
 idShortPath: idOrString (idShortSeg)*;
 idShortSeg: '.' idOrString | '[' INTEGER ']';
 
-parameterSpec: ( parameterPathSpec | parameterAllSpec );
-parameterPathSpec: instanceSpec ':' (idOrString | INTEGER) ( ':' idShortPath )?;
-parameterAllSpec: instanceSpec ':' '*';
+parameterSpec: instanceSpec ':' (idShortPath | INTEGER);
 
 argumentSpec: submodelSpec ':' ('in' | 'out') ':' (idOrString | INTEGER | '*');
 opVarSpec: defaultElementSpec ':' ('in' | 'out' | 'inout') ':' (INTEGER);

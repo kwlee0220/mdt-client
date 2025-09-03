@@ -63,6 +63,7 @@ import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
+import mdt.model.sm.shape.Shape;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.timeseries.TimeSeries;
@@ -247,7 +248,8 @@ public class SubmodelUtils {
 			case Data.SEMANTIC_ID -> "Data";
 			case Simulation.SEMANTIC_ID -> "Sim";
 			case AI.SEMANTIC_ID -> "AI";
-			case TimeSeries.SEMANTIC_ID -> "TimeSeries";
+			case TimeSeries.SEMANTIC_ID -> "TS";
+			case Shape.SEMANTIC_ID -> "Shape";
 			default -> throw new InternalException("unknown Submodel " + semanticIdStr);
 		};
 	}

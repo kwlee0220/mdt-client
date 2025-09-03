@@ -12,8 +12,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import mdt.model.MDTModelSerDe;
-import mdt.model.sm.value.ElementValue;
-import mdt.model.sm.value.ElementValues;
 
 
 /**
@@ -23,8 +21,9 @@ import mdt.model.sm.value.ElementValues;
 public abstract class AbstractElementReference implements ElementReference {
 	@Override
 	public void update(SubmodelElement sme) throws IOException {
-		ElementValue newValue = ElementValues.getValue(sme);
-		updateValue(newValue);
+//		ElementValue newValue = ElementValues.getValue(sme);
+//		updateValue(newValue);
+		write(sme);
 	}
 
 	@Override

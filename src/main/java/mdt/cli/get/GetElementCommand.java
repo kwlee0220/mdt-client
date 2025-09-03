@@ -145,6 +145,6 @@ public class GetElementCommand extends AbstractMDTCommand {
 		}
 		
 		ElementValue value = ElementValues.getValue(target);
-		return MDTModelSerDe.toJsonString(value);
+		return value.toValueJsonString();
 	}
 }

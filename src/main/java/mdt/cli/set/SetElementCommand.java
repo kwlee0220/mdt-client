@@ -43,6 +43,9 @@ public class SetElementCommand extends AbstractMDTCommand {
 	@Parameters(index="0", arity="1", paramLabel="element-ref", description="target SubmodelElementReference to set")
 	private String m_target = null;
 	
+	@Option(names={"--element", "-e"}, description="update entire SubmodelElement")
+	private boolean m_updateElement;
+	
 	@ArgGroup(exclusive=true, multiplicity="1")
 	private SourceSpec m_source;
 	
@@ -138,8 +141,13 @@ public class SetElementCommand extends AbstractMDTCommand {
 		throws IOException {
 		String jsonStr = IOUtils.toString(jsonFile);
 		try {
-			SubmodelElement newSme = MDTModelSerDe.readValue(jsonStr, SubmodelElement.class);
-			target.update(newSme);
+			if ( m_updateElement ) {
+				SubmodelElement newSme = MDTModelSerDe.readValue(jsonStr, SubmodelElement.class);
+				target.update(newSme);
+			}
+			else {
+				target.updateWithValueJsonString(jsonStr);
+			}
 		}
 		catch ( IOException e ) {
 			// JSON 파일에 SubmodelElement이 아닌 ElementValue가 저장된 경우에는 값을 읽어서 갱신시킨다.

@@ -1,7 +1,7 @@
 package mdt.cli.get;
 
 import mdt.cli.CommandCollection;
-import mdt.cli.get.model.GetModelCommands;
+import mdt.cli.get.instance.GetInstanceCommand;
 
 import picocli.CommandLine.Command;
 
@@ -18,7 +18,6 @@ import picocli.CommandLine.Command;
 	description="Show MDT-related entity's properties",
 	subcommands= {
 		GetInstanceCommand.class,
-		GetModelCommands.class,
 		GetMdtInfoCommand.class,
 		GetElementCommand.class,
 		GetShellCommand.class,

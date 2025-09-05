@@ -1,14 +1,17 @@
-package mdt.cli.get.model;
+package mdt.cli.get.instance;
 
 import java.io.IOException;
 import java.util.List;
 
 import org.barfuin.texttree.api.Node;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import utils.stream.FStream;
 
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTOperationDescriptor;
 import mdt.tree.node.DefaultNode;
@@ -28,15 +31,22 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description = "Get MDT operation (AI/Simulation) informations for the MDTInstance."
 )
-public class GetModelOperationsCommand extends AbstractGetMDTModelEntityCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(GetModelOperationsCommand.class);
+public class GetInstanceOperationsCommand extends AbstractInstanceSubCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceOperationsCommand.class);
 
 	public static final void main(String... args) throws Exception {
-		main(new GetModelOperationsCommand(), args);
+		main(new GetInstanceOperationsCommand(), args);
 	}
 	
-	public GetModelOperationsCommand() {
+	public GetInstanceOperationsCommand() {
 		setLogger(s_logger);
+	}
+
+	@Override
+	protected void displayAsJson(HttpMDTInstanceClient instance) throws SerializationException, IOException {
+		List<MDTOperationDescriptor> descList = instance.getMDTOperationDescriptorAll();
+		String json = MDTModelSerDe.JSON_SERIALIZER.writeList(descList);
+		System.out.println(json);
 	}
 
 	@Override
@@ -82,6 +92,7 @@ public class GetModelOperationsCommand extends AbstractGetMDTModelEntityCommand 
 			
 			public ArgumentListNode(String title, List<MDTOperationDescriptor.ArgumentDescriptor> args) {
 				setTitle(title);
+				
 				m_argNodes = FStream.from(args)
 									.map(this::create)
 									.toList();
@@ -96,6 +107,8 @@ public class GetModelOperationsCommand extends AbstractGetMDTModelEntityCommand 
 				TerminalNode node = new TerminalNode();
 				node.setTitle(arg.getId());
 				node.setValueType(String.format(" (%s)", arg.getValueType()));
+				node.setHideValue(true);
+				
 				return node;
 			}
 		}

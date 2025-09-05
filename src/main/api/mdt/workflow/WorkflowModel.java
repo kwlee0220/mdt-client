@@ -78,6 +78,12 @@ public class WorkflowModel {
 		return new InternalException(msg);
 	}
 	
+	@Override
+	public String toString() {
+		return String.format("WorkflowModel(id=%s, name=%s, #tasks=%d)",
+								m_id, m_name, m_taskDescriptors.size());
+	}
+	
 	private static List<TaskDescriptor> sortTopologically(Collection<TaskDescriptor> tasks) {
 		List<TaskDescriptor> remains = Lists.newArrayList(tasks);
 		List<TaskDescriptor> sorted = Lists.newArrayList();

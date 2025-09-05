@@ -1,14 +1,17 @@
-package mdt.cli.get.model;
+package mdt.cli.get.instance;
 
 import java.io.IOException;
 import java.util.List;
 
 import org.barfuin.texttree.api.Node;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import utils.stream.FStream;
 
+import mdt.client.instance.HttpMDTInstanceClient;
+import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTTwinCompositionDescriptor;
 import mdt.model.instance.MDTTwinCompositionDescriptor.MDTCompositionDependency;
@@ -28,15 +31,22 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description = "Get Twin-Compositions for the MDTInstance."
 )
-public class GetModelCompositionsCommand extends AbstractGetMDTModelEntityCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(GetModelCompositionsCommand.class);
+public class GetInstanceCompositionsCommand extends AbstractInstanceSubCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceCompositionsCommand.class);
 
 	public static final void main(String... args) throws Exception {
-		main(new GetModelCompositionsCommand(), args);
+		main(new GetInstanceCompositionsCommand(), args);
 	}
 	
-	public GetModelCompositionsCommand() {
+	public GetInstanceCompositionsCommand() {
 		setLogger(s_logger);
+	}
+
+	@Override
+	protected void displayAsJson(HttpMDTInstanceClient instance) throws SerializationException, IOException {
+		MDTTwinCompositionDescriptor twinComp = instance.getMDTTwinCompositionDescriptor();
+		String json = MDTModelSerDe.JSON_SERIALIZER.write(twinComp);
+		System.out.println(json);
 	}
 
 	@Override

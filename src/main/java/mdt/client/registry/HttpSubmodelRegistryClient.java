@@ -32,7 +32,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public List<SubmodelDescriptor> getAllSubmodelDescriptors() {
-		String url = String.format("%s/submodel-descriptors", m_endpoint);
+		String url = String.format("%s/aas_registry/submodel-descriptors", m_endpoint);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);
@@ -41,7 +41,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	@Override
 	public List<SubmodelDescriptor>
 	getAllSubmodelDescriptorsByIdShort(String idShort) {
-		String url = String.format("%s/submodel-descriptors?idShort=%s", m_endpoint, idShort);
+		String url = String.format("%s/aas_registry/submodel-descriptors?idShort=%s", m_endpoint, idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);
@@ -49,7 +49,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public List<SubmodelDescriptor> getAllSubmodelDescriptorsBySemanticId(String semanticId) {
-		String url = String.format("%s/submodel-descriptors?semanticId=%s", m_endpoint, semanticId);
+		String url = String.format("%s/aas_registry/submodel-descriptors?semanticId=%s", m_endpoint, semanticId);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return callList(req, SubmodelDescriptor.class);
@@ -57,7 +57,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public SubmodelDescriptor getSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
+		String url = String.format("%s/aas_registry/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, SubmodelDescriptor.class);
@@ -66,7 +66,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	@Override
 	public SubmodelDescriptor postSubmodelDescriptor(SubmodelDescriptor desc) {
 		try {
-			String url = String.format("%s/submodel-descriptors", m_endpoint);
+			String url = String.format("%s/aas_registry/submodel-descriptors", m_endpoint);
 			RequestBody reqBody = createRequestBody(desc);
 			
 			Request req = new Request.Builder().url(url).post(reqBody).build();
@@ -79,7 +79,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor descriptor) {
-		String url = String.format("%s/submodel-descriptors", m_endpoint);
+		String url = String.format("%s/aas_registry/submodel-descriptors", m_endpoint);
 		try {
 			RequestBody reqBody = createRequestBody(descriptor);
 			
@@ -93,7 +93,7 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 
 	@Override
 	public void deleteSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
+		String url = String.format("%s/aas_registry/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
 		
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);

@@ -13,6 +13,7 @@ public abstract class DefaultNode implements Node {
 	private Object m_title = "";
 	private Object m_valueType = "";
 	private Object m_value = "";
+	private boolean m_hideValue = false;
 	private String m_text = null;	// 일반적으로 null이고, 이때는 'getText()'를 호출하게되지만,
 		                            // null이 아닌 경우는 'getText()'를 호출하지 않고 이 값을 사용함
 	
@@ -50,6 +51,10 @@ public abstract class DefaultNode implements Node {
 	public void setValue(Object value) {
 		m_value = value;
 	}
+	
+	public void setHideValue(boolean hide) {
+		m_hideValue = hide;
+	}
 
 	@Override
 	public String getText() {
@@ -57,8 +62,13 @@ public abstract class DefaultNode implements Node {
 			return String.format("%s%s", m_prefix, m_text);
 		}
 		else {
-			return String.format("%s%s%s: %s", m_prefix, m_title, FOption.getOrElse(m_valueType, ""),
-									FOption.getOrElse(m_value, "None"));
+			if ( m_hideValue ) {
+				return String.format("%s%s%s", m_prefix, m_title, FOption.getOrElse(m_valueType, ""));
+			}
+			else {
+				return String.format("%s%s%s: %s", m_prefix, m_title, FOption.getOrElse(m_valueType, ""),
+										FOption.getOrElse(m_value, "None"));
+			}
 		}
 	}
 	

@@ -25,6 +25,7 @@ import lombok.experimental.Accessors;
 
 import utils.func.FOption;
 
+import mdt.model.AASUtils;
 import mdt.model.sm.info.MDTAssetType;
 
 /**
@@ -83,6 +84,10 @@ public class InstanceDescriptor {
 		return m_aasId;
 	}
 	
+	public String getAasIdEncoded() {
+		return AASUtils.encodeBase64UrlSafe(m_aasId);
+	}
+	
 	/**
 	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 idShort를 반환한다.
 	 * 
@@ -138,13 +143,14 @@ public class InstanceDescriptor {
 			throws IOException, JsonProcessingException {
 			gen.writeStartObject();
 			gen.writeStringField("id", desc.getId());
-			gen.writeStringField("status", desc.getStatus().name());
-			gen.writeStringField("baseEndpoint", desc.getBaseEndpoint());
 			gen.writeStringField("aasId", desc.getAasId());
+			gen.writeStringField("aasIdEncoded", desc.getAasIdEncoded());
 			gen.writeStringField("aasIdShort", desc.getAasIdShort());
 			gen.writeStringField("globalAssetId", desc.getGlobalAssetId());
 			gen.writeStringField("assetType", FOption.map(desc.getAssetType(), MDTAssetType::name));
 			gen.writeStringField("assetKind", FOption.map(desc.getAssetKind(), AssetKind::name));
+			gen.writeStringField("status", desc.getStatus().name());
+			gen.writeStringField("baseEndpoint", desc.getBaseEndpoint());
 			
 			gen.writeEndObject();
 		}

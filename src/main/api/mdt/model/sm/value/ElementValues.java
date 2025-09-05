@@ -58,12 +58,7 @@ public class ElementValues {
 		}
 		
 		if ( element instanceof Property prop ) {
-			if ( prop.getValue() != null ) {
-				return getPropertyValue(prop);
-			}
-			else {
-				return null;
-			}
+			return getPropertyValue(prop);
 		}
 		else if ( element instanceof SubmodelElementCollection smec ) {
 			Map<String,ElementValue> members = Maps.newHashMap();

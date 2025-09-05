@@ -1,4 +1,4 @@
-package mdt.cli.get;
+package mdt.cli.get.instance;
 
 import java.io.IOException;
 import java.util.List;
@@ -46,6 +46,10 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Get an MDTInstance information.",
 	subcommands = {
+		GetInstanceSubmodelsCommand.class,
+		GetInstanceParametersCommand.class,
+		GetInstanceOperationsCommand.class,
+		GetInstanceCompositionsCommand.class,
 		GetInstanceLogCommand.class,
 	}
 )
@@ -106,6 +110,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 		
 		AssetAdministrationShellDescriptor aasDesc = instance.getAASShellDescriptor();
 		table.addCell(" AAS_ID "); table.addCell(" " + IdPair.of(aasDesc.getId(), aasDesc.getIdShort()) + " ");
+		table.addCell(" AAS_ID_ENCODED "); table.addCell(" " + aasDesc.getId() + " ");
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(aasDesc.getIdShort()) + " ");
 		table.addCell(" GLOBAL_ASSET_ID "); table.addCell(" " + getOrEmpty(aasDesc.getGlobalAssetId()) + " ");
 		table.addCell(" ASSET_TYPE "); table.addCell(" " + getOrEmpty(aasDesc.getAssetType()) + " ");

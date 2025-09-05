@@ -165,6 +165,7 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 					return nodes;
 				}
 			};
+			root.setHideValue(true);
 			treeString = TextTree.newInstance(TREE_OPTS).render(root);
 		}
 		

@@ -1,4 +1,4 @@
-package mdt.cli.get.model;
+package mdt.cli.get.instance;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -7,6 +7,7 @@ import org.barfuin.texttree.api.Node;
 import org.barfuin.texttree.api.TextTree;
 import org.barfuin.texttree.api.TreeOptions;
 import org.barfuin.texttree.api.style.TreeStyles;
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +31,14 @@ import picocli.CommandLine.ParentCommand;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class AbstractGetMDTModelEntityCommand extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(AbstractGetMDTModelEntityCommand.class);
+public abstract class AbstractInstanceSubCommand extends AbstractMDTCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(AbstractInstanceSubCommand.class);
 
-	@ParentCommand GetModelCommands m_parent;
+	@ParentCommand GetInstanceCommand m_parent;
+	
+	@Option(names={"--output", "-o"}, paramLabel="type", defaultValue="tree", required=false,
+			description="output type (candidnates: 'tree' or 'json')")
+	private String m_output = "tree";
 	
 	@Option(names={"--repeat", "-r"}, paramLabel="interval", description="repeat interval (e.g. \"1s\", \"500ms\"")
 	private String m_repeat = null;
@@ -44,8 +49,9 @@ public abstract class AbstractGetMDTModelEntityCommand extends AbstractMDTComman
 	private final MovingAverage m_mavg = new MovingAverage(0.1f);
 	
 	abstract protected Node toMDTModelNode(MDTInstance instance) throws IOException;
+	protected void displayAsJson(HttpMDTInstanceClient instance) throws SerializationException, IOException { }
 	
-	protected AbstractGetMDTModelEntityCommand() {
+	protected AbstractInstanceSubCommand() {
 		setLogger(s_logger);
 	}
 
@@ -54,7 +60,16 @@ public abstract class AbstractGetMDTModelEntityCommand extends AbstractMDTComman
 		HttpMDTInstanceClient modelSvc = m_parent.getInstance(mdt);
 		
 		if ( m_repeat == null ) {
-			display(modelSvc, false);
+			switch ( m_output ) {
+				case "tree":
+					displayAsTree(modelSvc, false);
+					break;
+				case "json":
+					displayAsJson(modelSvc);
+					break;
+				default:
+					throw new IllegalArgumentException("unsupported output type: " + m_output);
+			}
 			return;
 		}
 
@@ -63,7 +78,7 @@ public abstract class AbstractGetMDTModelEntityCommand extends AbstractMDTComman
 			@Override
 			protected FOption<Void> performPeriodicAction(long loopIndex) throws Exception {
 				try {
-					display(modelSvc, true);
+					displayAsTree(modelSvc, true);
 				}
 				catch ( InvalidResourceStatusException expected ) {
 					System.out.println("instance is not running: id=" + m_parent.getInstanceId());
@@ -85,7 +100,7 @@ public abstract class AbstractGetMDTModelEntityCommand extends AbstractMDTComman
 		TREE_OPTS.setMaxDepth(5);
 	}
 	
-	private void display(MDTInstance service, boolean clearConsole) throws IOException {
+	private void displayAsTree(MDTInstance service, boolean clearConsole) throws IOException {
 		StopWatch watch = StopWatch.start();
 		
 		Node mdtModelNode = toMDTModelNode(service);

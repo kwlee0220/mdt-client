@@ -338,9 +338,9 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	}
 
 	public String resolveReferenceToUrl(String ref) {
-		String url = String.format("%s/resolveReference/$url", getEndpoint());
+		String url = String.format("%s/references/$url", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
-						 		.addQueryParameter("reference", ref)
+						 		.addQueryParameter("ref", ref)
 					 			.build();
 		return m_restfulClient.get(httpUrl, HttpRESTfulClient.STRING_DESER);
 	}

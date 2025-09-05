@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import utils.func.Funcs;
+import utils.func.Try;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
@@ -16,7 +17,9 @@ import mdt.model.DescriptorUtils;
 import mdt.model.MDTManager;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -56,16 +59,19 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
-		SubmodelDescriptor smDesc = null;
-		if ( m_smIdShort != null ) {
-			// 'm_id'는 MDTInstance의 식별자로 간주하고, 'm_idShort'는 Submodel의 idShort로 간주한다.
-			HttpMDTInstanceClient instance = manager.getInstance(m_id);
-			smDesc = Funcs.findFirst(instance.getAASSubmodelDescriptorAll(), desc -> m_smIdShort.equals(desc.getIdShort()))
-							.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + m_smIdShort));
-		}
-		else {
-			smDesc = mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_id);
-		}
+		SubmodelDescriptor smDesc
+			= Try.get(() -> mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_id))
+				.recover(() -> {
+					// m_id를 Submodel id로 간주해서 SubmodelDescriptor를 찾는 과정에서 오류가 발생한 경우,
+					// m_id를 <instance-id>:<submodel-idShort> 형식의 SubmodelReference로 간주해서
+					// SubmodelDescriptor를 찾는다.
+					ByIdShortSubmodelReference smRef = (ByIdShortSubmodelReference)MDTExpressionParser.parseSubmodelReference(m_id).evaluate();
+					HttpMDTInstanceClient instance = manager.getInstance(smRef.getInstanceId());
+					return Funcs.findFirst(instance.getAASSubmodelDescriptorAll(),
+											desc -> smRef.getSubmodelIdShort().equals(desc.getIdShort()))
+								.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + m_smIdShort));
+				})
+				.get();
 			
 		m_output = m_output.toLowerCase();
 		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {

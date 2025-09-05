@@ -1,4 +1,4 @@
-package mdt.cli.get;
+package mdt.cli.get.instance;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

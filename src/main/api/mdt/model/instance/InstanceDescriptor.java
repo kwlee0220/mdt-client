@@ -127,6 +127,21 @@ public class InstanceDescriptor {
 	public AssetKind getAssetKind() {
 		return m_assetKind;
 	}
+	
+	public String getParameterEndpoint(int paramIdx, String smEndpoint) {
+		if ( m_baseEndpoint == null ) {
+			throw new IllegalStateException("no base endpoint");
+		}
+		
+		String assetTypeName = switch ( m_assetType ) {
+			case Machine -> "Equipment";
+            case Process -> "Operation";
+            default -> throw new IllegalArgumentException("MDTParameter is not supported for assetType: " + m_assetType);
+		};
+		
+		return String.format("%s/submodel-elements/DataInfo.%s.%sParameterValues[%d]",
+							smEndpoint, assetTypeName, assetTypeName, paramIdx);
+	}
 
 	public static class Serializer extends StdSerializer<InstanceDescriptor> {
 		private static final long serialVersionUID = 1L;

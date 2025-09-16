@@ -1,26 +1,17 @@
 package mdt.model.sm.info;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
-import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
-import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
-import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
+
+import mdt.model.MDTSemanticIds;
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public interface InformationModel {
-	public static final String IDSHORT = "Data";
-	public static final String SEMANTIC_ID = "https://etri.re.kr/mdt/Submodel/InformationModel/1/1";
-	public static final Reference SEMANTIC_ID_REFERENCE
-		= new DefaultReference.Builder()
-				.type(ReferenceTypes.EXTERNAL_REFERENCE)
-				.keys(new DefaultKey.Builder()
-									.type(KeyTypes.GLOBAL_REFERENCE)
-									.value(SEMANTIC_ID)
-									.build())
-				.build();
+	public static final String IDSHORT = "InformationModel";
+	public static final String SEMANTIC_ID = MDTSemanticIds.SUBMODEL_INFO;
+	public static final Reference SEMANTIC_ID_REFERENCE = MDTSemanticIds.toReference(SEMANTIC_ID);
 	
 	public MDTInfo getMDTInfo();
 	public void setMDTInfo(MDTInfo info);

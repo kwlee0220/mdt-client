@@ -51,9 +51,6 @@ public class RunTaskCommand extends MultiVariablesCommand {
 	@Parameters(index="0", paramLabel="opRef",
 				description="Operation reference (e.g. <instance-id>/<submodel-idshort>)")
 	private String m_opRefExpr;
-
-//	@Option(names={"--sync"}, defaultValue="false", description="invoke synchronously")
-//	private boolean m_sync = false;
 	
 	public RunTaskCommand() {
 		setLogger(s_logger);

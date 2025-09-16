@@ -118,13 +118,14 @@ public class GetInstanceParametersCommand extends AbstractInstanceSubCommand {
 		public List<? extends Node> getChildren() {
 			TerminalNode nameNode = new TerminalNode("name", "", m_pdesc.getName());
 			TerminalNode refNode = new TerminalNode("reference", "", m_pdesc.getReference());
+			TerminalNode epNode = new TerminalNode("endpoint", "", m_pdesc.getEndpoint());
 			try {
 				if ( !m_ref.isActivated() ) {
 					m_ref.activate(m_manager);
 				}
 				DefaultNode valueNode = DefaultNodeFactories.create(m_ref.read());
 				valueNode.setTitle("value");
-				return List.of(nameNode, refNode, valueNode);
+				return List.of(nameNode, refNode, epNode, valueNode);
 			}
 			catch ( Throwable e ) {
 				return List.of(refNode);

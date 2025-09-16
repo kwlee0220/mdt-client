@@ -19,8 +19,6 @@ import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.value.ElementValue;
-import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.References;
 
 
@@ -81,12 +79,13 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 		m_smRef.activate(manager);
 	}
 
-	@Override
-	public void updateWithValueJsonString(String valueJsonString) throws IOException {
-		SubmodelElement proto = read();
-		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
-		updateValue(newVal);
-	}
+//	@Override
+//	public void updateValue(String valueJsonString) throws IOException {
+////		SubmodelElement proto = read();
+////		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
+////		updateValue(newVal);
+//		updateValue(valueJsonString);
+//	}
 
 	@Override
 	public String toStringExpr() {

@@ -35,9 +35,9 @@ public class ParameterCollectionNode extends ListNode {
 		List<Parameter> params = m_paramColl.getParameterList();
 		List<ParameterValue> values = m_paramColl.getParameterValueList();
 		return FStream.from(params)
-						.zipWith(FStream.from(values))
-						.map(pair -> ParameterPairNodeFactory.create(pair._1, pair._2))
-						.toList();
+					.zipWith(FStream.from(values))
+					.map(pair -> ParameterPairNodeFactory.create(pair._1, pair._2))
+					.toList();
 	}
 	
 	public static ParameterCollectionNodeFactory FACTORY = new ParameterCollectionNodeFactory();

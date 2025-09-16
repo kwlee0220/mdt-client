@@ -4,10 +4,14 @@ import java.io.IOException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import utils.func.Lazy;
+import utils.http.RESTfulRemoteException;
 
 import mdt.model.SubmodelService;
 import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.IdShortPath;
 
 
@@ -22,6 +26,7 @@ import mdt.model.sm.value.IdShortPath;
 public abstract class SubmodelBasedElementReference extends AbstractElementReference
 													implements MDTElementReference {
 	private final Lazy<IdShortPath> m_idShortPath = Lazy.of(this::parseIdShortPath);
+	private final ObjectMapper MAPPER = new ObjectMapper();
 	
 	abstract public MDTSubmodelReference getSubmodelReference();
 	
@@ -36,8 +41,38 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 
 	@Override
 	public void updateValue(ElementValue smev) throws IOException {
+		updateValue(smev.toValueJsonString());
+	}
+	
+	@Override
+	public void updateValue(String valueJsonString) throws IOException {
 		SubmodelService service = getSubmodelService();
-		service.updateSubmodelElementValueByPath(getIdShortPathString(), smev);
+		try {
+//			JsonNode jnode = MAPPER.readTree(valueJsonString);
+//			if ( jnode.isObject() || jnode.isArray() ) {
+//				String encoded = MAPPER.writeValueAsString(valueJsonString);
+//				service.updateSubmodelElementByPath(getIdShortPathString(), encoded);
+//			}
+//			else {
+				service.updateSubmodelElementByPath(getIdShortPathString(), valueJsonString);
+//			}
+		}
+		catch ( RESTfulRemoteException e ) {
+			String msg = e.getMessage();
+			if ( msg != null && msg.startsWith("no type information found") ) {
+				getLogger().warn("failed to update the value by path=" + getIdShortPathString()
+									+ ", try to update it locally: valueJsonString=" + valueJsonString);
+				updateValueLocally(valueJsonString);
+			}
+			else {
+				throw e;
+			}
+		}
+	}
+	private void updateValueLocally(String valueJsonString) throws IOException {
+		SubmodelElement buffer = read();
+		ElementValues.updateWithValueJsonString(buffer, valueJsonString);
+		write(buffer);
 	}
 
 	@Override

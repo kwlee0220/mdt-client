@@ -146,12 +146,12 @@ public class SetElementCommand extends AbstractMDTCommand {
 				target.update(newSme);
 			}
 			else {
-				target.updateWithValueJsonString(jsonStr);
+				target.updateValue(jsonStr);
 			}
 		}
 		catch ( IOException e ) {
 			// JSON 파일에 SubmodelElement이 아닌 ElementValue가 저장된 경우에는 값을 읽어서 갱신시킨다.
-			target.updateWithValueJsonString(jsonStr);
+			target.updateValue(jsonStr);
 		}
 	}
 	

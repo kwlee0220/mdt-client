@@ -190,11 +190,11 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 	private void printInstancesLongTable(List<Workflow> wfList, PrintWriter pw) {
 		Table table = new Table(6);
 		table.setColumnWidth(1, 15, 50);
-		table.setColumnWidth(2, 15, 40);
+		table.setColumnWidth(2, 10, 40);
 		table.setColumnWidth(3, 9, 9);
 
 		table.addCell(" # ");
-		table.addCell(" NAME ");
+		table.addCell(" ID ");
 		table.addCell(" MODEL ");
 		table.addCell(" STATUS ");
 		table.addCell(" COUNT ");

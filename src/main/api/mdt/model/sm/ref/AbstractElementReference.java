@@ -8,8 +8,12 @@ import java.time.LocalDateTime;
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
+
+import utils.LoggerSettable;
 
 import mdt.model.MDTModelSerDe;
 
@@ -18,11 +22,12 @@ import mdt.model.MDTModelSerDe;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class AbstractElementReference implements ElementReference {
+public abstract class AbstractElementReference implements ElementReference, LoggerSettable {
+	private static final Logger s_logger = LoggerFactory.getLogger(ElementReference.class);
+	private Logger m_logger = s_logger;
+	
 	@Override
 	public void update(SubmodelElement sme) throws IOException {
-//		ElementValue newValue = ElementValues.getValue(sme);
-//		updateValue(newValue);
 		write(sme);
 	}
 
@@ -248,5 +253,15 @@ public abstract class AbstractElementReference implements ElementReference {
 			String json = MDTModelSerDe.toJsonString(prop);
 			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.DATE_TIME, json));
 		}
+	}
+	
+	@Override
+	public Logger getLogger() {
+		return m_logger;
+	}
+	
+	@Override
+	public void setLogger(Logger logger) {
+		m_logger = logger != null ? logger : s_logger;
 	}
 }

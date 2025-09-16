@@ -6,15 +6,10 @@ import utils.LogbackConfigLoader;
 import utils.Picoclies;
 
 import mdt.cli.MDTCommandsMain.SimulationCommands;
-import mdt.cli.MDTCommandsMain.TaskCommands;
 import mdt.cli.get.GetCommands;
 import mdt.cli.list.ListCommands;
 import mdt.cli.set.SetCommands;
 import mdt.cli.workflow.WorkflowCommands;
-import mdt.task.builtin.AASOperationTaskCommand;
-import mdt.task.builtin.HttpTaskCommand;
-import mdt.task.builtin.ProgramTaskCommand;
-import mdt.task.builtin.SetTaskCommand;
 
 import ch.qos.logback.classic.Level;
 import picocli.CommandLine;
@@ -38,7 +33,7 @@ import picocli.CommandLine.Command;
 		StartMDTInstanceCommand.class,
 		StopMDTInstanceCommand.class,
 		SetCommands.class,
-		TaskCommands.class,
+		RunCommands.class,
 		WorkflowCommands.class,
 		ResolveCommands.class,
 		SimulationCommands.class,
@@ -56,21 +51,6 @@ public class MDTCommandsMain {
 									.setUsageHelpWidth(110);
 		System.exit(cmdLine.execute(args));
 	}
-	
-	@Command(
-		name="run",
-		parameterListHeading = "Parameters:%n",
-		optionListHeading = "Options:%n",
-		mixinStandardHelpOptions = true,
-		description="MDT Task related commands",
-		subcommands= {
-			RunTaskCommand.class,
-			AASOperationTaskCommand.class,
-			ProgramTaskCommand.class,
-			HttpTaskCommand.class,
-			SetTaskCommand.class,
-		})
-	public static class TaskCommands extends CommandCollection {}
 	
 	@Command(
 		name="simulation",

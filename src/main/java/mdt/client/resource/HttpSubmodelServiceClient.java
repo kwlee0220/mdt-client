@@ -36,7 +36,6 @@ import mdt.model.MDTOperationHandle;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.sm.AASFile;
-import mdt.model.sm.value.ElementValue;
 
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -158,11 +157,11 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void updateSubmodelElementValueByPath(String idShortPath, ElementValue value) {
+	public void updateSubmodelElementByPath(String idShortPath, String valueJsonString) {
 		try {
 			String url = String.format("%s/submodel-elements/%s/$value",
 										getEndpoint(), encodeIdShortPath(idShortPath));
-			RequestBody reqBody = createRequestBody(value.toValueJsonString());
+			RequestBody reqBody = createRequestBody(valueJsonString);
 			
 			Request req = new Request.Builder().url(url).patch(reqBody).build();
 			send(req);

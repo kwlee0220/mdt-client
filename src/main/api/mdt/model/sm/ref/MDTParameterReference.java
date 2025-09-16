@@ -126,16 +126,17 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	}
 
 	@Override
-	public void updateWithValueJsonString(String valueJsonString) throws IOException {
+	public void updateValue(String valueJsonString) throws IOException {
 		assertActivated();
 		
-		// 해당 SubmodelElement의 구조를 알기 위해 prototype 객체를 활용한다.
-		if ( m_proto == null ) {
-			m_proto = read();
-		}
-		
-		ElementValue newVal = ElementValues.parseValueJsonString(m_proto, valueJsonString);;
-		updateValue(newVal);
+		m_ref.updateValue(valueJsonString);
+//		// 해당 SubmodelElement의 구조를 알기 위해 prototype 객체를 활용한다.
+//		if ( m_proto == null ) {
+//			m_proto = read();
+//		}
+//		
+//		ElementValue newVal = ElementValues.parseValueJsonString(m_proto, valueJsonString);;
+//		updateValue(newVal);
 	}
 
 	@Override
@@ -240,7 +241,6 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 			paramIdx = paramColl.getParameterIndex(paramId);
 		}
 		// TODO: 새로운 수정
-		return String.format("%s[%d].ParameterValue%s",
-							paramCollPathPrefix, paramIdx, subPath);
+		return String.format("%s[%d].ParameterValue%s", paramCollPathPrefix, paramIdx, subPath);
 	}
 }

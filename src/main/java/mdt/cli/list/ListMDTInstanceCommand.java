@@ -36,6 +36,7 @@ import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
@@ -157,7 +158,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 					System.out.println("elapsed: " + secStr);
 				}
 			}
-			catch ( RESTfulIOException e ) {
+			catch ( RESTfulIOException | ResourceNotFoundException e ) {
 				System.out.println("fails to list MDTInstances: " + e.getCause());
 			}
 			

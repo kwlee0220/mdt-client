@@ -73,11 +73,8 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 	@Option(names={"--operations", "-o"}, description="show operations (AI or Simulation)")
 	private boolean m_operations = false;
 	
-	@Option(names={"--components", "-c"}, description="show composition items")
-	private boolean m_components = false;
-	
-	@Option(names={"--dependencies", "-d"}, description="show composition dependencies")
-	private boolean m_dependencies = false;
+	@Option(names={"--compositions", "-c"}, description="show compositions")
+	private boolean m_compositions = false;
 
 	@Option(names={"--repeat", "-r"}, paramLabel="interval",
 			description="repeat interval (e.g. \"1s\", \"500ms\"")
@@ -147,18 +144,12 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 		if ( m_operations ) {
 			nodes.add(buildOperationsNode(instance));
 		}
-		if ( m_components ) {
+		if ( m_compositions ) {
 			FOption.accept(buildCompositionItemsNode(instance), nodes::add);
-		}
-		if ( m_dependencies ) {
 			FOption.accept(buildCompositionDependenciesNode(instance), nodes::add);
 		}
-		
-		String treeString = null;
-		if ( nodes.size() == 1 ) {
-			treeString = TextTree.newInstance(TREE_OPTS).render(nodes.get(0));
-		}
-		else if ( nodes.size() > 1 ) {
+
+		if ( nodes.size() > 0 ) {
 			DefaultNode root = new DefaultNode("MDTInstance: " + instance.getId(), null, "") {
 				@Override
 				public Iterable<? extends Node> getChildren() {
@@ -166,15 +157,13 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 				}
 			};
 			root.setHideValue(true);
-			treeString = TextTree.newInstance(TREE_OPTS).render(root);
-		}
-		
-		if ( treeString != null ) {
+			String treeString = TextTree.newInstance(TREE_OPTS).render(root);
 			if ( clearConsole ) {
 				System.out.print(CLEAR_CONSOLE_CONTROL);
 			}
 			System.out.print(treeString);
 		}
+		
 		if ( m_verbose ) {
 			watch.stop();
 			
@@ -230,7 +219,7 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 						})
 						.toList();
 	}
-
+	
 	private DefaultNode buildCompositionItemsNode(MDTInstance instance) {
 		SubmodelService infoSvc = FStream.from(instance.getSubmodelServiceAllBySemanticId(InformationModel.SEMANTIC_ID))
 								        .findFirst()

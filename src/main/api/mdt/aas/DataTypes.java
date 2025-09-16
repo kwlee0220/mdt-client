@@ -494,7 +494,12 @@ public class DataTypes {
 
 		@Override
 		public String fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : jnode.asText();
+			if ( jnode == null || jnode.isNull() ) {
+				return null;
+			}
+			else {
+				return jnode.isTextual() ? jnode.asText() : jnode.toString();
+			}
 		}
 	}
 

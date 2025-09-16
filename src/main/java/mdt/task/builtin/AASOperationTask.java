@@ -232,7 +232,7 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		
 		OperationResult result = null;
 //		if ( !sync ) {
-			getLogger().info("invoking AASOperation asynchronously: op={}, timeout={}, pollInterval={}",
+			getLogger().info("invoking AASOperation: op={}, timeout={}, pollInterval={}",
 							opRef, timeout, pollInterval);	
 			try {
 				result = svc.runOperation(opIdShortPath, op.getInputVariables(),

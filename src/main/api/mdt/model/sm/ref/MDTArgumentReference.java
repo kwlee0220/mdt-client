@@ -24,16 +24,15 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
-import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.ElementValue;
-import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.IdShortPath;
 
 
@@ -171,10 +170,13 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 	}
 
 	@Override
-	public void updateWithValueJsonString(String valueJsonString) throws IOException {
-		SubmodelElement proto = read();
-		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
-		updateValue(newVal);
+	public void updateValue(String valueJsonString) throws IOException {
+		m_argRef.updateValue(valueJsonString);
+//		SubmodelElement proto = read();
+////		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
+////		updateValue(newVal);
+//		ElementValues.updateWithValueJsonString(proto, valueJsonString);
+//		write(proto);
 	}
 	
 	public MDTSubmodelReference getSubmodelReference() {

@@ -69,7 +69,7 @@ public interface Variable {
 	 * @param valueJsonString 새 값의 JSON 문자열 표현.
 	 * @throws IOException 변수 값을 갱신하는 과정에서 오류가 발생한 경우.
 	 */
-	public void updateWithValueJsonString(String valueJsonString) throws IOException;
+	public void updateValue(String valueJsonString) throws IOException;
 
 	public String getSerializationType();
 	public void serializeFields(JsonGenerator gen) throws IOException;

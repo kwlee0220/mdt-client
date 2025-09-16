@@ -93,8 +93,8 @@ public abstract class AbstractVariable implements Variable {
 		}
 
 		@Override
-		public void updateWithValueJsonString(String valueJsonString) throws IOException {
-			m_ref.updateWithValueJsonString(valueJsonString);
+		public void updateValue(String valueJsonString) throws IOException {
+			m_ref.updateValue(valueJsonString);
 		}
 
 		@Override
@@ -155,7 +155,7 @@ public abstract class AbstractVariable implements Variable {
 		}
 
 		@Override
-		public void updateWithValueJsonString(String valueJsonString) throws IOException {
+		public void updateValue(String valueJsonString) throws IOException {
 			ElementValue newVal = ElementValues.parseValueJsonString(m_element, valueJsonString);
 			updateValue(newVal);
 		}
@@ -220,7 +220,7 @@ public abstract class AbstractVariable implements Variable {
 		}
 
 		@Override
-		public void updateWithValueJsonString(String valueJsonString) throws IOException {
+		public void updateValue(String valueJsonString) throws IOException {
 			throw new UnsupportedOperationException("ValueVariable cannot be updateWithValueJsonString(valueJsonString)");
 		}
 

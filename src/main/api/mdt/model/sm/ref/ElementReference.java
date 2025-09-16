@@ -73,7 +73,7 @@ public interface ElementReference {
 	 * @return    갱신된 SubmodelElement 객체.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
-	public void updateWithValueJsonString(String valueJsonString) throws IOException;
+	public void updateValue(String valueJsonString) throws IOException;
 
 	public String toStringExpr();
 

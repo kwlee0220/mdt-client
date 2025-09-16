@@ -223,7 +223,7 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 			
 			// 동일 이름을 command-variable이 검색된 경우.
 			try {
-				outVar.updateWithValueJsonString(cmdVar.getValue());
+				outVar.updateValue(cmdVar.getValue());
 				getLogger().info("Updated: output variable[{}]: {}", outVar.getName(), cmdVar.getValue());
 			}
 			catch ( IOException e ) {

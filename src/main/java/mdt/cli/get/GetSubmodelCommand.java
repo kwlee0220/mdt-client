@@ -39,13 +39,9 @@ import picocli.CommandLine.Parameters;
 public class GetSubmodelCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelCommand.class);
 
-	@Parameters(index="0", arity="1", paramLabel="ref",
-				description="SubmodelReference (<submodel-id> | <instance-id>) to show")
-	private String m_id = null;
-
-	@Parameters(index="1", arity="0..1", paramLabel="idShort",
-				description="Submodel idShort to show")
-	private String m_smIdShort = null;
+	@Parameters(index="0", arity="1", paramLabel="submodel-ref|submodel-id",
+				description="SubmodelReference (<submodel-ref> | <submodel-id>) to show")
+	private String m_ref = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: table or json)")
@@ -60,16 +56,17 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
 		SubmodelDescriptor smDesc
-			= Try.get(() -> mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_id))
+			= Try.get(() -> mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_ref))
 				.recover(() -> {
 					// m_id를 Submodel id로 간주해서 SubmodelDescriptor를 찾는 과정에서 오류가 발생한 경우,
 					// m_id를 <instance-id>:<submodel-idShort> 형식의 SubmodelReference로 간주해서
 					// SubmodelDescriptor를 찾는다.
-					ByIdShortSubmodelReference smRef = (ByIdShortSubmodelReference)MDTExpressionParser.parseSubmodelReference(m_id).evaluate();
+					ByIdShortSubmodelReference smRef
+							= (ByIdShortSubmodelReference)MDTExpressionParser.parseSubmodelReference(m_ref).evaluate();
 					HttpMDTInstanceClient instance = manager.getInstance(smRef.getInstanceId());
 					return Funcs.findFirst(instance.getAASSubmodelDescriptorAll(),
 											desc -> smRef.getSubmodelIdShort().equals(desc.getIdShort()))
-								.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + m_smIdShort));
+								.getOrThrow(() -> new ResourceNotFoundException("Submodel", "ref=" + m_ref));
 				})
 				.get();
 			

@@ -33,8 +33,7 @@ import picocli.CommandLine.Option;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "aas",
-	aliases = {"shells"},
+	name = "shells",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,

@@ -10,7 +10,6 @@ import lombok.experimental.Delegate;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.sm.SubmodelUtils;
-import mdt.model.sm.value.PropertyValue;
 
 /**
  *
@@ -38,7 +37,7 @@ public class ExtendedSubmodelService implements SubmodelService {
 		
 		SubmodelElement sme = getSubmodelElementByPath(idShortPath);
 		if ( sme instanceof Property ) {
-			updateSubmodelElementValueByPath(idShortPath, PropertyValue.STRING(value));
+			updateSubmodelElementByPath(idShortPath, value);
 		}
 		else {
 			throw new ResourceNotFoundException("Property", "path=" + idShortPath);

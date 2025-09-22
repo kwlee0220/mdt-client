@@ -92,7 +92,7 @@ dependencies {
 	implementation "org.apache.tika:tika-core:${tika_version}"
 
 	// JSLT2
-	implementation "com.github.tonysparks.jslt2:jslt2:${jslt2_version}"
+//	implementation "com.github.tonysparks.jslt2:jslt2:${jslt2_version}"
 		
 	// picocli command line parser
 	implementation "info.picocli:picocli:${picocli_version}"

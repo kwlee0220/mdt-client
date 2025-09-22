@@ -25,6 +25,12 @@ public interface MdtExprVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitExpr(MdtExprParser.ExprContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#nullExpr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNullExpr(MdtExprParser.NullExprContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MdtExprParser#assignmentExpr}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

@@ -11,7 +11,10 @@ expr: valueLiteralSpec
         | submodelSpec
         | fullElementSpec
         | assignmentExpr
+        | nullExpr
         ;
+
+nullExpr: NULL;
 
 assignmentExpr:
           fullElementSpec '=' valueLiteralSpec
@@ -59,6 +62,7 @@ rangeValueLiteralSpec: '[' propertyValueLiteralSpec ',' propertyValueLiteralSpec
 idOrString: ID | STRING;
 
 // Lexer rules
+NULL: 'null';
 ID: [a-zA-Z_] [a-zA-Z0-9_-]*;
 INTEGER: '-'? [0-9]+;
 FLOAT: '-'? [0-9]+ '.' [0-9]+;

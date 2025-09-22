@@ -209,6 +209,11 @@ public class MDTExpressionVisitor extends MdtExprBaseVisitor<MDTExpression> {
 	}
 	
 	@Override
+	public NullExpr visitNullExpr(MdtExprParser.NullExprContext ctx) {
+		return new NullExpr();
+	}
+	
+	@Override
 	public TerminalExpr visitTerminal(TerminalNode node) {
 		switch ( node.getSymbol().getType() ) {
 			case MdtExprParser.STRING:

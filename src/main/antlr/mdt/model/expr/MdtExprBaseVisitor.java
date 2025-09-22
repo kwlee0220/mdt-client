@@ -34,6 +34,13 @@ public class MdtExprBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitNullExpr(MdtExprParser.NullExprContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitAssignmentExpr(MdtExprParser.AssignmentExprContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}

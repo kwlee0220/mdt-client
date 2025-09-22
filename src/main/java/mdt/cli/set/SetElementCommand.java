@@ -4,7 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+
+import com.google.common.base.Preconditions;
 
 import utils.io.IOUtils;
 
@@ -12,7 +15,9 @@ import mdt.cli.AbstractMDTCommand;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.SubmodelService;
+import mdt.model.expr.MDTExpression;
 import mdt.model.expr.MDTExpressionParser;
+import mdt.model.expr.NullExpr;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.DefaultAASFile;
 import mdt.model.sm.SubmodelUtils;
@@ -101,10 +106,19 @@ public class SetElementCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	private void setWithExpr(MDTInstanceManager manager, ElementReference target, String expr) throws IOException {
-		ElementValue newValue;
+	private void setWithExpr(MDTInstanceManager manager, ElementReference target, String exprStr) throws IOException {
+		SubmodelElement sme = target.read();
+
+		MDTExpression expr = MDTExpressionParser.parseExpr(exprStr);
+		if ( expr instanceof NullExpr nullExpr ) {
+			Preconditions.checkArgument(sme instanceof Property, "Cannot set null to non-Property: %s", sme);
+			((Property)sme).setValue(null);
+			target.update(sme);
+			return;
+		}
 		
-		Object src = MDTExpressionParser.parseExpr(expr).evaluate();
+		ElementValue newValue;
+		Object src = MDTExpressionParser.parseExpr(exprStr).evaluate();
 		if ( src instanceof MDTElementReference ref ) {
 			ref.activate(manager);
 			newValue = ref.readValue();
@@ -113,10 +127,9 @@ public class SetElementCommand extends AbstractMDTCommand {
 			newValue = value;
 		}
 		else {
-			throw new IllegalArgumentException("Invalid expression: " + expr);
+			throw new IllegalArgumentException("Invalid expression: " + exprStr);
 		}
 		
-		SubmodelElement sme = target.read();
 		// ParameterValue인 경우에는 'ParameterValue' 필드를 사용한다.
 		if ( SubmodelUtils.isParameterValue(sme) ) {
 			newValue = ParameterValue.builder()

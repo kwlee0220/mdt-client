@@ -140,7 +140,8 @@ public class MqttService extends AbstractService {
 	        client.setCallback(new MqttCallback() {
 	            @Override
 	            public void connectionLost(Throwable cause) {
-        			s_logger.warn("MQTT broker disconnected: broker={}, cause={}", m_brokerUrl, cause);
+        			s_logger.warn("MQTT broker disconnected: broker={}, cause={}",
+        							m_brokerUrl, ""+cause);
 	            }
 	
 	            @Override

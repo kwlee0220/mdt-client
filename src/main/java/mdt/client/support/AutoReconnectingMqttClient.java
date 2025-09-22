@@ -133,7 +133,7 @@ public abstract class AutoReconnectingMqttClient extends AbstractService
 		m_reconnect = MqttBrokerReconnect.builder()
 										.mqttServerUri(m_mqttServerUri)
 										.clientId(m_clientId)
-										.reconnectTryInterval(m_reconnectInterval)
+										.reconnectInterval(m_reconnectInterval)
 										.build();
 		m_reconnect.setLogger(getLogger());
 		m_reconnect.whenFinished(result -> {

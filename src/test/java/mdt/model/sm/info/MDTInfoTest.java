@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import utils.Indexed;
 
+import mdt.model.MDTModelSerDe;
 import mdt.model.sm.SubmodelUtils;
 
 
@@ -18,9 +19,7 @@ import mdt.model.sm.SubmodelUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public class MDTInfoTest {
-	public static final JsonMapper MAPPER = JsonMapper.builder()
-														.findAndAddModules()
-														.build();
+	public static final JsonMapper MAPPER = MDTModelSerDe.MAPPER;
 	
 	@Before
 	public void setup() {

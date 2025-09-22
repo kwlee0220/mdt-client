@@ -1,5 +1,7 @@
 package mdt.client.support;
 
+import java.nio.charset.StandardCharsets;
+
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
@@ -70,6 +72,26 @@ public class MqttService extends AbstractService {
 		return m_guard.get(() -> isConnectedInGuard() ? m_client : null);
 	}
 	
+	public void publish(String topic, String payload) throws MqttException {
+		Preconditions.checkArgument(topic != null, "topic is null");
+		Preconditions.checkArgument(payload != null, "payload is null");
+		
+		m_guard.lock();
+		try {
+			if ( !isConnectedInGuard() ) {
+				s_logger.warn("failed to publish: topic={}, message={}, broker={}, cause=not connected to MQTT broker",
+								topic, payload, m_brokerUrl);
+				return;
+			}
+			
+			MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
+			m_client.publish(topic, message);
+		}
+		finally {
+			m_guard.unlock();
+		}
+	}
+	
 	public void subscribe(String topic, Subscriber subscriber) {
 		Preconditions.checkArgument(topic != null, "topic is null");
 		
@@ -105,6 +127,11 @@ public class MqttService extends AbstractService {
 	}
 	
 	@Override
+	public String toString() {
+		return "MqttService[broker=" + m_brokerUrl + ", clientId=" + m_clientId + "]";
+	}
+	
+	@Override
 	protected void doStart() {
 		try {
 			MqttClient client = new MqttClient(m_brokerUrl, m_clientId, new MemoryPersistence());
@@ -113,16 +140,12 @@ public class MqttService extends AbstractService {
 	        client.setCallback(new MqttCallback() {
 	            @Override
 	            public void connectionLost(Throwable cause) {
-	        		if ( s_logger.isDebugEnabled() ) {
-	        			s_logger.debug("MQTT broker disconnected");
-	        		}
+        			s_logger.warn("MQTT broker disconnected: broker={}, cause={}", m_brokerUrl, cause);
 	            }
 	
 	            @Override
 	            public void messageArrived(String topic, MqttMessage msg) throws Exception {
-	        		if ( s_logger.isDebugEnabled() ) {
-	                    s_logger.debug("Message arrived on topic[{}]: {}", topic, msg);
-	                }
+                    s_logger.debug("Message arrived on topic[{}]: {}", topic, msg);
 	        		
 	        		var subscriptions
 	        			= m_guard.get(() -> FStream.from(m_subscribers.keys())
@@ -142,11 +165,7 @@ public class MqttService extends AbstractService {
 	        // Connect to broker
 	        m_options.setCleanSession(true);
 	        client.connect(m_options);
-	        
-	        // subscribe to all topics
-			for ( String topic : m_subscribers.keySet() ) {
-				client.subscribe(topic);
-			}
+	        s_logger.info("Connected to {}", this);
 			
 			m_guard.run(() -> {
 				if ( isConnectedInGuard() ) {
@@ -158,6 +177,11 @@ public class MqttService extends AbstractService {
 				
 				m_client = client;
 			});
+	        
+	        // subscribe to all topics
+			for ( String topic : m_subscribers.keySet() ) {
+				client.subscribe(topic);
+			}
 			
 			notifyStarted();
 		}
@@ -175,8 +199,10 @@ public class MqttService extends AbstractService {
 					m_client.disconnect();
 				}
 				catch ( MqttException e ) {
-					s_logger.error("Failed to disconnect from broker: {}", e.getMessage(), e);
+					s_logger.error("Failed to disconnect {}", this, e);
 				}
+				
+				m_client = null;
 			}
 		});
 

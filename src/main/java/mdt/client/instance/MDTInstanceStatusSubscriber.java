@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
 
 import mdt.client.support.AutoReconnectingMqttClient;
+import mdt.model.MDTModelSerDe;
 import mdt.model.instance.InstanceStatusChangeEvent;
 
 /**
@@ -22,7 +23,7 @@ import mdt.model.instance.InstanceStatusChangeEvent;
 public class MDTInstanceStatusSubscriber extends AutoReconnectingMqttClient {
 	private static final Logger s_logger = LoggerFactory.getLogger(MDTInstanceStatusSubscriber.class);
 	private static final String TOPIC_PATTERN = "/mdt/manager/instances/#";
-	private static final JsonMapper MAPPER = JsonMapper.builder().findAndAddModules().build();
+	private static final JsonMapper MAPPER = MDTModelSerDe.MAPPER;
 	
 	private final int m_qos;
 	

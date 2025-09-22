@@ -33,7 +33,7 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 	
 	private final String m_mqttServerUri;
 	private final String m_clientId;
-	private final Duration m_reconnectTrialInterval;
+	private final Duration m_reconnectInterval;
 	private final @Nullable MqttCallback m_mqttCallback;
 	
 	@Override protected void initializeLoop() throws Exception { }
@@ -41,12 +41,12 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 	
 	private MqttBrokerReconnect(Builder builder) {
 		Preconditions.checkNotNull(builder.m_mqttServerUri);
-		Preconditions.checkNotNull(builder.m_reconnectTryInterval);
+		Preconditions.checkNotNull(builder.m_reconnectInterval);
 		
 		m_mqttServerUri = builder.m_mqttServerUri;
 		m_clientId = FOption.getOrElse(builder.m_clientId, MqttClient.generateClientId());
 		m_mqttCallback = builder.m_mqttCallback;
-		m_reconnectTrialInterval = builder.m_reconnectTryInterval;
+		m_reconnectInterval = builder.m_reconnectInterval;
 		
 		setLogger(s_logger);
 	}
@@ -67,7 +67,7 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 		}
 		catch ( MqttException e ) {
 			Duration elapsed = Duration.between(started, Instant.now());
-			long remains = m_reconnectTrialInterval.minus(elapsed).toMillis();
+			long remains = m_reconnectInterval.minus(elapsed).toMillis();
 			if ( remains > 10 ) {
 				TimeUnit.MILLISECONDS.sleep(remains);
 			}
@@ -99,7 +99,7 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 	public static class Builder {
 		private String m_mqttServerUri;
 		private String m_clientId;
-		private Duration m_reconnectTryInterval = Duration.ofSeconds(10);
+		private Duration m_reconnectInterval = Duration.ofSeconds(10);
 		private @Nullable MqttCallback m_mqttCallback;
 		
 		public MqttBrokerReconnect build() {
@@ -147,8 +147,8 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 		 * @param interval 재접속 시도 간격
 		 * @return 본 객체.
 		 */
-		public Builder reconnectTryInterval(Duration interval) {
-			m_reconnectTryInterval = interval;
+		public Builder reconnectInterval(Duration interval) {
+			m_reconnectInterval = interval;
 			return this;
 		}
 	}

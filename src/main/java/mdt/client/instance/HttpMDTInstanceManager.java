@@ -53,7 +53,7 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServiceProxy {
-	private static final JsonMapper MAPPER = JsonMapper.builder().findAndAddModules().build();
+	private static final JsonMapper MAPPER = MDTModelSerDe.MAPPER;
 	private static final String TOPIC_PREFIX = "/mdt/manager/instances/";
 	private static final int TOPIC_PREFIX_LENGTH = TOPIC_PREFIX.length();
 	public static EventBus EVENT_BUS = new EventBus();

@@ -202,12 +202,9 @@ public final class TaskDescriptor {
 	
 	public String toJsonString() {
 		try {
-			return JsonMapper.builder()
-							.findAndAddModules()
-							.addModule(new JavaTimeModule())
-							.build()
-							.writerFor(TaskDescriptor.class)
-							.writeValueAsString(this);
+			return MDTModelSerDe.MAPPER
+								.writerFor(TaskDescriptor.class)
+								.writeValueAsString(this);
 		}
 		catch ( IOException e ) {
 			String msg = String.format("Failed to serialize TaskDescriptor: %s", this);

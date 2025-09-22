@@ -22,7 +22,7 @@ public class TestMqttReconnect {
 		
 		MqttBrokerReconnect reconnect = MqttBrokerReconnect.builder()
 															.mqttServerUri("tcp://0.0.0.0:1883")
-															.reconnectTryInterval(Duration.ofSeconds(1))
+															.reconnectInterval(Duration.ofSeconds(1))
 															.build();
 		reconnect.whenFinished(System.out::println);
 		

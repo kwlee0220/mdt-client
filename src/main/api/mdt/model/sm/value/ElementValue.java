@@ -11,11 +11,26 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface ElementValue {
-	// public static ElementValue parseJsonString(String json);	// ElementValues에서 정의됨.
-	public String toJsonString() throws IOException;
+	/**
+	 * Polymorphic한 JSON 표현을 제외한 값에 해당하는 부분의 Java 객체를 반환한다.
+	 * 
+	 * @return	값에 해당하는 부분의 Java 객체.
+	 */
 	public Object toValueJsonObject();
 	
-	// public ElementValue parseValueJsonString(String json) throws IOException;	// ElementValues에서 정의됨.
+	/**
+	 * Polymorphic한 JSON 표현을 포함한 전체 JSON 문자열을 반환한다.
+	 *
+	 * @return	JSON 표현
+	 * @throws IOException	JSON 변환에 실패한 경우
+	 */
+	public String toJsonString() throws IOException;
+	
+	/**
+	 * Polymorphic한 JSON 표현을 제외한 값에 해당하는 부분의 JSON 문자열을 반환한다.
+	 * 
+	 * @return	값에 해당하는 부분의 JSON 문자열
+	 */
 	public String toValueJsonString();
 	
 	public String toDisplayString();

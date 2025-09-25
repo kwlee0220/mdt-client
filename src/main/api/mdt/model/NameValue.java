@@ -1,12 +1,10 @@
 package mdt.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 
+import utils.KeyValue;
 import utils.Keyed;
 import utils.Named;
 
@@ -15,11 +13,7 @@ import utils.Named;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@JsonInclude(Include.NON_NULL)
-public final class NameValue implements Named, Keyed<String> {
-	private final String m_name;
-	private final String m_value;
-	
+public final class NameValue extends KeyValue<String,String> implements Named, Keyed<String> {
 	public static NameValue of(String name, String value) {
 		return new NameValue(name, value);
 	}
@@ -27,24 +21,16 @@ public final class NameValue implements Named, Keyed<String> {
 	@JsonCreator
 	public NameValue(@JsonProperty("name") String name,
 					@JsonProperty("value") String value) {
-		Preconditions.checkArgument(name != null);
-		
-		this.m_name = name;
-		this.m_value = value;
-	}
-	
-	@Override
-	public String key() {
-        return m_name;
+		super(name, value);
 	}
 	
 	@Override
 	public String getName() {
-		return m_name;
+		return key();
 	}
 
 	public String getValue() {
-		return m_value;
+		return value();
 	}
 
 	@Override
@@ -57,17 +43,11 @@ public final class NameValue implements Named, Keyed<String> {
 		}
 		
 		NameValue other = (NameValue)obj;
-		return Objects.equal(m_name, other.m_name);
+		return Objects.equal(getName(), other.getValue());
 	}
 	
 	@Override
 	public int hashCode() {
-		return Objects.hashCode(m_name);
-	}
-	
-	@Override
-	public String toString() {
-		String vstr = (m_value != null) ? String.format("=%s", m_value) : "";
-		return String.format("%s%s", m_name, vstr);
+		return Objects.hashCode(getName());
 	}
 }

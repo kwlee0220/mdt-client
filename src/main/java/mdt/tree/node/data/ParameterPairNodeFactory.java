@@ -1,7 +1,6 @@
 package mdt.tree.node.data;
 
 import java.time.Instant;
-import java.util.Objects;
 
 import utils.func.FOption;
 

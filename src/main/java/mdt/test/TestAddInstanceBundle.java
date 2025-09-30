@@ -17,7 +17,7 @@ public class TestAddInstanceBundle {
 		
 		String instId = "test";
 		File instanceDir = new File("/home/kwlee/mdt/models/test");
-		HttpMDTInstanceClient inst = manager.addInstance(instId, instanceDir);
+		HttpMDTInstanceClient inst = manager.addInstance(instId, -1, instanceDir);
 		System.out.println("instance: aas-id=" + inst.getAasId());
 	}
 }

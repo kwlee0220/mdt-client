@@ -109,8 +109,13 @@ public class DefaultNodeFactories {
 		@Override
 		public DefaultNode create(SubmodelElement element) {
 			Property prop = (Property)element;
+			
+			String title = prop.getIdShort();
+//			String title = Funcs.getFirst(prop.getDisplayName())
+//								 .map(nt -> String.format("%s(%s)", prop.getIdShort(), nt.getText()))
+//								 .getOrElse(prop.getIdShort());
 			String typeStr = FOption.map(prop.getValueType(), vt -> String.format(" (%s)", vt));
-			return new TerminalNode(prop.getIdShort(), typeStr, prop.getValue());
+			return new TerminalNode(title, typeStr, prop.getValue());
 		} 
 	};
 	

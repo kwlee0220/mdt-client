@@ -4,8 +4,6 @@ import java.io.IOException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import utils.func.Lazy;
 import utils.http.RESTfulRemoteException;
 
@@ -26,7 +24,6 @@ import mdt.model.sm.value.IdShortPath;
 public abstract class SubmodelBasedElementReference extends AbstractElementReference
 													implements MDTElementReference {
 	private final Lazy<IdShortPath> m_idShortPath = Lazy.of(this::parseIdShortPath);
-	private final ObjectMapper MAPPER = new ObjectMapper();
 	
 	abstract public MDTSubmodelReference getSubmodelReference();
 	

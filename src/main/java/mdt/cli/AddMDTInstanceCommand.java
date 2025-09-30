@@ -33,6 +33,9 @@ public class AddMDTInstanceCommand extends AbstractMDTCommand {
 	@Parameters(index="1", paramLabel="path",
 				description="Path to the MDTInstance implementation directory or zip file")
 	private File m_instanceFile;
+
+	@Option(names={"--port", "-p"}, paramLabel="number", required=false, description="Port number for the MDTInstance")
+	private int m_port = -1;
 	
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
@@ -48,7 +51,7 @@ public class AddMDTInstanceCommand extends AbstractMDTCommand {
 	@Override
 	public void run(MDTManager manager) throws Exception {
 		HttpMDTInstanceManager client = (HttpMDTInstanceManager)manager.getInstanceManager();
-		client.addInstance(m_id, m_instanceFile);
+		client.addInstance(m_id, m_port, m_instanceFile);
 		if ( m_verbose ) {
             System.out.printf("added MDTInstance: id=%s%n", m_id);
 		}

@@ -205,14 +205,17 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return createInstance(desc);
 	}
 	
-	public HttpMDTInstanceClient addInstance(String id, File instanceFile)
-		throws MDTInstanceManagerException {
+	public HttpMDTInstanceClient addInstance(String id, int port, File instanceFile) throws MDTInstanceManagerException {
 		Preconditions.checkArgument(id != null, "MDTInstance id must not be null");
 		Preconditions.checkArgument(instanceFile != null, "MDTInstance file must not be null");
 		
 		MultipartBody.Builder builder = new MultipartBody.Builder()
 											.setType(MultipartBody.FORM)
 											.addFormDataPart("id", id);
+		
+		if ( port > 0 ) {
+			builder = builder.addFormDataPart("port", ""+port);
+		}
 		
 		File zippedFile = instanceFile;
 		if ( instanceFile.isDirectory() ) {

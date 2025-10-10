@@ -105,5 +105,17 @@ public final class MDTClientConfig {
 	public void setWorkflowManagerEndpoint(String endpoint) {
 		m_workflowManagerEndpoint = endpoint;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("MDTClientConfig [mdtEndpoint=").append(m_mdtEndpoint)
+				.append(", connectTimeout=").append(m_connectTimeout)
+				.append(", readTimeout=").append(m_readTimeout)
+				.append(", mqttEndpoint=").append(m_mqttEndpoint)
+				.append(", workflowManagerEndpoint=").append(m_workflowManagerEndpoint)
+				.append("]");
+		return builder.toString();
+	}
 }
 	

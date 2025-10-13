@@ -382,7 +382,8 @@ public class TaskDescriptors {
 		List<Qualifier> qualifiers = submodel.getQualifiers();
 		String method = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_METHOD)
 								.getOrThrow(() -> new ModelValidationException(
-										"Submodel operation method not found: submodel idShort=" + submodel.getIdShort()));
+										"Submodel operation method not found in the submodel qualifiers: submodel idShort="
+										+ submodel.getIdShort()));
 		switch ( method ) {
 			case "http":
 				descriptor = loadHttpTask(descriptor, submodel);

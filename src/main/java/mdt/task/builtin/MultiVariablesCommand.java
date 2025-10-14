@@ -124,41 +124,17 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 			}
 			switch ( kind.toLowerCase() ) {
 				case "in":
-					if ( !descriptor.getInputVariables().containsKey(var.getName()) ) {
-						getLogger().error("Unknown input variable: {}", var.getName());
-						throw new IllegalArgumentException("Unknown input variable: " + var.getName());
-					}
-					updateTaskVariable(descriptor.getInputVariables(), var);
-					if ( getLogger().isDebugEnabled() ) {
-						getLogger().debug("set input parameter variable[{}]", kind, unmatchedOpt.getName());
-					}
+					updateInputTaskVariable(descriptor, var);
+					getLogger().debug("set input parameter variable[{}]", var.getName());
 					break;
 				case "out":
-					if ( !descriptor.getOutputVariables().containsKey(var.getName()) ) {
-						getLogger().error("Unknown output variable: {}", var.getName());
-						throw new IllegalArgumentException("Unknown output variable: " + var.getName());
-					}
-					checkForOutputVariable(var);
-					updateTaskVariable(descriptor.getOutputVariables(), var);
-					if ( getLogger().isDebugEnabled() ) {
-						getLogger().debug("set output parameter variable[{}]", kind, unmatchedOpt.getName());
-					}
+					updateOutputTaskVariable(descriptor, var);
+					getLogger().debug("set output parameter variable[{}]", var.getName());
 					break;
 				case "inout":
-					if ( !descriptor.getInputVariables().containsKey(var.getName()) ) {
-						getLogger().error("Unknown input variable: {}", var.getName());
-						throw new IllegalArgumentException("Unknown input variable: " + var.getName());
-					}
-					if ( !descriptor.getOutputVariables().containsKey(var.getName()) ) {
-						getLogger().error("Unknown output variable: {}", var.getName());
-						throw new IllegalArgumentException("Unknown output variable: " + var.getName());
-					}
-					checkForOutputVariable(var);
-					updateTaskVariable(descriptor.getInputVariables(), var);
-					updateTaskVariable(descriptor.getOutputVariables(), var);
-					if ( getLogger().isDebugEnabled() ) {
-						getLogger().debug("set inoutput parameter variable[{}]", kind, unmatchedOpt.getName());
-					}
+					updateInputTaskVariable(descriptor, var);
+					updateOutputTaskVariable(descriptor, var);
+					getLogger().debug("set inoutput parameter variable[{}]", var.getName());
 					break;
 				case "opt":
 				case "opton":
@@ -168,6 +144,28 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 					throw new AssertionError("invalid kind: " + kind);
 			}
 		}
+	}
+	
+	private void updateInputTaskVariable(TaskDescriptor descriptor, Variable var) {
+        if ( descriptor.findLabel(TaskUtils.LABEL_MDT_OPERATION).isPresent() ) {
+    		if ( !descriptor.getInputVariables().containsKey(var.getName()) ) {
+    			getLogger().error("Unknown input variable: {}", var.getName());
+    			throw new IllegalArgumentException("Unknown input variable: " + var.getName());
+    		}
+        }
+		updateTaskVariable(descriptor.getInputVariables(), var);
+	}
+	
+	private void updateOutputTaskVariable(TaskDescriptor descriptor, Variable var) {
+		if ( descriptor.findLabel(TaskUtils.LABEL_MDT_OPERATION).isPresent() ) {
+			if ( !descriptor.getOutputVariables().containsKey(var.getName()) ) {
+				getLogger().error("Unknown output variable: {}", var.getName());
+				throw new IllegalArgumentException("Unknown output variable: " + var.getName());
+			}
+		}
+		checkForOutputVariable(var);
+		updateTaskVariable(descriptor.getOutputVariables(), var);
+		getLogger().debug("set output parameter variable[{}]", var.getName());
 	}
 	
 	private void checkForOutputVariable(Variable var) {

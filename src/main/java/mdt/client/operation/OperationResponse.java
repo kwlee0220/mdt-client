@@ -106,7 +106,8 @@ public class OperationResponse {
 										.join(", ")
 								: "";
 		String msgStr = (this.m_message != null) ? String.format(", message=%s", this.m_message) : "";
-		return String.format("[%s] status=%s, outputs={%s}%s", this.m_sessionId, this.m_status, valuesStr, msgStr);
+		return String.format("[session=%s] status=%s, outputs={%s}%s",
+							this.m_sessionId, this.m_status, valuesStr, msgStr);
 	}
 	
 	public static <T> OperationResponse running(String sessionId, String msg) {

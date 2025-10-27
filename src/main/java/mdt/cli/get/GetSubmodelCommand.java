@@ -80,8 +80,12 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 				displayAsTable(smDesc);
 				break;
 			case json:
-				Submodel sm = AASUtils.newSubmodelService(DescriptorUtils.getEndpointString(smDesc.getEndpoints()))
-										.getSubmodel();
+				String smEp = DescriptorUtils.getEndpointString(smDesc.getEndpoints());
+				if ( smEp == null ) {
+					System.err.println("No endpoint info in the SubmodelDescriptor: " + smDesc.getId());
+					System.exit(-1);
+				}
+				Submodel sm = AASUtils.newSubmodelService(smEp).getSubmodel();
 				displaySubmodel(sm);
 				break;
 			case desc:

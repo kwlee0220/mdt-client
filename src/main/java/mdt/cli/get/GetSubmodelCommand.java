@@ -2,6 +2,7 @@ package mdt.cli.get;
 
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
+import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
@@ -13,8 +14,10 @@ import utils.func.Try;
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
+import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
 import mdt.model.MDTManager;
+import mdt.model.MDTModelSerDe;
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.expr.MDTExpressionParser;
@@ -38,14 +41,16 @@ import picocli.CommandLine.Parameters;
 )
 public class GetSubmodelCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetSubmodelCommand.class);
+	
+	enum OutputTypes { table, json, desc };
 
 	@Parameters(index="0", arity="1", paramLabel="submodel-ref|submodel-id",
 				description="SubmodelReference (<submodel-ref> | <submodel-id>) to show")
 	private String m_ref = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: table or json)")
-	private String m_output = "table";
+			description="output type (candidnates: ${COMPLETION-CANDIDATES})")
+	private OutputTypes m_output = OutputTypes.table;
 	
 	public GetSubmodelCommand() {
 		setLogger(s_logger);
@@ -69,17 +74,22 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 								.getOrThrow(() -> new ResourceNotFoundException("Submodel", "ref=" + m_ref));
 				})
 				.get();
-			
-		m_output = m_output.toLowerCase();
-		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
-			displayAsTable(smDesc);
-		}
-		else if ( m_output.equalsIgnoreCase("json") ) {
-			displayAsJson(smDesc);
-		}
-		else {
-			System.err.println("Unknown output: " + m_output);
-			System.exit(-1);
+		
+		switch ( m_output ) {
+			case table:
+				displayAsTable(smDesc);
+				break;
+			case json:
+				Submodel sm = AASUtils.newSubmodelService(DescriptorUtils.getEndpointString(smDesc.getEndpoints()))
+										.getSubmodel();
+				displaySubmodel(sm);
+				break;
+			case desc:
+				displayAsJson(smDesc);
+				break;
+			default:
+				System.err.println("Unknown output: " + m_output);
+				System.exit(-1);
 		}
 	}
 
@@ -91,6 +101,10 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 		throws SerializationException {
 		JsonSerializer ser = new JsonSerializer();
 		String jsonStr = ser.write(smDesc);
+		System.out.println(jsonStr);
+	}
+	private void displaySubmodel(Submodel sm) {
+		String jsonStr = MDTModelSerDe.toJsonString(sm);
 		System.out.println(jsonStr);
 	}
 	

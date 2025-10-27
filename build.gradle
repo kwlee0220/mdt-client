@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'etri'
-version = '1.2'
+version = System.getenv("MDT_BUILD_VERSION") ?: "unknown"
 
 application {
 	mainClass = 'mdt.cli.MDTCommandsMain'
@@ -52,9 +52,6 @@ repositories {
 
 dependencies {
 	implementation project(":utils")
-
-	// Guava (from the project :utils)
-//	implementation "com.google.guava:guava:${guava_version}"
 	
 	// Checker framework
 	implementation("org.checkerframework:checker:${checker_version}")
@@ -90,14 +87,10 @@ dependencies {
 	
 	// Tika
 	implementation "org.apache.tika:tika-core:${tika_version}"
-
-	// JSLT2
-//	implementation "com.github.tonysparks.jslt2:jslt2:${jslt2_version}"
 		
 	// picocli command line parser
 	implementation "info.picocli:picocli:${picocli_version}"
 	annotationProcessor "info.picocli:picocli-codegen:${picocli_version}"
-//	implementation "org.fusesource.jansi:jansi:${jansi_version}"
 	
 	// MQTT
 	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"

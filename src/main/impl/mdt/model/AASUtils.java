@@ -105,6 +105,19 @@ public class AASUtils {
 		}
 		return shells.get(0);
 	}
+
+	public static SubmodelService newSubmodelService(String submodelServiceEndpoint) throws IOException {
+		try {
+			OkHttpClient httpClient = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
+			return new HttpSubmodelServiceClient(httpClient, submodelServiceEndpoint);
+		}
+		catch ( Exception e ) {
+			throw new IOException("failed to create an OkHttpClient: cause=" + e);
+		}
+	}
+	public static SubmodelService newSubmodelService(OkHttpClient httpClient, String submodelServiceEndpoint) {
+		return new HttpSubmodelServiceClient(httpClient, submodelServiceEndpoint);
+	}
 	
 	public static SubmodelService newSubmodelService(OkHttpClient httpClient, String faastUrl, String submodelId) {
 		String url = AASUtils.toSubmodelServiceEndpointString(faastUrl, submodelId);

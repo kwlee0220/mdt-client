@@ -84,11 +84,15 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		Instant started = Instant.now();
 		
 		TaskDescriptor descriptor = getTaskDescriptor();
+		
+		//
+		// TaskDescriptor의 'operation' 옵션에 기술된 Operation SubmodelElement를 획득한다.
+		//
+		Operation op;
 		MDTElementReference opRef
 					= descriptor.findOptionValue(OPTION_OPERATION)
 								.map(ElementReferences::parseExpr)
 								.getOrThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
-		Operation op;
 		try {
 			opRef.activate(manager);
 			SubmodelElement sme = opRef.read();
@@ -269,7 +273,12 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 					SubmodelElement resultSme = opvar.getValue();
 					Variable taskVar = descriptor.getOutputVariables().getOfKey(resultSme.getIdShort());
 					if ( taskVar != null ) {
-						taskVar.update(resultSme);
+						// 업데이트 시에는 SubmodelElement 전체가 아닌 값만 추출하여 갱신하도록 변경함.
+						// 그렇지 않으면 idShort 값이 덮어써져서 구조가 깨지는 문제가 발생함.
+//						taskVar.update(resultSme);
+						
+						ElementValue resultValue = ElementValues.getValue(resultSme);
+						taskVar.updateValue(resultValue);
 						if ( getLogger().isInfoEnabled() ) {
 							getLogger().info("Updated: output variable[{}]: {}",
 											taskVar.getName(), ElementValues.getValue(resultSme));
@@ -281,7 +290,12 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 					SubmodelElement resultSme = opvar.getValue();
 					Variable taskVar = descriptor.getOutputVariables().getOfKey(resultSme.getIdShort());
 					if ( taskVar != null ) {
-						taskVar.update(resultSme);
+						// 업데이트 시에는 SubmodelElement 전체가 아닌 값만 추출하여 갱신하도록 변경함.
+						// 그렇지 않으면 idShort 값이 덮어써져서 구조가 깨지는 문제가 발생함.
+//						taskVar.update(resultSme);
+						
+						ElementValue resultValue = ElementValues.getValue(resultSme);
+						taskVar.updateValue(resultValue);
 						if ( getLogger().isInfoEnabled() ) {
 							getLogger().info("Updated: output variable[{}]: {}",
 											taskVar.getName(), ElementValues.getValue(resultSme));

@@ -58,10 +58,11 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	
 	@Parameters(index="0", paramLabel="id", description="MDTInstance id to show.")
 	private String m_instanceId;
-	
+
+	enum OutputTypes { table, json, env };
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: 'table', 'json' or 'env')")
-	private String m_output = "table";
+			description="output type (candidnates: ${COMPLETION-CANDIDATES})")
+	private OutputTypes m_output = OutputTypes.table;
 
 	public static final void main(String... args) throws Exception {
 		main(new GetInstanceCommand(), args);
@@ -85,20 +86,20 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		HttpMDTInstanceClient instance = manager.getInstance(m_instanceId);
-		
-		m_output = m_output.toLowerCase();
-		if ( m_output == null || m_output.equalsIgnoreCase("table") ) {
-			displayAsTable(instance);
-		}
-		else if ( m_output.startsWith("json") ) {
-			displayAsJson(instance);
-		}
-		else if ( m_output.startsWith("env") ) {
-			displayEnvironment(instance);
-		}
-		else {
-			System.err.println("Unsupported output: " + m_output);
-			System.exit(-1);
+
+		switch ( m_output ) {
+			case table:
+				displayAsTable(instance);
+				break;
+			case json:
+				displayAsJson(instance);
+				break;
+			case env:
+				displayEnvironment(instance);
+				break;
+			default:
+				System.err.println("Unsupported output: " + m_output);
+				System.exit(-1);
 		}
 	}
 	

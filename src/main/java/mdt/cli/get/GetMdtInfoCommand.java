@@ -1,6 +1,7 @@
 package mdt.cli.get;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.List;
 
@@ -16,15 +17,12 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-import utils.MovingAverage;
-import utils.StopWatch;
 import utils.UnitUtils;
-import utils.async.PeriodicLoopExecution;
-import utils.async.StartableExecution;
 import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
+import mdt.cli.PeriodicRefreshingConsole;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.InvalidResourceStatusException;
@@ -82,8 +80,6 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 	
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
-	
-	private final MovingAverage m_mavg = new MovingAverage(0.1f);
 
 	public static final void main(String... args) throws Exception {
 		main(new GetMdtInfoCommand(), args);
@@ -99,41 +95,39 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 		HttpMDTInstanceClient instance = manager.getInstance(m_instanceId);
 		
 		if ( m_repeat == null ) {
-			display(instance, false);
+			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
+				printOutput(instance, pw);
+			}
 			return;
 		}
 
 		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
-		StartableExecution<Void> exec = new PeriodicLoopExecution<>(repeatInterval) {
+		PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 			@Override
-			protected FOption<Void> performPeriodicAction(long loopIndex) throws Exception {
+			protected void print(PrintWriter pw) throws Exception {
 				try {
 					MDTInstance instance = manager.getInstance(m_instanceId);
-					display(instance, true);
+					printOutput(instance, pw);
 				}
 				catch ( InvalidResourceStatusException expected ) {
-					System.out.println("instance is not running: id=" + instance.getId());
+					pw.println("instance is not running: id=" + instance.getId());
 				}
 				catch ( Exception e ) {
-					System.out.printf("failed to get MDT model info: instance=%s, cause=%s%n", instance.getId(), e);
+					pw.printf("failed to get MDT model info: instance=%s, cause=%s%n", instance.getId(), e);
 				}
-				return FOption.empty();
 			}
 		};
-		exec.start();
-		exec.get();
+		pwriter.setVerbose(m_verbose);
+		pwriter.run();
 	}
 
-	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
 	private static final TreeOptions TREE_OPTS = new TreeOptions();
 	static {
 		TREE_OPTS.setStyle(TreeStyles.UNICODE_ROUNDED);
 		TREE_OPTS.setMaxDepth(5);
 	}
 	
-	private void display(MDTInstance instance, boolean clearConsole) throws IOException {
-		StopWatch watch = StopWatch.start();
-		
+	private void printOutput(MDTInstance instance, PrintWriter pw) throws IOException {
 		List<DefaultNode> nodes = Lists.newArrayList();
 		if ( m_info ) {
 			nodes.add(buildInfoNode(instance));
@@ -158,18 +152,7 @@ public class GetMdtInfoCommand extends AbstractMDTCommand {
 			};
 			root.setHideValue(true);
 			String treeString = TextTree.newInstance(TREE_OPTS).render(root);
-			if ( clearConsole ) {
-				System.out.print(CLEAR_CONSOLE_CONTROL);
-			}
-			System.out.print(treeString);
-		}
-		
-		if ( m_verbose ) {
-			watch.stop();
-			
-			double avg = m_mavg.observe(watch.getElapsedInFloatingSeconds());
-			String secStr = UnitUtils.toMillisString(Math.round(avg * 1000));
-			System.out.println("elapsed: " + secStr);
+			pw.print(treeString);
 		}
 	}
 	

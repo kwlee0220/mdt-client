@@ -1,23 +1,21 @@
 package mdt.cli.workflow;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.StopWatch;
 import utils.UnitUtils;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
+import mdt.cli.PeriodicRefreshingConsole;
 import mdt.cli.list.ListCommands;
 import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
@@ -40,7 +38,6 @@ import picocli.CommandLine.Option;
 )
 public class ListWorkflowAllCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListWorkflowAllCommand.class);
-	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
 	
 	@Option(names={"--table", "-t"}, description="display instances in a table format.")
 	private boolean m_tableFormat = false;
@@ -73,51 +70,45 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		WorkflowManager svc = ((HttpMDTManager)mdt).getWorkflowManager();
-		
-		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
-		while ( true ) {
-			StopWatch watch = StopWatch.start();
-			
-			try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				PrintWriter pw = new PrintWriter(baos) ) {
-                List<Workflow> wfList = listWorkflows(svc);
-                if ( m_long ) {
-					if ( m_tableFormat ) {
-						printInstancesLongTable(wfList, pw);
-					}
-					else {
-                    	printInstancesLongList(wfList, pw);
-					}
-                }
-                else {
-					if ( m_tableFormat ) {
-						printInstancesShortTable(wfList, pw);
-					}
-					else {
-						printInstancesShortList(wfList, pw);
-					}
-                }
-				pw.flush();
-				String outputString = baos.toString();
-				if ( repeatInterval == null ) {
-					System.out.print(outputString);
-					break;
-				}
-				else {
-					System.out.print(CLEAR_CONSOLE_CONTROL);
-					System.out.print(outputString);
-				}
-				if ( m_verbose ) {
-					System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
-				}
+		WorkflowManager wfManager = ((HttpMDTManager)mdt).getWorkflowManager();
+
+		if ( m_repeat == null ) {
+			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
+				printOutput(wfManager, pw);
 			}
-			
-			Duration remains = repeatInterval.minus(watch.getElapsed());
-			if ( !(remains.isNegative() || remains.isZero()) ) {
-				TimeUnit.MILLISECONDS.sleep(remains.toMillis());
-			}
+			return;
 		}
+		else {
+			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
+			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
+				@Override
+				protected void print(PrintWriter pw) throws Exception {
+					printOutput(wfManager, pw);
+				}
+			};
+			pwriter.setVerbose(m_verbose);
+			pwriter.run();
+		}
+	}
+	
+	private void printOutput(WorkflowManager wfManager, PrintWriter pw) {
+        List<Workflow> wfList = listWorkflows(wfManager);
+        if ( m_long ) {
+			if ( m_tableFormat ) {
+				printInstancesLongTable(wfList, pw);
+			}
+			else {
+            	printInstancesLongList(wfList, pw);
+			}
+        }
+        else {
+			if ( m_tableFormat ) {
+				printInstancesShortTable(wfList, pw);
+			}
+			else {
+				printInstancesShortList(wfList, pw);
+			}
+        }
 	}
 	
 	private List<Workflow> listWorkflows(WorkflowManager wfMgr) {

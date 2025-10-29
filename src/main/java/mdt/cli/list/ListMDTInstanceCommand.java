@@ -1,11 +1,10 @@
 package mdt.cli.list;
 
-import java.io.ByteArrayOutputStream;
+import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.barfuin.texttree.api.TextTree;
@@ -21,8 +20,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 
 import utils.InternalException;
-import utils.MovingAverage;
-import utils.StopWatch;
 import utils.UnitUtils;
 import utils.Utilities;
 import utils.func.FOption;
@@ -30,6 +27,7 @@ import utils.http.RESTfulIOException;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
+import mdt.cli.PeriodicRefreshingConsole;
 import mdt.cli.list.Nodes.InstanceNode;
 import mdt.cli.list.Nodes.RootNode;
 import mdt.client.instance.HttpMDTInstanceClient;
@@ -58,7 +56,6 @@ import picocli.CommandLine.Option;
 )
 public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListMDTInstanceCommand.class);
-	private static final String CLEAR_CONSOLE_CONTROL = "\033[2J\033[1;1H";
 
 	@Option(names={"--filter", "-f"}, paramLabel="filter-expr", description="instance filter.")
 	private String m_filter = null;
@@ -92,8 +89,6 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
 	
-	private final MovingAverage m_mavg = new MovingAverage(0.1f);
-	
 	public ListMDTInstanceCommand() {
 		setLogger(s_logger);
 	}
@@ -102,72 +97,70 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
-		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
-		while ( true ) {
-			StopWatch watch = StopWatch.start();
+		if ( m_repeat == null ) {
+			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
+				printOutput(manager, pw);
+			}
+			return;
+		}
+		else {
+			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
+			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
+				@Override
+				protected void print(PrintWriter pw) throws Exception {
+					printOutput(manager, pw);
+				}
+			};
+			pwriter.setVerbose(m_verbose);
+			pwriter.run();
+		}
+	}
+	
+	private void printOutput(HttpMDTInstanceManager manager, PrintWriter pw) throws InterruptedException {
+		try {
+			List<HttpMDTInstanceClient> instances = (m_filter != null)
+													? manager.getInstanceAllByFilter(m_filter)
+													: manager.getInstanceAll();
 			
-			try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					PrintWriter pw = new PrintWriter(baos) ) {
-				List<HttpMDTInstanceClient> instances = (m_filter != null)
-														? manager.getInstanceAllByFilter(m_filter)
-														: manager.getInstanceAll();
-				
-                if ( m_long ) {
-					if ( m_output.equals("csv") ) {
-						printLongCsv(instances, pw);
-					}
-					else if ( m_output.equals("table") ) {
-                        printLongTable(instances, pw);
-                    }
-					else if ( m_output.equals("tree") ) {
-						printTree(instances, pw);
-					}
-					else {
-						printJson(instances, pw);
-					}
+            if ( m_long ) {
+				if ( m_output.equals("csv") ) {
+					printLongCsv(instances, pw);
+				}
+				else if ( m_output.equals("table") ) {
+                    printLongTable(instances, pw);
                 }
-                else {
-					if ( m_output.equals("csv") ) {
-						printShortCsv(instances, pw);
-					}
-					else if ( m_output.equals("table") ) {
-                        printShortTable(instances, pw);
-                    }
-					else if ( m_output.equals("tree") ) {
-						printTree(instances, pw);
-					}
-                    else {
-						printJson(instances, pw);
-                    }
-                }
-				pw.flush();
-				String outputString = baos.toString();
-				if ( repeatInterval == null ) {
-					System.out.print(outputString);
-					break;
+				else if ( m_output.equals("tree") ) {
+					printTree(instances, pw);
 				}
 				else {
-					System.out.print(CLEAR_CONSOLE_CONTROL);
-					System.out.print(outputString);
+					printJson(instances, pw);
 				}
-				if ( m_verbose ) {
-					watch.stop();
-					
-					double avg = m_mavg.observe(watch.getElapsedInFloatingSeconds());
-					String secStr = UnitUtils.toMillisString(Math.round(avg * 1000));
-					System.out.println("elapsed: " + secStr);
+            }
+            else {
+				if ( m_output.equals("csv") ) {
+					printShortCsv(instances, pw);
 				}
+				else if ( m_output.equals("table") ) {
+                    printShortTable(instances, pw);
+                }
+				else if ( m_output.equals("tree") ) {
+					printTree(instances, pw);
+				}
+                else {
+					printJson(instances, pw);
+                }
+            }
+		}
+		catch ( ResourceNotFoundException e ) {
+			pw.println("fails to list MDTInstances: " + e.getCause());
+		}
+		catch ( RESTfulIOException e ) {
+			Throwable cause = e.getCause();
+			if ( cause instanceof InterruptedIOException ) {
+				throw new InterruptedException("interrupted while listing MDTInstances");
 			}
-			catch ( RESTfulIOException | ResourceNotFoundException e ) {
-				System.out.println("fails to list MDTInstances: " + e.getCause());
-			}
-			
-			if ( repeatInterval == null ) {
-				break;
-			}
-			Duration remains = repeatInterval.minus(watch.getElapsed());
-			if ( !(remains.isNegative() || remains.isZero()) ) {
-				TimeUnit.MILLISECONDS.sleep(remains.toMillis());
+			else {
+				pw.println("fails to list MDTInstances: " + e.getCause());
 			}
 		}
 	}

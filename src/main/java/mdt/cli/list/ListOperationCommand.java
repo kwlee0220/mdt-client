@@ -1,18 +1,18 @@
 package mdt.cli.list;
 
+import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.StopWatch;
 import utils.UnitUtils;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
+import mdt.cli.PeriodicRefreshingConsole;
 import mdt.cli.list.ListCommands.CSVCollector;
 import mdt.cli.list.ListCommands.ListCollector;
 import mdt.cli.list.ListCommands.TableCollector;
@@ -63,44 +63,34 @@ public class ListOperationCommand extends AbstractMDTCommand {
 	@Override
 	public void run(MDTManager mdt) throws Exception {
 		MDTInstanceManager manager = mdt.getInstanceManager();
-		
-		Duration repeatInterval = (m_repeat != null) ? UnitUtils.parseDuration(m_repeat) : null;
-		while ( true ) {
-			StopWatch watch = StopWatch.start();
-			
-			try {
-				List<? extends MDTInstance> instances = (m_filter != null)
-														? manager.getInstanceAllByFilter(m_filter)
-														: manager.getInstanceAll();
-				
-				String listStr = (m_table) ? buildTableString(instances) + System.lineSeparator()
-											: buildCsvString(instances);
-				
-				if ( repeatInterval != null ) {
-					System.out.print(CLEAR_CONSOLE_CONTROL);
-				}
-				System.out.print(listStr);
-				System.out.flush();
+
+		if ( m_repeat == null ) {
+			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
+				printOutput(manager, pw);
 			}
-			catch ( Exception e ) {
-				if ( repeatInterval != null ) {
-					System.out.print(CLEAR_CONSOLE_CONTROL);
-				}
-				System.out.println("" + e);
-			}
-			if ( m_verbose ) {
-				System.out.println("elapsed: " + watch.stopAndGetElpasedTimeString());
-			}
-			
-			if ( repeatInterval == null ) {
-				break;
-			}
-			
-			long remainMillis = repeatInterval.minus(watch.getElapsed()).toMillis();
-			if ( remainMillis > 0 ) {
-				TimeUnit.MILLISECONDS.sleep(remainMillis);
-			}
+			return;
 		}
+		else {
+			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
+			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
+				@Override
+				protected void print(PrintWriter pw) throws Exception {
+					printOutput(manager, pw);
+				}
+			};
+			pwriter.setVerbose(m_verbose);
+			pwriter.run();
+		}
+	}
+	
+	private void printOutput(MDTInstanceManager manager, PrintWriter pw) {
+		List<? extends MDTInstance> instances = (m_filter != null)
+												? manager.getInstanceAllByFilter(m_filter)
+												: manager.getInstanceAll();
+		
+		String listStr = (m_table) ? buildTableString(instances) + System.lineSeparator()
+									: buildCsvString(instances);
+		pw.print(listStr);
 	}
 
 	private String buildCsvString(List<? extends MDTInstance> instances) {

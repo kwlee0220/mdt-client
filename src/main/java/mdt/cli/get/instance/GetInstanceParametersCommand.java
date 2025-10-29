@@ -1,6 +1,7 @@
 package mdt.cli.get.instance;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 
 import org.barfuin.texttree.api.Node;
@@ -51,10 +52,10 @@ public class GetInstanceParametersCommand extends AbstractInstanceSubCommand {
 	}
 
 	@Override
-	protected void displayAsJson(HttpMDTInstanceClient instance) throws SerializationException, IOException {
+	protected void displayAsJson(HttpMDTInstanceClient instance, PrintWriter pw) throws SerializationException, IOException {
 		List<MDTParameterDescriptor> descList = instance.getMDTParameterDescriptorAll();
 		String json = MDTModelSerDe.JSON_SERIALIZER.writeList(descList);
-		System.out.println(json);
+		pw.println(json);
 	}
 
 	@Override

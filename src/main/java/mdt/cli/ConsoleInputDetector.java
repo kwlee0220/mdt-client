@@ -21,7 +21,8 @@ import utils.async.Guard;
 public class ConsoleInputDetector extends AbstractThreadedExecution<Void> implements CancellableWork {
 	private static final Duration TIMEOUT = Duration.ofSeconds(1);
 	
-	private List<Character> m_stopCharacters;
+	private List<Character> m_quitCharacters;
+	private Runnable m_cancelCallback = null;
 	
 	private final Guard m_guard = Guard.create();
 	static enum State { NOT_STARTED, RUNNING, STOP_REQUESTED, STOPPED }
@@ -29,7 +30,24 @@ public class ConsoleInputDetector extends AbstractThreadedExecution<Void> implem
 	@GuardedBy("m_guard") private char m_input = '\0';
 	
 	public ConsoleInputDetector(List<Character> stopChars) {
-		m_stopCharacters = stopChars;
+		m_quitCharacters = stopChars;
+	}
+	
+	public void setQuitCharacters(List<Character> stopChars) {
+		m_quitCharacters = stopChars;
+	}
+	
+	public void setCancelCallback(Runnable callback) {
+		m_cancelCallback = callback;
+		
+		this.whenFinished(result -> {
+			if ( m_cancelCallback != null ) {
+				try {
+					m_cancelCallback.run();
+				}
+				catch ( Throwable ignored ) { }
+			}
+		});
 	}
 	
 	public char getDetectedInput() {
@@ -42,11 +60,11 @@ public class ConsoleInputDetector extends AbstractThreadedExecution<Void> implem
 		terminal.enterRawMode();
 		
 		while ( continueWork() ) {
-			int input = terminal.reader().read();
+			char input = (char)terminal.reader().read();
 			
-			if ( m_stopCharacters.contains((char)input) ) {
-				m_guard.run(() -> m_input = (char)input);
-				return null;
+			if ( m_quitCharacters.contains(input) ) {
+				m_guard.run(() -> m_input = input);
+				break;
 			}
 		}
 		

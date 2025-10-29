@@ -91,7 +91,6 @@ dependencies {
 	// picocli command line parser
 	implementation "info.picocli:picocli:${picocli_version}"
 	annotationProcessor "info.picocli:picocli-codegen:${picocli_version}"
-	// implementation "info.picocli:picocli:${picocli_version}"
 	// implementation "info.picocli:picocli-shell-jline3:${picocli_version}"
 	implementation "org.jline:jline:${jline_version}"
 	

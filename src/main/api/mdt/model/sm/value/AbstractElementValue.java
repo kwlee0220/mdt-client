@@ -2,6 +2,8 @@ package mdt.model.sm.value;
 
 import java.io.IOException;
 
+import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -38,7 +40,12 @@ public abstract class AbstractElementValue implements ElementValue {
 	@Override
 	public String toDisplayString() {
 		// PropertyValue인 경우는 재정의됨.
-		return toValueJsonString();
+		try {
+			return MDTModelSerDe.getJsonSerializer().write(toValueJsonObject());
+		}
+		catch ( SerializationException e ) {
+			throw new RuntimeException("Failed to get displayString of ElementValue: cause=" + e, e);
+		}
 	}
 	
 	@Override

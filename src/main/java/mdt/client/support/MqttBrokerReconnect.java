@@ -31,8 +31,6 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 	private final MqttClient m_client;
 	private final MqttConnectOptions m_connectOptions;
 	private final Duration m_reconnectInterval;
-	
-	@Override protected void initializeLoop() throws Exception { }
 	@Override protected void finalizeLoop() throws Exception { }
 	
 	private MqttBrokerReconnect(Builder builder) {
@@ -44,6 +42,12 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 		m_reconnectInterval = FOption.getOrElse(builder.m_reconnectInterval, DEFAULT_RECONNECT_INTERVAL);
 		
 		setLogger(s_logger);
+	}
+	
+	@Override
+	protected void initializeLoop() throws Exception {
+		getLogger().info("starting MQTT broker reconnect to {} with interval={}",
+						m_client.getServerURI(), m_reconnectInterval);
 	}
 
 	@Override
@@ -57,9 +61,7 @@ public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
 			// MQTT Broker에 연결을 시도한다.
 			m_client.connect(m_connectOptions);
 			
-			if ( getLogger().isInfoEnabled() ) {
-				getLogger().info("connected to {}", m_client.getServerURI());
-			}
+			getLogger().info("connected to {}", m_client.getServerURI());
 			
 			// MQTT Broker에 연결된 경우 {@link MqttClient} 객체를 반환하고 loop를 종료시킨다
 			return FOption.of(m_client);

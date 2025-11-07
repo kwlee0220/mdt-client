@@ -1,5 +1,6 @@
 package mdt.cli.workflow;
 
+import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import utils.UnitUtils;
+import utils.http.RESTfulIOException;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
@@ -19,6 +21,7 @@ import mdt.cli.PeriodicRefreshingConsole;
 import mdt.cli.list.ListCommands;
 import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
+import mdt.model.ResourceNotFoundException;
 import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
 
@@ -91,24 +94,38 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	private void printOutput(WorkflowManager wfManager, PrintWriter pw) {
-        List<Workflow> wfList = listWorkflows(wfManager);
-        if ( m_long ) {
-			if ( m_tableFormat ) {
-				printInstancesLongTable(wfList, pw);
+	private void printOutput(WorkflowManager wfManager, PrintWriter pw) throws InterruptedException {
+        try {
+			List<Workflow> wfList = listWorkflows(wfManager);
+			if ( m_long ) {
+				if ( m_tableFormat ) {
+					printInstancesLongTable(wfList, pw);
+				}
+				else {
+			    	printInstancesLongList(wfList, pw);
+				}
 			}
 			else {
-            	printInstancesLongList(wfList, pw);
+				if ( m_tableFormat ) {
+					printInstancesShortTable(wfList, pw);
+				}
+				else {
+					printInstancesShortList(wfList, pw);
+				}
 			}
-        }
-        else {
-			if ( m_tableFormat ) {
-				printInstancesShortTable(wfList, pw);
+		}
+		catch ( ResourceNotFoundException e ) {
+			pw.println("fails to list MDTWorkflows: " + e.getCause());
+		}
+		catch ( RESTfulIOException e ) {
+			Throwable cause = e.getCause();
+			if ( cause instanceof InterruptedIOException ) {
+				throw new InterruptedException("interrupted while listing MDTWorkflows");
 			}
 			else {
-				printInstancesShortList(wfList, pw);
+				pw.println("fails to list MDTWorkflows: " + e.getCause());
 			}
-        }
+		}
 	}
 	
 	private List<Workflow> listWorkflows(WorkflowManager wfMgr) {

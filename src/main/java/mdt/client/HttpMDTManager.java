@@ -126,6 +126,22 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 		return connect(endpoint);
 	}
 	
+	public static HttpMDTManager connectWithConfigFile(File clientConfigFile) {
+		Preconditions.checkArgument(clientConfigFile != null, "clientConfigFile is null");
+		
+		try {
+			MDTClientConfig config = MDTClientConfig.load(clientConfigFile);
+			return connect(config);
+		}
+		catch ( Throwable e ) {
+			Throwable cause = Throwables.unwrapThrowable(e);
+			String msg = String.format("Failed to read client-config-file (%s), cause=%s", clientConfigFile, cause);
+			s_logger.error(msg);
+			
+			throw new InternalException(msg, cause);
+		}
+	}
+	
 	public static HttpMDTManager connect(String endpoint) {
 		return HttpMDTManager.builder()
 							.endpoint(endpoint)

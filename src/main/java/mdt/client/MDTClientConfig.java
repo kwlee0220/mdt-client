@@ -36,7 +36,7 @@ public final class MDTClientConfig {
 	
 	public static MDTClientConfig load(File configFile) throws IOException {
 		if ( s_logger.isInfoEnabled() ) {
-			s_logger.info("reading a configuration from {}", configFile);
+			s_logger.info("reading a configuration from {}", configFile.getAbsolutePath());
 		}
 		
 		String confYamlString = IOUtils.toString(configFile);

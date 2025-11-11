@@ -1,13 +1,15 @@
 package mdt.client.support;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Map;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
+import org.apache.commons.lang3.time.DurationUtils;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -26,8 +28,12 @@ import utils.LoggerSettable;
 import utils.Throwables;
 import utils.UnitUtils;
 import utils.async.Guard;
+import utils.async.PeriodicLoopExecution;
 import utils.func.FOption;
 import utils.func.Unchecked;
+
+import ch.qos.logback.classic.LoggerContext;
+
 
 /**
  *
@@ -42,6 +48,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	
 	private final MqttClient m_client;
 	private final MqttConnectOptions m_options;
+	private Duration m_reconnectInterval = Duration.ofSeconds(5);
 	private Logger m_logger = null;
 	
 	private final Guard m_guard = Guard.create();
@@ -89,6 +96,16 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		return m_options;
 	}
 	
+	public Duration getReconnectInterval() {
+		return m_reconnectInterval;
+	}
+	public void setReconnectInterval(Duration interval) {
+		Preconditions.checkArgument(interval != null && DurationUtils.isPositive(interval),
+									"invalid reconnect interval: " + interval);
+		
+		m_reconnectInterval = interval;
+	}
+	
 	public boolean isConnected() {
 		return m_guard.get(this::isConnectedInGuard);
 	}
@@ -107,12 +124,6 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		
 		m_guard.lock();
 		try {
-			if ( !isConnectedInGuard() ) {
-				getLogger().warn("failed to publish: topic={}, broker={}, cause=not connected to MQTT broker",
-								topic, m_client.getServerURI());
-				return;
-			}
-			
 			m_client.publish(topic, message);
 		}
 		finally {
@@ -135,6 +146,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 					m_client.subscribe(topic, qos);
 				}
 				catch ( MqttException e ) {
+					m_subscribers.remove(topic, subscriber);
 					getLogger().error("Failed to subscribe to topic[{}]: {}", topic, e.getMessage(), e);
 				}
 			}
@@ -220,7 +232,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		notifyStopped();
 	}
 	
-	private MqttCallback m_callback = new MqttCallback() {
+	private MqttCallbackExtended m_callback = new MqttCallbackExtended() {
 		@Override
 		public void connectionLost(Throwable cause) {
 			getLogger().warn("MQTT broker disconnected: broker={}, cause={}", m_client.getServerURI(), ""+cause);
@@ -239,6 +251,12 @@ public class MqttService extends AbstractService implements LoggerSettable {
 
 		@Override
 		public void deliveryComplete(IMqttDeliveryToken token) {}
+
+		@Override
+		public void connectComplete(boolean reconnect, String serverURI) {
+			getLogger().debug("connectComplete: reconnect={}, server={}", reconnect, serverURI);
+			onConnected(m_client);
+		}
 	};
 	
 	/**
@@ -288,13 +306,10 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	
 	private MqttBrokerReconnect connectAsync() {
 		// MQTT Broker에 연결될 때까지 반복적으로 연결을 시도한다.
-		MqttBrokerReconnect reconnect = MqttBrokerReconnect.builder()
-															.mqttClient(m_client)
-															.connectOptions(m_options)
-															.build();
-		reconnect.whenCompleted(client -> {
-			onConnected(client);
-		});
+		MqttBrokerReconnect reconnect = new MqttBrokerReconnect(m_client, m_options, m_reconnectInterval);
+//		reconnect.whenCompleted(client -> {
+//			onConnected(client);
+//		});
 		reconnect.start();
 		
 		return reconnect;
@@ -343,5 +358,41 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		}
 		
 		return opts;
+	}
+	
+	public static final void main(String... args) throws Exception {
+		LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
+		Logger root = lc.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+		((ch.qos.logback.classic.Logger)root).setLevel(ch.qos.logback.classic.Level.DEBUG);
+
+		MqttConnectOptions opts = new MqttConnectOptions();
+		opts.setAutomaticReconnect(true);
+		opts.setCleanSession(true);
+		
+		MqttService mqttSvc = new MqttService("tcp://localhost:1883", opts);
+		mqttSvc.setReconnectInterval(Duration.ofSeconds(3));
+		mqttSvc.startAsync();
+		
+		mqttSvc.subscribe("test/topic/+", (topic, msg) -> {
+			System.out.println("Received message on topic[" + topic + "]: " + new String(msg.getPayload(), StandardCharsets.UTF_8));
+		});
+		
+		PeriodicLoopExecution<Void> publishing = new PeriodicLoopExecution<Void>(Duration.ofSeconds(1)) {
+			@Override
+			protected FOption<Void> performPeriodicAction(long loopIndex) throws Exception {
+				try {
+					mqttSvc.publish("test/topic/1", "Hello MQTT!");
+				}
+				catch ( MqttException ignored ) {
+					System.out.println("Publish failed, broker not connected.");
+				}
+				return FOption.empty();
+			}
+		};
+		publishing.start();
+		
+		Thread.sleep(10_000);
+		
+		mqttSvc.stopAsync().awaitTerminated();
 	}
 }

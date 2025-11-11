@@ -12,6 +12,7 @@ import utils.StopWatch;
 import utils.UnitUtils;
 import utils.async.PeriodicLoopExecution;
 import utils.func.FOption;
+import utils.func.Try;
 
 
 /**
@@ -43,6 +44,11 @@ public abstract class PeriodicRefreshingConsole extends PeriodicLoopExecution<Vo
 	
 	public void setVerbose(boolean verbose) {
 		m_verbose = verbose;
+	}
+	
+	public Void run() {
+		Try.run(super::run);
+		return null;
 	}
 	
 	@Override

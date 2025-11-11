@@ -1,8 +1,6 @@
 package mdt.client.support;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -12,8 +10,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-import utils.async.AbstractLoopExecution;
+import utils.async.AbstractStatePoller;
 import utils.func.FOption;
+
+import ch.qos.logback.classic.LoggerContext;
+
 
 /**
  * A class to connect to an MQTT broker with automatic reconnection.
@@ -24,92 +25,71 @@ import utils.func.FOption;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class MqttBrokerReconnect extends AbstractLoopExecution<MqttClient> {
+public class MqttBrokerReconnect extends AbstractStatePoller<MqttClient> {
 	private static final Logger s_logger = LoggerFactory.getLogger(MqttBrokerReconnect.class);
 	private static final Duration DEFAULT_RECONNECT_INTERVAL = Duration.ofSeconds(10);
 	
 	private final MqttClient m_client;
 	private final MqttConnectOptions m_connectOptions;
-	private final Duration m_reconnectInterval;
-	@Override protected void finalizeLoop() throws Exception { }
 	
-	private MqttBrokerReconnect(Builder builder) {
-		Preconditions.checkNotNull(builder.m_client);
-		Preconditions.checkNotNull(builder.m_connectOptions);
+	public MqttBrokerReconnect(MqttClient client, MqttConnectOptions opts) {
+		super(DEFAULT_RECONNECT_INTERVAL);
+		Preconditions.checkNotNull(client);
+		Preconditions.checkNotNull(opts);
 		
-		m_client = builder.m_client;
-		m_connectOptions = builder.m_connectOptions;
-		m_reconnectInterval = FOption.getOrElse(builder.m_reconnectInterval, DEFAULT_RECONNECT_INTERVAL);
+		m_client = client;
+		m_connectOptions = opts;
+		
+		setLogger(s_logger);
+	}
+	
+	public MqttBrokerReconnect(MqttClient client, MqttConnectOptions opts, Duration reconnectInterval) {
+		super(reconnectInterval, true);
+		Preconditions.checkArgument(client != null, "MqttClient is null");
+		Preconditions.checkNotNull(opts);
+		
+		m_client = client;
+		m_connectOptions = opts;
 		
 		setLogger(s_logger);
 	}
 	
 	@Override
-	protected void initializeLoop() throws Exception {
-		getLogger().info("starting MQTT broker reconnect to {} with interval={}",
-						m_client.getServerURI(), m_reconnectInterval);
+	protected void initializePoller() throws Exception {
+		getLogger().info("starting MQTT broker connection to {} with interval={}",
+						m_client.getServerURI(), getLoopInterval());
 	}
 
 	@Override
-	protected FOption<MqttClient> iterate(long loopIndex) throws Exception {
-		if ( getLogger().isDebugEnabled() ) {
-			getLogger().debug("trying {}-th connection to {}", loopIndex+1, m_client.getServerURI());
-		}
+	protected FOption<MqttClient> pollState() throws Exception {
+		getLogger().debug("trying connection to {}", m_client.getServerURI());
 		
-		Instant started = Instant.now();
 		try {
 			// MQTT Broker에 연결을 시도한다.
 			m_client.connect(m_connectOptions);
-			
 			getLogger().info("connected to {}", m_client.getServerURI());
 			
 			// MQTT Broker에 연결된 경우 {@link MqttClient} 객체를 반환하고 loop를 종료시킨다
 			return FOption.of(m_client);
 		}
 		catch ( MqttException e ) {
-			Duration elapsed = Duration.between(started, Instant.now());
-			long remains = m_reconnectInterval.minus(elapsed).toMillis();
-			if ( remains > 10 ) {
-				TimeUnit.MILLISECONDS.sleep(remains);
-			}
-			
-			// MQTT Broker에 연결되지 않은 경우 {@link FOption#empty()}를 반환하여
-			// loop를 계속 수행하도록 한다.
 			return FOption.empty();
 		}
 	}
 	
-	public static Builder builder() {
-		return new Builder();
-	}
-	public static class Builder {
-		private MqttClient m_client;
-		private MqttConnectOptions m_connectOptions;
-		private Duration m_reconnectInterval;
+	public static final void main(String... args) throws Exception {
+		LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
+		Logger root = lc.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+		((ch.qos.logback.classic.Logger)root).setLevel(ch.qos.logback.classic.Level.DEBUG);
 		
-		public MqttBrokerReconnect build() {
-			return new MqttBrokerReconnect(this);
-		}
+		MqttClient client = new MqttClient("tcp://localhost:1883", MqttClient.generateClientId());
+		MqttConnectOptions opts = new MqttConnectOptions();
+		opts.setAutomaticReconnect(true);
+		opts.setCleanSession(true);
 		
-		public Builder mqttClient(MqttClient client) {
-			m_client = client;
-			return this;
-		}
-		
-		public Builder connectOptions(MqttConnectOptions options) {
-			m_connectOptions = options;
-			return this;
-		}
-		
-		/**
-		 * MQTT Broker에 재접속을 시도하는 간격을 설정한다.
-		 *
-		 * @param interval 재접속 시도 간격
-		 * @return 본 객체.
-		 */
-		public Builder reconnectInterval(Duration interval) {
-			m_reconnectInterval = interval;
-			return this;
-		}
+		MqttBrokerReconnect reconnect = new MqttBrokerReconnect(client, opts,
+																Duration.ofSeconds(1));
+		MqttClient connectedClient = reconnect.run();
+		System.out.println("Connected to broker: " + connectedClient.getServerURI());
 	}
 }

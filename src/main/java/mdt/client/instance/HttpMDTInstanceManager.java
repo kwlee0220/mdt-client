@@ -347,6 +347,11 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 					 			.build();
 		return m_restfulClient.get(httpUrl, HttpRESTfulClient.STRING_DESER);
 	}
+	
+	@Override
+	public String toString() {
+		return "HttpMDTInstanceManager[" + m_endpoint + "]";
+	}
 
 	public static Builder builder() {
 		return new Builder();

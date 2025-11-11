@@ -1,35 +1,61 @@
 #! /bin/bash
 
-VERSION="latest"
-REGISTRY=""
+# --tag(-t) 옵션 처리 및 MDT_VERSION 변수 설정
+MDT_VERSION=""
 
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --version)
-      VERSION="$2"
-      shift 2
-      ;;
-    --registry)
-      REGISTRY="$2"
-      shift 2
-      ;;
-    *)
-      shift
-      ;;
-  esac
+    case "$1" in
+        --tag|-t)
+            MDT_VERSION="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
 done
 
-if [ -z "$REGISTRY" ]; then
-  echo "Error: --registry 옵션이 필요합니다."
-  echo "Usage: $0 --registry REGISTRY [--version VERSION]"
-  exit 1
+# MDT_VERSION이 지정되지 않았으면 기본값 사용
+if [ -z "$MDT_VERSION" ]; then
+    MDT_VERSION="$MDT_BUILD_VERSION"
+fi
+REPOSITORY="mdt-client:$MDT_VERSION"
+
+# 사용법 출력 (--help 옵션)
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    echo "사용법: $0 [--tag <VERSION>]"
+    echo ""
+    echo "옵션:"
+    echo "  --tag, -t <VERSION> 버전 지정 (예: 1.3.0). 기본값은 \$MDT_BUILD_VERSION"
+    echo "  --help, -h              도움말 출력"
+    echo ""
+    echo "예제:"
+    echo "  $0                        # 기본 버전으로 빌드"
+    echo "  $0 --tag 1.3.0        # 1.3.0 버전으로 빌드"
+    exit 0
 fi
 
-docker image rmi $REGISTRY/mdt-client:$VERSION
+# 기존 이미지 삭제
+docker image rmi -f $REPOSITORY
 
-cp ../build/libs/mdt-client-1.2-all.jar mdt-client-all.jar
+echo "==> Docker 이미지 빌드 시작: $REPOSITORY"
+MDT_MANAGER_HOME=$MDT_HOME/mdt-client
+cp $MDT_MANAGER_HOME/mdt-client-all.jar mdt-client-all.jar
+cp $MDT_MANAGER_HOME/mdt_client_config.yaml mdt_client_config.yaml
+cp $MDT_MANAGER_HOME/logback.xml logback.xml
 
-docker build -t $REGISTRY/mdt-client:$VERSION .
-docker push $REGISTRY/mdt-client:$VERSION
+# Docker 이미지 빌드
+docker build -t $REPOSITORY .
 
+# 성공 메시지
+if [ $? -eq 0 ]; then
+    echo "==> 빌드 완료: $REPOSITORY"
+else
+    echo "==> 빌드 실패!"
+    exit 1
+fi
+
+# 클론한 디렉토리 정리
 rm mdt-client-all.jar
+rm mdt_client_config.yaml
+rm logback.xml

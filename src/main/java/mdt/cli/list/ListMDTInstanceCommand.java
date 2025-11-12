@@ -204,6 +204,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	
 	private void printLongTable(List<? extends MDTInstance> instances, PrintWriter pw) {
 		Table table = new Table(7);
+		table.setColumnWidth(3, 10, 50);
 		table.setColumnWidth(4, 10, 35);
 		table.addCell(" # ");
 		table.addCell(" INSTANCE ");

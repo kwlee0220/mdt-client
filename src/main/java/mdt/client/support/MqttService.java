@@ -49,6 +49,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	private final MqttClient m_client;
 	private final MqttConnectOptions m_options;
 	private Duration m_reconnectInterval = Duration.ofSeconds(5);
+	private MqttBrokerReconnect m_initConnector;
 	private Logger m_logger = null;
 	
 	private final Guard m_guard = Guard.create();
@@ -204,7 +205,9 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	@Override
 	protected void doStart() {
 		try {
-			connectAsync();
+			// MQTT Broker에 연결될 때까지 반복적으로 연결을 시도한다.
+			m_initConnector = new MqttBrokerReconnect(m_client, m_options, m_reconnectInterval);
+			m_initConnector.start();
 			
 			notifyStarted();
 		}
@@ -218,6 +221,9 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	protected void doStop() {
 		getLogger().info("Stopping {}", this);
 		
+		// 첫 connection도 완료되지 않은 상태라면 여기서 종료한다.
+		m_initConnector.cancel(true);
+		
 		m_guard.runChecked(() -> {
 			if ( m_client.isConnected() ) {
 				try {
@@ -228,6 +234,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 				}
 			}
 		});
+		Unchecked.runOrIgnore(m_initConnector::waitForFinished);
 
 		notifyStopped();
 	}
@@ -302,17 +309,6 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	    
 	    // 패턴과 토픽의 레벨 수가 정확히 일치해야 함
 	    return i == patternLength && i == topicLength;
-	}
-	
-	private MqttBrokerReconnect connectAsync() {
-		// MQTT Broker에 연결될 때까지 반복적으로 연결을 시도한다.
-		MqttBrokerReconnect reconnect = new MqttBrokerReconnect(m_client, m_options, m_reconnectInterval);
-//		reconnect.whenCompleted(client -> {
-//			onConnected(client);
-//		});
-		reconnect.start();
-		
-		return reconnect;
 	}
 	
 	private void onConnected(MqttClient client) {
@@ -392,7 +388,8 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		publishing.start();
 		
 		Thread.sleep(10_000);
-		
 		mqttSvc.stopAsync().awaitTerminated();
+		
+		Thread.sleep(3_000);
 	}
 }

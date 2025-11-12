@@ -1,0 +1,5 @@
+---
+mdtEndpoint: "${env:MDT_ENDPOINT}"
+connectTimeout: "10s"
+readTimeout: "30s"
+workflowManagerEndpoint: "${env:MDT_WORKFLOW_ENDPOINT}"

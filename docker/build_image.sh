@@ -39,10 +39,9 @@ fi
 docker image rmi -f $REPOSITORY
 
 echo "==> Docker 이미지 빌드 시작: $REPOSITORY"
-MDT_MANAGER_HOME=$MDT_HOME/mdt-client
-cp $MDT_MANAGER_HOME/mdt-client-all.jar mdt-client-all.jar
-cp $MDT_MANAGER_HOME/mdt_client_config.yaml mdt_client_config.yaml
-cp $MDT_MANAGER_HOME/logback.xml logback.xml
+MDT_CLIENT_HOME=$MDT_HOME/mdt-client
+cp $MDT_CLIENT_HOME/mdt-client-all.jar mdt-client-all.jar
+cp $MDT_CLIENT_HOME/logback.xml logback.xml
 
 # Docker 이미지 빌드
 docker build -t $REPOSITORY .
@@ -57,5 +56,4 @@ fi
 
 # 클론한 디렉토리 정리
 rm mdt-client-all.jar
-rm mdt_client_config.yaml
 rm logback.xml

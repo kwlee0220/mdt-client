@@ -42,7 +42,7 @@ defaultElementSpec: submodelSpec ':' idShortPath;
 idShortPath: idOrString (idShortSeg)*;
 idShortSeg: '.' idOrString | '[' INTEGER ']';
 
-parameterSpec: instanceSpec ':' (idShortPath | INTEGER);
+parameterSpec: instanceSpec ':' (idShortPath | INTEGER | '*');
 
 argumentSpec: submodelSpec ':' ('in' | 'out') ':' (idOrString | INTEGER | '*');
 opVarSpec: defaultElementSpec ':' ('in' | 'out' | 'inout') ':' (INTEGER);

@@ -7,10 +7,12 @@ import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.MDTArgumentKind;
 import mdt.model.sm.ref.MDTArgumentReference;
 import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.ref.MDTParameterCollectionReference;
 import mdt.model.sm.ref.MDTParameterReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.ref.OperationVariableReference;
 import mdt.model.sm.ref.OperationVariableReference.Kind;
+import mdt.model.sm.ref.SubmodelBasedElementReference;
 import mdt.model.sm.value.IdShortPath;
 
 /**
@@ -45,9 +47,14 @@ public abstract class MDTElementReferenceExpr implements MDTExpression {
 		}
 
 		@Override
-		public MDTParameterReference evaluate() {
-			return MDTParameterReference.newInstance(m_instanceIdExpr.evaluate(),
-													m_paramPath.evaluate().toString());
+		public SubmodelBasedElementReference evaluate() {
+			String paramPathStr = m_paramPath.evaluate().toString();
+			if ( paramPathStr.equals("*") ) {
+				return MDTParameterCollectionReference.newInstance(m_instanceIdExpr.evaluate());
+			}
+			else {
+				return MDTParameterReference.newInstance(m_instanceIdExpr.evaluate(), paramPathStr);
+			}
 		}
 	}
 	

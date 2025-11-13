@@ -109,14 +109,19 @@ public class ElementReferences {
 		String elementPath = tokens.nextToken().getOrThrow(errorMsg);
 		return DefaultElementReference.newInstance(smRef, elementPath);
 	}
-	private static MDTParameterReference parseParameterReference(SplitStream tokens) {
+	private static SubmodelBasedElementReference parseParameterReference(SplitStream tokens) {
 		String fullExpr = tokens.remaining();
 		Supplier<IllegalArgumentException> errorMsg
 						= () -> new IllegalArgumentException("Invalid MDTParameterReference: expr=" + fullExpr);
 						
 		String instanceId = tokens.nextToken().getOrThrow(errorMsg);
 		String paramSpec = tokens.nextToken().getOrThrow(errorMsg);
-		return MDTParameterReference.newInstance(instanceId, paramSpec);
+		if ( paramSpec.equals("*") ) {
+			return MDTParameterCollectionReference.newInstance(instanceId);
+		}
+		else {
+			return MDTParameterReference.newInstance(instanceId, paramSpec);
+		}
 	}
 	private static MDTArgumentReference parseArgumentReference(SplitStream tokens) {
 		String fullExpr = tokens.remaining();

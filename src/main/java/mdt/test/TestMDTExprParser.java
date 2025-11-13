@@ -5,10 +5,13 @@ import java.io.IOException;
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.expr.LiteralExpr;
+import mdt.model.expr.MDTExpression;
 import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.ref.MDTSubmodelReference;
 
 /**
  *
@@ -32,32 +35,47 @@ public class TestMDTExprParser {
 		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();
 		HttpMDTInstanceManager manager = mdt.getInstanceManager();
 		
-		String expr = "welder:Data:DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue";
+		String expr = "test:Data:DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue";
 		printElementReference(manager, expr);
 		
 		String idShortPath = "DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue";
-		expr = String.format("welder:\"Data\":%s", idShortPath);
+		expr = String.format("test:\"Data\":%s", idShortPath);
 		printElementReference(manager, expr);
 		
 		idShortPath = "DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue";
-		expr = String.format("welder:idShort=Data:%s", idShortPath);
+		expr = String.format("test:idShort=Data:%s", idShortPath);
 		printElementReference(manager, expr);
 		
 		idShortPath = "DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue";
-		expr = String.format("submodel:id='https://www.samcheon.com/mdt/Welder/sm/Data':%s", idShortPath);
+		expr = String.format("submodel:id='http://mdt.etri.re.kr/mdt/Test/sm/Data':%s", idShortPath);
 		printElementReference(manager, expr);
 		
-		printElementReference(manager, "param:welder:Ampere");
-		printElementReference(manager, "param:welder:*");
+		printElementReference(manager, "param:test:IncAmount");
+		printElementReference(manager, "param:test:*");
+		printElementReference2(manager, "param:test:*");
 		
-		printElementReference(manager, "oparg:in:welder:Simulation:PeakQuality");
-		printElementReference(manager, "oparg:out:welder:Simulation:0");
+		printElementReference(manager, "oparg:test:AddAndSleep:in:SleepTime");
+		printElementReference(manager, "oparg:test:AddAndSleep:out:0");
+		printElementReference2(manager, "oparg:test:AddAndSleep:out:0");
 	}
 	
-	private static void printElementReference(MDTInstanceManager manager, String expr) throws IOException {
-		MDTExpressionParser evaluator = new MDTExpressionParser();
-		MDTElementReference ref = (MDTElementReference) ElementReferences.parseExpr(expr);
-		ref.activate(manager);
-		System.out.println(ref.read());
+	private static void printElementReference(MDTInstanceManager manager, String exprStr) throws IOException {
+		MDTExpression expr = MDTExpressionParser.parseExpr(exprStr);
+		ElementReference result = (ElementReference)expr.evaluate();
+		if ( result instanceof MDTElementReference ref ) {
+			ref.activate(manager);
+		}
+		else if ( result instanceof MDTSubmodelReference smRef ) {
+			smRef.activate(manager);
+		}
+		System.out.println(result.read());
+		System.out.println(result.readValue());
+	}
+	
+	private static void printElementReference2(MDTInstanceManager manager, String exprStr) throws IOException {
+		MDTElementReference ref2 = ElementReferences.parseExpr(exprStr);
+		ref2.activate(manager);
+		System.out.println(ref2.read());
+		System.out.println(ref2.readValue());
 	}
 }

@@ -17,4 +17,9 @@ public class MDTIdShortPathExpr implements MDTExpression {
 	public IdShortPath evaluate() {
 		return m_path;
 	}
+	
+	@Override
+	public String toString() {
+		return m_path.toString();
+	}
 }

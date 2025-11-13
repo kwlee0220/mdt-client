@@ -45,16 +45,11 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	public void updateValue(String valueJsonString) throws IOException {
 		SubmodelService service = getSubmodelService();
 		try {
-//			JsonNode jnode = MAPPER.readTree(valueJsonString);
-//			if ( jnode.isObject() || jnode.isArray() ) {
-//				String encoded = MAPPER.writeValueAsString(valueJsonString);
-//				service.updateSubmodelElementByPath(getIdShortPathString(), encoded);
-//			}
-//			else {
-				service.updateSubmodelElementByPath(getIdShortPathString(), valueJsonString);
-//			}
+			service.updateSubmodelElementByPath(getIdShortPathString(), valueJsonString);
 		}
 		catch ( RESTfulRemoteException e ) {
+			// 현재 FAST의 구현에 버그가 있어 예외가 발생하기도 해서,
+			// 이러한 경우 로컬 업데이트로 처리하도록 함.
 			String msg = e.getMessage();
 			if ( msg != null && msg.startsWith("no type information found") ) {
 				getLogger().warn("failed to update the value by path=" + getIdShortPathString()

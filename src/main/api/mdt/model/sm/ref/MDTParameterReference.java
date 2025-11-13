@@ -204,7 +204,6 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 		};
 		String paramCollPathPrefix = String.format("DataInfo.%s.%sParameterValues", assetTypeName, assetTypeName);
 
-		// TODO: 새로운 수정
 		String paramId = null;
 		String subPath = "";
 		int paramIdx;
@@ -240,7 +239,7 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 			ParameterCollection paramColl = instance.getParameterCollection();
 			paramIdx = paramColl.getParameterIndex(paramId);
 		}
-		// TODO: 새로운 수정
+		
 		return String.format("%s[%d].ParameterValue%s", paramCollPathPrefix, paramIdx, subPath);
 	}
 }

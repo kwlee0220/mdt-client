@@ -1,6 +1,7 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,7 @@ import com.google.common.collect.Maps;
 
 import utils.KeyValue;
 import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
 import mdt.model.ModelValidationException;
 import mdt.model.SubmodelService;
@@ -105,7 +107,11 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 			SubmodelElement sme = m_ref.read();
 			if ( sme instanceof SubmodelElementList sml ) {
 				List<SubmodelElement> members = FStream.from(sml.getValue())
-														.mapOrThrow(this::toMemberElement)
+														.mapOrThrow(elm -> {
+															var kv = toMemberElement(elm);
+															kv.value().setIdShort(kv.key());
+															return kv.value();
+														})
 														.toList();
 				sml.setValue(members);
 				return sml;
@@ -121,7 +127,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 			throw new IOException(msg);
 		}
 	}
-	private SubmodelElement toMemberElement(SubmodelElement elm) throws IOException {
+	private KeyValue<String,SubmodelElement> toMemberElement(SubmodelElement elm) throws IOException {
 		if ( !(elm instanceof SubmodelElementCollection) ) {
 			throw new IOException("Invalid MDTParameterCollection member element type: "
 									+ elm.getClass().getName());
@@ -130,9 +136,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		
 		String memberId = SubmodelUtils.getPropertyValueById(member, "ParameterID").value();
 		SubmodelElement memberElm = SubmodelUtils.getFieldById(member, "ParameterValue").value();
-		memberElm.setIdShort(memberId);
-		
-		return memberElm;
+		return KeyValue.of(memberId, memberElm);
 	}
 	
 	@Override
@@ -141,7 +145,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		
 		ElementValue smev = m_ref.readValue();
 		if ( smev instanceof ElementListValue smelv ) {
-			Map<String,ElementValue> paramValues = Maps.newHashMap();
+			LinkedHashMap<String,ElementValue> paramValues = Maps.newLinkedHashMap();
 			for ( ElementValue member : smelv.getElementAll() ) {
 				KeyValue<String,ElementValue> kv = toMemberValue(member);
 				paramValues.put(kv.key(), kv.value());
@@ -162,33 +166,65 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		}
 		ElementCollectionValue cv = (ElementCollectionValue)member;
 		
-		ElementValue pidValue = cv.getField("ParameterID");
+		PropertyValue<String> pidValue = (PropertyValue<String>)cv.getField("ParameterID");
 		if ( !(pidValue instanceof PropertyValue) ) {
 			throw new IOException(String.format("Invalid ParameterID value type: %s", pidValue.getClass().getName()));
 		}
 		
-		String paramId = ((PropertyValue<?>)pidValue).toValueJsonString();
+		String paramId = (String)pidValue.get();
 		return KeyValue.of(paramId, cv.getField("ParameterValue"));
 	}
 	
 	@Override
 	public void write(SubmodelElement sme) throws IOException {
-		ElementValue smev = ElementValues.getValue(sme);
-		updateValue(smev);
+		Preconditions.checkArgument(sme != null && sme instanceof SubmodelElementList,
+									"smev should be a SubmodelElementList: %s", sme);
+
+		LinkedHashMap<String,SubmodelElement> valueMap
+								= FStream.from(((SubmodelElementList)sme).getValue())
+										.mapOrThrow(elm -> KeyValue.of(elm.getIdShort(), elm))
+										.mapToKeyValue(kv -> kv)
+										.toMap(Maps.newLinkedHashMap());
+		
+		SubmodelElementList paramValues = (SubmodelElementList)m_ref.read();
+		FStream.from(paramValues.getValue())
+				.forEach(paramValue -> {
+					String memberId = SubmodelUtils.getPropertyValueById(paramValue, "ParameterID").value();
+					SubmodelElement newValue = valueMap.get(memberId);
+					newValue.setIdShort("ParameterValue");
+					SubmodelUtils.replaceFieldbyId((SubmodelElementCollection)paramValue, "ParameterValue", newValue);
+				});
+		m_ref.write(paramValues);
 	}
 
 	@Override
 	public void updateValue(ElementValue smev) throws IOException {
+		Preconditions.checkArgument(smev != null && smev instanceof ElementCollectionValue,
+									"smev should be a ElementCollectionValue: %s", smev);
 		assertActivated();
 		
-		m_ref.updateValue(smev);
+		List<ElementValue> paramValues = KeyValueFStream.from(((ElementCollectionValue)smev).getFieldAll())
+														.map(kv -> {
+															String paramId = kv.key();
+															ElementValue paramValue = kv.value();
+															
+															var v = Map.of("ParameterID", PropertyValue.STRING(paramId),
+																			"ParameterValue", paramValue);
+															return (ElementValue)new ElementCollectionValue(v);
+														})
+														.toList();
+		ElementListValue expandedValue = new ElementListValue(paramValues);
+		m_ref.updateValue(expandedValue);
 	}
 
 	@Override
 	public void updateValue(String valueJsonString) throws IOException {
+		Preconditions.checkArgument(valueJsonString != null, "valueJsonString is null");
 		assertActivated();
 		
-		m_ref.updateValue(valueJsonString);
+		SubmodelElement elm = read();
+		ElementValues.updateWithValueJsonString(elm, valueJsonString);
+		write(elm);
 	}
 
 	@Override

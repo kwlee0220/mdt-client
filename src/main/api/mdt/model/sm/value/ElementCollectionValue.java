@@ -1,6 +1,7 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -25,10 +26,10 @@ import utils.stream.KeyValueFStream;
 public class ElementCollectionValue extends AbstractElementValue implements ElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:collection";
 	
-	private final Map<String,ElementValue> m_fields;
+	private final LinkedHashMap<String,ElementValue> m_fields;
 	
 	public ElementCollectionValue(Map<String,ElementValue> elements) {
-		m_fields = elements;
+		m_fields = Maps.newLinkedHashMap(elements);
 	}
 	
 	public Map<String,ElementValue> getFieldAll() {
@@ -40,16 +41,17 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	}
 
 	public FOption<ElementValue> findField(String fieldName) {
-		return KeyValueFStream.from(m_fields)
-						.findFirst(kv -> kv.key().equals(fieldName))
-						.map(KeyValue::value);
+		return FOption.ofNullable(m_fields.get(fieldName));
 	}
 
 	public ElementValue getField(String fieldName) {
-		return KeyValueFStream.from(m_fields)
-						.findFirst(kv -> kv.key().equals(fieldName))
-						.map(KeyValue::value)
-						.getOrThrow(() -> new IllegalArgumentException("No field found: " + fieldName));
+		ElementValue field = m_fields.get(fieldName);
+		if ( field != null ) {
+			return field;
+		}
+		else {
+			throw new IllegalArgumentException("No field found: " + fieldName);
+		}
 	}
 	
 	public static ElementCollectionValue parseValueJsonNode(SubmodelElementCollection smc, JsonNode vnode)
@@ -112,7 +114,7 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	}
 	
 	public static ElementCollectionValue deserializeFields(JsonNode jnode) throws IOException {
-		var fields = FStream.from(jnode.fields())
+		var fields = FStream.from(jnode.properties())
 							.mapToKeyValue(ent -> KeyValue.of(ent.getKey(), ent.getValue()))
 							.mapValue(ElementValues::parseJsonNode)
 							.toMap();

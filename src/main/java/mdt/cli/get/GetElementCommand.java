@@ -8,7 +8,6 @@ import org.barfuin.texttree.api.TextTree;
 import org.barfuin.texttree.api.TreeOptions;
 import org.barfuin.texttree.api.style.TreeStyles;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +23,6 @@ import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
-import mdt.model.sm.value.ElementValues;
 import mdt.tree.node.DefaultNodeFactories;
 
 import picocli.CommandLine.Command;
@@ -105,11 +103,10 @@ public class GetElementCommand extends AbstractMDTCommand {
 	}
 	
 	private void printOutput(ElementReference smeRef, PrintWriter pw) throws Exception {
-		SubmodelElement target = smeRef.read();
 		String outputString = switch ( m_output ) {
-			case "tree" -> toDisplayTree(target, TREE_OPTS);
-			case "json" -> toDisplayJson(target);
-			case "value" -> toDisplayValue(target);
+			case "tree" -> toDisplayTree(smeRef.read(), TREE_OPTS);
+			case "json" -> toDisplayJson(smeRef.read());
+			case "value" -> toDisplayValue(smeRef.readValue());
 			default -> throw new IllegalArgumentException("Invalid output type: " + m_output);
 		};
 		pw.print(outputString);
@@ -124,15 +121,7 @@ public class GetElementCommand extends AbstractMDTCommand {
 		return MDTModelSerDe.toJsonString(target);
 	}
 
-	private String toDisplayValue(SubmodelElement target) throws Exception {
-		if ( target instanceof Property prop ) {
-			return prop.getValue();
-		}
-		else if ( target instanceof File file ) {
-			return file.getValue();
-		}
-		
-		ElementValue value = ElementValues.getValue(target);
+	private String toDisplayValue(ElementValue value) throws Exception {
 		return value.toValueJsonString();
 	}
 }

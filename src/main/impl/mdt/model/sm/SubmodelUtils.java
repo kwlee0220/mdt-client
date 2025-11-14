@@ -318,6 +318,33 @@ public class SubmodelUtils {
 			throw new IllegalArgumentException("Not a Property: " + fieldName);
 		}
 	}
+
+	public static void removeFieldById(SubmodelElementList sml, String idShort) {
+		sml.getValue().removeIf(field -> field.getIdShort().equals(idShort));
+	}
+	public static void removeFieldById(SubmodelElementCollection smc, String idShort) {
+		smc.getValue().removeIf(field -> field.getIdShort().equals(idShort));
+	}
+	public static void replaceFieldbyId(SubmodelElementList sml, String idShort, SubmodelElement newField) {
+		List<SubmodelElement> fieldList = sml.getValue();
+		for ( int i = 0; i < fieldList.size(); ++i ) {
+			SubmodelElement field = fieldList.get(i);
+			if ( field.getIdShort().equals(idShort) ) {
+				fieldList.set(i, newField);
+				return;
+			}
+		}
+	}
+	public static void replaceFieldbyId(SubmodelElementCollection smc, String idShort, SubmodelElement newField) {
+		List<SubmodelElement> fieldList = smc.getValue();
+		for ( int i = 0; i < fieldList.size(); ++i ) {
+			SubmodelElement field = fieldList.get(i);
+			if ( field.getIdShort().equals(idShort) ) {
+				fieldList.set(i, newField);
+				return;
+			}
+		}
+	}
 	
 	/**
 	 * 주어진 SubmodelElement의 리스트에 포함된 SubmodelElementCollection (SMC)들 중에서

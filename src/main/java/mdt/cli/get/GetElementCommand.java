@@ -94,7 +94,12 @@ public class GetElementCommand extends AbstractMDTCommand {
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
 				protected void print(PrintWriter pw) throws Exception {
-					printOutput(smeRef, pw);
+					try {
+						printOutput(smeRef, pw);
+					}
+					catch ( Exception ignored ) {
+						pw.println("" + ignored);
+					}
 				}
 			};
 			pwriter.setVerbose(m_verbose);

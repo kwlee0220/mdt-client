@@ -86,7 +86,12 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
 				protected void print(PrintWriter pw) throws Exception {
-					printOutput(wfManager, pw);
+					try {
+						printOutput(wfManager, pw);
+					}
+					catch ( Exception ignored ) {
+						pw.println("failed to list Workflow instances: cause=" + ignored);
+					}
 				}
 			};
 			pwriter.setVerbose(m_verbose);

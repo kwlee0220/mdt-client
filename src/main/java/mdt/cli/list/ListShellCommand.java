@@ -78,7 +78,12 @@ public class ListShellCommand extends AbstractMDTCommand {
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
 				protected void print(PrintWriter pw) throws Exception {
-					printOutput(manager, pw);
+					try {
+						printOutput(manager, pw);
+					}
+					catch ( Exception ignored ) {
+						pw.println("failed to list AAS Shells: cause=" + ignored);
+					}
 				}
 			};
 			pwriter.setVerbose(m_verbose);

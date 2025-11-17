@@ -75,7 +75,12 @@ public class ListOperationCommand extends AbstractMDTCommand {
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
 				protected void print(PrintWriter pw) throws Exception {
-					printOutput(manager, pw);
+					try {
+						printOutput(manager, pw);
+					}
+					catch ( Exception ignored ) {
+						pw.println("failed to list Operations: cause=" + ignored);
+					}
 				}
 			};
 			pwriter.setVerbose(m_verbose);

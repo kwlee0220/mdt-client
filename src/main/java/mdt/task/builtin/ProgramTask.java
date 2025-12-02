@@ -1,7 +1,6 @@
 package mdt.task.builtin;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -189,7 +188,7 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 					FileValue fv = dref.readAASFileValue();
 					String fileName = String.format("%s.%s", var.getName(), FilenameUtils.getExtension(fv.getValue()));
 					file = new File(workingDir, fileName);
-					dref.readAttachment(new FileOutputStream(file));
+					dref.readAttachment(file);
 					
 					return new FileVariable(var.getName(), file);
 				}

@@ -1,7 +1,6 @@
 package mdt.cli.get;
 
 import java.io.File;
-import java.io.FileOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +67,7 @@ public class GetFile extends AbstractMDTCommand {
 		if ( m_outputFile == null ) {
 			output = new File(fvalue.getValue());
 		}
-		iref.readAttachment(new FileOutputStream(output));
+		iref.readAttachment(output);
 		if ( m_verbose ) {
 			System.out.printf("File downloaded to: %s%n", output.getAbsolutePath());
 		}

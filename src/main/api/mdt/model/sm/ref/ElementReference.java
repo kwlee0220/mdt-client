@@ -2,6 +2,7 @@ package mdt.model.sm.ref;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -72,6 +73,19 @@ public interface ElementReference {
 	 * @throws	IOException	읽기 과정에서 예외가 발생한 경우.
 	 */
 	public void readAttachment(OutputStream out) throws IOException;
+	
+	/**
+	 * SubmodelElement의 참조가 가리키는 'File' SubmodelElement에 첨부된 파일을 읽어
+	 * 주어진 파일로 저장한다.
+	 *
+	 * @param outputFile	첨부 파일 내용을 저장할 파일 객체.
+	 * @throws IOException	읽기 과정에서 예외가 발생한 경우.
+	 */
+	public default void readAttachment(File outputFile) throws IOException {
+		try ( OutputStream out = new FileOutputStream(outputFile) ) {
+			readAttachment(out);
+		}
+	}
 	
 	/**
 	 * SubmodelElement의 참조가 가리키는 SubmodelElement을 주어진 SubmodelElement으로 갱신한다. 

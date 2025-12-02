@@ -26,11 +26,18 @@ public class MDTModelSerDe {
 	public static final JsonDeserializer JSON_DESERIALIZER = new JsonDeserializer();
 	public static final JsonSerializer JSON_SERIALIZER = new JsonSerializer();
 	public static final JsonMapper MAPPER = JsonMapper.builder()
-														.addModule(new JavaTimeModule())
-														.findAndAddModules()
-														.build();
+							.addModule(new JavaTimeModule())
+							.findAndAddModules()
+							.build();
+	public static final JsonMapper PRETTY_MAPPER = JsonMapper.builder()
+							.addModule(new JavaTimeModule())
+							.findAndAddModules()
+							.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT)
+							.build();
+	
 	static {
 		MAPPER.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		PRETTY_MAPPER.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 	}
 	
 	private MDTModelSerDe() {
@@ -47,6 +54,10 @@ public class MDTModelSerDe {
 
 	public static JsonMapper getJsonMapper() {
 		return MAPPER;
+	}
+	
+	public static JsonMapper getPrettyJsonMapper() {
+		return PRETTY_MAPPER;
 	}
 	
 	public static JsonNode readJsonNode(File jsonFile) throws IOException {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+import org.apache.tika.Tika;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 
@@ -27,9 +28,13 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	private final String m_contentType;
 	private final String m_value;
 	
-	public FileValue(@NonNull String contentType, String path) {
+	public FileValue(String path, @NonNull String contentType) {
 		m_contentType = contentType;
 		m_value = path;
+	}
+	
+	public static FileValue of(java.io.File file) throws IOException {
+		return new FileValue(file.getName(), new Tika().detect(file));
 	}
 	
 	public String getMimeType() {
@@ -49,7 +54,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 		String contentType = JacksonUtils.getStringField(jnode, FIELD_CONTENT_TYPE);
 		String value = JacksonUtils.getStringFieldOrNull(jnode, FIELD_VALUE);
 		
-		return new FileValue(contentType, value);
+		return new FileValue(value, contentType);
 	}
 
 	@Override
@@ -103,6 +108,6 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	public static FileValue deserializeValue(JsonNode vnode) {
 		String mimeType = JacksonUtils.getStringField(vnode, FIELD_CONTENT_TYPE);
 		String value = JacksonUtils.getStringField(vnode, FIELD_VALUE);
-		return new FileValue(mimeType, value);
+		return new FileValue(value, mimeType);
 	}
 }

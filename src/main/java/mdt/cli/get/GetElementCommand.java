@@ -79,11 +79,10 @@ public class GetElementCommand extends AbstractMDTCommand {
 		MDTInstanceManager manager = mdt.getInstanceManager();
 		
 		ElementReference smeRef = ElementReferences.parseExpr(m_elmRef);
-		if ( smeRef instanceof MDTElementReference iref ) {
-			iref.activate(manager);
-		}
-
 		if ( m_repeat == null ) {
+			if ( smeRef instanceof MDTElementReference iref ) {
+				iref.activate(manager);
+			}
 			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
 				printOutput(smeRef, pw);
 			}
@@ -95,6 +94,9 @@ public class GetElementCommand extends AbstractMDTCommand {
 				@Override
 				protected void print(PrintWriter pw) throws Exception {
 					try {
+						if ( smeRef instanceof MDTElementReference iref && !iref.isActivated()) {
+							iref.activate(manager);
+						}
 						printOutput(smeRef, pw);
 					}
 					catch ( Exception ignored ) {

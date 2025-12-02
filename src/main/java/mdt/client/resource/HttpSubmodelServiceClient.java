@@ -1,6 +1,8 @@
 package mdt.client.resource;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -9,7 +11,6 @@ import javax.xml.datatype.Duration;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.BaseOperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.ExecutionState;
-import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.Message;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationHandle;
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
@@ -18,6 +19,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationRequest;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -26,21 +29,23 @@ import com.google.common.collect.Lists;
 
 import lombok.Data;
 
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+
 import utils.InternalException;
 import utils.Tuple;
 import utils.http.OkHttpClientUtils;
 import utils.http.RESTfulIOException;
+import utils.io.IOUtils;
 
 import mdt.client.Fa3stHttpClient;
 import mdt.model.MDTOperationHandle;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
-import mdt.model.sm.AASFile;
-
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import mdt.model.sm.value.FileValue;
 
 
 /**
@@ -48,6 +53,8 @@ import okhttp3.RequestBody;
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpSubmodelServiceClient extends Fa3stHttpClient implements SubmodelService {
+	private static final Logger s_logger = LoggerFactory.getLogger(HttpSubmodelServiceClient.class);
+	
 	public static HttpSubmodelServiceClient newTrustAllSubmodelServiceClient(String url) {
 		try {
 			OkHttpClient client = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
@@ -308,47 +315,56 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, BaseOperationResult.class);
 	}
+	
+//	@Override
+//	public AASFile getAASFileByPath(String idShortPath) {
+//		try {
+//			SubmodelElement sme = getSubmodelElementByPath(idShortPath);
+//			Preconditions.checkArgument(sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File,
+//										"the SubmodelElement is not a File: idShortPath=%s", idShortPath);
+//			
+//			org.eclipse.digitaltwin.aas4j.v3.model.File aasFile = (org.eclipse.digitaltwin.aas4j.v3.model.File) sme;
+//			java.io.File file = getAASFileContentByPath(idShortPath);
+//			
+//			return DefaultAASFile.builder().aasFile(aasFile).file(file).build();
+//		}
+//		catch ( IOException e ) {
+//			throw new RESTfulIOException("Failed to get AASFile by path: " + idShortPath, e);
+//		}
+//	}
 
 	@Override
-	public AASFile getFileByPath(String idShortPath) {
+	public void getAttachmentByPath(String idShortPath, OutputStream output) {
 		String url = String.format("%s/submodel-elements/%s/attachment",
 									getEndpoint(), encodeIdShortPath(idShortPath));
 		Request req = new Request.Builder().url(url).get().build();
-		AASFile mdtFile = call(req, AASFile.class);
-		
-		File aasFile = (File)getSubmodelElementByPath(idShortPath);
-		mdtFile.setPath(aasFile.getValue());
-		
-		return mdtFile;
+		call(req, OutputStream.class, output);
 	}
 
 	@Override
-	public byte[] getFileContentByPath(String idShortPath) {
+	public long putAttachmentByPath(String idShortPath, FileValue mdtFile, InputStream attachment) {
+		Preconditions.checkArgument(idShortPath != null, "idShortPath is null");
+		Preconditions.checkArgument(mdtFile != null, "AASFile is null");
+		Preconditions.checkArgument(attachment != null, "attachment is null");
+		
 		String url = String.format("%s/submodel-elements/%s/attachment",
 									getEndpoint(), encodeIdShortPath(idShortPath));
-		Request req = new Request.Builder().url(url).get().build();
-		return call(req, byte[].class);
-	}
-
-	@Override
-	public void putFileByPath(String idShortPath, AASFile mdtFile) {
-		MultipartBody.Builder builder
-			= new MultipartBody.Builder()
-								.setType(MultipartBody.FORM)
-								.addFormDataPart("fileName", mdtFile.getPath())
-								.addFormDataPart("contentType", mdtFile.getContentType())
-								.addFormDataPart("content", null,
-												RequestBody.create(mdtFile.getContent(), mdtFile.getMediaType()));
-
-		String url = String.format("%s/submodel-elements/%s/attachment",
-									getEndpoint(), encodeIdShortPath(idShortPath));
-		RequestBody reqBody = builder.build();
+		
+		StreamRequestBody fileBody = new StreamRequestBody(attachment,
+															MediaType.parse(mdtFile.getMimeType()));
+		RequestBody reqBody = new MultipartBody.Builder()
+												.setType(MultipartBody.FORM)
+												.addFormDataPart("fileName", mdtFile.getValue())
+												.addFormDataPart("content", null, fileBody)
+												.build();
 		Request req = new Request.Builder().url(url).put(reqBody).build();
 		call(req, void.class);
+		
+		return fileBody.getUploadedBytes();
 	}
 
 	@Override
-	public void deleteFileByPath(String idShortPath) {
+	public void deleteAttachmentByPath(String idShortPath) {
 		String url = String.format("%s/submodel-elements/%s/attachment",
 									getEndpoint(), encodeIdShortPath(idShortPath));
 		Request req = new Request.Builder().url(url).delete().build();
@@ -357,5 +373,32 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	
 	private String encodeIdShortPath(String idShortPath) {
 		return URLEncoder.encode(idShortPath, StandardCharsets.UTF_8);
+	}
+	
+	private static class StreamRequestBody extends RequestBody {
+		private final MediaType m_mediaType;
+		private final InputStream m_is;
+		private long m_uploadeds = 0;
+		
+		private StreamRequestBody(InputStream is, MediaType mediaType) {
+			m_is = is;
+			m_mediaType = mediaType;
+		}
+		
+		public long getUploadedBytes() {
+			return m_uploadeds;
+		}
+
+		@Override
+		public MediaType contentType() {
+			return m_mediaType;
+		}
+
+		@Override
+		public void writeTo(okio.BufferedSink sink) throws IOException {
+			try ( InputStream input = m_is ) {
+				m_uploadeds = IOUtils.copy(input, sink.outputStream());
+			}
+		}
 	}
 }

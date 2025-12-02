@@ -1,8 +1,9 @@
 package mdt.test;
 
+import utils.io.TempFile;
+
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.sm.AASFile;
 
 /**
  *
@@ -10,7 +11,7 @@ import mdt.model.sm.AASFile;
  */
 public class TestGetFileByPath {
 	public static final void main(String... args) throws Exception {
-		String id = AASUtils.encodeBase64UrlSafe("http://www.lg.co.kr/refrigerator/Innercase/QualityInspector/AI/ThicknessInspection");
+		String id = AASUtils.encodeBase64UrlSafe("http://www.lg.co.kr/refrigerator/Innercase/QualityInspector/Data");
 		String url = String.format("https://localhost:19009/api/v3.0/submodels/%s", id);
 		
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
@@ -20,14 +21,10 @@ public class TestGetFileByPath {
 //		System.out.println(file);
 //		
 //		SubmodelElement sme = svc.getSubmodelElementByPath("testFile");
-		
-		AASFile mdtFile = svc.getFileByPath("AIInfo.Inputs[0].InputValue");
-		System.out.println(mdtFile);
 
-		System.out.println(svc.getFileContentByPath("AIInfo.Inputs[0].InputValue").length);
-		
-		svc.deleteFileByPath("AIInfo.Inputs[0].InputValue");
-		mdtFile = svc.getFileByPath("AIInfo.Inputs[0].InputValue");
-		System.out.println(mdtFile);
+		String idShortPath = "DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue";
+		try ( TempFile tempFile = svc.getAASFileByPath(idShortPath) ) {
+			System.out.println("Downloaded file: " + tempFile.getFile() + ", size=" + tempFile.getFile().length());
+		}
 	}
 }

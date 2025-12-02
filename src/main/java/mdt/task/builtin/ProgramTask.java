@@ -1,6 +1,7 @@
 package mdt.task.builtin;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -32,7 +33,6 @@ import utils.io.IOUtils;
 import utils.stream.FStream;
 
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.AASFile;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.FileValue;
@@ -185,13 +185,12 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 			if ( value instanceof FileValue ) {
 				if ( var instanceof ReferenceVariable refVar ) {
 					MDTElementReference dref = (MDTElementReference) refVar.getReference();
-					AASFile mdtFile = dref.getSubmodelService().getFileByPath(dref.getIdShortPathString());
-
-					String fileName = String.format("%s.%s", var.getName(),
-													FilenameUtils.getExtension(mdtFile.getPath()));
+					
+					FileValue fv = dref.readAASFileValue();
+					String fileName = String.format("%s.%s", var.getName(), FilenameUtils.getExtension(fv.getValue()));
 					file = new File(workingDir, fileName);
-					IOUtils.toFile(mdtFile.getContent(), file);
-
+					dref.readAttachment(new FileOutputStream(file));
+					
 					return new FileVariable(var.getName(), file);
 				}
 				else {

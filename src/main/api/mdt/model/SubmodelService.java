@@ -1,5 +1,9 @@
 package mdt.model;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -14,8 +18,9 @@ import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import mdt.model.sm.AASFile;
-import mdt.model.sm.value.ElementValue;
+import utils.io.TempFile;
+
+import mdt.model.sm.value.FileValue;
 
 
 /**
@@ -97,17 +102,6 @@ public interface SubmodelService {
 	 */
 	public void updateSubmodelElementByPath(String idShortPath, SubmodelElement element)
 		throws ResourceNotFoundException;
-	
-	/**
-//	 * 주어진 idShortPath에 해당하는 SubmodelElement 객체의 값을
-//	 * 주어진 {@link ElementValue} 값으로 변경한다.
-//	 *
-//	 * @param idShortPath	Submodel내의 변경 대상 idShortPath.
-//	 * @param value	    변경할 값
-//	 * @throws ResourceNotFoundException	해당 idShortPath에 해당하는 SubmodelElement 객체가 존재하지 않는 경우.
-//	 */
-//	public void updateSubmodelElementByPath(String idShortPath, ElementValue value)
-//		throws ResourceNotFoundException;
 
 	/**
 	 * 주어진 value json 문자열을 이용하여 idShortPath에 해당하는 SubmodelElement 객체의 값을 변경한다.
@@ -129,33 +123,65 @@ public interface SubmodelService {
 	public void deleteSubmodelElementByPath(String idShortPath);
 	
 	/**
-	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일 정보를 반환한다.
-	 *
-	 * @param idShortPath	File SubmodelElement 객체의 idShortPath.
-	 * @return	파일 정보
-	 * @throws ResourceNotFoundException	해당 idShortPath에 해당하는 SubmodelElement 객체가 존재하지 않는 경우.
-	 */
-	public AASFile getFileByPath(String idShortPath) throws ResourceNotFoundException;
-	
-	/**
-	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일의 내용을 반환한다.
+	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일의 내용을
+	 * 지정된 attachment 파일에 저장한다.
 	 *
 	 * @param idShortPath File SubmodelElement 객체의 idShortPath.
-	 * @return 파일 내용 byte 배열.
+	 * @param output  		파일 내용을 저장할 OutputStream 객체.
 	 * @throws ResourceNotFoundException 해당 idShortPath에 해당하는 SubmodelElement 객체가
 	 *                                   존재하지 않는 경우.
+	 * @throws IOException	파일 입출력 오류 발생한 경우.
 	 */
-	public byte[] getFileContentByPath(String idShortPath) throws ResourceNotFoundException;
+	public void getAttachmentByPath(String idShortPath, OutputStream output)
+		throws ResourceNotFoundException, IOException;
+	
+	/**
+	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일 내용을
+	 * 임시 파일로 생성하여 반환한다.
+	 *
+	 * @param idShortPath	File SubmodelElement 객체의 idShortPath.
+	 * @return	AAS File 객체.
+	 * @throws ResourceNotFoundException	해당 idShortPath에 해당하는 SubmodelElement 객체가
+	 * 								 존재하지 않는 경우.
+	 * @throws IOException	파일 입출력 오류 발생한 경우.
+	 */
+	public default TempFile getAASFileByPath(String idShortPath) throws ResourceNotFoundException,
+																		IOException {
+		TempFile tempFile = TempFile.create();
+		getAttachmentByPath(idShortPath, tempFile.getOutputStream());
+		
+		return tempFile;
+	}
 	
 	/**
 	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일의 내용을 변경한다.
 	 *
-	 * @param idShortPath File SubmodelElement 객체의 idShortPath.
-	 * @param file     변경할 파일 내용.
+	 * @param idShortPath	File SubmodelElement 객체의 idShortPath.
+	 * @param aasFile     	대상 AAS File 객체..
+	 * @param attachment	변경할 파일 내용.
+	 * @return	변경된 파일 크기.
 	 * @throws ResourceNotFoundException 해당 idShortPath에 해당하는 SubmodelElement 객체가
 	 *                                   존재하지 않는 경우.
 	 */
-	public void putFileByPath(String idShortPath, AASFile file) throws ResourceNotFoundException;
+	public long putAttachmentByPath(String idShortPath, FileValue aasFile, InputStream attachment)
+		throws ResourceNotFoundException;
+	
+	/**
+	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일의 내용을 변경한다.
+	 *
+	 * @param idShortPath 	File SubmodelElement 객체의 idShortPath.
+	 * @param aasFile     	변경할 파일 내용.
+	 * @param attachment	새 파일 객체.
+	 * @throws ResourceNotFoundException 해당 idShortPath에 해당하는 SubmodelElement 객체가
+	 *                                   존재하지 않는 경우.
+	 * @throws IOException	파일 입출력 오류 발생한 경우.
+	 */
+	public default long putAttachmentByPath(String idShortPath, FileValue aasFile, File attachment)
+		throws ResourceNotFoundException, IOException {
+		try ( InputStream is = java.nio.file.Files.newInputStream(attachment.toPath()) ) {
+			return putAttachmentByPath(idShortPath, aasFile, is);
+		}
+	}
 	
 	/**
 	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일의 내용을 삭제한다.
@@ -164,7 +190,7 @@ public interface SubmodelService {
 	 * @throws ResourceNotFoundException 해당 idShortPath에 해당하는 SubmodelElement 객체가
 	 *                                   존재하지 않는 경우.
 	 */
-	public void deleteFileByPath(String idShortPath) throws ResourceNotFoundException;;
+	public void deleteAttachmentByPath(String idShortPath) throws ResourceNotFoundException;;
 	
 	/**
 	 * idShortPath에 해당하는 SubmodelElement 객체의 Operation을 동기적으로 실행한다.

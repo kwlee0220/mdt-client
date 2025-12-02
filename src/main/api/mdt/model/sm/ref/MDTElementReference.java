@@ -1,6 +1,5 @@
 package mdt.model.sm.ref;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
@@ -12,7 +11,6 @@ import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.AASFile;
-import mdt.model.sm.DefaultAASFile;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.value.ElementCollectionValue;
 import mdt.model.sm.value.ElementValue;
@@ -96,16 +94,7 @@ public interface MDTElementReference extends ElementReference {
 			return null;
 		}
 		else if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File aasFile ) {
-			DefaultAASFile file = new DefaultAASFile();
-			String path = aasFile.getValue();
-			
-			file.setPath(path);
-			file.setContentType(aasFile.getContentType());
-			if ( path != null && path.length() > 0 ) {
-				file.setContent(getSubmodelService().getFileContentByPath(path));
-			}
-			
-			return file;
+			return AASFile.of(aasFile);
 		}
 		else {
 			String json = MDTModelSerDe.toJsonString(sme);
@@ -124,29 +113,6 @@ public interface MDTElementReference extends ElementReference {
 		}
 		else {
 			updateValue(propValue);
-		}
-	}
-	
-	public default void uploadFile(File file) throws IOException {
-		SubmodelElement sme = read();
-		if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File ) {
-			SubmodelService svc = getSubmodelService();
-			DefaultAASFile mdtFile = DefaultAASFile.from(file);
-			svc.putFileByPath(getIdShortPathString(), mdtFile);
-		}
-		else if ( SubmodelUtils.isParameterValue(sme) ) {
-			SubmodelService svc = getSubmodelService();
-			DefaultAASFile mdtFile = DefaultAASFile.from(file);
-
-			svc.putFileByPath(getIdShortPathString() + ".ParameterValue", mdtFile);
-//			Map<String,ElementValue> paramValue = Map.of(
-//				"ParameterValue", mdtFile.getValue(),
-//				"EventDateTime", PropertyValue.DATE_TIME(Instant.now())
-//			);
-//			updateValue(new ElementCollectionValue(paramValue));
-		}
-		else {
-			throw new IllegalArgumentException("ElementReference is not a File or Parameter: " + this);
 		}
 	}
 }

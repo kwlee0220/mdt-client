@@ -18,7 +18,7 @@ public class FileValueTest {
 	
 	@Test
 	public void testSerializeFileValue() throws IOException {
-		FileValue nev = new FileValue("application/jpeg", "/home/kwlee/image.jpg");
+		FileValue nev = new FileValue("/home/kwlee/image.jpg", "application/jpeg");
 		
 //		System.out.println(nev.toJson());
 		Assert.assertEquals(JSON, nev.toJsonString());

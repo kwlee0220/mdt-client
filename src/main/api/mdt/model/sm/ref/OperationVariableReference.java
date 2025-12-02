@@ -1,6 +1,8 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
@@ -18,6 +20,7 @@ import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.value.FileValue;
 
 
 /**
@@ -145,6 +148,20 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 		OperationVariable opv = getVariable(op, m_kind, m_ordinal);
 		opv.setValue(newSme);
 		m_opRef.write(op);
+	}
+
+	@Override
+	public void readAttachment(OutputStream out) throws IOException {
+		Preconditions.checkState(m_opRef != null, "OperationVariableReference is not activated");
+		
+		m_opRef.readAttachment(out);
+	}
+
+	@Override
+	public void updateAttachment(FileValue file, InputStream content) throws IOException {
+		Preconditions.checkState(m_opRef != null, "OperationVariableReference is not activated");
+		
+		m_opRef.updateAttachment(file, content);
 	}
 
 	@Override

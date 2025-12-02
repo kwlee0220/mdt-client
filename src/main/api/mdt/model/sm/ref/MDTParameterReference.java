@@ -1,6 +1,8 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
@@ -17,6 +19,7 @@ import mdt.model.sm.data.ParameterCollection;
 import mdt.model.sm.info.MDTAssetType;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.value.FileValue;
 
 
 /**
@@ -137,6 +140,20 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 //		
 //		ElementValue newVal = ElementValues.parseValueJsonString(m_proto, valueJsonString);;
 //		updateValue(newVal);
+	}
+
+	@Override
+	public void readAttachment(OutputStream out) throws IOException {
+		assertActivated();
+		
+		m_ref.readAttachment(out);
+	}
+
+	@Override
+	public void updateAttachment(FileValue file, InputStream content) throws IOException {
+		assertActivated();
+		
+		m_ref.updateAttachment(file, content);
 	}
 
 	@Override

@@ -1,6 +1,8 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,6 +35,7 @@ import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.FileValue;
 import mdt.model.sm.value.IdShortPath;
 
 
@@ -160,6 +163,20 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 		Preconditions.checkState(m_argRef != null, "not activated");
 		
 		m_argRef.write(newElm);
+	}
+
+	@Override
+	public void readAttachment(OutputStream out) throws IOException {
+		Preconditions.checkState(m_argRef != null, "not activated");
+		
+		m_argRef.readAttachment(out);
+	}
+
+	@Override
+	public void updateAttachment(FileValue file, InputStream content) throws IOException {
+		Preconditions.checkState(m_argRef != null, "not activated");
+		
+		m_argRef.updateAttachment(file, content);
 	}
 
 	@Override

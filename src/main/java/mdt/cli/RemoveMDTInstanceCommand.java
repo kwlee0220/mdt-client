@@ -86,9 +86,7 @@ public class RemoveMDTInstanceCommand extends AbstractMDTCommand {
 			manager.removeInstance(instId);
 		}
 		catch ( Exception e ) {
-			if ( m_verbose ) {
-				System.out.printf("failed to remove MDTInstance: %s", instId, e);
-			}
+			System.out.printf("failed to remove MDTInstance: %s: cause %s", instId, e);
 		}
 	}
 }

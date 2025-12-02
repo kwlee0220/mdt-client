@@ -1,6 +1,8 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ import mdt.model.sm.value.ElementCollectionValue;
 import mdt.model.sm.value.ElementListValue;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.value.FileValue;
 import mdt.model.sm.value.PropertyValue;
 
 
@@ -225,6 +228,18 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		SubmodelElement elm = read();
 		ElementValues.updateWithValueJsonString(elm, valueJsonString);
 		write(elm);
+	}
+
+	@Override
+	public void readAttachment(OutputStream out) throws IOException {
+		assertActivated();
+		m_ref.readAttachment(out);
+	}
+
+	@Override
+	public void updateAttachment(FileValue file, InputStream content) throws IOException {
+		assertActivated();
+		m_ref.updateAttachment(file, content);
 	}
 
 	@Override

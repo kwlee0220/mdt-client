@@ -13,7 +13,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
+import utils.func.FOption;
 import utils.http.RESTfulRemoteException;
 
 import mdt.model.MessageTypeEnum;
@@ -23,13 +25,14 @@ import mdt.model.MessageTypeEnum;
  * @author Kang-Woo Lee (ETRI)
  */
 @Getter @Setter
+@Accessors(prefix="m_")
 @JsonPropertyOrder({"messageType", "text", "code", "timestamp"})
 @JsonInclude(Include.NON_NULL)
 public class Fa3stMessage {
-    private MessageTypeEnum messageType;
-    private String text;
+    private MessageTypeEnum m_messageType;
+    private String m_text;
     private String m_code;
-    private String timestamp;
+    private String m_timestamp;
 	
 	public static Fa3stMessage from(Throwable e) {
 		ZonedDateTime now = Instant.now().atZone(ZoneOffset.systemDefault());
@@ -42,10 +45,10 @@ public class Fa3stMessage {
     					@JsonProperty("text") String text,
     					@JsonProperty("code") String code,
     					@JsonProperty("timestamp") String timestamp) {
-    	this.messageType = messageType;
-    	this.text = text;
+    	this.m_messageType = messageType;
+    	this.m_text = text;
     	m_code = code;
-    	this.timestamp = timestamp;
+    	this.m_timestamp = timestamp;
     }
     
     public String getCode() {
@@ -53,11 +56,9 @@ public class Fa3stMessage {
     }
 	
 	public RESTfulRemoteException toClientException() {
-		if ( this.text != null ) {
-			throw new RESTfulRemoteException("code=" + m_code + ", details=" + this.text);
-		}
-		else {
-			throw new RESTfulRemoteException("code=" + m_code);
-		}
+		String msg = FOption.mapOrSupply(m_text,
+										t -> String.format("[%s] code=%s, details: %s", m_messageType, m_code, t),
+										() -> String.format("[%s] code=%s", m_messageType, m_code));
+		throw new RESTfulRemoteException(msg);
 	}
 }

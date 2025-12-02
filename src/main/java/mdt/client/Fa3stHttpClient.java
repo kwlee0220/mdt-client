@@ -1,25 +1,21 @@
 package mdt.client;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-
-import utils.Tuple;
-import utils.http.HttpClientProxy;
-import utils.http.RESTfulIOException;
-import utils.http.RESTfulRemoteException;
-
-import mdt.model.MDTModelSerDe;
-import mdt.model.ResourceNotFoundException;
-import mdt.model.sm.AASFile;
-import mdt.model.sm.DefaultAASFile;
+import com.google.common.base.Preconditions;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -28,16 +24,26 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
+import utils.Tuple;
+import utils.http.HttpClientProxy;
+import utils.http.RESTfulIOException;
+import utils.http.RESTfulRemoteException;
+
+import mdt.model.MDTModelSerDe;
+import mdt.model.ResourceNotFoundException;
+
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class Fa3stHttpClient implements HttpClientProxy {
+	private static final Logger s_logger = LoggerFactory.getLogger(Fa3stHttpClient.class);
 	private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
 	private final String m_endpoint;
 	private final OkHttpClient m_client;
+//	private Supplier<AASFile> m_aasFileFactory = () -> MemoryAASFile.builder().build();
 	
 	public Fa3stHttpClient(OkHttpClient client, String endpoint) {
 		m_endpoint = endpoint;
@@ -63,9 +69,13 @@ public class Fa3stHttpClient implements HttpClientProxy {
 	}
 
 	protected <T> T call(Request req, Class<T> resultCls) {
+		return call(req, resultCls, null);
+	}
+
+	protected <T> T call(Request req, Class<T> resultCls, Object attachment) {
 		try {
 			Response resp =  m_client.newCall(req).execute();
-			return parseResponse(resp, resultCls);
+			return parseResponse(resp, resultCls, attachment);
 		}
 		catch ( SocketTimeoutException | ConnectException e ) {
 			throw new RESTfulIOException("Failed to connect to the server: endpoint=" + m_endpoint, e);
@@ -78,7 +88,7 @@ public class Fa3stHttpClient implements HttpClientProxy {
 	protected <T> Tuple<String,T> callAsync(Request req, Class<T> resultCls) {
 		try {
 			Response resp =  m_client.newCall(req).execute();
-			T result = parseResponse(resp, resultCls);
+			T result = parseResponse(resp, resultCls, null);
 			if ( resp.code() == 202 ) {
 				return Tuple.of(resp.header("Location"), result);
 			}
@@ -123,7 +133,7 @@ public class Fa3stHttpClient implements HttpClientProxy {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private <T> T parseResponse(Response resp, Class<T> valueType) throws RESTfulIOException {
+	private <T> T parseResponse(Response resp, Class<T> valueType, Object attachment) throws RESTfulIOException {
 		try {
 			if ( resp.isSuccessful() ) {
 				if ( resp.code() != 204 ) {
@@ -139,11 +149,18 @@ public class Fa3stHttpClient implements HttpClientProxy {
 						else if ( byte[].class == valueType ) {
 							return (T)respBody.bytes();
 						}
-						else if ( AASFile.class.isAssignableFrom(valueType) ) {
-							DefaultAASFile mdtFile = new DefaultAASFile();
-							mdtFile.setContentType(resp.body().contentType().toString());
-							mdtFile.setContent(respBody.bytes());
-							return (T)mdtFile;
+						else if ( OutputStream.class.isAssignableFrom(valueType) ) {
+							Preconditions.checkArgument(attachment != null && attachment instanceof OutputStream,
+														"invalid response attachment for File response");
+							
+							InputStream in = respBody.byteStream();
+							OutputStream out = (OutputStream)attachment;
+							try ( in; out  ) {
+								long nbytes = in.transferTo(out);
+								s_logger.info("downloaded: {} bytes", nbytes);
+							}
+							
+							return null;
 						}
 						else {
 							String respBodyStr = respBody.string();
@@ -218,7 +235,7 @@ public class Fa3stHttpClient implements HttpClientProxy {
 					throw new ResourceNotFoundException(msg.getText());
 				}
 				else if ( resp.code() >= 500 && resp.code() < 600 ) {
-					throw new RESTfulRemoteException(msg.getText());
+					throw msg.toClientException();
 				}
 			}
 			

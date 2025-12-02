@@ -1,21 +1,18 @@
 package mdt.cli.get;
 
 import java.io.File;
+import java.io.FileOutputStream;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import utils.io.IOUtils;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
-import mdt.model.SubmodelService;
-import mdt.model.sm.AASFile;
 import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.value.FileValue;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -66,21 +63,14 @@ public class GetFile extends AbstractMDTCommand {
 		MDTElementReference iref = (MDTElementReference)smeRef;
 		iref.activate(manager);
 		
-		SubmodelElement sme = smeRef.read();
-		if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File file ) {
-			SubmodelService svc = iref.getSubmodelService();
-			AASFile aasFile = svc.getFileByPath(iref.getIdShortPathString());
-			
-			if ( m_outputFile == null ) {
-				m_outputFile = new File(aasFile.getPath());
-			}
-			IOUtils.toFile(aasFile.getContent(), m_outputFile);
-			if ( m_verbose ) {
-				System.out.printf("File downloaded to: %s%n", m_outputFile.getAbsolutePath());
-			}
+		FileValue fvalue = iref.readAASFileValue();
+		File output = m_outputFile;
+		if ( m_outputFile == null ) {
+			output = new File(fvalue.getValue());
 		}
-		else {
-			System.out.printf("The specified element is not a File type: %s%n", smeRef);
+		iref.readAttachment(new FileOutputStream(output));
+		if ( m_verbose ) {
+			System.out.printf("File downloaded to: %s%n", output.getAbsolutePath());
 		}
 	}
 }

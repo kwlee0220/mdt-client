@@ -2,6 +2,8 @@ package mdt.model.sm.ref;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Objects;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
@@ -18,6 +20,7 @@ import utils.io.IOUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.value.FileValue;
 
 
 /**
@@ -65,6 +68,16 @@ public final class FileStoreReference extends AbstractElementReference implement
 		SubmodelElement proto = read();
 		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
 		updateValue(newVal);
+	}
+
+	@Override
+	public void readAttachment(OutputStream out) throws IOException {
+		throw new UnsupportedOperationException("readAttachment is not supported for FileStoreReference");
+	}
+
+	@Override
+	public void updateAttachment(FileValue file, InputStream content) throws IOException {
+		throw new UnsupportedOperationException("updateAttachment is not supported for FileStoreReference");
 	}
 
 	public static FileStoreReference parseString(String valueExpr) {

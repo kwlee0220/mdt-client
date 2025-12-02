@@ -1,6 +1,8 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Objects;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
@@ -19,6 +21,7 @@ import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.value.FileValue;
 import mdt.model.sm.value.References;
 
 
@@ -77,6 +80,16 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	@Override
 	public void activate(MDTInstanceManager manager) {
 		m_smRef.activate(manager);
+	}
+
+	@Override
+	public void readAttachment(OutputStream out) throws IOException {
+		getSubmodelService().getAttachmentByPath(getIdShortPathString(), out);
+	}
+
+	@Override
+	public void updateAttachment(FileValue file, InputStream content) throws IOException {
+		getSubmodelService().putAttachmentByPath(getIdShortPathString(), file, content);
 	}
 
 //	@Override

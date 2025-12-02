@@ -5,18 +5,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
+import org.apache.tika.Tika;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import utils.func.FOption;
 import utils.io.IOUtils;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.model.MDTManager;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.DefaultAASFile;
 import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.value.FileValue;
 
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -176,8 +178,15 @@ public class SetElementCommand extends AbstractMDTCommand {
 	private void setFile(MDTInstanceManager manager, MDTElementReference target, FileElementSpec fileSpec)
 		throws IOException {
 		SubmodelService svc = target.getSubmodelService();
-		DefaultAASFile mdtFile = DefaultAASFile.from(fileSpec.m_file, fileSpec.m_path, fileSpec.m_mimeType);
-		svc.putFileByPath(target.getIdShortPathString(), mdtFile);
+		
+		String path = FOption.getOrElse(fileSpec.m_path, fileSpec.m_file.getName());
+		String contentType = fileSpec.m_mimeType;
+		if ( contentType == null ) {
+			contentType = new Tika().detect(fileSpec.m_file);
+		}
+		
+		FileValue fvalue = new FileValue(path, contentType);
+		svc.putAttachmentByPath(target.getIdShortPathString(), fvalue, fileSpec.m_file);
 	}
 
 	public static void main(String... args) throws Exception {

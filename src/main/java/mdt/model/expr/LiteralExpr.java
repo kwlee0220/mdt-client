@@ -55,7 +55,7 @@ public abstract class LiteralExpr implements MDTExpression {
 		private final FileValue m_value;
 		
 		public FileValueSpec(String mimeType, String path) {
-			m_value = new FileValue(mimeType, path);
+			m_value = new FileValue(path, mimeType);
 		}
 
 		@Override

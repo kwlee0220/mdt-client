@@ -99,7 +99,7 @@ public class ElementValues {
 		return PropertyValue.from(prop);
 	}
 	public static FileValue getFileValue(File aasFile) {
-		return new FileValue(aasFile.getContentType(), aasFile.getValue());
+		return new FileValue(aasFile.getValue(), aasFile.getContentType());
 	}
 	public static MultiLanguagePropertyValue getMLPValue(MultiLanguageProperty mlp) {
 		return new MultiLanguagePropertyValue(mlp.getValue());

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
@@ -13,7 +14,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 
 import utils.KeyValue;
-import utils.func.FOption;
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
@@ -26,13 +26,13 @@ import utils.stream.KeyValueFStream;
 public class ElementCollectionValue extends AbstractElementValue implements ElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:collection";
 	
-	private final LinkedHashMap<String,ElementValue> m_fields;
+	private final LinkedHashMap<String,? extends ElementValue> m_fields;
 	
-	public ElementCollectionValue(Map<String,ElementValue> elements) {
+	public ElementCollectionValue(Map<String,? extends ElementValue> elements) {
 		m_fields = Maps.newLinkedHashMap(elements);
 	}
 	
-	public Map<String,ElementValue> getFieldAll() {
+	public Map<String,? extends ElementValue> getFieldAll() {
 		return m_fields;
 	}
 	
@@ -40,8 +40,8 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 		return m_fields.containsKey(fieldName);
 	}
 
-	public FOption<ElementValue> findField(String fieldName) {
-		return FOption.ofNullable(m_fields.get(fieldName));
+	public Optional<ElementValue> findField(String fieldName) {
+		return Optional.ofNullable(m_fields.get(fieldName));
 	}
 
 	public ElementValue getField(String fieldName) {

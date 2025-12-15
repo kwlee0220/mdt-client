@@ -149,7 +149,7 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 																					.value().getValue();
 													SubmodelElement field = SubmodelUtils.findFieldById(smc, valueField)
 																							.map(Indexed::value)
-																							.getOrNull();
+																							.orElse(null);
 													field.setIdShort(argName);
 													return field;
 												})
@@ -177,6 +177,13 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 		Preconditions.checkState(m_argRef != null, "not activated");
 		
 		m_argRef.updateAttachment(file, content);
+	}
+
+	@Override
+	public void removeAttachment() throws IOException {
+		Preconditions.checkState(m_argRef != null, "not activated");
+		
+		m_argRef.removeAttachment();
 	}
 
 	@Override

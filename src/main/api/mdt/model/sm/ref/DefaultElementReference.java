@@ -92,6 +92,11 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 		getSubmodelService().putAttachmentByPath(getIdShortPathString(), file, content);
 	}
 
+	@Override
+	public void removeAttachment() throws IOException {
+		getSubmodelService().deleteAttachmentByPath(getIdShortPathString());
+	}
+
 //	@Override
 //	public void updateValue(String valueJsonString) throws IOException {
 ////		SubmodelElement proto = read();

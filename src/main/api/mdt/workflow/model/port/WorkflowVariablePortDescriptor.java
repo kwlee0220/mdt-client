@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 
 /**
  *
@@ -53,7 +53,8 @@ public class WorkflowVariablePortDescriptor extends AbstractPortDescriptor {
 	}
 	
 	public static WorkflowVariablePortDescriptor parseJson(String name, String description, ObjectNode topNode) {
-		String holder = FOption.map(topNode.get("holder"), JsonNode::asText); 
+		JsonNode holderNode = topNode.get("holder");
+		String holder = (holderNode != null) ? holderNode.asText() : null;
 		String variable = topNode.get("variable").asText();
 
 		return new WorkflowVariablePortDescriptor(name, description, holder, variable);
@@ -61,7 +62,7 @@ public class WorkflowVariablePortDescriptor extends AbstractPortDescriptor {
 	
 	@Override
 	public String toStringExpr() {
-		String holderStr = FOption.mapOrElse(m_holder, s -> String.format("%s/", s), "");
+		String holderStr = Optionals.mapOrElse(m_holder, s -> String.format("%s/", s), "");
 		return String.format("%s:%s%s", getPortType().getId(), holderStr, m_variable);
 	}
 }

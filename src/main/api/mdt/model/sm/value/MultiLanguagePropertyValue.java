@@ -50,7 +50,7 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 							.mapOrThrow(elm -> {
 								Map.Entry<String,JsonNode> ent
 									= Funcs.getFirst(elm.fields())
-											.getOrThrow(() -> new IllegalStateException("No language field"));
+											.orElseThrow(() -> new IllegalStateException("No language field"));
 								return buildLangStringTextType(ent.getKey(), ent.getValue().asText());
 							})
 							.toList();
@@ -86,7 +86,7 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 							.mapOrThrow(elm -> {
 								Map.Entry<String,JsonNode> ent
 									= Funcs.getFirst(elm.fields())
-											.getOrThrow(() -> new IllegalStateException("No language field"));
+											.orElseThrow(() -> new IllegalStateException("No language field"));
 								return buildLangStringTextType(ent.getKey(), ent.getValue().asText());
 							})
 							.toList();

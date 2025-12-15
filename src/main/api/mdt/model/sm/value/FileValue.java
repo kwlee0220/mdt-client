@@ -12,7 +12,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 
-import utils.func.FOption;
 import utils.json.JacksonUtils;
 
 import mdt.model.MDTModelSerDe;
@@ -61,7 +60,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	public Object toValueJsonObject() {
 		Map<String,String> value = Maps.newLinkedHashMap();
 		value.put(FIELD_CONTENT_TYPE, m_contentType);
-		value.put(FIELD_VALUE, FOption.getOrElse(m_value, "null"));
+		value.put(FIELD_VALUE, m_value);
 		return value;
 	}
 	
@@ -86,7 +85,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	
 	@Override
 	public String toString() {
-		return String.format("file:'%s' ('%s')", FOption.getOrElse(this.m_value, "None"), this.m_contentType);
+		return String.format("file:'%s' ('%s')", (m_value != null) ? m_value : "None", this.m_contentType);
 	}
 
 	private static final String FIELD_CONTENT_TYPE = "contentType";
@@ -109,5 +108,13 @@ public final class FileValue extends AbstractElementValue implements DataElement
 		String mimeType = JacksonUtils.getStringField(vnode, FIELD_CONTENT_TYPE);
 		String value = JacksonUtils.getStringField(vnode, FIELD_VALUE);
 		return new FileValue(value, mimeType);
+	}
+	
+	public static final void main(String... args) throws Exception {
+		FileValue val = new FileValue(null, "text/plain");
+		String json = val.toJsonString();
+		json = val.toValueJsonString();
+		
+		System.out.println("json=" + json);
 	}
 }

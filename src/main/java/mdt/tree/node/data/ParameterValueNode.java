@@ -36,7 +36,7 @@ public final class ParameterValueNode {
 											Instant ts = DataTypes.DATE_TIME.parseValueString(tsProp.getValue());
 											return String.format(" (ts=%s)", DataTypes.DATE_TIME.toValueString(ts));
 										})
-										.getOrElse("");
+										.orElse("");
 			node.setValue(node.getValue() + tsStr);
 			return node;
 		}
@@ -44,7 +44,7 @@ public final class ParameterValueNode {
 		private String getFieldStringOrNull(SubmodelElement smc, String field) {
 			return SubmodelUtils.findPropertyById(smc, field)
 								.map(idxed -> idxed.value().getValue())
-								.getOrNull();
+								.orElse(null);
 		}
 	}
 }

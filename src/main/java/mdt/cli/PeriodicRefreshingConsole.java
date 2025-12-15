@@ -5,13 +5,13 @@ import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import utils.MovingAverage;
 import utils.StopWatch;
 import utils.UnitUtils;
 import utils.async.PeriodicLoopExecution;
-import utils.func.FOption;
 import utils.func.Try;
 
 
@@ -60,7 +60,7 @@ public abstract class PeriodicRefreshingConsole extends PeriodicLoopExecution<Vo
 	}
 	
 	@Override
-	protected FOption<Void> performPeriodicAction(long loopIndex) throws Exception {
+	protected Optional<Void> performPeriodicAction(long loopIndex) throws Exception {
 		try ( ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				PrintWriter pw = new PrintWriter(baos) ) {
 			StopWatch watch = StopWatch.start();
@@ -89,7 +89,7 @@ public abstract class PeriodicRefreshingConsole extends PeriodicLoopExecution<Vo
 			return null;
 		}
 		else {
-			return FOption.empty();
+			return Optional.empty();
 		}
 	}
 	

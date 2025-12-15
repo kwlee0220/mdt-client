@@ -365,10 +365,19 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 
 	@Override
 	public void deleteAttachmentByPath(String idShortPath) {
-		String url = String.format("%s/submodel-elements/%s/attachment",
-									getEndpoint(), encodeIdShortPath(idShortPath));
-		Request req = new Request.Builder().url(url).delete().build();
-		call(req, void.class);
+		SubmodelElement sme = getSubmodelElementByPath(idShortPath);
+		if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File fileElm ) {
+			if ( fileElm.getValue() != null && !fileElm.getValue().isEmpty() ) {
+				String url = String.format("%s/submodel-elements/%s/attachment",
+											getEndpoint(), encodeIdShortPath(idShortPath));
+				Request req = new Request.Builder().url(url).delete().build();
+				call(req, void.class);
+			}
+		}
+		else {
+			throw new IllegalArgumentException(
+					String.format("the SubmodelElement is not a File: idShortPath=%s", idShortPath));
+		}
 	}
 	
 	private String encodeIdShortPath(String idShortPath) {

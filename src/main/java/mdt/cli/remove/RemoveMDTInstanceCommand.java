@@ -1,4 +1,4 @@
-package mdt.cli;
+package mdt.cli.remove;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import utils.LoggerNameBuilder;
 import utils.func.Unchecked;
 
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstance;
@@ -18,20 +19,23 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+
 /**
  * 
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "remove",
+	name = "instance",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
 	description = "Remove the MDT instance."
 )
 public class RemoveMDTInstanceCommand extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerNameBuilder.from(RemoveMDTInstanceCommand.class).dropSuffix(2)
-															.append("unregister.mdt_instances").getLogger();
+	private static final Logger s_logger = LoggerNameBuilder.from(RemoveMDTInstanceCommand.class)
+															.dropSuffix(2)
+															.append("unregister.mdt_instances")
+															.getLogger();
 	
 	@Parameters(index="0..*", paramLabel="ids", description="MDTInstance ids to unregister")
 	private List<String> m_instanceIds;
@@ -58,7 +62,6 @@ public class RemoveMDTInstanceCommand extends AbstractMDTCommand {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
 		if ( m_removeAll ) {
-			
 			if ( m_force ) {
 				manager.getInstanceAllByFilter("instance.status = 'RUNNING'")
 						.parallelStream()

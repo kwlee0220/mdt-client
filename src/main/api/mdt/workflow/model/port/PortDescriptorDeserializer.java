@@ -11,8 +11,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.base.Preconditions;
 
-import utils.func.FOption;
-
 
 /**
  *
@@ -34,7 +32,9 @@ public class PortDescriptorDeserializer extends StdDeserializer<PortDescriptor> 
 		ObjectNode node = (ObjectNode)parser.getCodec().readTree(parser);
 		
 		String name = node.get("name").asText();
-		String desc = FOption.map(node.get("description"), JsonNode::asText);
+		
+		JsonNode descNode = node.get("description");
+		String desc = (descNode != null) ? descNode.asText() : null;
 		
 		JsonNode refNode = node.get("valueReference");
 		if ( refNode != null ) {
@@ -42,9 +42,8 @@ public class PortDescriptorDeserializer extends StdDeserializer<PortDescriptor> 
 			return PortDescriptors.parseStringExpr(name, desc, refNode.asText());
 		}
 		else {
-//			boolean valueOnly = FOption.mapOrElse(node.get("valueOnly"), v -> Boolean.parseBoolean(v.asText()), false);
-			String portType = FOption.mapOrElse(node.get("portType"), JsonNode::asText,
-												PortType.SME.getId()); 
+			JsonNode portTypeNode = node.get("portType");
+			String portType = (portTypeNode != null) ? portTypeNode.asText() : PortType.SME.getId();
 			
 			PortType type = PortType.fromId(portType);
 			return switch ( type ) {

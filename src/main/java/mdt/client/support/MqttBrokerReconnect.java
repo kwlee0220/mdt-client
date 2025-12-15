@@ -1,6 +1,7 @@
 package mdt.client.support;
 
 import java.time.Duration;
+import java.util.Optional;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
@@ -11,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import utils.async.AbstractStatePoller;
-import utils.func.FOption;
 
 import ch.qos.logback.classic.LoggerContext;
 
@@ -61,7 +61,7 @@ public class MqttBrokerReconnect extends AbstractStatePoller<MqttClient> {
 	}
 
 	@Override
-	protected FOption<MqttClient> pollState() throws Exception {
+	protected Optional<MqttClient> pollState() throws Exception {
 		getLogger().debug("trying connection to {}", m_client.getServerURI());
 		
 		try {
@@ -70,10 +70,10 @@ public class MqttBrokerReconnect extends AbstractStatePoller<MqttClient> {
 			getLogger().info("connected to {}", m_client.getServerURI());
 			
 			// MQTT Broker에 연결된 경우 {@link MqttClient} 객체를 반환하고 loop를 종료시킨다
-			return FOption.of(m_client);
+			return Optional.of(m_client);
 		}
 		catch ( MqttException e ) {
-			return FOption.empty();
+			return Optional.empty();
 		}
 	}
 	

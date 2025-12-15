@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.apache.tika.Tika;
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -15,8 +17,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import utils.func.FOption;
+import utils.func.Unchecked;
 
+import mdt.model.MDTModelSerDe;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.FileValue;
@@ -45,7 +48,34 @@ public interface ElementReference {
 	 * @throws	IOException    읽기 과정에서 예외가 발생한 경우.
 	 */
 	public default ElementValue readValue() throws IOException {
-		return FOption.map(read(), ElementValues::getValue);
+		SubmodelElement sme = read();
+		return (sme != null) ? ElementValues.getValue(sme) : null;
+	}
+	
+	public default Property readAsProperty() throws IOException {
+		SubmodelElement sme = read();
+		if ( sme == null ) {
+			return null;
+		}
+		else if ( sme instanceof Property prop ) {
+			return prop;
+		}
+		else {
+			throw new IOException("not a Property: element=" + sme);
+		}
+	}
+	public default String readAsString() throws IOException {
+		Property prop = readAsProperty();
+		if ( prop == null ) {
+			return null;
+		}
+		else if ( prop.getValueType() == DataTypeDefXsd.STRING ) {
+			return prop.getValue().toString();
+		}
+		else {
+			String json = MDTModelSerDe.toJsonString(prop);
+			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.STRING, json));
+		}
 	}
 	
 	/**
@@ -160,12 +190,13 @@ public interface ElementReference {
 	public default void updateAttachment(File contentFile) throws IOException {
 		ElementValue sme = readValue();
 		if ( sme instanceof FileValue file ) {
-			String path = FOption.getOrElse(file.getValue(), contentFile.getName());
-			String contentType = FOption.getOrElse(file.getMimeType(),
-													new Tika().detect(contentFile));
+			if ( file.getValue() != null ) {
+				Unchecked.runOrIgnore(this::removeAttachment);
+			}
 			
+			String contentType = new Tika().detect(contentFile);
 			try ( InputStream out = new FileInputStream(contentFile) ) {
-				updateAttachment(new FileValue(path, contentType), out);
+				updateAttachment(new FileValue(contentFile.getName(), contentType), out);
 			}
 		}
 		else {
@@ -173,6 +204,8 @@ public interface ElementReference {
 											+ sme.getClass().getSimpleName());
 		}
 	}
+	
+	public void removeAttachment() throws IOException;
 
 	public String toStringExpr();
 

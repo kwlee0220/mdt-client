@@ -123,11 +123,15 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	
 	private void printOutput(HttpMDTInstanceManager manager, PrintWriter pw) throws InterruptedException {
 		try {
-			List<HttpMDTInstanceClient> instances = (m_filter != null)
-													? manager.getInstanceAllByFilter(m_filter)
-													: manager.getInstanceAll();
-			
-            if ( m_long ) {
+			List<HttpMDTInstanceClient> instances;
+			if ( m_filter != null ) {
+				instances = manager.getInstanceAllByFilter(m_filter);
+			}
+			else {
+				instances = manager.getInstanceAll();
+			}
+
+			if ( m_long ) {
 				if ( m_output.equals("csv") ) {
 					printLongCsv(instances, pw);
 				}
@@ -167,6 +171,12 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			else {
 				pw.println("fails to list MDTInstances: " + e.getCause());
 			}
+		}
+	}
+	
+	private void printId(List<? extends MDTInstance> instances, PrintWriter pw) {
+		for ( MDTInstance inst : instances ) {
+			pw.println(inst.getId());
 		}
 	}
 	

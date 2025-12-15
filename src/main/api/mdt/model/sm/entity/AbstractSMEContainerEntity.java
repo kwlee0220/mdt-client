@@ -9,6 +9,7 @@ import java.util.Map;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.eclipse.digitaltwin.aas4j.v3.model.AasSubmodelElements;
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
@@ -27,7 +28,6 @@ import com.google.common.primitives.Primitives;
 import utils.InternalException;
 import utils.ReflectionUtils;
 import utils.Utilities;
-import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.aas.DataType;
@@ -104,7 +104,8 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 	
 	public static DataType<?> getDataType(PropertyField anno, Property prop) {
 		if ( anno.valueType().equals("") ) {
-			return FOption.mapOrElse(prop.getValueType(), DataTypes::fromAas4jDatatype, DataTypes.STRING);
+			DataTypeDefXsd vtype = prop.getValueType();
+			return (vtype != null) ? DataTypes.fromAas4jDatatype(vtype) : DataTypes.STRING;
 		}
 		else {
 			return DataTypes.fromDataTypeName(anno.valueType());
@@ -508,7 +509,7 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 				}
 				else {
 					dtype = getDataType(anno, value);
-					propStr = FOption.map(value, dtype::toValueString);
+					propStr = (value != null) ? dtype.toValueString(value) : null;
 				}
 
 				String idShort = (anno.idShort().length() > 0) ? anno.idShort() : null;

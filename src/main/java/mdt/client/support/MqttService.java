@@ -3,6 +3,7 @@ package mdt.client.support;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
@@ -29,7 +30,6 @@ import utils.Throwables;
 import utils.UnitUtils;
 import utils.async.Guard;
 import utils.async.PeriodicLoopExecution;
-import utils.func.FOption;
 import utils.func.Unchecked;
 
 import ch.qos.logback.classic.LoggerContext;
@@ -189,7 +189,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	
 	@Override
 	public Logger getLogger() {
-		return FOption.getOrElse(m_logger, s_logger);
+		return (m_logger != null) ? m_logger : s_logger;
 	}
 	
 	@Override
@@ -375,14 +375,14 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		
 		PeriodicLoopExecution<Void> publishing = new PeriodicLoopExecution<Void>(Duration.ofSeconds(1)) {
 			@Override
-			protected FOption<Void> performPeriodicAction(long loopIndex) throws Exception {
+			protected Optional<Void> performPeriodicAction(long loopIndex) throws Exception {
 				try {
 					mqttSvc.publish("test/topic/1", "Hello MQTT!");
 				}
 				catch ( MqttException ignored ) {
 					System.out.println("Publish failed, broker not connected.");
 				}
-				return FOption.empty();
+				return Optional.empty();
 			}
 		};
 		publishing.start();

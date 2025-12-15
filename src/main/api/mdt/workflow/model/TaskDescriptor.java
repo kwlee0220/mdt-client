@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -135,8 +136,8 @@ public final class TaskDescriptor {
 		return m_options;
 	}
 	
-	public FOption<String> findOptionValue(String optName) {
-		return FOption.ofNullable(m_options.get(optName)).map(Option::getValue);
+	public Optional<String> findOptionValue(String optName) {
+		return Optional.ofNullable(m_options.get(optName)).map(Option::getValue);
 	}
 	
 	public void addOption(String name, String value) {

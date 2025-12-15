@@ -4,8 +4,6 @@ import com.google.common.base.Preconditions;
 
 import okhttp3.MediaType;
 
-import utils.func.FOption;
-
 import mdt.model.sm.value.FileValue;
 
 /**
@@ -57,7 +55,7 @@ public class AASFile {
 	 * @return {@link MediaType} 객체.
 	 */
 	public MediaType getMediaType() {
-		return FOption.map(getContentType(), MediaType::parse);
+		return (getContentType() != null) ? MediaType.parse(getContentType()) : null;
 	}
 	
 	/**
@@ -71,9 +69,8 @@ public class AASFile {
 	
 	@Override
 	public String toString() {
-		String pathStr = FOption.getOrElse(m_path, "unknown");
-		String typeStr = FOption.mapOrElse(m_contentType,
-											t -> String.format("type=%s", t), "unknown");
+		String pathStr = (m_path != null) ? m_path : "unknown";
+		String typeStr = (m_contentType != null) ? String.format("type=%s", m_contentType) : "unknown";
 		return String.format("%s(%s)", pathStr, typeStr);
 	}
 }

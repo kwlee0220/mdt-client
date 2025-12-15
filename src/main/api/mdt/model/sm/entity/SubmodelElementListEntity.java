@@ -11,7 +11,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementList;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-import utils.func.FOption;
 import utils.stream.FStream;
 
 
@@ -85,11 +84,11 @@ public abstract class SubmodelElementListEntity<E extends SubmodelElementEntity>
 		Preconditions.checkArgument(sme != null);
 
 		if ( sme instanceof SubmodelElementList sml ) {
-			FOption.accept(getIdShort(), sml::setIdShort);
-			FOption.accept(getSemanticId(), sml::setSemanticId);
+			if ( getIdShort() != null ) sml.setIdShort(getIdShort());
+			if ( getSemanticId() != null ) sml.setSemanticId(getSemanticId());
 			sml.setOrderRelevant(m_orderRelevant);
-			FOption.accept(m_typeValueListElement, sml::setTypeValueListElement);
-			FOption.accept(m_valueTypeListElement, sml::setValueTypeListElement);
+			if ( m_typeValueListElement != null ) sml.setTypeValueListElement(m_typeValueListElement);
+			if ( m_valueTypeListElement != null ) sml.setValueTypeListElement(m_valueTypeListElement);
 			
 			List<SubmodelElement> elements = FStream.from(m_members)
 										.map(entity -> (SubmodelElement)entity.newSubmodelElement())

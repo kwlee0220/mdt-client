@@ -2,6 +2,7 @@ package mdt.task.builtin;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,9 +72,10 @@ public class HttpTaskCommand extends AbstractTaskCommand {
 			descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL, m_pollInterval);
 		}
 		else {
-			descriptor.findOptionValue(HttpTask.OPTION_POLL_INTERVAL)
-						.ifAbsent(() -> descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL,
-																		DEFAULT_POLL_INTERVAL));
+			Optional<String> opt = descriptor.findOptionValue(HttpTask.OPTION_POLL_INTERVAL);
+			if ( opt.isEmpty() ) {
+				descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL, DEFAULT_POLL_INTERVAL);
+			}
 		}
 		
 		HttpTask httpTask = new HttpTask(descriptor);

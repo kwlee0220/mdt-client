@@ -144,17 +144,17 @@ public class HttpTask extends AbstractThreadedExecution<Void> implements MDTTask
 		OperationRequest reqBody = new OperationRequest();
 		
 		String endpoint = descriptor.findOptionValue(OPTION_SERVER_ENDPOINT)
-									.getOrThrow(() -> new IllegalArgumentException("serverEndpoint option is not provided"));
+									.orElseThrow(() -> new IllegalArgumentException("serverEndpoint option is not provided"));
 		String opId = descriptor.findOptionValue(OPTION_OPERATION)
-								.getOrThrow(() -> new IllegalArgumentException("operationId option is not provided"));
+								.orElseThrow(() -> new IllegalArgumentException("operationId option is not provided"));
 		reqBody.setOperation(opId);
 
 		Duration pollInterval = descriptor.findOptionValue(OPTION_POLL_INTERVAL)
 											.map(this::parseDuration)
-											.getOrElse(DEFAULT_POLL_INTERVAL);
+											.orElse(DEFAULT_POLL_INTERVAL);
 		Duration timeout = descriptor.findOptionValue(OPTION_TIMEOUT)
 									.map(this::parseDuration)
-									.getOrNull();
+									.orElse(null);
 		
 		reqBody.setInputVariables(descriptor.getInputVariables());
 		reqBody.setOutputVariables(descriptor.getOutputVariables());

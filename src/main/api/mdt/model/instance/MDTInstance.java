@@ -59,6 +59,10 @@ public interface MDTInstance {
 	 */
 	public MDTInstanceStatus getStatus();
 	
+	public default boolean isRunning() {
+		return getStatus() == MDTInstanceStatus.RUNNING;
+	}
+	
 	/**
 	 * MDTInstance에 부여된 endpoint를 반환한다.
 	 * <p>

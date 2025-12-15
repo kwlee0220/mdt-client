@@ -8,6 +8,7 @@ import utils.Picoclies;
 import mdt.cli.MDTCommandsMain.SimulationCommands;
 import mdt.cli.get.GetCommands;
 import mdt.cli.list.ListCommands;
+import mdt.cli.remove.RemoveCommands;
 import mdt.cli.set.SetCommands;
 import mdt.cli.workflow.WorkflowCommands;
 
@@ -26,10 +27,12 @@ import picocli.CommandLine.Command;
 	description="%nManufactoring DigitalTwin (MDT) related commands.",
 	subcommands = {
 		EndpointCommand.class,
+		BuildInstanceCommand.class,
 		ListCommands.class,
 		GetCommands.class,
+		RemoveCommands.class,
 		AddMDTInstanceCommand.class,	
-		RemoveMDTInstanceCommand.class,	
+//		RemoveMDTInstanceCommand.class,	
 		StartMDTInstanceCommand.class,
 		StopMDTInstanceCommand.class,
 		SetCommands.class,

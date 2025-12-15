@@ -218,21 +218,21 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		}
 		
 		File zippedFile = instanceFile;
-		if ( instanceFile.isDirectory() ) {
-			try {
-				// Instance 파일이 디렉토리인 경우, zip 파일로 압축한다.
-				zippedFile = new File(instanceFile.getParentFile(), id + ".zip");
-				ZipFile.zipDirectory(zippedFile.toPath(), instanceFile.toPath());
-			}
-			catch ( IOException e ) {
-				throw new MDTInstanceManagerException("Failed to add an instance: dir=" + instanceFile, e);
-			}
-		}
-		else if ( !Files.getFileExtension(zippedFile.getAbsolutePath()).equals("zip") ) {
-			throw new MDTInstanceManagerException("MDTInstance file must be a zip file: " + zippedFile);
-		}
-
 		try {
+			if ( instanceFile.isDirectory() ) {
+				try {
+					// Instance 파일이 디렉토리인 경우, zip 파일로 압축한다.
+					zippedFile = new File(instanceFile.getParentFile(), id + ".zip");
+					ZipFile.zipDirectory(zippedFile.toPath(), instanceFile.toPath());
+				}
+				catch ( IOException e ) {
+					throw new MDTInstanceManagerException("Failed to add an instance: dir=" + instanceFile, e);
+				}
+			}
+			else if ( !Files.getFileExtension(zippedFile.getAbsolutePath()).equals("zip") ) {
+				throw new MDTInstanceManagerException("MDTInstance file must be a zip file: " + zippedFile);
+			}
+			
 			builder.addFormDataPart("bundle", id + ".zip", RequestBody.create(zippedFile, ZIP_TYPE));
 
 			String url = String.format("%s/instances", getEndpoint());

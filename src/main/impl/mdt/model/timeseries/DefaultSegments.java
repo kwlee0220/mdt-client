@@ -1,6 +1,7 @@
 package mdt.model.timeseries;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
@@ -11,7 +12,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import utils.Indexed;
-import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.sm.SubmodelUtils;
@@ -52,7 +52,7 @@ public class DefaultSegments extends SubmodelElementCollectionEntity implements 
 		SubmodelElementCollection smc = (SubmodelElementCollection)sme;
 		
 		for ( DefaultSegment segment : segments ) {
-			FOption<Indexed<SubmodelElement>> ochild = SubmodelUtils.findFieldById(smc, segment.getIdShort());
+			Optional<Indexed<SubmodelElement>> ochild = SubmodelUtils.findFieldById(smc, segment.getIdShort());
 			
 			SubmodelElement target;
 			if ( ochild.isPresent() ) {

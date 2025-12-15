@@ -6,8 +6,6 @@ import java.util.Map;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
-import utils.func.FOption;
-
 import mdt.aas.DataTypes;
 
 /**
@@ -30,11 +28,11 @@ public class ParameterValue extends ElementCollectionValue {
 	public Instant getEventDateTime() {
 		return findField("EventDateTime")
 				.map(ev -> ((PropertyValue<Instant>)ev).get())
-				.getOrNull();
+				.orElse(null);
 	}
 	
 	public ElementValue getParameterValue() {
-		return findField("ParameterValue").getOrNull();
+		return findField("ParameterValue").orElse(null);
 	}
 	
 	@Override
@@ -47,7 +45,7 @@ public class ParameterValue extends ElementCollectionValue {
 			return String.format("(unknown): null %s", tsStr);
 		}
 		else if ( value instanceof PropertyValue prop ) {
-			String valueStr = FOption.mapOrElse(prop, PropertyValue::toDisplayString, "null");
+			String valueStr = (prop != null) ? prop.toDisplayString() : "null"; 
 			return String.format("[Property] %s%s", valueStr, tsStr);
 		}
 		else if ( value instanceof org.eclipse.digitaltwin.aas4j.v3.model.File file ) {

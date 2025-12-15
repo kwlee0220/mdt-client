@@ -11,7 +11,6 @@ import com.google.common.base.Preconditions;
 
 import utils.Indexed;
 import utils.KeyedValueList;
-import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.ResourceNotFoundException;
@@ -134,7 +133,7 @@ public class ParameterCollectionBase implements ParameterCollection {
 	}
 	
 	private Map<String,Integer> getParameterBindings() {
-		return m_parameterBindings.updateAndGet(prev -> FOption.getOrElseThrow(prev, this::loadParameterBindings));
+		return m_parameterBindings.updateAndGet(prev -> prev != null ? prev : loadParameterBindings());
 	}
 	private Map<String,Integer> loadParameterBindings() {
 		String idShortPath = String.format("DataInfo.%s.%sParameters", m_entityTypeName, m_entityTypeName);
@@ -147,7 +146,7 @@ public class ParameterCollectionBase implements ParameterCollection {
 	}
 
 	private Map<String,Integer> getParameterValueBindings() {
-		return m_parameterValueBindings.updateAndGet(prev -> FOption.getOrElseThrow(prev, this::loadParameterValueBindings));
+		return m_parameterValueBindings.updateAndGet(prev -> (prev != null) ? prev : loadParameterValueBindings());
 	}
 	private Map<String,Integer> loadParameterValueBindings() {
 		String idShortPath = String.format("DataInfo.%s.%sParameterValues", m_entityTypeName, m_entityTypeName);

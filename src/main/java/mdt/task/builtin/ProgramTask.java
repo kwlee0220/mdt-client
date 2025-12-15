@@ -147,13 +147,13 @@ public class ProgramTask extends AbstractThreadedExecution<Void> implements MDTT
 		
 		File workingDir = descriptor.findOptionValue("workingDirectory")
 									.map(File::new)
-									.getOrElse(FileUtils::getCurrentWorkingDirectory);
+									.orElseGet(FileUtils::getCurrentWorkingDirectory);
 		List<String> commandLine = descriptor.findOptionValue("commandLine")
 									.map(v -> Arrays.asList(v.split("\n")))
-									.getOrThrow(() -> new IllegalArgumentException("Option is not specified: commandLine"));
+									.orElseThrow(() -> new IllegalArgumentException("Option is not specified: commandLine"));
 		Duration timeout = descriptor.findOptionValue("timeout")
 									.map(UnitUtils::parseSecondDuration)
-									.getOrNull();
+									.orElse(null);
 		
 		CommandExecution.Builder builder = CommandExecution.builder()
 															.addCommand(commandLine)

@@ -92,7 +92,7 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		MDTElementReference opRef
 					= descriptor.findOptionValue(OPTION_OPERATION)
 								.map(ElementReferences::parseExpr)
-								.getOrThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
+								.orElseThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
 		try {
 			opRef.activate(manager);
 			SubmodelElement sme = opRef.read();
@@ -131,7 +131,7 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		
 		boolean updateOperationVariables = descriptor.findOptionValue(OPTION_UPDATE_OPVARS)
 														.map(DataUtils::asBoolean)
-														.getOrElse(false);
+														.orElse(false);
 		if ( updateOperationVariables ) {
 			try {
 				op.setInoutputVariables(result.getInoutputArguments());
@@ -148,7 +148,7 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 		
 		boolean showResult = descriptor.findOptionValue(OPTION_SHOW_RESULT)
 										.map(DataUtils::asBoolean)
-										.getOrElse(false);
+										.orElse(false);
 		if ( showResult ) {
 			for ( OperationVariable opVar: result.getOutputArguments() ) {
 				ElementValue ev = ElementValues.getValue(opVar.getValue());
@@ -229,10 +229,10 @@ public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettabl
 
 		Duration pollInterval = descriptor.findOptionValue(OPTION_POLL_INTERVAL)
 											.map(UnitUtils::parseSecondDuration)
-											.getOrElse(DEFAULT_POLL_INTERVAL);
+											.orElse(DEFAULT_POLL_INTERVAL);
 		Duration timeout = descriptor.findOptionValue(OPTION_TIMEOUT)
 									.map(UnitUtils::parseSecondDuration)
-									.getOrNull();
+									.orElse(null);
 		
 		OperationResult result = null;
 //		if ( !sync ) {

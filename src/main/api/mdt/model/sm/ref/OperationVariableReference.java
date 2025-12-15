@@ -165,6 +165,13 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 	}
 
 	@Override
+	public void removeAttachment() throws IOException {
+		Preconditions.checkState(m_opRef != null, "OperationVariableReference is not activated");
+		
+		m_opRef.removeAttachment();
+	}
+
+	@Override
 	public void updateValue(ElementValue value) throws ResourceNotFoundException, IOException {
 		Preconditions.checkArgument(value != null);
 		Preconditions.checkState(m_opRef != null, "OperationVariableReference is not activated");

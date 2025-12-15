@@ -9,7 +9,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementCollect
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-import utils.func.FOption;
 import utils.stream.FStream;
 
 
@@ -50,8 +49,12 @@ public class SubmodelElementCollectionEntity extends AbstractSMEContainerEntity<
 		Preconditions.checkArgument(sme != null);
 
 		if ( sme instanceof SubmodelElementCollection smc ) {
-			FOption.accept(getIdShort(), smc::setIdShort);
-			FOption.accept(getSemanticId(), smc::setSemanticId);
+			if ( getIdShort() != null ) {
+				smc.setIdShort(getIdShort());
+			}
+			if ( getSemanticId() != null ) {
+				smc.setSemanticId(getSemanticId());
+			}
 			
 			Map<String, SubmodelElement> elementMap = FStream.from(smc.getValue())
 															.tagKey(SubmodelElement::getIdShort)

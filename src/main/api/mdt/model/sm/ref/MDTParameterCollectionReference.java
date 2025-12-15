@@ -243,6 +243,12 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 	}
 
 	@Override
+	public void removeAttachment() throws IOException {
+		assertActivated();
+		m_ref.removeAttachment();
+	}
+
+	@Override
 	public String getSerializationType() {
 		return SERIALIZATION_TYPE;
 	}

@@ -3,6 +3,7 @@ package mdt.model.sm;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -257,7 +258,7 @@ public class SubmodelUtils {
 	public static boolean containsFieldById(SubmodelElementCollection smc, String fieldName) {
 		return Funcs.findFirst(smc.getValue(), field -> field.getIdShort().equals(fieldName)).isPresent();
 	}
-	public static FOption<Indexed<SubmodelElement>> findFieldById(SubmodelElement smc, String fieldName) {
+	public static Optional<Indexed<SubmodelElement>> findFieldById(SubmodelElement smc, String fieldName) {
 		if ( smc instanceof SubmodelElementCollection coll ) {
 			return Funcs.findFirstIndexed(coll.getValue(), field -> field.getIdShort().equals(fieldName));
 		}
@@ -265,7 +266,7 @@ public class SubmodelUtils {
 			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
 		}
 	}
-	public static <T extends SubmodelElement> FOption<Indexed<T>>
+	public static <T extends SubmodelElement> Optional<Indexed<T>>
 	findFieldById(SubmodelElement smc, String fieldName, Class<T> outputClass) {
 		if ( smc instanceof SubmodelElementCollection coll ) {
 			return Funcs.findFirstIndexed(coll.getValue(), field -> field.getIdShort().equals(fieldName))
@@ -275,7 +276,7 @@ public class SubmodelUtils {
 			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
 		}
 	}
-	public static FOption<Indexed<Property>> findPropertyById(SubmodelElement smc, String fieldName) {
+	public static Optional<Indexed<Property>> findPropertyById(SubmodelElement smc, String fieldName) {
 		return findFieldById(smc, fieldName)
 				.filter(idxed -> idxed.value() instanceof Property)
 				.map(idxed -> Indexed.with((Property) idxed.value(), idxed.index()));
@@ -283,7 +284,7 @@ public class SubmodelUtils {
 	public static Indexed<SubmodelElement> getFieldById(SubmodelElement smc, String fieldName)
 		throws IllegalArgumentException {
 		return findFieldById(smc, fieldName)
-					.getOrThrow(() -> {
+					.orElseThrow(() -> {
 						String fieldNames = FStream.from(((SubmodelElementCollection)smc).getValue())
 													.map(SubmodelElement::getIdShort)
 													.join(", ");

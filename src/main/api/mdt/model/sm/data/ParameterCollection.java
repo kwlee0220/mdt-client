@@ -66,7 +66,7 @@ public interface ParameterCollection {
 	 */
 	public default int getParameterIndex(String paramId) throws ResourceNotFoundException {
 		return Funcs.findFirstIndexed(this.getParameterList(), param -> param.getParameterId().equals(paramId))
-						.getOrThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId))
+						.orElseThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId))
 						.index();
 	}
 	
@@ -91,8 +91,8 @@ public interface ParameterCollection {
 	 */
 	public default int getParameterValueIndex(String paramId) throws ResourceNotFoundException {
 		return Funcs.findFirstIndexed(this.getParameterValueList(), param -> param.getParameterId().equals(paramId))
-						.getOrThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId))
-						.index();
+					.orElseThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId))
+					.index();
 	}
 //	public SubmodelElement getParameterValueAsSubmodelElement(String paramId) throws ResourceNotFoundException;
 //	public String getIdShortPathOfParameterValue(String paramId);

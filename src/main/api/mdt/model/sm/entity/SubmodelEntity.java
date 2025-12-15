@@ -9,7 +9,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
-import utils.func.FOption;
 import utils.stream.FStream;
 
 
@@ -52,9 +51,9 @@ public class SubmodelEntity extends AbstractSMEContainerEntity<Submodel> {
 
 	@Override
 	public void updateAasModel(Submodel model) {
-		FOption.accept(getId(), model::setId);
-		FOption.accept(getIdShort(), model::setIdShort);
-		FOption.accept(getSemanticId(), model::setSemanticId);
+		if ( getId() != null ) model.setId(getId());
+		if ( getIdShort() != null ) model.setIdShort(getIdShort());
+		if ( getSemanticId() != null ) model.setSemanticId(getSemanticId());
 		
 		Map<String, SubmodelElement> elementMap = FStream.from(model.getSubmodelElements())
 														.tagKey(SubmodelElement::getIdShort)

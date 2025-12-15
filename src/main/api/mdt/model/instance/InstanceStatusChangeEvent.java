@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import utils.InternalException;
-import utils.func.FOption;
 
 import mdt.model.MDTManagerEvent;
 
@@ -77,9 +76,9 @@ public class InstanceStatusChangeEvent extends MDTManagerEvent {
 	
 	@Override
 	public String toString() {
-		String epStr = FOption.mapOrElse(this.m_serviceEndpoint, ep -> String.format(", endpoint=%s", ep), ""); 
+		String epStr = (m_serviceEndpoint != null) ? String.format(", endpoint=%s", m_serviceEndpoint) : "";
 		return String.format("InstanceStatusChangeEvent(instanceId=%s, statusChange=%s%s)",
-							this.m_instanceId, this.m_statusChange, epStr);
+							m_instanceId, m_statusChange, epStr);
 	}
 
 	public static InstanceStatusChangeEvent ADDING(String instanceId) {

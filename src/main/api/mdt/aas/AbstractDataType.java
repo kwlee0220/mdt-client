@@ -4,8 +4,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import utils.func.FOption;
-
 
 /**
  *
@@ -64,6 +62,6 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 
 	@Override
 	public T fromJdbcObject(Object jdbcObj) {
-		return FOption.map((String)jdbcObj, this::parseValueString);
+		return (jdbcObj != null) ? parseValueString(jdbcObj.toString()) : null;
 	}
 }

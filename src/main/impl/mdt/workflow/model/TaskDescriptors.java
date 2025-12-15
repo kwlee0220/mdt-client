@@ -168,7 +168,7 @@ public class TaskDescriptors {
 		String portName = SubmodelUtils.getPropertyById(var, prefix + "ID").value().getValue();
 		String portDesc = SubmodelUtils.findPropertyById(var, prefix + "Description")
 										.map(idxed -> idxed.value().getValue())
-										.getOrNull();
+										.orElse(null);
 		return Variables.newInstance(portName, portDesc, elmRef);
 	}
 	

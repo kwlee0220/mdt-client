@@ -30,7 +30,6 @@ import lombok.experimental.UtilityClass;
 import utils.DataUtils;
 import utils.Tuple;
 import utils.Utilities;
-import utils.func.FOption;
 import utils.func.Try;
 
 import mdt.model.ModelGenerationException;
@@ -169,7 +168,7 @@ public class DataTypes {
 
 		@Override
 		public Timestamp toJdbcObject(Instant value) {
-			return FOption.map(value, Timestamp::from);
+			return (value != null) ? Timestamp.from(value) : null;
 		}
 
 		@Override
@@ -203,7 +202,7 @@ public class DataTypes {
 
 		@Override
 		public java.sql.Date toJdbcObject(Date value) {
-			return FOption.map(value, v -> new java.sql.Date(v.getTime()));
+			return (value != null) ? new java.sql.Date(value.getTime()) : null;
 		}
 
 		@Override
@@ -270,7 +269,7 @@ public class DataTypes {
 
 		@Override
 		public Long toJdbcObject(Duration value) {
-			return FOption.map(value, Duration::toMillis);
+			return (value != null) ? value.toMillis() : null;
 		}
 
 		@Override
@@ -528,7 +527,7 @@ public class DataTypes {
 
 		@Override
 		public java.sql.Time toJdbcObject(LocalTime value) {
-			return FOption.map(value, Time::valueOf);
+			return (value != null) ? Time.valueOf(value) : null;
 		}
 
 		@Override

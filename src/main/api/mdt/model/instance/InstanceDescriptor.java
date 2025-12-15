@@ -23,8 +23,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import utils.func.FOption;
-
 import mdt.model.AASUtils;
 import mdt.model.sm.info.MDTAssetType;
 
@@ -162,8 +160,8 @@ public class InstanceDescriptor {
 			gen.writeStringField("aasIdEncoded", desc.getAasIdEncoded());
 			gen.writeStringField("aasIdShort", desc.getAasIdShort());
 			gen.writeStringField("globalAssetId", desc.getGlobalAssetId());
-			gen.writeStringField("assetType", FOption.map(desc.getAssetType(), MDTAssetType::name));
-			gen.writeStringField("assetKind", FOption.map(desc.getAssetKind(), AssetKind::name));
+			gen.writeStringField("assetType", (desc.getAssetType() != null) ? desc.getAssetType().name() : null);
+			gen.writeStringField("assetKind", (desc.getAssetKind() != null) ? desc.getAssetKind().name() : null);
 			gen.writeStringField("status", desc.getStatus().name());
 			gen.writeStringField("baseEndpoint", desc.getBaseEndpoint());
 			

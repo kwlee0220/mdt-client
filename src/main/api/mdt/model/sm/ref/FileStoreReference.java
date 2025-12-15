@@ -80,6 +80,11 @@ public final class FileStoreReference extends AbstractElementReference implement
 		throw new UnsupportedOperationException("updateAttachment is not supported for FileStoreReference");
 	}
 
+	@Override
+	public void removeAttachment() throws IOException {
+		throw new UnsupportedOperationException("removeAttachment is not supported for FileStoreReference");
+	}
+
 	public static FileStoreReference parseString(String valueExpr) {
 		return new FileStoreReference(new File(valueExpr));
 	}

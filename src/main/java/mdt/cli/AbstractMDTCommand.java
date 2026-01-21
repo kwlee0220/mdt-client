@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import utils.LoggerSettable;
 import utils.Picoclies;
 import utils.Throwables;
-import utils.func.FOption;
+import utils.func.Optionals;
 
 import mdt.client.HttpMDTManager;
 import mdt.client.MDTClientConfig;
@@ -73,7 +73,7 @@ public abstract class AbstractMDTCommand implements Runnable, LoggerSettable {
 
 	@Override
 	public void setLogger(org.slf4j.Logger logger) {
-		m_logger = FOption.getOrElse(logger, () -> LoggerFactory.getLogger(AbstractMDTCommand.class));
+		m_logger = Optionals.getOrElse(logger, () -> LoggerFactory.getLogger(AbstractMDTCommand.class));
 	}
 	
 	@Override

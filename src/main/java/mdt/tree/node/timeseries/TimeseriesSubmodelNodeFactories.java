@@ -50,7 +50,7 @@ public final class TimeseriesSubmodelNodeFactories {
 			meta.updateFromAasModel(sme);
 
 			TerminalNode node = new TerminalNode();
-			String csv = FStream.from(meta.getRecordMetadata().getFieldAll())
+			String csv = FStream.from(meta.getRecord().getFieldAll())
 								.map(field -> String.format("%s:%s", field.getName(), field.getType()))
 								.join(", ");
 			node.setTitle(meta.getIdShort());

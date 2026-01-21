@@ -49,7 +49,7 @@ public class ParameterCollectionNode extends ListNode {
 				equip.updateFromAasModel(sme);
 				return new ParameterCollectionNode(equip);
 			}
-			else if ( SubmodelUtils.isOperation(sme) ) {
+			else if ( SubmodelUtils.isAASOperation(sme) ) {
 				DefaultOperation op = new DefaultOperation();
 				op.updateFromAasModel(sme);
 				return new ParameterCollectionNode(op);

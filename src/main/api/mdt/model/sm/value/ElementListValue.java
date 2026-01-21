@@ -32,23 +32,54 @@ public class ElementListValue extends AbstractElementValue implements ElementVal
 	}
 
 	@Override
+	public List<Object> toValueObject() {
+		return FStream.from(m_elementValues)
+						.map(ElementValue::toValueObject)
+						.toList();
+	}
+	
+	public void update(SubmodelElementList sml) {
+		FStream.from(sml.getValue())
+				.zipWith(FStream.from(m_elementValues))
+				.forEach(match -> ElementValues.update(match._1, match._2));
+	}
+
+	@Override
 	public String toJsonString() throws IOException {
 		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
 	
-	public static ElementListValue parseValueJsonNode(SubmodelElementList sml, JsonNode vnode) throws IOException {
+	public static ElementListValue from(SubmodelElementList sml) {
 		List<ElementValue> values = FStream.from(sml.getValue())
-											.zipWith(FStream.from(vnode.elements()))
-											.mapOrThrow(pair -> ElementValues.parseValueJsonNode(pair._1, pair._2))
+											.mapOrThrow(ElementValues::getValue)
 											.toList();
 		return new ElementListValue(values);
 	}
-
-	@Override
-	public Object toValueJsonObject() {
-		return FStream.from(m_elementValues)
-						.map(elm -> ((AbstractElementValue)elm).toValueJsonObject())
-						.toList();
+	
+	public static ElementListValue fromValueObject(Object obj, SubmodelElementList sml)
+		throws IOException {
+		if ( obj instanceof Iterable iter ) {
+			List<ElementValue> members
+					= FStream.from(sml.getValue())
+							.zipWith(FStream.<Object>from(iter))
+							.mapOrThrow(pair -> ElementValues.fromValueObject(pair._2, pair._1))
+		                    .toList();
+			return new ElementListValue(members);
+		}
+		else {
+			throw new IOException("Invalid object for ElementListValue: " + obj);
+		}
+	}
+	
+	public static ElementListValue parseValueJsonNode(JsonNode vnode, SubmodelElementList sml) throws IOException {
+		if ( !vnode.isArray() ) {
+			throw new IOException("ElementListValue expects an 'Array' node: JsonNode=" + vnode);
+		}
+		List<ElementValue> values = FStream.from(sml.getValue())
+											.zipWith(FStream.from(vnode.elements()))
+											.mapOrThrow(pair -> ElementValues.parseValueJsonNode(pair._2, pair._1))
+											.toList();
+		return new ElementListValue(values);
 	}
 	
 	@Override

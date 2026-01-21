@@ -10,33 +10,20 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.Qualifier;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
-
-import com.google.common.base.Preconditions;
 
 import lombok.experimental.UtilityClass;
 
 import utils.stream.FStream;
 
 import mdt.model.ModelValidationException;
-import mdt.model.NameValue;
 import mdt.model.Qualifiers;
-import mdt.model.ReferenceUtils;
 import mdt.model.sm.SubmodelUtils;
+import mdt.model.sm.SubmodelUtils.OperationSubmodelDescriptor;
+import mdt.model.sm.SubmodelUtils.SubmodelArgumentDescriptor;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.model.sm.ref.ElementReference;
-import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTArgumentKind;
 import mdt.model.sm.ref.MDTArgumentReference;
-import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.ref.MDTSubmodelReference;
-import mdt.model.sm.value.ElementValue;
-import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
-import mdt.model.sm.variable.Variable;
-import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.AASOperationTask;
 import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.SetTask;
@@ -64,15 +51,15 @@ public class TaskDescriptors {
 		return shortId;
 	}
 		
-	public static TaskDescriptor newSetTaskDescriptor(String id, String srcPortExpr, String tarPortExpr) {
+	public static TaskDescriptor newSetTaskDescriptor(String id, String srcArgSpec, String tarArgSpec) {
 		TaskDescriptor taskDesc = new TaskDescriptor(id, "", SetTask.class.getName());
-		taskDesc.getInputVariables().add(Variables.newInstance("source", "", srcPortExpr));
-		taskDesc.getOutputVariables().add(Variables.newInstance("target", "", tarPortExpr));
+		taskDesc.addInputArgumentSpec("source", ArgumentSpec.parseArgumentSpec(srcArgSpec));
+		taskDesc.addOutputArgumentSpec("target", ArgumentSpec.reference(tarArgSpec));
 		
 		return taskDesc;
 	}
 	
-	public static void loadVariablesFromOperation(DefaultElementReference opRef,
+	public static void loadVariablesFromAASOperation(DefaultElementReference opRef,
 													TaskDescriptor descriptor) throws IOException {
 		SubmodelElement sme = opRef.read();
 		if ( !(sme instanceof Operation) ) {
@@ -86,291 +73,63 @@ public class TaskDescriptors {
 			    .forEach(idxed -> {
 			    	String varName = idxed.value().getValue().getIdShort();
 			    	MDTArgumentReference argRef = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.INPUT, varName);
-			    	descriptor.getInputVariables().add(new ReferenceVariable(varName, "", argRef));
+			    	descriptor.addInputArgumentSpec(varName, ArgumentSpec.reference(argRef));
 			    });
 		FStream.from(op.getOutputVariables())
 			    .zipWithIndex()
 			    .forEach(idxed -> {
 			    	String varName = idxed.value().getValue().getIdShort();
 			    	MDTArgumentReference argRef = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.OUTPUT, varName);
-			    	descriptor.getOutputVariables().add(new ReferenceVariable(varName, "", argRef));
-			    });
-		FStream.from(op.getInoutputVariables())
-			    .zipWithIndex()
-			    .forEach(idxed -> {
-			    	String varName = idxed.value().getValue().getIdShort();
-			    	MDTArgumentReference inArgRef = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.INPUT, varName);
-			    	descriptor.getInputVariables().add(new ReferenceVariable(varName, "", inArgRef));
-			    	
-			    	MDTArgumentReference outArgRef = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.OUTPUT, varName);
-			    	descriptor.getOutputVariables().add(new ReferenceVariable(varName, "", outArgRef));
+			    	descriptor.addOutputArgumentSpec(varName, ArgumentSpec.reference(argRef));
 			    });
 
 		Submodel sm = smRef.get().getSubmodel();
 		if ( SubmodelUtils.isAISubmodel(sm) || SubmodelUtils.isSimulationSubmodel(sm) ) {
 			descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
 		}
-
 	}
 	
-	public static void loadVariablesFromSubmodel(TaskDescriptor task, MDTSubmodelReference ref) {
+	public static void loadArgumentSpecsFromSubmodel(TaskDescriptor task, DefaultSubmodelReference ref) {
 		Submodel submodel = ref.get().getSubmodel();
 		if ( SubmodelUtils.isAISubmodel(submodel) ) {
-			loadVariables(task, ref, "AI");
+			loadArgumentSpecs(task, ref, "AI");
 		}
 		else if ( SubmodelUtils.isSimulationSubmodel(submodel) ) {
-			loadVariables(task, ref, "Simulation");
+			loadArgumentSpecs(task, ref, "Simulation");
 		}
 		else {
-			String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+			String semanticId = SubmodelUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
 			throw new IllegalArgumentException("Unexpected Submodel: semanticId=" + semanticId);
 		}
 	}
 	
 	public static void loadSimulationVariables(TaskDescriptor task, DefaultSubmodelReference smRef) {
-		loadVariables(task, smRef, "Simulation");
+		loadArgumentSpecs(task, smRef, "Simulation");
 	}
 	
 	public static void loadAIVariables(TaskDescriptor task, DefaultSubmodelReference smRef) {
-		loadVariables(task, smRef, "AI");
+		loadArgumentSpecs(task, smRef, "AI");
 	}
 	
-	private static void loadVariables(TaskDescriptor task, MDTSubmodelReference smRef, String opTitle) {
+	private static void loadArgumentSpecs(TaskDescriptor task, DefaultSubmodelReference smRef, String opTitle) {
 		Submodel submodel = smRef.get().getSubmodel();
 		
-		SubmodelElementList inputs = SubmodelUtils.traverse(submodel, opTitle + "Info.Inputs",
-															SubmodelElementList.class);
-		FStream.from(inputs.getValue())
-				.cast(SubmodelElementCollection.class)
-				.zipWithIndex()
-				.map(idxed -> {
-					String idShortPath = String.format("%sInfo.Inputs[%d].InputValue", opTitle, idxed.index());
-					DefaultElementReference ref = DefaultElementReference.newInstance(smRef, idShortPath);
-					return toReferenceVariable(idxed.value(), ref, "Input");
-				})
-				.forEach(task.getInputVariables()::addIfAbscent);
-
-		SubmodelElementList outputs = SubmodelUtils.traverse(submodel, opTitle + "Info.Outputs",
-															SubmodelElementList.class);
-		FStream.from(outputs.getValue())
-				.cast(SubmodelElementCollection.class)
-				.zipWithIndex()
-				.map(idxed -> {
-					String idShortPath = String.format("%sInfo.Outputs[%d].OutputValue", opTitle, idxed.index());
-					DefaultElementReference ref = DefaultElementReference.newInstance(smRef, idShortPath);
-					return toReferenceVariable(idxed.value(), ref, "Output");
-				})
-				.forEach(task.getOutputVariables()::addIfAbscent);
-	}
-	
-	private static Variable toReferenceVariable(SubmodelElementCollection var, DefaultElementReference elmRef,
-												String prefix) {
-		String portName = SubmodelUtils.getPropertyById(var, prefix + "ID").value().getValue();
-		String portDesc = SubmodelUtils.findPropertyById(var, prefix + "Description")
-										.map(idxed -> idxed.value().getValue())
-										.orElse(null);
-		return Variables.newInstance(portName, portDesc, elmRef);
-	}
-	
-	static class BaseBuilder<T extends BaseBuilder<T>> {
-		protected final TaskDescriptor m_descriptor = new TaskDescriptor();
+		OperationSubmodelDescriptor opSmDesc = SubmodelUtils.loadOperationSubmodelDescriptor(submodel);
 		
-		protected BaseBuilder(String taskType) {
-			m_descriptor.setType(taskType);
+		for ( Map.Entry<String, SubmodelArgumentDescriptor> ent: opSmDesc.getInputs().entrySet() ) {
+			SubmodelArgumentDescriptor argDesc = ent.getValue();
+			MDTArgumentReference ref = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.INPUT, argDesc.getId());
+			task.addInputArgumentSpec(ent.getKey(), ArgumentSpec.reference(ref));
 		}
-		
-		public TaskDescriptor build() {
-			Preconditions.checkArgument(m_descriptor.getId() != null, "Task ID is null");
-			
-			return m_descriptor;
-		}
-
-		@SuppressWarnings("unchecked")
-		public T id(String id) {
-			m_descriptor.setId(id);
-			return (T)this;
-		}
-		
-		@SuppressWarnings("unchecked")
-		public T name(String name) {
-			m_descriptor.setName(name);
-			return (T)this;
-		}
-
-		@SuppressWarnings("unchecked")
-		public T description(String desc) {
-			m_descriptor.setDescription(desc);
-			return (T)this;
-		}
-
-		@SuppressWarnings("unchecked")
-		public T addLabel(String name, String value) {
-			m_descriptor.getLabels().add(new NameValue(name, value));
-			return (T)this;
-		}
-
-		@SuppressWarnings("unchecked")
-		public T addDependency(String... deps) {
-			m_descriptor.getDependencies().addAll(List.of(deps));
-			return (T)this;
-		}
-
-		@SuppressWarnings("unchecked")
-		public T addOption(String name, String value) {
-			m_descriptor.addOption(name, value);
-			return (T)this;
-		}
-		
-		@SuppressWarnings("unchecked")
-		public T addInputVariable(Variable var) {
-			m_descriptor.getInputVariables().addOrReplace(var);
-			return (T) this;
-		}
-		
-		public T addInputVariable(String name, String description, String expr) {
-			return addInputVariable(Variables.newInstance(name, description, expr));
-		}
-		
-		@SuppressWarnings("unchecked")
-		public T addOutputVariable(Variable var) {
-			m_descriptor.getOutputVariables().addOrReplace(var);
-			return (T) this;
-		}
-		
-		public T addOutputVariable(String name, String description, String expr) {
-			return addOutputVariable(Variables.newInstance(name, description, expr));
-		}
-	}
-	
-	public static SetTaskBuilder setTaskBuilder() {
-		return new SetTaskBuilder();
-	}
-	public static class SetTaskBuilder extends BaseBuilder<SetTaskBuilder> {
-		private SetTaskBuilder() {
-			super(SetTask.class.getName());
-		}
-		
-		public TaskDescriptor build() {
-			Preconditions.checkArgument(m_descriptor.getInputVariables().containsKey("source"),
-										"Source variable is missing");
-			Preconditions.checkArgument(m_descriptor.getOutputVariables().containsKey("target"),
-										"Target variable is missing");
-
-			return super.build();
-		}
-		
-		public SetTaskBuilder source(ElementReference ref) {
-			m_descriptor.getInputVariables().addOrReplace(Variables.newInstance("source", "", ref));
-			return this;
-		}
-		public SetTaskBuilder source(String refExpr) {
-			return source(ElementReferences.parseExpr(refExpr));
-		}
-		public SetTaskBuilder value(String literalExpr) {
-			ElementValue literal = ElementValues.parseExpr(literalExpr);
-			m_descriptor.getInputVariables().addOrReplace(Variables.newInstance("source", "", literal));
-			return this;
-		}
-		
-		public SetTaskBuilder target(ElementReference ref) {
-			m_descriptor.getOutputVariables().addOrReplace(Variables.newInstance("target", "", ref));
-			return this;
-		}
-		public SetTaskBuilder target(String refExpr) {
-			return target(ElementReferences.parseExpr(refExpr));
+		for ( Map.Entry<String, SubmodelArgumentDescriptor> ent: opSmDesc.getOutputs().entrySet() ) {
+			SubmodelArgumentDescriptor argDesc = ent.getValue();
+			MDTArgumentReference ref = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.OUTPUT, argDesc.getId());
+			task.addInputArgumentSpec(ent.getKey(), ArgumentSpec.reference(ref));
 		}
 	}
 
-	public static HttpTaskBuilder httpTaskBuilder() {
-		return new HttpTaskBuilder();
-	}
-	public static class HttpTaskBuilder extends BaseBuilder<HttpTaskBuilder> {
-		private HttpTaskBuilder() {
-			super(HttpTask.class.getName());
-		}
-		
-		public TaskDescriptor build() {
-			Map<String,Option> options = m_descriptor.getOptions();
-			Preconditions.checkState(options.containsKey(HttpTask.OPTION_SERVER_ENDPOINT), "ServerEndpoint is missing");
-			Preconditions.checkState(options.containsKey(HttpTask.OPTION_OPERATION), "Operation ID is missing");
-			Preconditions.checkState(options.containsKey(HttpTask.OPTION_POLL_INTERVAL), "PollInterval is missing");
-			
-			return super.build();
-		}
-		
-		public HttpTaskBuilder serverEndpoint(String url) {
-			m_descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, url);
-			return this;
-		}
-		
-		public HttpTaskBuilder operationId(String id) {
-			m_descriptor.addOption(HttpTask.OPTION_OPERATION, id);
-			return this;
-		}
-		
-		public HttpTaskBuilder pollInterval(String interval) {
-			m_descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL, interval);
-			return this;
-		}
-		
-		public HttpTaskBuilder timeout(String timeout) {
-			m_descriptor.addOption(HttpTask.OPTION_TIMEOUT, timeout);
-			return this;
-		}
-		
-//		public HttpTaskBuilder sync(boolean flag) {
-//			m_descriptor.addOrReplaceOption(HttpTask.OPTION_SYNC, ""+flag);
-//			return this;
-//		}
-		
-		public HttpTaskBuilder operationSubmodelRef(DefaultSubmodelReference ref) {
-			Preconditions.checkArgument(ref.isActivated(), "Operation (AI or Simulation) SubmodelReference is not activated");
-			TaskDescriptors.loadVariablesFromSubmodel(m_descriptor, ref);
-			
-			return this;
-		}
-	}
-
-	public static AASOperationTaskBuilder aasOperationTaskBuilder() {
-		return new AASOperationTaskBuilder();
-	}
-	public static class AASOperationTaskBuilder extends BaseBuilder<AASOperationTaskBuilder> {
-		private AASOperationTaskBuilder() {
-			super(AASOperationTask.class.getName());
-		}
-		
-		public TaskDescriptor build() {
-			Map<String,Option> options = m_descriptor.getOptions();
-			Preconditions.checkState(options.containsKey(AASOperationTask.OPTION_OPERATION),
-														"AASOperation ElementReference is missing");
-			Preconditions.checkState(options.containsKey(AASOperationTask.OPTION_POLL_INTERVAL),
-														"PollInterval is missing");
-
-			return super.build();
-		}
-		
-		public AASOperationTaskBuilder operationRef(MDTElementReference opRef) {
-			m_descriptor.addOption(AASOperationTask.OPTION_OPERATION, opRef.toStringExpr());
-			return this;
-		}
-
-		public AASOperationTaskBuilder pollInterval(String interval) {
-			m_descriptor.addOption(AASOperationTask.OPTION_POLL_INTERVAL, interval);
-			return this;
-		}
-		
-		public AASOperationTaskBuilder timeout(String to) {
-			m_descriptor.addOption(AASOperationTask.OPTION_TIMEOUT, to);
-			return this;
-		}
-		
-		public AASOperationTaskBuilder updateOperationVariables(boolean flag) {
-			m_descriptor.addOption(AASOperationTask.OPTION_UPDATE_OPVARS, ""+flag);
-			return this;
-		}
-	}
-
-	public static TaskDescriptor from(MDTSubmodelReference opSubmodelRef) throws ModelValidationException, IOException {
+	public static TaskDescriptor from(DefaultSubmodelReference opSubmodelRef)
+		throws ModelValidationException, IOException {
 		Submodel submodel = opSubmodelRef.get().getSubmodel();
 		
 		List<LangStringNameType> lsntList = submodel.getDisplayName();
@@ -381,7 +140,7 @@ public class TaskDescriptors {
 		
 		List<Qualifier> qualifiers = submodel.getQualifiers();
 		String method = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_METHOD)
-								.getOrThrow(() -> new ModelValidationException(
+								.orElseThrow(() -> new ModelValidationException(
 										"Submodel operation method not found in the submodel qualifiers: submodel idShort="
 										+ submodel.getIdShort()));
 		switch ( method ) {
@@ -392,7 +151,7 @@ public class TaskDescriptors {
                 throw new ModelValidationException("Unsupported operation method: " + method);
 		}
 		
-		loadVariablesFromSubmodel(descriptor, opSubmodelRef);
+		loadArgumentSpecsFromSubmodel(descriptor, opSubmodelRef);
 		
 		return descriptor;
 	}
@@ -405,21 +164,21 @@ public class TaskDescriptors {
         List<Qualifier> qualifiers = submodel.getQualifiers();
         String serverEndpoint
                 = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_SERVER_ENDPOINT)
-                            .getOrThrow(() -> new ModelValidationException("Submodel operation server endpoint not found: submodel idShort="
+                            .orElseThrow(() -> new ModelValidationException("Submodel operation server endpoint not found: submodel idShort="
                                                                             + submodel.getIdShort()));
         descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, serverEndpoint);
         
         String opId = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_OPERATION_ID)
-                                .getOrThrow(() -> new ModelValidationException("Submodel operation id is missing: submodel idShort="
+                                .orElseThrow(() -> new ModelValidationException("Submodel operation id is missing: submodel idShort="
                                                                                 + submodel.getIdShort()));
         descriptor.addOption(HttpTask.OPTION_OPERATION, opId);
         
         String pollInterval = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_POLL_INTERVAL)
-                                        	.getOrElse(DEFAULT_POLL_INTERVAL);
+                                        	.orElse(DEFAULT_POLL_INTERVAL);
         descriptor.addOption(HttpTask.OPTION_POLL_INTERVAL, pollInterval);
         
         String timeout = Qualifiers.findQualifierByType(qualifiers, Qualifiers.QUALIFIER_TIMEOUT)
-                                	.getOrNull();
+                                	.orElse(null);
         if ( timeout != null ) {
             descriptor.addOption(HttpTask.OPTION_TIMEOUT, timeout);
         }

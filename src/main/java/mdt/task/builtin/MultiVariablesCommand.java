@@ -1,32 +1,27 @@
 package mdt.task.builtin;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import utils.KeyedValueList;
-import utils.Throwables;
 import utils.Tuple;
 import utils.Utilities;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.model.expr.LiteralExpr;
-import mdt.model.expr.MDTElementReferenceExpr;
-import mdt.model.expr.MDTExpression;
-import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
-import mdt.model.sm.variable.Variable;
-import mdt.model.sm.variable.Variables;
-import mdt.workflow.model.TaskDescriptor;
+import mdt.workflow.model.ArgumentSpec;
+import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Unmatched;
@@ -83,7 +78,47 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		return unmatchedOptions;
 	}
 	
-	protected void loadTaskVariablesFromArguments(MDTInstanceManager manager, TaskDescriptor descriptor) {
+	public static class TaskArgumentsDescriptor {
+		private final Map<String,ArgumentSpec> m_inputs = Maps.newHashMap();
+		private final Map<String,ReferenceArgumentSpec> m_outputs = Maps.newHashMap();
+		private final Map<String,ReferenceArgumentSpec> m_inoutputs = Maps.newHashMap();
+		private final Map<String,String> m_options = Maps.newHashMap();
+
+		public Map<String,ArgumentSpec> getInputs() {
+			return m_inputs;
+		}
+
+		public void addInput(String id, ArgumentSpec argSpec) {
+			m_inputs.put(id, argSpec);
+		}
+
+		public Map<String,ReferenceArgumentSpec> getOutputs() {
+			return m_outputs;
+		}
+
+		public void addOutput(String id, ReferenceArgumentSpec argSpec) {
+			m_outputs.put(id, argSpec);
+		}
+
+		public Map<String,ReferenceArgumentSpec> getInoutputs() {
+			return m_inoutputs;
+		}
+
+		public void addInoutput(String id, ReferenceArgumentSpec argSpec) {
+			m_inoutputs.put(id, argSpec);
+		}
+		
+		public Map<String,String> getOptions() {
+			return m_options;
+		}
+
+		public void addOption(String name, String value) {
+			m_options.put(name, value);
+		}
+	}
+	
+	protected TaskArgumentsDescriptor loadTaskArgumentsFromCommandLine(MDTInstanceManager manager)
+		throws IOException {
 		// Command line에서 지정된 옵션을 파싱하여 input/output parameter를 추출한다.
 		// 이때, input/output parameter 관련 정보들은 unmatcheds에 포함되어 있다.
 		// Input/output parameter는 다음과 같은 형식으로 지정된다.
@@ -91,32 +126,12 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		//   --out.<parameter-name> <element-reference> (output parameter의 경우)
 		//   --inout.<parameter-name> <element-reference> (input/output parameter의 경우)
 		//
+		TaskArgumentsDescriptor varsDesc = new TaskArgumentsDescriptor();
 		List<UnmatchedOption> unmatchedOptions = collectUnmatchedOptions();
 		for ( UnmatchedOption unmatchedOpt: unmatchedOptions ) {
-			Variable var;
-			MDTExpression expr = MDTExpressionParser.parseExpr(unmatchedOpt.getValue());
-			if ( expr instanceof MDTElementReferenceExpr refExpr ) {
-				try {
-					MDTElementReference ref = refExpr.evaluate();
-					ref.activate(manager);
-					var = Variables.newInstance(unmatchedOpt.getName(), "", ref);
-				}
-				catch ( Exception e ) {
-					Throwable cause = Throwables.unwrapThrowable(e);
-					String msg = String.format("Failed to parse %s variable(\"%s\"), ref=%s, cause=%s",
-												unmatchedOpt.getType(), unmatchedOpt.getName(),
-												unmatchedOpt.getValue(), cause);
-					throw new IllegalArgumentException(msg);
-				}
-			}
-			else if ( expr instanceof LiteralExpr lit ) {
-				var = Variables.newInstance(unmatchedOpt.getName(), "", lit.evaluate());
-			}
-			else {
-				throw new IllegalArgumentException("Unexpected variable expression: name="
-													+ unmatchedOpt.getName()
-													+ ", expr=" + unmatchedOpt.getValue());
-			}
+			String name = unmatchedOpt.getName();
+			
+			ArgumentSpec argSpec = ArgumentSpec.parseArgumentSpec(unmatchedOpt.getValue());
 			
 			String kind = unmatchedOpt.getType();
 			if ( kind == null ) {
@@ -124,65 +139,32 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 			}
 			switch ( kind.toLowerCase() ) {
 				case "in":
-					updateInputTaskVariable(descriptor, var);
-					getLogger().debug("set input parameter variable[{}]", var.getName());
+					varsDesc.addInput(name, argSpec);
+					getLogger().debug("add input parameter variable[{}]", name);
 					break;
 				case "out":
-					updateOutputTaskVariable(descriptor, var);
-					getLogger().debug("set output parameter variable[{}]", var.getName());
+					Preconditions.checkArgument(argSpec instanceof ReferenceArgumentSpec,
+												"output parameter must be reference argument spec: arg=" + name);
+					varsDesc.addOutput(name, (ReferenceArgumentSpec)argSpec);
+					getLogger().debug("add output parameter variable[{}]", name);
 					break;
 				case "inout":
-					updateInputTaskVariable(descriptor, var);
-					updateOutputTaskVariable(descriptor, var);
-					getLogger().debug("set inoutput parameter variable[{}]", var.getName());
+					Preconditions.checkArgument(argSpec instanceof ReferenceArgumentSpec,
+												"inoutput parameter must be reference argument spec: arg=" + name);
+					varsDesc.addInoutput(name, (ReferenceArgumentSpec)argSpec);
+					getLogger().debug("add inoutput parameter variable[{}]", name);
 					break;
 				case "opt":
 				case "opton":
-					descriptor.addLabel(unmatchedOpt.getName(), unmatchedOpt.getValue());
+					varsDesc.addOption(unmatchedOpt.getName(), unmatchedOpt.getValue());
+					getLogger().debug("add inoutput parameter variable[{}]", name);
 					break;
 				default:
 					throw new AssertionError("invalid kind: " + kind);
 			}
 		}
-	}
-	
-	private void updateInputTaskVariable(TaskDescriptor descriptor, Variable var) {
-        if ( descriptor.findLabel(TaskUtils.LABEL_MDT_OPERATION).isPresent() ) {
-    		if ( !descriptor.getInputVariables().containsKey(var.getName()) ) {
-    			getLogger().error("Unknown input variable: {}", var.getName());
-    			throw new IllegalArgumentException("Unknown input variable: " + var.getName());
-    		}
-        }
-		updateTaskVariable(descriptor.getInputVariables(), var);
-	}
-	
-	private void updateOutputTaskVariable(TaskDescriptor descriptor, Variable var) {
-		if ( descriptor.findLabel(TaskUtils.LABEL_MDT_OPERATION).isPresent() ) {
-			if ( !descriptor.getOutputVariables().containsKey(var.getName()) ) {
-				getLogger().error("Unknown output variable: {}", var.getName());
-				throw new IllegalArgumentException("Unknown output variable: " + var.getName());
-			}
-		}
-		checkForOutputVariable(var);
-		updateTaskVariable(descriptor.getOutputVariables(), var);
-		getLogger().debug("set output parameter variable[{}]", var.getName());
-	}
-	
-	private void checkForOutputVariable(Variable var) {
-		if ( !(var instanceof ReferenceVariable) ) {
-			getLogger().error("Output variable must be a reference variable: {}", var);
-			throw new IllegalArgumentException("Output variable must be a reference variable: " + var);
-		}
-	}
-	
-	private static void updateTaskVariable(KeyedValueList<String, Variable> varList, Variable paramVar) {
-		Variable taskVar = varList.getOfKey(paramVar.getName());
-		if ( taskVar != null ) {
-			varList.replace(paramVar);
-		}
-		else {
-			varList.add(paramVar);
-		}
+		
+		return varsDesc;
 	}
 	
 	private static String trimHeadingDashes(String optName) {

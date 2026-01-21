@@ -14,7 +14,7 @@ import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
@@ -56,7 +56,7 @@ import picocli.CommandLine.Parameters;
 public class GetInstanceCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceCommand.class);
 	
-	@Parameters(index="0", paramLabel="id", description="MDTInstance id to show.")
+	@Parameters(index="0", paramLabel="id", arity="1..1",  description="MDTInstance id to show.")
 	private String m_instanceId;
 
 	enum OutputTypes { table, json, env };
@@ -138,7 +138,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 				});
 		
 		table.addCell(" STATUS "); table.addCell(" " + instance.getStatus().toString());
-		String epStr = FOption.getOrElse(instance.getServiceEndpoint(), "");
+		String epStr = Optionals.getOrElse(instance.getServiceEndpoint(), "");
 		table.addCell(" ENDPOINT "); table.addCell(" " + epStr);
 		
 		System.out.println(table.render());

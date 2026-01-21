@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
@@ -83,16 +83,16 @@ public class GetWorkflowCommand extends AbstractMDTCommand {
 		table.addCell(" MODEL "); table.addCell(" " + workflow.getModelId());
 		table.addCell(" STATUS "); table.addCell(" " + workflow.getStatus());
 		table.addCell(" CREATION_TIME "); table.addCell(" " + workflow.getCreationTime());
-		table.addCell(" START_TIME "); table.addCell(" " + FOption.getOrElse(workflow.getStartTime(), ""));
-		table.addCell(" FINISH_TIME "); table.addCell(" " + FOption.getOrElse(workflow.getFinishTime(), ""));
+		table.addCell(" START_TIME "); table.addCell(" " + Optionals.getOrElse(workflow.getStartTime(), ""));
+		table.addCell(" FINISH_TIME "); table.addCell(" " + Optionals.getOrElse(workflow.getFinishTime(), ""));
 		
 		FStream.from(workflow.getTasks()).zipWithIndex().forEach(tup -> {
 			NodeTask task = tup.value();
 			
 			table.addCell(String.format(" TASK[%02d] ", tup.index()));
-			String depListStr = FStream.from(task.getDependents())
-										.join(", ", "[", "]");
-			String msg = String.format(" %s (%s) <- %s", task.getTaskId(), task.getStatus(), depListStr);
+//			String depListStr = FStream.from(task.getDependents())
+//										.join(", ", "[", "]");
+			String msg = String.format(" %s (%s)", task.getTaskId(), task.getStatus());
 			table.addCell(msg);
 		});
 		

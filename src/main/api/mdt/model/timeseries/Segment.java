@@ -5,6 +5,8 @@ import java.time.Instant;
 
 import javax.annotation.Nullable;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+
 import mdt.model.sm.value.MultiLanguagePropertyValue;
 
 
@@ -13,6 +15,7 @@ import mdt.model.sm.value.MultiLanguagePropertyValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface Segment {
+	
 //	/**
 //	 * Segment에 저장된 레코드들의 메타데이터를 반환한다.
 //	 *

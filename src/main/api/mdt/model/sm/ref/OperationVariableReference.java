@@ -189,7 +189,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 	@Override
 	public void updateValue(String valueJsonString) throws IOException {
 		SubmodelElement proto = read();
-		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
+		ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
 		updateValue(newVal);
 	}
 

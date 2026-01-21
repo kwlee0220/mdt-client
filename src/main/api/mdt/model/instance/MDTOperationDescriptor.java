@@ -20,9 +20,9 @@ public class MDTOperationDescriptor {
 	private final List<ArgumentDescriptor> m_outputArguments;
 	
 	public MDTOperationDescriptor(@JsonProperty("id") String id,
-											@JsonProperty("operationType") String type,
-											@JsonProperty("inputArguments") List<ArgumentDescriptor> inArgs,
-											@JsonProperty("outputArguments") List<ArgumentDescriptor> outArgs) {
+									@JsonProperty("operationType") String type,
+									@JsonProperty("inputArguments") List<ArgumentDescriptor> inArgs,
+									@JsonProperty("outputArguments") List<ArgumentDescriptor> outArgs) {
 		Preconditions.checkArgument(id != null, "Submodel idShort is null");
 		Preconditions.checkArgument(type != null, "Operation type is null");
 		Preconditions.checkArgument(inArgs != null, "null inputArguments");
@@ -88,30 +88,37 @@ public class MDTOperationDescriptor {
 	}
 	
 
-	@JsonPropertyOrder({"id", "valueType", "reference"})
+	@JsonPropertyOrder({"id", "idShortPath", "valueType", "reference"})
 	public static class ArgumentDescriptor {
 		private final String m_id;
+		private final String m_idShortPath;
 		private final String m_valueType;
 		private final String m_reference;
 		
 		public ArgumentDescriptor(@JsonProperty("id") String id,
+									@JsonProperty("idShortPath") String idShortPath,
 									@JsonProperty("valueType") String valueType,
 									@JsonProperty("reference") String reference) {
 			m_id = id;
 			m_valueType = valueType;
 			m_reference = reference;
+			m_idShortPath = idShortPath;
 		}
 		
 		public String getId() {
 			return m_id;
 		}
 		
+		public String getValueType() {
+			return m_valueType;
+		}
+		
 		public String getReference() {
 			return m_reference;
 		}
-		
-		public String getValueType() {
-			return m_valueType;
+
+		public String getIdShortPath() {
+			return m_idShortPath;
 		}
 		
 		@Override

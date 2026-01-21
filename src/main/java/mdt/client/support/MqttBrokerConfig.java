@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 
 
 /**
@@ -24,7 +24,7 @@ public class MqttBrokerConfig {
 	private String m_keepAliveInterval;	// null means using default value of MQTT library.
 	
 	public String getBrokerUrl() {
-		return FOption.getOrElse(m_brokerUrl, DEFAULT_BROKER_URL);
+		return Optionals.getOrElse(m_brokerUrl, DEFAULT_BROKER_URL);
 	}
 	
 	public String getConnectionTimeout() {

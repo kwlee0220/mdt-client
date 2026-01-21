@@ -137,8 +137,8 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		}
 		SubmodelElementCollection member = (SubmodelElementCollection)elm;
 		
-		String memberId = SubmodelUtils.getPropertyValueById(member, "ParameterID").value();
-		SubmodelElement memberElm = SubmodelUtils.getFieldById(member, "ParameterValue").value();
+		String memberId = SubmodelUtils.getStringFieldById(member, "ParameterID");
+		SubmodelElement memberElm = SubmodelUtils.getFieldById(member, "ParameterValue");
 		return KeyValue.of(memberId, memberElm);
 	}
 	
@@ -174,7 +174,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 			throw new IOException(String.format("Invalid ParameterID value type: %s", pidValue.getClass().getName()));
 		}
 		
-		String paramId = (String)pidValue.get();
+		String paramId = (String)pidValue.toValueObject();
 		return KeyValue.of(paramId, cv.getField("ParameterValue"));
 	}
 	
@@ -192,7 +192,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		SubmodelElementList paramValues = (SubmodelElementList)m_ref.read();
 		FStream.from(paramValues.getValue())
 				.forEach(paramValue -> {
-					String memberId = SubmodelUtils.getPropertyValueById(paramValue, "ParameterID").value();
+					String memberId = SubmodelUtils.getStringFieldById(paramValue, "ParameterID");
 					SubmodelElement newValue = valueMap.get(memberId);
 					newValue.setIdShort("ParameterValue");
 					SubmodelUtils.replaceFieldbyId((SubmodelElementCollection)paramValue, "ParameterValue", newValue);
@@ -206,7 +206,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 									"smev should be a ElementCollectionValue: %s", smev);
 		assertActivated();
 		
-		List<ElementValue> paramValues = KeyValueFStream.from(((ElementCollectionValue)smev).getFieldAll())
+		List<ElementValue> paramValues = KeyValueFStream.from(((ElementCollectionValue)smev).getFieldMap())
 														.map(kv -> {
 															String paramId = kv.key();
 															ElementValue paramValue = kv.value();

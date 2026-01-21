@@ -1,8 +1,6 @@
 package mdt.cli;
 
-import mdt.task.builtin.AASOperationTaskCommand;
-import mdt.task.builtin.HttpTaskCommand;
-import mdt.task.builtin.ProgramTaskCommand;
+import mdt.task.builtin.RunSubmodelCommand;
 import mdt.task.builtin.SetTaskCommand;
 
 import picocli.CommandLine.Command;
@@ -19,10 +17,8 @@ import picocli.CommandLine.Command;
 	mixinStandardHelpOptions = true,
 	description="MDT Task related commands",
 	subcommands= {
-		RunTaskCommand.class,
-		AASOperationTaskCommand.class,
-		ProgramTaskCommand.class,
-		HttpTaskCommand.class,
+		RunAASOperationCommand.class,
 		SetTaskCommand.class,
+		RunSubmodelCommand.class,
 	})
 public class RunCommands extends CommandCollection {}

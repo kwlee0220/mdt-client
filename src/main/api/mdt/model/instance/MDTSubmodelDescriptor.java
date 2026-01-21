@@ -1,11 +1,11 @@
 package mdt.model.instance;
 
-import javax.annotation.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.base.Preconditions;
+
+import javax.annotation.Nullable;
 
 /**
  *

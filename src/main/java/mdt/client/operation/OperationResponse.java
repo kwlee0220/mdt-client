@@ -1,9 +1,12 @@
 package mdt.client.operation;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,15 +18,14 @@ import utils.InternalException;
 import utils.func.Try;
 import utils.stream.FStream;
 
-import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
-import mdt.model.sm.variable.Variable;
+import mdt.model.MDTModelSerDe;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@JsonIncludeProperties({"session", "status", "result", "message"})
+@JsonIncludeProperties({"session", "status", "outputArguments", "message"})
 @JsonInclude(Include.NON_NULL)
 public class OperationResponse {
 	/** 비동기적으로 수행하는 경우 수행 중인 연산의 식별자 */
@@ -31,25 +33,25 @@ public class OperationResponse {
 	/** 연산의 수행 상태 */
 	private final OperationStatus m_status;
 	/** 연산 수행 결과 (성공적으로 연산이 완료된 경우) */
-	private final @Nullable List<Variable> m_result;
+	private final @Nullable Map<String,SubmodelElement> m_outputArguments;
 	/** 연산 수행 결과 메시지 (연산 수행이 성공적으로 완료되지 못한 경우) */
 	private final @Nullable String m_message;
 	
 	@JsonCreator
 	public OperationResponse(@JsonProperty("session") String sessionId,
 								@JsonProperty("status") OperationStatus status,
-								@JsonProperty("result") List<Variable> result,
+								@JsonProperty("outputArguments") Map<String,SubmodelElement> outputArguments,
 								@JsonProperty("message") String message) {
 		m_sessionId = sessionId;
 		m_status = status;
-		m_result = result;
+		m_outputArguments = outputArguments;
 		m_message = message;
 	}
 	
 	private OperationResponse(Builder builder) {
 		m_sessionId = builder.m_sessionId;
 		m_status = builder.m_status;
-		m_result = builder.m_result;
+		m_outputArguments = builder.m_outputArguments;
 		m_message = builder.m_message;
 	}
 	
@@ -62,12 +64,20 @@ public class OperationResponse {
 		return m_status;
 	}
 	
-	public List<Variable> getResult() {
-		return m_result;
+	public Map<String,SubmodelElement> getOutputArguments() {
+		return m_outputArguments;
 	}
 	
 	public String getMessage() {
 		return m_message;
+	}
+	
+	public static OperationResponse fromJsonString(String json) throws IOException {
+		return MDTModelSerDe.readValue(json, OperationResponse.class);
+	}
+	
+	public String toJsonString() {
+		return MDTModelSerDe.toJsonString(this);
 	}
 	
 	public Throwable toJavaException() {
@@ -100,10 +110,8 @@ public class OperationResponse {
 	
 	@Override
 	public String toString() {
-		String valuesStr = (m_result != null)
-								? FStream.from(m_result)
-										.map(Variable::toString)
-										.join(", ")
+		String valuesStr = (m_outputArguments != null)
+								? FStream.from(m_outputArguments.keySet()).join(", ")
 								: "";
 		String msgStr = (this.m_message != null) ? String.format(", message=%s", this.m_message) : "";
 		return String.format("[session=%s] status=%s, outputs={%s}%s",
@@ -114,20 +122,15 @@ public class OperationResponse {
 		return OperationResponse.builder()
 								.session(sessionId)
 								.status(OperationStatus.RUNNING)
-								.result(null)
 								.message(msg)
 								.build();
 	}
 	
-	public static <T> OperationResponse completed(String sessionId, List<Variable> outputVariables) {
-		// Result 중에서 'ReferenceVariable'이 아닌 경우만 뽑아서 result를 구성한다.
-		List<Variable> result = FStream.from(outputVariables)
-										.filter(var -> !(var instanceof ReferenceVariable))
-										.toList();
+	public static <T> OperationResponse completed(String sessionId, Map<String,SubmodelElement> outputArguments) {
 		return OperationResponse.builder()
 								.session(sessionId)
 								.status(OperationStatus.COMPLETED)
-								.result(result)
+								.outputArguments(outputArguments)
 								.build();
 	}
 	
@@ -136,7 +139,7 @@ public class OperationResponse {
 		return OperationResponse.builder()
 								.session(sessionId)
 								.status(OperationStatus.FAILED)
-								.result(null)
+								.outputArguments(null)
 								.message(errorMsg)
 								.build();
 	}
@@ -145,7 +148,7 @@ public class OperationResponse {
 		return OperationResponse.builder()
 								.session(sessionId)
 								.status(OperationStatus.CANCELLED)
-								.result(null)
+								.outputArguments(null)
 								.message(msg)
 								.build();
 	}
@@ -159,7 +162,7 @@ public class OperationResponse {
 		/** 연산의 수행 상태 */
 		private OperationStatus m_status;
 		/** 연산 수행 결과 (성공적으로 연산이 완료된 경우) */
-		private @Nullable List<Variable> m_result;
+		private @Nullable Map<String,SubmodelElement> m_outputArguments = Map.of();
 		/** 연산 수행 결과 메시지 (연산 수행이 성공적으로 완료되지 못한 경우) */
 		private @Nullable String m_message;
 		
@@ -177,8 +180,8 @@ public class OperationResponse {
 			return this;
 		}
 		
-		public Builder result(List<Variable> result) {
-			m_result = result;
+		public Builder outputArguments(Map<String,SubmodelElement> outputArguments) {
+			m_outputArguments = outputArguments;
 			return this;
 		}
 		

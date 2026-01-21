@@ -2,7 +2,8 @@ package mdt.model.expr;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.checkerframework.com.google.common.base.Preconditions;
+
+import com.google.common.base.Preconditions;
 
 import mdt.model.expr.MdtExprParser.ExprContext;
 import mdt.model.expr.MdtExprParser.FullElementSpecContext;

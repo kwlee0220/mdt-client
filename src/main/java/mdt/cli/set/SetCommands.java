@@ -17,6 +17,8 @@ import picocli.CommandLine.Command;
 	description="\nUpdate MDT entity",
 	subcommands= {
 		SetElementCommand.class,
+		SetParameterCommand.class,
+		SetArgumentCommand.class,
 	})
 public class SetCommands extends CommandCollection {
 }

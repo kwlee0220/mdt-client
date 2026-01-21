@@ -1,13 +1,10 @@
 package mdt.sample.workflow;
 
 import mdt.client.HttpMDTManager;
-import mdt.model.sm.ref.ElementReference;
-import mdt.model.sm.ref.ElementReferences;
-import mdt.model.sm.variable.Variable;
-import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.SetTask;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -40,12 +37,8 @@ public class SampleWorkflowDescriptor0 {
 		//
 		// 입출력 변수들을 설정한다.
 		//
-		Variable src = Variables.newInstance("source", null, "7");
-		descriptor.getInputVariables().addOrReplace(src);
-		
-		ElementReference incAmountRef = ElementReferences.parseExpr("param:test:IncAmount");
-		Variable tar = Variables.newInstance("target", null, incAmountRef);
-		descriptor.getOutputVariables().addOrReplace(tar);
+		descriptor.addInputArgumentSpec("source", ArgumentSpec.literal(7));
+		descriptor.addOutputArgumentSpec("target", ArgumentSpec.reference("param:test:IncAmount"));
 		
 		wfModel.getTaskDescriptors().add(descriptor);
 		wfModel.getGui().put("layoutSize", 50);

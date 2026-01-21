@@ -42,12 +42,12 @@ public class OperationValueTest {
 		
 		List<ElementValue> inputs = opVarValue.getInputValues();
 		Assert.assertEquals(2, inputs.size());
-		Assert.assertEquals(0, ((PropertyValue)inputs.get(0)).get());
-		Assert.assertEquals(1, ((PropertyValue)inputs.get(1)).get());
+		Assert.assertEquals(0, ((PropertyValue)inputs.get(0)).toValueObject());
+		Assert.assertEquals(1, ((PropertyValue)inputs.get(1)).toValueObject());
 		
 		List<ElementValue> outputs = opVarValue.getOutputValues();
 		Assert.assertEquals(1, outputs.size());
-		Assert.assertEquals(0, ((PropertyValue)inputs.get(0)).get());
+		Assert.assertEquals(0, ((PropertyValue)inputs.get(0)).toValueObject());
 		
 		List<ElementValue> inoutputs = opVarValue.getInoutputValues();
 		Assert.assertEquals(0, inoutputs.size());

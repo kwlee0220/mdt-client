@@ -15,15 +15,13 @@ import lombok.experimental.Accessors;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-//@JsonInclude(Include.NON_NULL)
-//@JsonIncludeProperties({"taskId", "status", "dependents", "startTime", "finishTime"})
 @JsonPropertyOrder({"taskId", "status", "dependents", "startTime", "finishTime"})
 @Accessors(prefix = "m_")
 @Getter
 public class NodeTask {
 	private final String m_taskId;
 	private final WorkflowStatus m_status;
-	private final Set<String> m_dependents;
+//	private final Set<String> m_dependents;
 
 	private final LocalDateTime m_startTime;
 	private final LocalDateTime m_finishTime;
@@ -35,7 +33,7 @@ public class NodeTask {
 					@JsonProperty("finishTime") LocalDateTime finishTime) {
 		m_taskId = taskId;
 		m_status = status;
-		m_dependents = dependents;
+//		m_dependents = dependents;
 		m_startTime = startTime;
 		m_finishTime = finishTime;
 	}

@@ -65,14 +65,14 @@ public interface AssetAdministrationShellService {
 	public AssetInformation putAssetInformation(AssetInformation assetInfo);
 	
 	/**
-	 * AssetAdministrationShell 객체에 포함된 thumbnail의 {@link Resouce) 객체를 반환한다.
+	 * AssetAdministrationShell 객체에 포함된 thumbnail의 {@link Resource} 객체를 반환한다.
 	 *
 	 * @return	thumbnail Resource
 	 */
 	public Resource getThumbnail();
 	
 	/**
-	 * AssetAdministrationShell 객체에 포함된 thumbnail의 {@link Resouce) 객체를 설정한다.
+	 * AssetAdministrationShell 객체에 포함된 thumbnail의 {@link Resource} 객체를 설정한다.
 	 *
 	 * @param thumbnail	설정할 thumbnail
 	 * @return	설정된 thumbnail

@@ -148,6 +148,7 @@ public interface InstanceDescriptorService {
 	 * <p>
 	 * Filter 조건에서 사용할 수 있는 속성 정보는 다음과 같다.
 	 * <table border="1">
+	 * 	<caption>Filter 조건에서 사용할 수 있는 속성 정보</caption>
 	 * 	<tr>
 	 * 		<td>id</td>
 	 * 		<td>InstanceDescriptor 고유 식별자</td>

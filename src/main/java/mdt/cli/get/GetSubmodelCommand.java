@@ -9,20 +9,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import utils.func.Funcs;
-import utils.func.Try;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
-import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
-import mdt.model.expr.MDTExpressionParser;
+import mdt.model.instance.MDTInstance;
 import mdt.model.sm.SubmodelUtils;
-import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -44,9 +40,13 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 	
 	enum OutputTypes { table, json, desc };
 
-	@Parameters(index="0", arity="1", paramLabel="submodel-ref|submodel-id",
-				description="SubmodelReference (<submodel-ref> | <submodel-id>) to show")
-	private String m_ref = null;
+	@Parameters(index="0", arity="1", paramLabel="instance-id|submodel-id",
+				description="Target MDTInstance id or Submodel id to show")
+	private String m_id;
+
+	@Parameters(index="1", arity="0..1", paramLabel="submodel-idshort",
+				description="Target Submodel idshort to show (used with instance-id)")
+	private String m_smIdShort = null;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: ${COMPLETION-CANDIDATES})")
@@ -60,20 +60,17 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
-		SubmodelDescriptor smDesc
-			= Try.get(() -> mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_ref))
-				.recover(() -> {
-					// m_id를 Submodel id로 간주해서 SubmodelDescriptor를 찾는 과정에서 오류가 발생한 경우,
-					// m_id를 <instance-id>:<submodel-idShort> 형식의 SubmodelReference로 간주해서
-					// SubmodelDescriptor를 찾는다.
-					ByIdShortSubmodelReference smRef
-							= (ByIdShortSubmodelReference)MDTExpressionParser.parseSubmodelReference(m_ref).evaluate();
-					HttpMDTInstanceClient instance = manager.getInstance(smRef.getInstanceId());
-					return Funcs.findFirst(instance.getAASSubmodelDescriptorAll(),
-											desc -> smRef.getSubmodelIdShort().equals(desc.getIdShort()))
-								.getOrThrow(() -> new ResourceNotFoundException("Submodel", "ref=" + m_ref));
-				})
-				.get();
+		SubmodelDescriptor smDesc;
+		if ( m_smIdShort != null ) {
+			MDTInstance instance = manager.getInstance(m_id);
+			smDesc = Funcs.findFirst(instance.getAASSubmodelDescriptorAll(),
+									desc -> desc.getIdShort().equals(m_smIdShort))
+					.orElseThrow(() -> new ResourceNotFoundException("Submodel",
+															"instance-id=" + m_id + ", idShort=" + m_smIdShort));
+		}
+		else {
+			smDesc = mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_id);
+		}
 		
 		switch ( m_output ) {
 			case table:
@@ -120,7 +117,7 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(smDesc.getIdShort()) + " ");
 		
 		table.addCell(" SEMANTIC_ID ");
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(smDesc.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(smDesc.getSemanticId());
 		if ( semanticId != null ) {
 			String msg = String.format(" (%s) %s", SubmodelUtils.getShortSubmodelSemanticId(semanticId), semanticId);
 			table.addCell(msg);

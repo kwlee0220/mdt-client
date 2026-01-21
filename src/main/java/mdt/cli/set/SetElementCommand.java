@@ -8,7 +8,7 @@ import java.util.Scanner;
 import org.apache.tika.Tika;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 import utils.io.IOUtils;
 
 import mdt.cli.AbstractMDTCommand;
@@ -179,7 +179,7 @@ public class SetElementCommand extends AbstractMDTCommand {
 		throws IOException {
 		SubmodelService svc = target.getSubmodelService();
 		
-		String path = FOption.getOrElse(fileSpec.m_path, fileSpec.m_file.getName());
+		String path = Optionals.getOrElse(fileSpec.m_path, fileSpec.m_file::getName);
 		String contentType = fileSpec.m_mimeType;
 		if ( contentType == null ) {
 			contentType = new Tika().detect(fileSpec.m_file);

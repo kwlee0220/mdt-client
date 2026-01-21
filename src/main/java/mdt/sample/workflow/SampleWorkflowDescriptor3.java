@@ -6,11 +6,11 @@ import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -56,12 +56,12 @@ public class SampleWorkflowDescriptor3 {
 		task.addOption(HttpTask.OPTION_TIMEOUT, "60");
 		task.addOption(HttpTask.OPTION_LOG_LEVEL, "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
-		
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data"));
-		task.getInputVariables().addOrReplace(Variables.newValueVariable("IncAmount", "", "11"));
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("SleepTime", "",
-				"test:Data:DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue"));
-		task.getOutputVariables().addOrReplace(Variables.newReferenceVariable("Output", "", "param:test:Data"));
+
+		task.addInputArgumentSpec("Data", ArgumentSpec.reference("param:test:Data"));
+		task.addInputArgumentSpec("IncAmount", ArgumentSpec.literal(11));
+		task.addInputArgumentSpec("SleepTime", 
+								ArgumentSpec.reference("test:Data:DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue"));
+		task.addOutputArgumentSpec("Output", ArgumentSpec.reference("param:test:Data"));
 		
 		return task;
 	}

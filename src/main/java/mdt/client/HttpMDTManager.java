@@ -17,10 +17,12 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.eventbus.EventBus;
 
+import okhttp3.OkHttpClient;
+
 import utils.InternalException;
 import utils.Throwables;
 import utils.Utilities;
-import utils.func.FOption;
+import utils.func.Optionals;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
@@ -37,8 +39,6 @@ import mdt.client.workflow.HttpWorkflowManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.workflow.WorkflowManager;
-
-import okhttp3.OkHttpClient;
 
 /**
  *
@@ -98,7 +98,7 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 		// 'mdt_client_config.yaml' 파일을 확인한다.
 
 		File clientHomeDir = Utilities.getEnvironmentVariableFile("MDT_CLIENT_HOME")
-										.getOrElse(FileUtils.getCurrentWorkingDirectory());
+										.orElseGet(FileUtils::getCurrentWorkingDirectory);
 		File clientConfigFile = FileUtils.path(clientHomeDir, CLIENT_CONFIG_FILE);
 		if ( clientConfigFile.canRead() ) {
 			try {
@@ -216,9 +216,9 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	public HttpMDTInstanceManager getInstanceManager() {
 		String endpoint = String.format("%s%s", getEndpoint(), INSTANCE_MANAGER_SUFFIX);
 		return HttpMDTInstanceManager.builder()
-											.httpClient(getHttpClient())
-											.endpoint(endpoint)
-											.build();
+									.httpClient(getHttpClient())
+									.endpoint(endpoint)
+									.build();
 	}
 	
 	public WorkflowManager getWorkflowManager() {
@@ -272,7 +272,7 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 					builder = builder.readTimeout(m_readTimeout);
 				}
 				m_httpClient = builder.build();
-				m_mapper = FOption.getOrElse(m_mapper, MDTModelSerDe::getJsonMapper);
+				m_mapper = Optionals.getOrElse(m_mapper, MDTModelSerDe::getJsonMapper);
 			}
 			catch ( KeyManagementException | NoSuchAlgorithmException e ) {
 				throw new InternalException("Failed to create HttpClient", e);

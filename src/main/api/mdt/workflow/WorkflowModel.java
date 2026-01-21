@@ -9,14 +9,13 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import org.checkerframework.com.google.common.base.Preconditions;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -48,7 +47,7 @@ public class WorkflowModel {
 	private Map<String, Object> m_gui = Maps.newHashMap();
 	
 	public void addTaskDescriptor(TaskDescriptor taskDesc) {
-		Preconditions.checkArgument(taskDesc != null, "taskDesc must not be null");
+		Preconditions.checkArgument(taskDesc != null, "TaskDescriptor must not be null");
 		
 		if ( m_taskDescriptors.contains(taskDesc) ) {
 			throw new IllegalArgumentException("taskDesc already exists: " + taskDesc.getId());

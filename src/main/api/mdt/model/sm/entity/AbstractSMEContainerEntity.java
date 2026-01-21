@@ -320,7 +320,7 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 
 	protected void updateMLPropertyField(Field field, MultiLanguagePropertyField anno, MultiLanguageProperty mlprop) {
 		try {
-			MultiLanguagePropertyValue mlpv = ElementValues.getMLPValue(mlprop);
+			MultiLanguagePropertyValue mlpv = MultiLanguagePropertyValue.from(mlprop);
 			PropertyUtils.setSimpleProperty(this, field.getName(), mlpv);
 		}
 		catch ( Exception e ) {

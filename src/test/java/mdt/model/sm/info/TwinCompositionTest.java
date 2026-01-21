@@ -2,15 +2,12 @@ package mdt.model.sm.info;
 
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import utils.Indexed;
 
 import mdt.model.sm.SubmodelUtils;
 
@@ -55,28 +52,28 @@ public class TwinCompositionTest {
 		info.setCompositionDependencies(List.of(dep1, dep2));
 		
 		SubmodelElementCollection smc = info.newSubmodelElement();
-		Indexed<Property> field;
+		String field;
 
-		field = SubmodelUtils.getPropertyById(smc, "CompositionID");
-		Assert.assertEquals("compositionId", field.value().getValue());
-		field = SubmodelUtils.getPropertyById(smc, "CompositionType");
-		Assert.assertEquals("compositionType", field.value().getValue());
+		field = SubmodelUtils.getStringFieldById(smc, "CompositionID");
+		Assert.assertEquals("compositionId", field);
+		field = SubmodelUtils.getStringFieldById(smc, "CompositionType");
+		Assert.assertEquals("compositionType", field);
 		
 		List<SubmodelElement> items = SubmodelUtils.getFieldById(smc, "CompositionItems",
 																		SubmodelElementList.class)
-													.value().getValue();
+													.getValue();
 		Assert.assertEquals(2, items.size());
 		List<SubmodelElement> deps = SubmodelUtils.getFieldById(smc, "CompositionDependencies",
-																SubmodelElementList.class).value().getValue();
+																SubmodelElementList.class).getValue();
 		Assert.assertEquals(2, deps.size());
 		
 		smc.setIdShort("idShort2");
-		SubmodelUtils.getPropertyById(smc, "CompositionID").value().setValue("compositionId2");
-		SubmodelUtils.getPropertyById(smc, "CompositionType").value().setValue("compositionType2");
+		SubmodelUtils.getPropertyFieldById(smc, "CompositionID").setValue("compositionId2");
+		SubmodelUtils.getPropertyFieldById(smc, "CompositionType").setValue("compositionType2");
 		
-		SubmodelElementList sml = SubmodelUtils.getFieldById(smc, "CompositionItems", SubmodelElementList.class).value();
+		SubmodelElementList sml = SubmodelUtils.getFieldById(smc, "CompositionItems", SubmodelElementList.class);
 		sml.getValue().remove(0);
-		SubmodelElementList sml2 = SubmodelUtils.getFieldById(smc, "CompositionDependencies", SubmodelElementList.class).value();
+		SubmodelElementList sml2 = SubmodelUtils.getFieldById(smc, "CompositionDependencies", SubmodelElementList.class);
 		sml2.getValue().clear();
 		
 		DefaultTwinComposition info2 = new DefaultTwinComposition();

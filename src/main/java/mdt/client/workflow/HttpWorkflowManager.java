@@ -3,10 +3,13 @@ package mdt.client.workflow;
 import java.io.IOException;
 import java.util.List;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
+
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
@@ -18,13 +21,10 @@ import mdt.model.AASUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceAlreadyExistsException;
 import mdt.model.ResourceNotFoundException;
+import mdt.workflow.MDTWorkflowInstanceManagerException;
 import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
-
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
-import okhttp3.RequestBody;
 
 
 /**
@@ -50,6 +50,12 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	public String getEndpoint() {
 		return m_endpoint;
 	}
+
+	@Override
+	public void onWorkflowModelAdded(WorkflowModel wfModel) throws MDTWorkflowInstanceManagerException { }
+
+	@Override
+	public void onWorkflowModelRemoved(String wfModelId) throws MDTWorkflowInstanceManagerException { }
 
 	@Override
 	public OkHttpClient getHttpClient() {
@@ -81,7 +87,7 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	}
 
 	@Override
-	public Workflow startWorkflow(@NonNull String wfModelId) throws ResourceNotFoundException {
+	public Workflow startWorkflow(String wfModelId) throws ResourceNotFoundException {
 		Preconditions.checkArgument(wfModelId != null, "WorkflowModel id is null");
 		
 		String url = String.format("%s/models/%s/start", m_endpoint, wfModelId);

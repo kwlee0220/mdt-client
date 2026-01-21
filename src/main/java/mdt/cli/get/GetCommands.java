@@ -19,10 +19,16 @@ import picocli.CommandLine.Command;
 	subcommands= {
 		GetInstanceCommand.class,
 		GetMdtInfoCommand.class,
+		
 		GetElementCommand.class,
+		GetParameterCommand.class,
+		GetArgumentCommand.class,
+		
 		GetShellCommand.class,
 		GetSubmodelCommand.class,
 		GetFile.class,
+		
+		GetTimeSeriesCommand.class,
 	})
 public class GetCommands extends CommandCollection { }
 

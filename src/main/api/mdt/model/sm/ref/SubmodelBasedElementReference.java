@@ -24,8 +24,14 @@ import mdt.model.sm.value.IdShortPath;
 public abstract class SubmodelBasedElementReference extends AbstractElementReference
 													implements MDTElementReference {
 	private final Lazy<IdShortPath> m_idShortPath = Lazy.of(this::parseIdShortPath);
+	private final Lazy<SubmodelElement> m_prototype = Lazy.of(this::loadPrototype);
 	
 	abstract public MDTSubmodelReference getSubmodelReference();
+	
+	@Override
+	public SubmodelElement getPrototype() {
+		return m_prototype.get();
+	}
 	
 	public IdShortPath getIdShortPath() {
 		return m_idShortPath.get();
@@ -33,7 +39,17 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	
 	@Override
 	public SubmodelElement read() throws IOException {
-		return getSubmodelService().getSubmodelElementByPath(getIdShortPathString());
+		SubmodelElement sme = getSubmodelService().getSubmodelElementByPath(getIdShortPathString());
+		if ( !m_prototype.isLoaded() ) {
+			m_prototype.set(sme);
+		}
+		
+		return sme;
+	}
+
+	@Override
+	public ElementValue readValue() throws IOException {
+		return getSubmodelService().getSubmodelElementValueByPath(getIdShortPathString(), m_prototype.get());
 	}
 
 	@Override
@@ -45,7 +61,7 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	public void updateValue(String valueJsonString) throws IOException {
 		SubmodelService service = getSubmodelService();
 		try {
-			service.updateSubmodelElementByPath(getIdShortPathString(), valueJsonString);
+			service.updateSubmodelElementValueByPath(getIdShortPathString(), valueJsonString);
 		}
 		catch ( RESTfulRemoteException e ) {
 			// 현재 FAST의 구현에 버그가 있어 예외가 발생하기도 해서,
@@ -74,5 +90,9 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	
 	private IdShortPath parseIdShortPath() {
 		return IdShortPath.fromString(getIdShortPathString());
+	}
+	
+	private SubmodelElement loadPrototype() {
+		return getSubmodelService().getSubmodelElementByPath(getIdShortPathString());
 	}
 }

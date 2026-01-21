@@ -2,6 +2,7 @@ package mdt.task.skku;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -9,6 +10,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +73,7 @@ public class SKKUSimulationTask implements MDTTask {
 	}
 
 	@Override
-	public void run(MDTInstanceManager manager)
+	public Map<String, SubmodelElement> run(MDTInstanceManager manager)
 		throws TimeoutException, InterruptedException, CancellationException, TaskException {
 		HttpSubmodelServiceClient svc = (HttpSubmodelServiceClient)m_simRef.get();
 		
@@ -130,7 +132,7 @@ public class SKKUSimulationTask implements MDTTask {
 		
 		switch ( resp.getStatus() ) {
 			case COMPLETED:
-				return;
+				return Map.of();
 			case FAILED:
 				throw new TaskException(new Exception(resp.getMessage()));
 			case CANCELLED:

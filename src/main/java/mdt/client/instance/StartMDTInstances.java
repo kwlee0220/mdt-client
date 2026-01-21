@@ -27,6 +27,7 @@ import utils.async.StartableExecution;
 import utils.func.CheckedRunnableX;
 import utils.func.FOption;
 import utils.func.Funcs;
+import utils.func.Optionals;
 import utils.stream.FStream;
 
 import mdt.model.InvalidResourceStatusException;
@@ -64,11 +65,11 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		
 		m_manager = builder.m_manager;
         m_instanceIdList = builder.m_instanceIdList;
-        m_pollingInterval = FOption.getOrElse(builder.m_pollingInterval, DEFAULT_POLLING_INTERVAL);
+        m_pollingInterval = Optionals.getOrElse(builder.m_pollingInterval, DEFAULT_POLLING_INTERVAL);
         m_timeout = builder.m_timeout;
         m_nowait = builder.m_nowait;
         m_startAll = builder.m_startAll;
-        m_executor = FOption.getOrElse(builder.m_executor, DEFAULT_EXECUTOR);
+        m_executor = Optionals.getOrElse(builder.m_executor, DEFAULT_EXECUTOR);
         m_recursive = builder.m_recursive;
 	}
 	

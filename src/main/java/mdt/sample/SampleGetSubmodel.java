@@ -13,9 +13,9 @@ import com.google.common.collect.Lists;
 
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
-import mdt.model.ReferenceUtils;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
+import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 
@@ -40,7 +40,7 @@ public class SampleGetSubmodel {
 		System.out.printf("%-20s: %s%n", "id", submodel.getId());
 		System.out.printf("%-20s: %s%n", "idShort", submodel.getIdShort());
 		
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
 		System.out.printf("%-20s: %s%n", "semanticId", semanticId);
 		
 		List<LangStringTextType> descList = submodel.getDescription();

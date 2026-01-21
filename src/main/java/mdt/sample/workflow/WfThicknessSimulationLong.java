@@ -4,9 +4,12 @@ import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.task.MDTTask;
+import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 import mdt.workflow.model.TaskDescriptors;
 
@@ -93,48 +96,58 @@ public class WfThicknessSimulationLong {
 	private static TaskDescriptor inspectSurfaceThickness(MDTInstanceManager manager, String id) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
 		smRef.activate(manager);
-
-		return TaskDescriptors.httpTaskBuilder()
-								.id(id)
-								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
-								.operationId("inspector/ThicknessInspection")
-								.pollInterval("2s")
-								.timeout("1m")
-								.operationSubmodelRef(smRef)
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.build();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(HttpTask.class.getName());
+		descriptor.setId(id);
+		descriptor.addInputArgumentSpec("UpperImage", ArgumentSpec.reference("param:inspector:UpperImage:ParameterValue"));
+		descriptor.addOutputArgumentSpec("Defect", ArgumentSpec.reference("oparg:inspector:ThicknessInspection:out:Defect"));
+		descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, HTTP_OP_SERVER_ENDPOINT);
+		descriptor.addOption(HttpTask.OPTION_OPERATION, "inspector/ThicknessInspection");
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "1m");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "1s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}
 	
 	private static TaskDescriptor updateDefectList(MDTInstanceManager manager, String id) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "UpdateDefectList");
 		smRef.activate(manager);
-
-		return TaskDescriptors.httpTaskBuilder()
-								.id(id)
-								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
-								.operationId("inspector/UpdateDefectList")
-								.pollInterval("2s")
-								.timeout("1m")
-								.operationSubmodelRef(smRef)
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.build();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(HttpTask.class.getName());
+		descriptor.setId(id);
+		descriptor.addInputArgumentSpec("Defect", ArgumentSpec.reference("oparg:inspector:ThicknessInspection:out:Defect"));
+		descriptor.addInputArgumentSpec("DefectList", ArgumentSpec.reference("param:inspector:DefectList"));
+		descriptor.addOutputArgumentSpec("Output", ArgumentSpec.reference("param:inspector:DefectList"));
+		descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, HTTP_OP_SERVER_ENDPOINT);
+		descriptor.addOption(HttpTask.OPTION_OPERATION, "inspector/UpdateDefectList");
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "1m");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "1s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}
 	
 	private static TaskDescriptor simulateProcess(MDTInstanceManager manager, String id) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ProcessSimulation");
 		smRef.activate(manager);
-
-		return TaskDescriptors.httpTaskBuilder()
-								.id(id)
-								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
-								.operationId("inspector/ProcessSimulation")
-								.pollInterval("2s")
-								.timeout("1m")
-								.operationSubmodelRef(smRef)
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.build();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(HttpTask.class.getName());
+		descriptor.setId(id);
+		descriptor.addInputArgumentSpec("DefectList", ArgumentSpec.reference("param:inspector:DefectList"));
+		descriptor.addOutputArgumentSpec("AverageCycleTime", ArgumentSpec.reference("param:inspector:CycleTime"));
+		descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, HTTP_OP_SERVER_ENDPOINT);
+		descriptor.addOption(HttpTask.OPTION_OPERATION, "inspector/ProcessSimulation");
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "1m");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "1s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}
 }

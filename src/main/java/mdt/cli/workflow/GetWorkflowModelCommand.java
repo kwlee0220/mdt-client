@@ -4,7 +4,7 @@ import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
@@ -77,7 +77,7 @@ public class GetWorkflowModelCommand extends AbstractMDTCommand {
 		table.addCell(" FIELD "); table.addCell(" VALUE");
 		table.addCell(" ID "); table.addCell(" " + wfModel.getId());
 		table.addCell(" NAME "); table.addCell(" " + wfModel.getName());
-		table.addCell(" DEESCRIPTION "); table.addCell(" " + FOption.getOrElse(wfModel.getDescription(), ""));
+		table.addCell(" DEESCRIPTION "); table.addCell(" " + Optionals.getOrElse(wfModel.getDescription(), ""));
 		
 		FStream.from(wfModel.getTaskDescriptors()).zipWithIndex().forEach(tup -> {
 			TaskDescriptor task = tup.value();

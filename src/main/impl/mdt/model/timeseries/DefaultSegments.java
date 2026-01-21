@@ -11,7 +11,6 @@ import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.Setter;
 
-import utils.Indexed;
 import utils.stream.FStream;
 
 import mdt.model.sm.SubmodelUtils;
@@ -52,12 +51,12 @@ public class DefaultSegments extends SubmodelElementCollectionEntity implements 
 		SubmodelElementCollection smc = (SubmodelElementCollection)sme;
 		
 		for ( DefaultSegment segment : segments ) {
-			Optional<Indexed<SubmodelElement>> ochild = SubmodelUtils.findFieldById(smc, segment.getIdShort());
+			Optional<SubmodelElement> ochild = SubmodelUtils.findFieldById(smc, segment.getIdShort());
 			
 			SubmodelElement target;
 			if ( ochild.isPresent() ) {
-				SubmodelElement segSmc = smc.getValue().remove(ochild.get().index());
-				target = ochild.get().value();
+				smc.getValue().remove(ochild.get());
+				target = ochild.get();
 			}
 			else {
 				target = segment.newSubmodelElement();

@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import utils.func.FOption;
 import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
@@ -18,6 +19,7 @@ import mdt.workflow.model.TaskDescriptor;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ParentCommand;
 
 
 /**
@@ -33,8 +35,11 @@ import picocli.CommandLine.Parameters;
 )
 public class ProgramTaskCommand extends AbstractTaskCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpTaskCommand.class);
-
-	@Parameters(index="0", arity="1", paramLabel="path", description="Path to the operation descriptor")
+	
+	@ParentCommand
+	private RunSubmodelCommand m_parentCmd;
+	
+	@Parameters(index="0", paramLabel="path", arity="1..1",  description="Path to the operation descriptor")
 	private File m_opDescFile;
 	
 	@Option(names={"--workingDirectory"}, paramLabel="path", description="Working directory")
@@ -52,7 +57,9 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 		
 		TaskDescriptor descriptor = new TaskDescriptor();
 		descriptor.setType(ProgramTask.class.getName());
-		loadTaskDescriptor(descriptor, manager);
+		
+        // 해당 연산 Submodel을 읽어서 주요 TaskDescriptor 정보를 설정한다.
+		m_parentCmd.loadOperationSubmodel(manager, descriptor);
 
 		if ( m_opDescFile != null ) {
 			ProgramOperationDescriptor opDesc = ProgramOperationDescriptor.load(m_opDescFile, MDTModelSerDe.MAPPER);
@@ -60,7 +67,9 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 		}
 		FOption.accept(m_workingDir, dir -> descriptor.addOption(ProgramTask.OPTION_WORKING_DIRECTORY,
 																			dir.getAbsolutePath()));
-
+		
+		loadTaskDescriptor(manager, descriptor);
+		
 		ProgramTask task = new ProgramTask(descriptor);
 		task.run(manager);
 		
@@ -79,8 +88,8 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 			descriptor.addOption("workingDirectory", workDir.getAbsolutePath());
 		});
 		
-		FStream.from(opDesc.getInputVariables()).forEach(descriptor.getInputVariables()::addOrReplace);
-		FStream.from(opDesc.getOutputVariables()).forEach(descriptor.getOutputVariables()::addOrReplace);
+		KeyValueFStream.from(opDesc.getInputArguments()).forEach(descriptor::addInputArgumentSpec);
+		KeyValueFStream.from(opDesc.getOutputArguments()).forEach(descriptor::addOutputArgumentSpec);
 		FOption.accept(opDesc.getTimeout(), to -> descriptor.addOption("timeout", to.toString()));
 	}
 }

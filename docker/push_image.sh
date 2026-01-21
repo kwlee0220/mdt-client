@@ -11,7 +11,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
     echo "  --help, -h              도움말 출력"
     echo ""
     echo "예제:"
-    echo "  $0 --repo myrepo                     # 기본 태그로 푸시"
+    echo "  $0 --repo kwlee0220                     # 기본 태그로 푸시"
     echo "  $0 --repo myrepo --tag 1.3.0         # 1.3.0 태그로 푸시"
     echo "  $0 --repo myrepo --latest            # latest 태그도 함께 푸시"
     exit 0

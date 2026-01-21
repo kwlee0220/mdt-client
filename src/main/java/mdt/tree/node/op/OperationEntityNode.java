@@ -25,11 +25,11 @@ public class OperationEntityNode extends DefaultNode {
 		super(opId, null, "");
 		
 		SubmodelElementList inputsSml = SubmodelUtils.getFieldById((SubmodelElementCollection)sme,
-																	"Inputs", SubmodelElementList.class).value();
+																	"Inputs", SubmodelElementList.class);
 		m_inputsNode = new InputArgumentSmeListNode(inputsSml);
 		
 		SubmodelElementList outputSml = SubmodelUtils.getFieldById((SubmodelElementCollection)sme,
-																	"Outputs", SubmodelElementList.class).value();
+																	"Outputs", SubmodelElementList.class);
 		m_outputsNode = new OutputArgumentSmeListNode(outputSml);
 	}
 

@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.time.Duration;
 
 import org.apache.commons.text.StringSubstitutor;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import javax.annotation.Nullable;
 
 import utils.UnitUtils;
 import utils.io.IOUtils;

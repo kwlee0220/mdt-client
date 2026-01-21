@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringTextType;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultLangStringTextType;
@@ -14,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.func.Funcs;
 import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
 import mdt.model.MDTModelSerDe;
 
@@ -27,16 +27,27 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 	
 	private final List<LangStringTextType> m_langTexts;
 	
-	public MultiLanguagePropertyValue(@NonNull List<LangStringTextType> langTexts) {
+	public MultiLanguagePropertyValue(List<LangStringTextType> langTexts) {
 		m_langTexts = langTexts;
 	}
 	
-	public MultiLanguagePropertyValue(@NonNull String language, String text) {
+	public MultiLanguagePropertyValue(String language, String text) {
 		this(List.of(buildLangStringTextType(language, text)));
 	}
 	
 	public List<LangStringTextType> getLangTextAll() {
 		return m_langTexts;
+	}
+	
+	public void update(MultiLanguageProperty mlprop) {
+		mlprop.setValue(m_langTexts);
+	}
+
+	@Override
+	public List<Map<String,String>> toValueObject() {
+		return FStream.from(m_langTexts)
+						.map(langText -> Map.of(langText.getLanguage(), langText.getText()))
+						.toList();
 	}
 
 	@Override
@@ -44,24 +55,41 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
 	
-	public static MultiLanguagePropertyValue parseValueJsonNode(MultiLanguageProperty mlprop, JsonNode vnode) {
+	public static MultiLanguagePropertyValue from(MultiLanguageProperty mlp) {
+		return new MultiLanguagePropertyValue(mlp.getValue());
+	}
+	
+	public static MultiLanguagePropertyValue parseValueJsonNode(JsonNode vnode, MultiLanguageProperty mlprop)
+		throws IOException {
+		if ( !vnode.isObject() ) {
+			throw new IOException("MultiLanguagePropertyValue expects an 'Object' node: JsonNode=" + vnode);
+		}
+		
 		List<LangStringTextType> textList
 				= FStream.from(vnode.elements())
 							.mapOrThrow(elm -> {
 								Map.Entry<String,JsonNode> ent
-									= Funcs.getFirst(elm.fields())
+									= Funcs.getFirst(elm.properties())
 											.orElseThrow(() -> new IllegalStateException("No language field"));
 								return buildLangStringTextType(ent.getKey(), ent.getValue().asText());
 							})
 							.toList();
 		return new MultiLanguagePropertyValue(textList);
 	}
-
-	@Override
-	public Object toValueJsonObject() {
-		return FStream.from(m_langTexts)
-						.map(langText -> Map.of(langText.getLanguage(), langText.getText()))
-						.toList();
+	
+	public static MultiLanguagePropertyValue fromValueObject(Object value, MultiLanguageProperty mlprop)
+		throws IOException {
+		if ( value instanceof Map vmap ) {
+			@SuppressWarnings("unchecked")
+			List<LangStringTextType> textList
+							= KeyValueFStream.<String,String>from(vmap)
+											.map((k,v) -> buildLangStringTextType(""+k, ""+v))
+											.toList();
+			return new MultiLanguagePropertyValue(textList);
+		}
+		else {
+			throw new IOException("Invalid value object for MultiLanguagePropertyValue: " + value);
+		}
 	}
 
 	@Override
@@ -85,7 +113,7 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 				= FStream.from(vnode.elements())
 							.mapOrThrow(elm -> {
 								Map.Entry<String,JsonNode> ent
-									= Funcs.getFirst(elm.fields())
+									= Funcs.getFirst(elm.properties())
 											.orElseThrow(() -> new IllegalStateException("No language field"));
 								return buildLangStringTextType(ent.getKey(), ent.getValue().asText());
 							})

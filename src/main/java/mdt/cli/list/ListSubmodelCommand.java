@@ -19,9 +19,9 @@ import mdt.cli.list.ListCommands.ListCollector;
 import mdt.cli.list.ListCommands.TableCollector;
 import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.model.MDTManager;
-import mdt.model.ReferenceUtils;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
@@ -146,7 +146,7 @@ public class ListSubmodelCommand extends AbstractMDTCommand {
 	}
 	
 	private String getSemanticIdString(SubmodelDescriptor smDesc) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(smDesc.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(smDesc.getSemanticId());
 		if ( semanticId == null ) {
 			return "";
 		}

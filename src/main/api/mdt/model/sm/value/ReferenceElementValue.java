@@ -42,8 +42,49 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 	public String getSerializationType() {
 		return SERIALIZATION_TYPE;
 	}
+
+	@Override
+	public Map<String,Object> toValueObject() {
+		List<Map<String,String>> keyList = FStream.from(m_reference.getKeys())
+													.map(key -> {
+														Map<String,String> kvMap = Maps.newLinkedHashMap();
+														kvMap.put("type", key.getType().name());
+														kvMap.put("value", key.getValue());
+														return kvMap;
+													})
+													.toList();
+		Map<String,Object> output = Maps.newLinkedHashMap();
+		output.put("type", m_reference.getType().name());
+		output.put("keys", keyList);
+		return output;
+	}
 	
-	public static ReferenceElementValue parseValueJsonNode(ReferenceElement refElm, JsonNode vnode) {
+	public static ReferenceElementValue fromValueObject(Object value, ReferenceElement refElm) throws IOException {
+		if ( value instanceof List keyObjsList ) {
+			ReferenceTypes refTypes = refElm.getValue().getType();
+			DefaultReference.Builder builder = new DefaultReference.Builder().type(refTypes);
+			List<Key> keys = FStream.<Map<?, ?>>from(keyObjsList)
+									.map(keyObj -> {
+										Map<?, ?> keyMap = (Map<?, ?>) keyObj;
+										String keyType = (String) keyMap.get("type");
+										String keyValue = (String) keyMap.get("value");
+										return (Key) new DefaultKey.Builder().type(KeyTypes.valueOf(keyType)).value(keyValue).build();
+									})
+									.toList();
+			DefaultReference ref = builder.keys(keys).build();
+			return new ReferenceElementValue(ref);
+		}
+		else {
+			throw new IOException("invalid ReferenceElementValue object: " + value);
+		}
+	}
+	
+	public static ReferenceElementValue parseValueJsonNode(JsonNode vnode, ReferenceElement refElm)
+		throws IOException {
+		if ( !vnode.isObject() ) {
+			throw new IOException("ReferenceElementValue expects an 'Object' node: JsonNode=" + vnode);
+		}
+		
 		ReferenceTypes refTypes = refElm.getValue().getType();
 		DefaultReference.Builder builder = new DefaultReference.Builder()
 												.type(refTypes);
@@ -59,22 +100,6 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 	            .forEach(key -> builder.keys(key));
 		Reference ref = builder.build();
 		return new ReferenceElementValue(ref);
-	}
-
-	@Override
-	public Object toValueJsonObject() {
-		List<Map<String,String>> keyList = FStream.from(m_reference.getKeys())
-													.map(key -> {
-														Map<String,String> kvMap = Maps.newLinkedHashMap();
-														kvMap.put("type", key.getType().name());
-														kvMap.put("value", key.getValue());
-														return kvMap;
-													})
-													.toList();
-		Map<String,Object> output = Maps.newLinkedHashMap();
-		output.put("type", m_reference.getType().name());
-		output.put("keys", keyList);
-		return output;
 	}
 
 	@Override

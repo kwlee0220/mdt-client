@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 
 import mdt.model.sm.data.DefaultProductionOrder;
 import mdt.model.sm.data.ProductionOrder;
@@ -23,7 +23,7 @@ public final class ProductionOrderNode extends TerminalNode {
 		setTitle(plan.getProductionOrderID());
 		setValueType(String.format(" 공정(%s)", plan.getOperationID()));
 
-		String uomStr = FOption.getOrElse("" + plan.getItemUOMCode(), ""); 
+		String uomStr = Optionals.getOrElse("" + plan.getItemUOMCode(), ""); 
 		String value = String.format("%s(%s%s), schedule: %s~%s",
 										plan.getItemID(), plan.getProductionOrderQuantity(), uomStr,
 										plan.getScheduleStartDateTime(), plan.getScheduleEndDateTime());

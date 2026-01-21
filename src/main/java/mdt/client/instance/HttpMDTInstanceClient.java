@@ -9,15 +9,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.slf4j.Logger;
 
 import com.google.common.collect.Lists;
+
+import javax.annotation.Nullable;
+
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 import utils.InternalException;
 import utils.StateChangePoller;
@@ -47,13 +50,14 @@ import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.instance.MDTTwinCompositionDescriptor;
 import mdt.model.instance.MDTTwinCompositionDescriptor.MDTCompositionDependency;
 import mdt.model.instance.MDTTwinCompositionDescriptor.MDTCompositionItem;
+import mdt.model.sm.ai.AI;
+import mdt.model.sm.ai.AISubmodelService;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.data.DefaultDataInfo;
 import mdt.model.sm.data.ParameterCollection;
 import mdt.model.sm.info.MDTAssetType;
-
-import okhttp3.OkHttpClient;
-import okhttp3.RequestBody;
+import mdt.model.sm.simulation.Simulation;
+import mdt.model.sm.simulation.SimulationSubmodelService;
 
 
 /**
@@ -146,11 +150,6 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 
 	@Override
-	public AssetKind getAssetKind() {
-		return getInstanceDescriptor().getAssetKind();
-	}
-
-	@Override
 	public void start(@Nullable Duration pollInterval, @Nullable Duration timeout)
 		throws TimeoutException, InterruptedException, InvalidResourceStatusException {
 		MDTInstanceStatus status = reloadInstanceDescriptor().getStatus();
@@ -240,29 +239,29 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	@Override
 	public List<SubmodelService> getSubmodelServiceAll() throws InvalidResourceStatusException {
 		return FStream.from(getMDTSubmodelDescriptorAll())
-						.map(desc -> toSubmodelService(desc.getId()))
+						.map(desc -> toSubmodelService(desc))
 						.toList();
 	}
 
 	@Override
 	public SubmodelService getSubmodelServiceById(String submodelId) {
 		return Funcs.findFirst(getMDTSubmodelDescriptorAll(), isd -> isd.getId().equals(submodelId))
-						.map(desc -> toSubmodelService(desc.getId()))
-						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
+						.map(desc -> toSubmodelService(desc))
+						.orElseThrow(() -> new ResourceNotFoundException("Submodel", "id=" + submodelId));
 	}
 
 	@Override
 	public SubmodelService getSubmodelServiceByIdShort(String submodelIdShort) {
 		return Funcs.findFirst(getMDTSubmodelDescriptorAll(), isd -> isd.getIdShort().equals(submodelIdShort))
-						.map(desc -> toSubmodelService(desc.getId()))
-						.getOrThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + submodelIdShort));
+						.map(desc -> toSubmodelService(desc))
+						.orElseThrow(() -> new ResourceNotFoundException("Submodel", "idShort=" + submodelIdShort));
 	}
 
 	@Override
 	public List<SubmodelService> getSubmodelServiceAllBySemanticId(String semanticId) {
 		return FStream.from(getMDTSubmodelDescriptorAll())
 						.filter(isd -> isd.getSemanticId().equals(semanticId))
-						.map(desc -> toSubmodelService(desc.getId()))
+						.map(desc -> toSubmodelService(desc))
 						.toList();
 	}
 	
@@ -426,15 +425,20 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		return m_restfulClient.put(url, EMPTY_BODY, MDTModelSerDes.INSTANCE_DESC_RESP);
 	}
 	
-	private SubmodelService toSubmodelService(String id) {
+	private SubmodelService toSubmodelService(MDTSubmodelDescriptor smDesc) {
 		String baseEndpoint = getServiceEndpoint();
 		if ( baseEndpoint == null ) {
 			throw new InvalidResourceStatusException("MDTInstance", "id=" + getId(), getStatus());
 		}
 		
-		String encodedSubmodelId = AASUtils.encodeBase64UrlSafe(id);
+		String encodedSubmodelId = AASUtils.encodeBase64UrlSafe(smDesc.getId());
 		String smSvcEndpoint = String.format("%s/submodels/%s", baseEndpoint, encodedSubmodelId);
-		return new HttpSubmodelServiceClient(getHttpClient(), smSvcEndpoint);
+		SubmodelService core = new HttpSubmodelServiceClient(getHttpClient(), smSvcEndpoint);
+		return switch ( smDesc.getSemanticId() ) {
+			case Simulation.SEMANTIC_ID -> new SimulationSubmodelService(core);
+			case AI.SEMANTIC_ID -> new AISubmodelService(core);
+			default -> core;
+		};
 	}
 
 	public String getSubmodelServiceEndpoint(String submodelId) {

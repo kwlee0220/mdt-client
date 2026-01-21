@@ -41,17 +41,17 @@ public final class OperationVariableValue extends AbstractElementValue implement
 	}
 
 	@Override
-	public String toJsonString() throws IOException {
-		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
+	public Map<String, Object> toValueObject() {
+		Map<String, Object> value = Maps.newLinkedHashMap();
+		value.put(FIELD_INPUT_VARIABLES, new ElementListValue(m_inputValues).toValueObject());
+		value.put(FIELD_OUTPUT_VARIABLES, new ElementListValue(m_outputValues).toValueObject());
+		value.put(FIELD_INOUTPUT_VARIABLES, new ElementListValue(m_inoutputValues).toValueObject());
+		return value;
 	}
 
 	@Override
-	public Object toValueJsonObject() {
-		Map<String, Object> value = Maps.newLinkedHashMap();
-		value.put(FIELD_INPUT_VARIABLES, new ElementListValue(m_inputValues).toValueJsonObject());
-		value.put(FIELD_OUTPUT_VARIABLES, new ElementListValue(m_outputValues).toValueJsonObject());
-		value.put(FIELD_INOUTPUT_VARIABLES, new ElementListValue(m_inoutputValues).toValueJsonObject());
-		return value;
+	public String toJsonString() throws IOException {
+		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
 
 	public static final String SERIALIZATION_TYPE = "mdt:value:opvars";

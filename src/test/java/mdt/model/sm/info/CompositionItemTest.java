@@ -1,12 +1,9 @@
 package mdt.model.sm.info;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import utils.Indexed;
 
 import mdt.model.sm.SubmodelUtils;
 
@@ -28,16 +25,16 @@ public class CompositionItemTest {
 		item.setReference("reference");
 		
 		SubmodelElementCollection smc = item.newSubmodelElement();
-		Indexed<Property> field;
+		String field;
 
-		field = SubmodelUtils.getPropertyById(smc, "ID");
-		Assert.assertEquals("id", field.value().getValue());
-		field = SubmodelUtils.getPropertyById(smc, "Reference");
-		Assert.assertEquals("reference", field.value().getValue());
+		field = SubmodelUtils.getStringFieldById(smc, "ID");
+		Assert.assertEquals("id", field);
+		field = SubmodelUtils.getStringFieldById(smc, "Reference");
+		Assert.assertEquals("reference", field);
 		Assert.assertFalse(SubmodelUtils.containsFieldById(smc, "Description"));
 		
-		SubmodelUtils.getPropertyById(smc, "ID").value().setValue("id2");
-		SubmodelUtils.getPropertyById(smc, "Reference").value().setValue("reference2");
+		SubmodelUtils.getPropertyFieldById(smc, "ID").setValue("id2");
+		SubmodelUtils.getPropertyFieldById(smc, "Reference").setValue("reference2");
 		item.updateFromAasModel(smc);
 		
 		Assert.assertEquals("id2", item.getIdShort());

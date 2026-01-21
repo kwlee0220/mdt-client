@@ -22,10 +22,6 @@ import mdt.model.sm.value.IdShortPath.IdShort;
  */
 @UtilityClass
 public class ReferenceUtils {
-	public static String getSemanticIdStringOrNull(Reference semanticId) {
-		return (semanticId != null) ? semanticId.getKeys().get(0).getValue() : null;
-	}
-	
 	public static void assertModelReference(Reference ref) {
 		if ( ref.getType() != ReferenceTypes.MODEL_REFERENCE ) {
 			throw new IllegalArgumentException("Not ModelReference: type=" + ref.getType());

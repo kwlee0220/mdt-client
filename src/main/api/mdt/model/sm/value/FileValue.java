@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.apache.tika.Tika;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -27,7 +26,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	private final String m_contentType;
 	private final String m_value;
 	
-	public FileValue(String path, @NonNull String contentType) {
+	public FileValue(String path, String contentType) {
 		m_contentType = contentType;
 		m_value = path;
 	}
@@ -43,25 +42,49 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	public String getValue() {
 		return m_value;
 	}
+	
+	public void update(File aasFile) {
+		aasFile.setContentType(m_contentType);
+		aasFile.setValue(m_value);
+	}
+
+	@Override
+	public Map<String,String> toValueObject() {
+		Map<String,String> value = Maps.newLinkedHashMap();
+		value.put(FIELD_CONTENT_TYPE, m_contentType);
+		value.put(FIELD_VALUE, m_value);
+		return value;
+	}
 
 	@Override
 	public String toJsonString() throws IOException {
 		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
 	
-	public static FileValue parseValueJsonNode(File aasFile, JsonNode jnode) {
+	public static FileValue from(File aasFile) {
+		return new FileValue(aasFile.getValue(), aasFile.getContentType());
+	}
+	
+	public static FileValue fromValueObject(Object value, File aasFile) throws IOException {
+		if ( value instanceof Map vmap ) {
+			String contentType = (String) vmap.get(FIELD_CONTENT_TYPE);
+			String val = (String) vmap.get(FIELD_VALUE);
+			return new FileValue(val, contentType);
+		}
+		else {
+			throw new IOException("FileValue value is not a Map: value=" + value);
+		}
+	}
+	
+	public static FileValue parseValueJsonNode(JsonNode jnode, File aasFile) throws IOException {
+		if ( !jnode.isObject() ) {
+			throw new IOException("FileValue extends 'Object' node: JsonNode=" + jnode);
+		}
+		
 		String contentType = JacksonUtils.getStringField(jnode, FIELD_CONTENT_TYPE);
 		String value = JacksonUtils.getStringFieldOrNull(jnode, FIELD_VALUE);
 		
 		return new FileValue(value, contentType);
-	}
-
-	@Override
-	public Object toValueJsonObject() {
-		Map<String,String> value = Maps.newLinkedHashMap();
-		value.put(FIELD_CONTENT_TYPE, m_contentType);
-		value.put(FIELD_VALUE, m_value);
-		return value;
 	}
 	
 	@Override

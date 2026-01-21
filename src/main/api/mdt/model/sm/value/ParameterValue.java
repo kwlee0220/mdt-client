@@ -7,6 +7,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
 import mdt.aas.DataTypes;
+import mdt.model.sm.value.PropertyValue.DateTimePropertyValue;
 
 /**
  *
@@ -27,7 +28,7 @@ public class ParameterValue extends ElementCollectionValue {
 	@SuppressWarnings("unchecked")
 	public Instant getEventDateTime() {
 		return findField("EventDateTime")
-				.map(ev -> ((PropertyValue<Instant>)ev).get())
+				.map(ev -> ((DateTimePropertyValue)ev).toValueObject())
 				.orElse(null);
 	}
 	

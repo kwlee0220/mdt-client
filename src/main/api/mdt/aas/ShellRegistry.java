@@ -82,7 +82,7 @@ public interface ShellRegistry {
 	/**
 	 * 주어진 식별자에 해당하는 등록 AssetAdministrationShellDescriptor를 해제시킨다.
 	 * 
-	 * @param aasId		해제시킬 AssetAdministrationShellDescriptor의 식별자.
+	 * @param shellId		해제시킬 AssetAdministrationShellDescriptor의 식별자.
 	 * @throws ResourceNotFoundException	식별자에 해당하는 AssetAdministrationShellDescriptor가 존재하지 않는 경우.
 	 */
 	@DeleteExchange("/shell-descriptors/{shellId}")

@@ -6,11 +6,10 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import javax.annotation.Nullable;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
+
+import javax.annotation.Nullable;
 
 import mdt.aas.AssetAdministrationShellRegistry;
 import mdt.model.AssetAdministrationShellService;
@@ -122,18 +121,6 @@ public interface MDTInstance {
 	 */
 	public default @Nullable MDTAssetType getAssetType() {
 		return getInstanceDescriptor().getAssetType();
-	}
-	
-	/**
-	 * MDTInstance가 포함한 AssetAdministrationShell의 자산 종류를 반환한다.
-	 * <p>
-	 * 내부적으로는 {@code getInstanceDescriptor().getAssetKind()}와 동일하다.
-	 * 
-	 * @return	자산 종류.
-	 * @see MDTInstance#getInstanceDescriptor()
-	 */
-	public default @Nullable AssetKind getAssetKind() {
-		return getInstanceDescriptor().getAssetKind();
 	}
 	
 	/**

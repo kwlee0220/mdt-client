@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import utils.InternalException;
 import utils.UnitUtils;
 import utils.Utilities;
-import utils.func.FOption;
+import utils.func.Optionals;
 import utils.http.RESTfulIOException;
 import utils.stream.FStream;
 
@@ -330,8 +330,8 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		return new Object[] {
 			String.format(format, seqNo),
 			instance.getId(),
-			FOption.getOrElse(instance.getAssetType(), ""),
-			FOption.getOrElse(instance.getGlobalAssetId(), ""),
+			Optionals.getOrElse(instance.getAssetType(), ""),
+			Optionals.getOrElse(instance.getGlobalAssetId(), ""),
 			submodelIdCsv,
 			instance.getStatus(),
 			serviceEndpoint

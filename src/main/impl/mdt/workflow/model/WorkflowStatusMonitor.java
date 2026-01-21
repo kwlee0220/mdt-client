@@ -49,7 +49,7 @@ public class WorkflowStatusMonitor extends PeriodicLoopExecution<Void> {
 		
 		status = statusChanged(status);
 		if ( isFinished(status) ) {
-			return Optional.of(null);
+			return null;
 		}
 		else {
 			return Optional.empty();

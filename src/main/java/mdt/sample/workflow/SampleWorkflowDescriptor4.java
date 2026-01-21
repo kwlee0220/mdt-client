@@ -5,11 +5,15 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
+import mdt.task.MDTTask;
+import mdt.task.builtin.AASOperationTask;
+import mdt.task.builtin.HttpTask;
+import mdt.task.builtin.SetTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
-import mdt.workflow.model.TaskDescriptors;
 
 
 /**
@@ -30,44 +34,43 @@ public class SampleWorkflowDescriptor4 {
 		wfModel.setId(WORKFLOW_ID);
 		wfModel.setName("테스트 시뮬레이션");
 		wfModel.setDescription("본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.");
+		
+		TaskDescriptor descriptor;
+		
+		descriptor = new TaskDescriptor();
+		descriptor.setType(SetTask.class.getName());
+		descriptor.setId("copy-data");
+		descriptor.addInputArgumentSpec("source", ArgumentSpec.reference("param:test:Data"));
+		descriptor.addOutputArgumentSpec("target", ArgumentSpec.reference("oparg:test:AddAndSleep:in:Data"));
+		wfModel.getTaskDescriptors().add(descriptor);
 
-		TaskDescriptor taskDesc;
+		descriptor = new TaskDescriptor();
+		descriptor.setType(SetTask.class.getName());
+		descriptor.setId("copy-inc-amount");
+		descriptor.addInputArgumentSpec("source", ArgumentSpec.reference("param:test:IncAmount"));
+		descriptor.addOutputArgumentSpec("target", ArgumentSpec.reference("oparg:test:AddAndSleep:in:IncAmount"));
+		wfModel.getTaskDescriptors().add(descriptor);
 		
-		taskDesc = TaskDescriptors.setTaskBuilder()
-									.id("copy-data")
-									.target("oparg:test:AddAndSleep:in:Data")
-									.source("param:test:Data")
-									.build();
-		wfModel.getTaskDescriptors().add(taskDesc);
-		
-		taskDesc = TaskDescriptors.setTaskBuilder()
-									.id("copy-inc-amount")
-									.target("oparg:test:AddAndSleep:in:IncAmount")
-									.source("param:test:IncAmount")
-									.build();
-		wfModel.getTaskDescriptors().add(taskDesc);
-		
-		taskDesc = TaskDescriptors.setTaskBuilder()
-									.id("set-sleeptime")
-									.target("oparg:test:AddAndSleep:in:SleepTime")
-									.value("3")
-									.build();
-		wfModel.getTaskDescriptors().add(taskDesc);
+		descriptor = new TaskDescriptor();
+		descriptor.setType(SetTask.class.getName());
+		descriptor.setId("set-sleeptime");
+		descriptor.addInputArgumentSpec("source", ArgumentSpec.literal(3));
+		descriptor.addOutputArgumentSpec("target", ArgumentSpec.reference("oparg:test:AddAndSleep:in:SleepTime"));
+		wfModel.getTaskDescriptors().add(descriptor);
 		
 		ByIdShortSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("test", "AddAndSleep");
 		smRef.activate(manager);
 //		taskDesc = newHttpTask("simulation", smRef);
-		taskDesc = newAASOperationTask("sleep-and-add", smRef);
-		wfModel.getTaskDescriptors().add(taskDesc);
-
+		descriptor = newAASOperationTask("sleep-and-add", smRef);
+		wfModel.getTaskDescriptors().add(descriptor);
 		
-		taskDesc = TaskDescriptors.setTaskBuilder()
-									.id("copy-result")
-									.target("param:test:Data")
-									.source("oparg:test:AddAndSleep:out:Output")
-									.addDependency("sleep-and-add")
-									.build();
-		wfModel.getTaskDescriptors().add(taskDesc);
+		descriptor = new TaskDescriptor();
+		descriptor.setType(SetTask.class.getName());
+		descriptor.setId("copy-result");
+		descriptor.addInputArgumentSpec("source", ArgumentSpec.reference("oparg:test:AddAndSleep:out:Output"));
+		descriptor.addOutputArgumentSpec("target", ArgumentSpec.reference("param:test:Data"));
+		descriptor.addDependency("sleep-and-add");
+		wfModel.getTaskDescriptors().add(descriptor);
 
 		WorkflowManager wfManager = mdt.getWorkflowManager();
 		wfModel = wfManager.addOrReplaceWorkflowModel(wfModel);
@@ -76,29 +79,32 @@ public class SampleWorkflowDescriptor4 {
 	}
 	
 	private static TaskDescriptor newHttpTask(String taskId, ByIdShortSubmodelReference smRef) {
-		return TaskDescriptors.httpTaskBuilder()
-								.id(taskId)
-								.serverEndpoint(HTTP_OP_SERVER_ENDPOINT)
-								.operationId(smRef.getInstanceId() + "/" + smRef.getSubmodelIdShort())
-								.pollInterval("3s")
-								.timeout("1m")
-								.addOption("loglevel", "info")
-								.operationSubmodelRef(smRef)
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.addDependency("copy-data", "copy-inc-amount", "set-sleeptime")
-								.build();
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setId(taskId);
+		descriptor.setType(HttpTask.class.getName());
+		descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, HTTP_OP_SERVER_ENDPOINT);
+		descriptor.addOption(HttpTask.OPTION_OPERATION, smRef.getInstanceId() + "/" + smRef.getSubmodelIdShort());
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "im");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "3s");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		descriptor.addDependency("copy-data", "copy-inc-amount", "set-sleeptime");
+		
+		return descriptor;
 	}
 	
 	private static TaskDescriptor newAASOperationTask(String taskId, ByIdShortSubmodelReference smRef) {
-		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
-		return TaskDescriptors.aasOperationTaskBuilder()
-								.id(taskId)
-								.operationRef(opElmRef)
-								.pollInterval("3s")
-								.timeout("1m")
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.addDependency("copy-data", "copy-inc-amount", "set-sleeptime")
-								.build();
+		String opElmExpr = DefaultElementReference.newInstance(smRef, "Operation").toStringExpr();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setId(taskId);
+		descriptor.setType(AASOperationTask.class.getName());
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, opElmExpr);
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "im");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "3s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		descriptor.addDependency("copy-data", "copy-inc-amount", "set-sleeptime");
+		
+		return descriptor;
 	}
 }

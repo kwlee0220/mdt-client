@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
@@ -44,6 +45,16 @@ public final class FileStoreReference extends AbstractElementReference implement
 	public File getFile() {
 		return m_file;
 	}
+	
+	@Override
+	public SubmodelElement getPrototype() {
+		try {
+			return read();
+		}
+		catch ( IOException e ) {
+			throw new UncheckedIOException(e);
+		}
+	}
 
 	@Override
 	public SubmodelElement read() throws IOException {
@@ -57,6 +68,11 @@ public final class FileStoreReference extends AbstractElementReference implement
 	}
 
 	@Override
+	public ElementValue readValue() throws IOException {
+		return ElementValues.getValue(read());
+	}
+
+	@Override
 	public void updateValue(ElementValue smev) throws IOException {
 		SubmodelElement holder = read();
 		ElementValues.update(holder, smev);
@@ -66,7 +82,7 @@ public final class FileStoreReference extends AbstractElementReference implement
 	@Override
 	public void updateValue(String valueJsonString) throws IOException {
 		SubmodelElement proto = read();
-		ElementValue newVal = ElementValues.parseValueJsonString(proto, valueJsonString);
+		ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
 		updateValue(newVal);
 	}
 

@@ -23,7 +23,7 @@ import mdt.model.timeseries.RecordMetadata.Field;
 public class DefaultMetadata extends SubmodelElementCollectionEntity implements Metadata {
 	@MultiLanguagePropertyField(idShort="Name") private MultiLanguagePropertyValue name;
 	@MultiLanguagePropertyField(idShort="Description") private MultiLanguagePropertyValue description;
-	private RecordMetadata m_metadata;
+	private RecordMetadata record;	// 별도로 SubmodelElementCollection과의 변환을 처리해야 함.
 
 	@Override
 	public String getIdShort() {
@@ -34,15 +34,23 @@ public class DefaultMetadata extends SubmodelElementCollectionEntity implements 
 	public MultiLanguagePropertyValue getName() {
 		return name;
 	}
+	
+	public void setName(MultiLanguagePropertyValue mpv) {
+		this.name = mpv;
+	}
 
 	@Override
 	public MultiLanguagePropertyValue getDescription() {
 		return description;
 	}
+	
+	public void setDescription(MultiLanguagePropertyValue mpv) {
+		this.description = mpv;
+	}
 
 	@Override
-	public RecordMetadata getRecordMetadata() {
-		return m_metadata;
+	public RecordMetadata getRecord() {
+		return this.record;
 	}
 
 	@Override
@@ -50,11 +58,11 @@ public class DefaultMetadata extends SubmodelElementCollectionEntity implements 
 		super.updateAasModel(model);
 		
 		SubmodelElementCollection smc = (SubmodelElementCollection)model;
-		List<SubmodelElement> fields = FStream.from(m_metadata.getFieldAll())
+		List<SubmodelElement> fields = FStream.from(record.getFieldAll())
 											    .map(this::toFieldProperty)
 											    .castSafely(SubmodelElement.class)
 											    .toList();
-		SubmodelElementCollection recMeta = SubmodelUtils.newSubmodelElementCollection("RecordMetadata", fields);
+		SubmodelElementCollection recMeta = SubmodelUtils.newSubmodelElementCollection("Record", fields);
 		smc.getValue().add(recMeta);
 	}
 
@@ -63,13 +71,13 @@ public class DefaultMetadata extends SubmodelElementCollectionEntity implements 
 		super.updateFromAasModel(model);
 		
 		SubmodelElementCollection smc = (SubmodelElementCollection)model;
-		SubmodelElementCollection recordSmc = SubmodelUtils.getFieldById(smc, "RecordMetadata",
-																		SubmodelElementCollection.class).value();
+		SubmodelElementCollection recordSmc = SubmodelUtils.getFieldById(smc, "Record",
+																		SubmodelElementCollection.class);
 		List<Field> fields = FStream.from(recordSmc.getValue())
 									.castSafely(Property.class)
 									.map(this::parseField)
 									.toList();
-		m_metadata = new RecordMetadata(fields);
+		this.record = new RecordMetadata(fields);
 	}
 	
 	private Field parseField(Property prop) {

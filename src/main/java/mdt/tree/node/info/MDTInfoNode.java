@@ -2,7 +2,7 @@ package mdt.tree.node.info;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import utils.func.FOption;
+import utils.func.Optionals;
 
 import mdt.model.sm.info.DefaultMDTInfo;
 import mdt.model.sm.info.MDTInfo;
@@ -19,7 +19,7 @@ public class MDTInfoNode extends TerminalNode {
 	public MDTInfoNode(MDTInfo mdtInfo) {
 		setTitle(mdtInfo.getIdShort());
 		
-		String statusStr = "" + FOption.getOrElse(mdtInfo.getStatus(), "N/A");
+		String statusStr = "" + Optionals.getOrElse(mdtInfo.getStatus(), "N/A");
 		String value = String.format("name=\"%s\", type=%s, status=%s",
 										mdtInfo.getAssetName(), mdtInfo.getAssetType(), statusStr);
 		setValue(value);

@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.commons.lang3.time.DurationUtils;
@@ -23,6 +22,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.util.concurrent.AbstractService;
+
+import javax.annotation.Nullable;
 
 import utils.InternalException;
 import utils.LoggerSettable;

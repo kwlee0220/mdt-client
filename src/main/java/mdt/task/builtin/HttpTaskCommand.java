@@ -17,6 +17,7 @@ import mdt.workflow.model.TaskDescriptor;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParentCommand;
 
 
 /**
@@ -33,6 +34,9 @@ import picocli.CommandLine.Option;
 public class HttpTaskCommand extends AbstractTaskCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpTaskCommand.class);
 	private static final String DEFAULT_POLL_INTERVAL = "1.0";
+	
+	@ParentCommand
+	private RunSubmodelCommand m_parentCmd;
 
 	@Option(names={"--endpoint"}, paramLabel="endpoint",
 			description="The endpoint for the HTTP-based MDTOperationServer.")
@@ -58,7 +62,11 @@ public class HttpTaskCommand extends AbstractTaskCommand {
 		
 		TaskDescriptor descriptor = new TaskDescriptor();
 		descriptor.setType(HttpTask.class.getName());
-		loadTaskDescriptor(descriptor, manager);
+		
+        // 해당 연산 Submodel을 읽어서 주요 TaskDescriptor 정보를 설정한다.
+		m_parentCmd.loadOperationSubmodel(manager, descriptor);
+		
+		loadTaskDescriptor(manager, descriptor);
 		
 		FOption.accept(m_endpoint, ep -> descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, ep));
 		Preconditions.checkArgument(descriptor.findOptionValue(HttpTask.OPTION_SERVER_ENDPOINT).isPresent(),
@@ -83,6 +91,9 @@ public class HttpTaskCommand extends AbstractTaskCommand {
 		
 		Duration elapsed = Duration.between(started, Instant.now());
 		getLogger().info("HttpTask: elapsedTime={}", elapsed);
+
+		// LastExecutionTime 정보가 제공된 경우 task의 수행 시간을 계산하여 해당 SubmodelElement를 갱신한다.
+		TaskUtils.updateLastExecutionTime(manager, descriptor, started, getLogger());
 	}
 
 	public static void main(String... args) throws Exception {

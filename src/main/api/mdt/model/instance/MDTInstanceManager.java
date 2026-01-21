@@ -176,6 +176,7 @@ public interface MDTInstanceManager {
 	 * <p>
 	 * Filter 조건에서 사용할 수 있는 속성 정보는 다음과 같다.
 	 * <table border="1">
+	 * 	<caption>사용 가능한 MDTInstance 속성 정보</caption>
 	 * 	<tr>
 	 * 		<td>id</td>
 	 * 		<td>MDTInstance 고유 식별자</td>

@@ -2,16 +2,14 @@ package mdt.model.instance;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import javax.annotation.Nullable;
 
 import mdt.model.sm.info.MDTAssetType;
 
@@ -20,7 +18,7 @@ import mdt.model.sm.info.MDTAssetType;
  * @author Kang-Woo Lee (ETRI)
  */
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonPropertyOrder({"id", "status", "baseEndpoint", "aasId", "aasIdShort", "globalAssetId", "assetType", "assetKind",
+@JsonPropertyOrder({"id", "status", "baseEndpoint", "aasId", "aasIdShort", "globalAssetId", "assetType",
 					"submodels", "parameters", "operations", "twinComposition"})
 @Accessors(prefix="m_")
 @Getter @Setter
@@ -33,7 +31,6 @@ public class MDTModel {
 	private @Nullable String m_aasIdShort;
 	private @Nullable String m_globalAssetId;
 	private MDTAssetType m_assetType;
-	private @Nullable AssetKind m_assetKind;
 	
 	private List<MDTSubmodelDescriptor> m_submodels;
 	private List<MDTParameterDescriptor> m_parameters;
@@ -49,6 +46,5 @@ public class MDTModel {
 		m_aasIdShort = desc.getAasIdShort();
 		m_globalAssetId = desc.getGlobalAssetId();
 		m_assetType = desc.getAssetType();
-		m_assetKind = desc.getAssetKind();
 	}
 }

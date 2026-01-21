@@ -4,15 +4,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
+import javax.annotation.Nullable;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -23,22 +28,38 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import utils.InternalException;
-import utils.KeyedValueList;
+import utils.KeyValue;
 import utils.func.FOption;
+import utils.func.Funcs;
+import utils.func.Optionals;
 import utils.io.IOUtils;
 import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.NameValue;
+import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.ref.ElementReferences;
+import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.sm.ref.SubmodelBasedElementReference;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
+import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
+import mdt.model.sm.variable.AbstractVariable.ValueVariable;
 import mdt.model.sm.variable.Variable;
+import mdt.workflow.model.ArgumentSpec.LiteralArgumentSpec;
+import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@JsonPropertyOrder({"id", "name", "type", "description", "dependencies", "inputVariables", "outputVariables",
-					"options", "labels"})
+@JsonPropertyOrder({"id", "name", "type", "submodel", "description", "dependencies",
+					"inputVariables", "outputVariables", "options", "labels"})
+@JsonIncludeProperties({ "id", "name", "type", "submodel", "description", "dependencies",
+					"inputVariables", "outputVariables", "options", "labels" })
 @JsonInclude(Include.NON_NULL)
 public final class TaskDescriptor {
 	private String m_id;
@@ -46,9 +67,11 @@ public final class TaskDescriptor {
 	private String m_type;
 	private @Nullable String m_description;
 	
+	private DefaultSubmodelReference m_submodelRef;
+	
 	private Set<String> m_dependencies = Sets.newHashSet();
-	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);
-	private KeyedValueList<String,Variable> m_outputVariables = KeyedValueList.with(Variable::getName);
+	private LinkedHashMap<String,ArgumentSpec> m_inputArgumentSpecs = Maps.newLinkedHashMap();
+	private LinkedHashMap<String,ReferenceArgumentSpec> m_outputArgumentSpecs = Maps.newLinkedHashMap();
 	private Map<String, Option> m_options = Maps.newHashMap();
 	private List<NameValue> m_labels = Lists.newArrayList();
 	
@@ -96,14 +119,32 @@ public final class TaskDescriptor {
 		m_description = description;
 	}
 	
+	@JsonProperty("submodel")
+	public String getSubmodelRefString() {
+		return Optionals.map(m_submodelRef, DefaultSubmodelReference::toStringExpr);
+	}
+
+	@JsonProperty("submodel")
+	public void setSubmodelRefString(String refString) {
+		m_submodelRef = ElementReferences.parseSubmodelReference(refString);
+	}
+	
+	public DefaultSubmodelReference getSubmodelRef() {
+		return m_submodelRef;
+	}
+	
+	public void setSubmodelRef(DefaultSubmodelReference submodelRef) {
+		m_submodelRef = submodelRef;
+	}
+	
 	public Set<String> getDependencies() {
 		return m_dependencies;
 	}
 	
-	public void addDependency(String dependency) {
+	public void addDependency(String... dependency) {
 		Preconditions.checkArgument(dependency != null, "dependency must not be null");
 
-		m_dependencies.add(dependency);
+		FStream.of(dependency).forEach(m_dependencies::add);
 	}
 	
 	public void setDependencies(Iterable<String> dependencies) {
@@ -112,24 +153,55 @@ public final class TaskDescriptor {
 		m_dependencies = Sets.newHashSet(dependencies);
 	}
 	
-	public KeyedValueList<String,Variable> getInputVariables() {
-		return m_inputVariables;
+	public LinkedHashMap<String,ArgumentSpec> getInputArgumentSpecs() {
+		return m_inputArgumentSpecs;
 	}
-
-	public void setInputVariables(List<Variable> variables) {
-		Preconditions.checkArgument(variables != null, "Input variables must not be null");
-
-		m_inputVariables = KeyedValueList.from(variables, Variable::getName);
+	public void addInputArgumentSpec(String argId, ArgumentSpec spec) {
+		Preconditions.checkArgument(spec != null, "Input argument spec must not be null");
+		m_inputArgumentSpecs.put(argId, spec);
 	}
 	
-	public KeyedValueList<String,Variable> getOutputVariables() {
-		return m_outputVariables;
+	@JsonProperty("inputVariables")
+	public List<Variable> getInputVariables() {
+		return KeyValueFStream.from(m_inputArgumentSpecs)
+								.map(this::toVariable)
+								.toList();
 	}
 
-	public void setOutputVariables(List<Variable> variables) {
-		Preconditions.checkArgument(variables != null, "Output variables must not be null");
+	@JsonProperty("inputVariables")
+	public void setInputVariables(Iterable<Variable> vars) {
+		m_inputArgumentSpecs = FStream.from(vars)
+										.mapToKeyValue(this::fromArgumentSpec)
+										.toMap(new LinkedHashMap<>());
+	}
+	
+	public LinkedHashMap<String,ReferenceArgumentSpec> getOutputArgumentSpecs() {
+		return m_outputArgumentSpecs;
+	}
+	public void addOutputArgumentSpec(String argId, ReferenceArgumentSpec spec) {
+		Preconditions.checkArgument(spec != null, "Output argument spec must not be null");
 
-		m_outputVariables = KeyedValueList.from(variables, Variable::getName);
+		m_outputArgumentSpecs.put(argId, spec);
+	}
+	
+	@JsonProperty("outputVariables")
+	public List<Variable> getOutputVariables() {
+		return KeyValueFStream.from(m_outputArgumentSpecs)
+								.map(this::toVariable)
+								.toList();
+	}
+
+	@JsonProperty("outputVariables")
+	public void setOutputVariables(Iterable<Variable> vars) {
+		m_outputArgumentSpecs = Maps.newLinkedHashMap();
+		for ( Variable var : vars ) {
+			Preconditions.checkArgument(var instanceof ReferenceVariable,
+										"Output variable must be ReferenceVariable: %s", var);
+			
+			MDTElementReference ref = (MDTElementReference)((ReferenceVariable)var).getReference();
+			ReferenceArgumentSpec argSpec = ArgumentSpec.reference(ref);
+			m_outputArgumentSpecs.put(var.getName(), argSpec);
+		}
 	}
 	
 	public Map<String,Option> getOptions() {
@@ -156,6 +228,21 @@ public final class TaskDescriptor {
 		m_options = FStream.from(options)
 							.tagKey(Option::getName)
 							.toMap();
+		
+		// 만일 optiona 중에 operation이 포함되어 있고, submodelRef가 비어있다면
+		// operation 값을 이용해서 submodelRef를 설정한다.
+		if ( m_submodelRef == null ) {
+			Funcs.findFirst(options, opt -> opt.getName().equals("operation"))
+					.map(Option::getValue)
+					.ifPresent(opStr -> {
+						try {
+							SubmodelBasedElementReference opRef = (SubmodelBasedElementReference)ElementReferences.parseExpr(opStr);
+							m_submodelRef = (DefaultSubmodelReference)opRef.getSubmodelReference();
+						}
+						catch ( Throwable ignored ) { }
+					});
+		}
+		
 	}
 	
 	public List<NameValue> getLabels() {
@@ -194,9 +281,9 @@ public final class TaskDescriptor {
 	
 	public String toSignatureString() {
 		String taskTypeId = TaskDescriptors.toShortTaskTypeId(m_type);
-		String inPortNames = FStream.from(m_inputVariables).map(Variable::getName).join(", ");
-		String outPortNames = FStream.from(m_outputVariables).map(Variable::getName).join(", ");
-		return String.format("%s[%s]: (%s) -> (%s)", taskTypeId, getId(), inPortNames, outPortNames);
+		String inArgNames = FStream.from(m_inputArgumentSpecs.keySet()).join(", ");
+		String outArgNames = FStream.from(m_outputArgumentSpecs.keySet()).join(", ");
+		return String.format("%s[%s]: (%s) -> (%s)", taskTypeId, getId(), inArgNames, outArgNames);
 	}
 	
 	public String toJsonString() {
@@ -226,7 +313,9 @@ public final class TaskDescriptor {
 	}
 	public static TaskDescriptor parseEncodedString(List<String> chunks) throws IOException {
 		try {
-			String encodedStr = FStream.from(chunks).fold(new StringBuilder(), StringBuilder::append).toString();
+			String encodedStr = FStream.from(chunks)
+										.fold(new StringBuilder(), StringBuilder::append)
+										.toString();
 			
 			byte[] bytes = IOUtils.destringify(encodedStr);
 			String jsonStr = new String(bytes, StandardCharsets.UTF_8);
@@ -272,5 +361,63 @@ public final class TaskDescriptor {
 //								.flatMapIterable(Option::toCommandOptionSpec)
 //								.join(", ", "[", "]");
 		return String.format("%s: %s, opts:%s", taskName, toSignatureString(), m_options);
+	}
+	
+	public void updateOutputArguments(MDTInstanceManager manager, Map<String,SubmodelElement> outArgs,
+										Logger logger) {
+		Map<String,ElementValue> outValues = KeyValueFStream.from(outArgs)
+															.mapValue(ElementValues::getValue)
+															.toMap();
+		updateOutputArgumentsWithValues(manager, outValues, logger);
+	}
+	
+	public void updateOutputArgumentsWithValues(MDTInstanceManager manager, Map<String,ElementValue> outValues,
+												Logger logger) {
+		for ( Map.Entry<String,ElementValue> ent: outValues.entrySet() ) {
+			String argId = ent.getKey();
+			ElementValue argValue = ent.getValue();
+					
+			// Output argument와 동일 이름을 가진 variable을 찾는다.
+			ArgumentSpec outArgSpec = m_outputArgumentSpecs.get(argId);
+			if ( outArgSpec == null ) {
+				logger.warn("Unknown output argument: id={}", argId);
+				continue;
+			}
+			if ( outArgSpec instanceof ReferenceArgumentSpec refArgSpec ) {
+				try {
+					refArgSpec.activate(manager);
+					refArgSpec.updateValue(argValue);
+					logger.info("Updated: output variable {}({}): {}",
+								argId, refArgSpec.getReferenceString(), argValue);
+				}
+				catch ( IOException e ) {
+					logger.error("Failed to update output variable[{}], cause={}", argId, e);
+				}
+            }
+		}
+	}
+	private Variable toVariable(String argId, ArgumentSpec argSpec) {
+		if ( argSpec instanceof ReferenceArgumentSpec refArgSpec ) {
+			return new ReferenceVariable(argId, "", refArgSpec.getElementReference());
+		}
+		else if ( argSpec instanceof LiteralArgumentSpec litArgSpec ) {
+			return new ValueVariable(argId, "", litArgSpec.readValue());
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported argument spec type: " + argSpec);
+		}
+	}
+	private KeyValue<String,ArgumentSpec> fromArgumentSpec(Variable var) {
+		if ( var instanceof ReferenceVariable refVar ) {
+			ReferenceArgumentSpec argSpec = ArgumentSpec.reference((MDTElementReference)refVar.getReference());
+			return KeyValue.of(var.getName(), argSpec);
+		}
+		else if ( var instanceof ValueVariable valVar ) {
+			LiteralArgumentSpec argSpec = ArgumentSpec.literal(valVar.readValue());
+			return KeyValue.of(var.getName(), argSpec);
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported variable type: " + var);
+		}
 	}
 }

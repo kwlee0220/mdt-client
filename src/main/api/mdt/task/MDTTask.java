@@ -1,13 +1,14 @@
 package mdt.task;
 
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import utils.async.Cancellable;
 
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.variable.Variable;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -20,12 +21,9 @@ import mdt.workflow.model.TaskDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTTask extends Cancellable {
-//	/**
-//	 * MDT 태스크의 식별자를 반환한다.
-//	 *
-//	 * @return	MDT 태스크 식별자
-//	 */
-//	public String getId();
+	public static final String OPTION_TIMEOUT = "timeout";	// optional
+	public static final String OPTION_POLL_INTERVAL = "poll";    // optional
+	public static final String OPTION_LOG_LEVEL = "loglevel";
 	
 	/**
 	 * 태스크 기술자를 반환한다.
@@ -33,62 +31,6 @@ public interface MDTTask extends Cancellable {
 	 * @return	태스크 기술자.
 	 */
 	public TaskDescriptor getTaskDescriptor();
-	
-	/**
-	 * 등록된 모든 입력 태스크 포트들의 리스트를 반환한다.
-	 *
-	 * @return	태스크 variable 리스트.
-	 */
-	public default List<Variable> getInputVariableAll() {
-		return getTaskDescriptor().getInputVariables();
-	}
-	
-	/**
-	 * 주어진 이름에 해당하는 입력 태스크 포트를 반환한다.
-	 *
-	 * @param name	태스크 이름.
-	 * @return	{@link Variable} 객체.
-	 */
-	public default Variable getInputVariable(String name) {
-		return getTaskDescriptor().getInputVariables().getOfKey(name);
-	}
-	
-	/**
-	 * 새로운 입력 태스크 포트를 등록한다.
-	 *
-	 * @param var	등록할 태스크 포트를.	
-	 */
-	public default void addInputVariable(Variable var) {
-		getTaskDescriptor().getInputVariables().add(var);
-	}
-	
-	/**
-	 * 등록된 모든 출력 태스크 포트들의 리스트를 반환한다.
-	 *
-	 * @return	태스크 variable 리스트.
-	 */
-	public default List<Variable> getOutputVariableAll() {
-		return getTaskDescriptor().getOutputVariables();
-	}
-	
-	/**
-	 * 주어진 이름에 해당하는 출력 태스크 포트를 반환한다.
-	 *
-	 * @param name	태스크 이름.
-	 * @return	{@link Variable} 객체.
-	 */
-	public default Variable getOutputVariable(String name) {
-		return getTaskDescriptor().getOutputVariables().getOfKey(name);
-	}
-	
-	/**
-	 * 새로운 출력 태스크 포트를 등록한다.
-	 *
-	 * @param var	등록할 태스크 포트를.	
-	 */
-	public default void addOutputVariable(Variable var) {
-		getTaskDescriptor().getOutputVariables().add(var);
-	}
 	
 	/**
 	 * 태스크 작업을 수행한다.
@@ -104,6 +46,6 @@ public interface MDTTask extends Cancellable {
 	 * @throws CancellationException	태스크 수행 중 사용자 요청으로 중단된 경우.
 	 * @throws TaskException		태스크 수행 오류 발생으로 실패한 경우.
 	 */
-	public void run(MDTInstanceManager manager)
+	public Map<String,SubmodelElement> run(MDTInstanceManager manager)
 		throws TimeoutException, InterruptedException, CancellationException, TaskException;
 }

@@ -5,12 +5,13 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.model.sm.variable.Variables;
+import mdt.task.MDTTask;
+import mdt.task.builtin.AASOperationTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
-import mdt.workflow.model.TaskDescriptors;
 
 
 /**
@@ -62,73 +63,79 @@ public class WfInnercaseDemo {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ThicknessInspection");
 		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
 		opElmRef.activate(manager);
-
-		return TaskDescriptors.aasOperationTaskBuilder()
-								.id(id)
-								.operationRef(opElmRef)
-								.addInputVariable("UpperImage", "", "param:inspector:UpperImage")
-								.addOutputVariable("Defect", "", "oparg:inspector:ThicknessInspection:out:Defect")
-								.pollInterval("1s")
-								.timeout("1m")
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.addInputVariable(Variables.newInstance("UpperImage", "",
-																		"param:inspector:UpperImage"))
-								.build();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(AASOperationTask.class.getName());
+		descriptor.setId(id);
+		descriptor.addInputArgumentSpec("UpperImage", ArgumentSpec.reference("param:inspector:UpperImage"));
+		descriptor.addOutputArgumentSpec("Defect", ArgumentSpec.reference("oparg:inspector:ThicknessInspection:out:Defect"));
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, opElmRef.toStringExpr());
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "1m");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "1s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}
 	
 	private static TaskDescriptor updateDefectList(MDTInstanceManager manager, String id) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "UpdateDefectList");
 		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
 		opElmRef.activate(manager);
-
-		return TaskDescriptors.aasOperationTaskBuilder()
-								.id(id)
-								.operationRef(opElmRef)
-								.addInputVariable("Defect", "", "oparg:inspector:ThicknessInspection:out:Defect")
-								.addInputVariable("DefectList", "", "param:inspector:DefectList")
-								.addOutputVariable("DefectList", "", "param:inspector:DefectList")
-								.pollInterval("1s")
-								.timeout("1m")
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.build();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(AASOperationTask.class.getName());
+		descriptor.setId(id);
+		descriptor.addInputArgumentSpec("Defect", ArgumentSpec.reference("oparg:inspector:ThicknessInspection:out:Defect"));
+		descriptor.addInputArgumentSpec("DefectList", ArgumentSpec.reference("param:inspector:DefectList"));
+		descriptor.addOutputArgumentSpec("Output", ArgumentSpec.reference("param:inspector:DefectList"));
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, opElmRef.toStringExpr());
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "1m");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "1s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}
 	
 	private static TaskDescriptor simulateProcess(MDTInstanceManager manager, String id) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("inspector", "ProcessSimulation");
 		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
 		opElmRef.activate(manager);
-
-		return TaskDescriptors.aasOperationTaskBuilder()
-								.id(id)
-								.operationRef(opElmRef)
-								.addInputVariable("DefectList", "", "param:inspector:DefectList")
-								.addOutputVariable("AverageCycleTime", "", "param:inspector:CycleTime")
-								.pollInterval("1s")
-								.timeout("1m")
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.build();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(AASOperationTask.class.getName());
+		descriptor.setId(id);
+		descriptor.addInputArgumentSpec("DefectList", ArgumentSpec.reference("param:inspector:DefectList"));
+		descriptor.addOutputArgumentSpec("AverageCycleTime", ArgumentSpec.reference("param:inspector:CycleTime"));
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, opElmRef.toStringExpr());
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "1m");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "1s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}
 	
 	private static TaskDescriptor optimizeProcess(MDTInstanceManager manager, String id) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("innercase", "ProcessOptimization");
 		DefaultElementReference opElmRef = DefaultElementReference.newInstance(smRef, "Operation");
 		opElmRef.activate(manager);
-
-		return TaskDescriptors.aasOperationTaskBuilder()
-								.id(id)
-								.operationRef(opElmRef)
-								.addInputVariable("HTCycleTime", "", "param:heater:CycleTime")
-								.addInputVariable("VFCycleTime", "", "param:former:CycleTime")
-								.addInputVariable("PTCycleTime", "", "param:trimmer:CycleTime")
-								.addInputVariable("QICycleTime", "", "param:inspector:CycleTime")
-								.addOutputVariable("TotalThroughput", "", "param:innercase:CycleTime")
-								.pollInterval("1s")
-								.timeout("1m")
-								.addOption("loglevel", "info")
-								.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr())
-								.build();
+		
+		TaskDescriptor descriptor = new TaskDescriptor();
+		descriptor.setType(AASOperationTask.class.getName());
+		descriptor.setId(id);
+		descriptor.addInputArgumentSpec("HTCycleTime", ArgumentSpec.reference("param:heater:CycleTime"));
+		descriptor.addInputArgumentSpec("VFCycleTime", ArgumentSpec.reference("param:former:CycleTime"));
+		descriptor.addInputArgumentSpec("PTCycleTime", ArgumentSpec.reference("param:trimmer:CycleTime"));
+		descriptor.addInputArgumentSpec("QICycleTime", ArgumentSpec.reference("param:inspector:CycleTime"));
+		descriptor.addOutputArgumentSpec("TotalThroughput", ArgumentSpec.reference("param:innercase:CycleTime"));
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, opElmRef.toStringExpr());
+		descriptor.addOption(MDTTask.OPTION_TIMEOUT, "1m");
+		descriptor.addOption(MDTTask.OPTION_POLL_INTERVAL, "1s");
+		descriptor.addOption(MDTTask.OPTION_LOG_LEVEL, "info");
+		descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+		
+		return descriptor;
 	}	
 }

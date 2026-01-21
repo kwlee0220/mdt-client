@@ -30,7 +30,7 @@ public abstract class AbstractElementValue implements ElementValue {
 	@Override
 	public String toValueJsonString() {
 		try {
-			return MDTModelSerDe.getJsonMapper().writeValueAsString(toValueJsonObject());
+			return MDTModelSerDe.getJsonMapper().writeValueAsString(toValueObject());
 		}
 		catch ( IOException e ) {
 			throw new RuntimeException("Failed to get valueString of ElementValue: cause=" + e, e);
@@ -41,7 +41,7 @@ public abstract class AbstractElementValue implements ElementValue {
 	public String toDisplayString() {
 		// PropertyValue인 경우는 재정의됨.
 		try {
-			return MDTModelSerDe.getJsonSerializer().write(toValueJsonObject());
+			return MDTModelSerDe.getJsonSerializer().write(toValueObject());
 		}
 		catch ( SerializationException e ) {
 			throw new RuntimeException("Failed to get displayString of ElementValue: cause=" + e, e);

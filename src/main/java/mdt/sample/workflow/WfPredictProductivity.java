@@ -6,12 +6,11 @@ import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
-import mdt.model.sm.variable.Variable;
-import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.AASOperationTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -58,16 +57,11 @@ public class WfPredictProductivity {
 		descriptor.addOption(AASOperationTask.OPTION_TIMEOUT, "60");
 		descriptor.addOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
 		descriptor.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "welder:ProductivityPrediction"));
-		
-		Variable ts = Variables.newReferenceVariable("Timestamp", "", "param:welder:NozzleProduction.Timestamp");
-		descriptor.getInputVariables().addOrReplace(ts);
-		Variable nozzleProduction = Variables.newReferenceVariable("NozzleProduction", "",
-																	"param:welder:NozzleProduction");
-		descriptor.getInputVariables().addOrReplace(nozzleProduction);
-		
-		Variable totalThroughput = Variables.newReferenceVariable("TotalThroughput", "",
-																	"param:welder:TotalThroughput");
-		descriptor.getOutputVariables().addOrReplace(totalThroughput);
+
+		descriptor.addInputArgumentSpec("Timestamp", ArgumentSpec.reference("param:welder:NozzleProduction.Timestamp"));
+		descriptor.addInputArgumentSpec("NozzleProduction", ArgumentSpec.reference("param:welder:NozzleProduction"));
+
+		descriptor.addOutputArgumentSpec("TotalThroughput", ArgumentSpec.reference("param:welder:TotalThroughput"));
 		
 		return descriptor;
 	}

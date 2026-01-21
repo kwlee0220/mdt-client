@@ -2,8 +2,6 @@ package mdt.workflow;
 
 import java.util.List;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-
 import mdt.model.ResourceNotFoundException;
 
 /**
@@ -11,6 +9,9 @@ import mdt.model.ResourceNotFoundException;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface WorkflowInstanceManager {
+	public void onWorkflowModelAdded(WorkflowModel wfModel) throws MDTWorkflowInstanceManagerException;
+	public void onWorkflowModelRemoved(String wfModelId) throws MDTWorkflowInstanceManagerException;
+	
 	/**
 	 * 모든 워크플로우 등록정보를 반환한다.
 	 * 
@@ -27,7 +28,7 @@ public interface WorkflowInstanceManager {
 	 */
 	public Workflow getWorkflow(String wfId) throws ResourceNotFoundException;
 	
-	public Workflow startWorkflow(@NonNull String wfModelId) throws ResourceNotFoundException;
+	public Workflow startWorkflow(String wfModelId) throws ResourceNotFoundException;
 	public void stopWorkflow(String wfId) throws ResourceNotFoundException;
 	
 	public Workflow suspendWorkflow(String wfId) throws ResourceNotFoundException;

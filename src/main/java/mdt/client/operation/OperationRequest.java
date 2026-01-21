@@ -1,17 +1,18 @@
 package mdt.client.operation;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
+
+import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.Maps;
 
-import utils.KeyedValueList;
 import utils.stream.FStream;
 
 import mdt.model.MDTModelSerDe;
-import mdt.model.sm.variable.Variable;
 
 
 /**
@@ -19,13 +20,13 @@ import mdt.model.sm.variable.Variable;
  * @author Kang-Woo Lee (ETRI)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIncludeProperties({ "operation", "inputVariables", "outputVariables", "async" })
+@JsonIncludeProperties({ "operation", "inputArguments", "outputArguments", "async" })
 public class OperationRequest {
 	@JsonProperty("operation") private String m_opId;
-	@JsonProperty("inputVariables")
-	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);
-	@JsonProperty("outputVariables")
-	private KeyedValueList<String,Variable> m_outputVariables = KeyedValueList.with(Variable::getName);
+	@JsonProperty("inputArguments")
+	private Map<String,SubmodelElement> m_inputArguments = Maps.newHashMap();
+	@JsonProperty("outputArguments")
+	private Map<String,SubmodelElement> m_outputArguments = Maps.newHashMap();
 	@JsonProperty("async") private boolean m_async = true;
 	
 	public String getOperation() {
@@ -36,20 +37,20 @@ public class OperationRequest {
 		m_opId = id;
 	}
 	
-	public KeyedValueList<String,Variable> getInputVariables() {
-		return m_inputVariables;
+	public Map<String,SubmodelElement> getInputArguments() {
+		return m_inputArguments;
 	}
 	
-	public void setInputVariables(List<Variable> variables) {
-		m_inputVariables = KeyedValueList.from(variables, Variable::getName);
+	public void setInputArguments(Map<String,SubmodelElement> arguments) {
+		m_inputArguments = Maps.newHashMap(arguments);
 	}
 	
-	public KeyedValueList<String,Variable> getOutputVariables() {
-		return m_outputVariables;
+	public Map<String,SubmodelElement> getOutputArguments() {
+		return m_outputArguments;
 	}
 	
-	public void setOutputVariables(List<Variable> variables) {
-		m_outputVariables = KeyedValueList.from(variables, Variable::getName);
+	public void setOutputArguments(Map<String,SubmodelElement> arguments) {
+		m_outputArguments = Maps.newHashMap(arguments);
 	}
 	
 	public boolean isAsync() {
@@ -64,10 +65,14 @@ public class OperationRequest {
 		return MDTModelSerDe.readValue(jsonStr, OperationRequest.class);
 	}
 	
+	public String toJsonString() throws IOException {
+		return MDTModelSerDe.toJsonString(this);
+	}
+	
 	public String toString() {
-		String inPortNames = FStream.from(this.m_inputVariables.keySet()).join(", ");
-		String outPortNames = FStream.from(this.m_outputVariables.keySet()).join(", ");
+		String inArgNames = FStream.from(m_inputArguments.keySet()).join(", ");
+		String outArgNames = FStream.from(m_outputArguments.keySet()).join(", ");
 
-		return String.format("(%s) -> (%s)", inPortNames, outPortNames);
+		return String.format("(%s) -> (%s)", inArgNames, outArgNames);
 	}
 }

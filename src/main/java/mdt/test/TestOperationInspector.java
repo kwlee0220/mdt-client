@@ -1,15 +1,13 @@
 package mdt.test;
 
 import java.time.Duration;
-import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
-import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
-import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable;
 
+import mdt.client.operation.AASOperationClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.sm.PropertyUtils;
+import mdt.model.sm.value.PropertyValue.StringPropertyValue;
 
 
 /**
@@ -23,29 +21,16 @@ public class TestOperationInspector {
 		String aiUrl = String.format("https://localhost:19009/api/v3.0/submodels/%s", aiId);
 		HttpSubmodelServiceClient aiSvc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(aiUrl);
 		
-		OperationVariable defect;
-		defect = new DefaultOperationVariable.Builder()
-												.value(PropertyUtils.STRING("Defect", "0,0,0,0,0,0,0,0,0"))
-												.build();
-		OperationVariable defectList;
-		defectList = new DefaultOperationVariable.Builder()
-													.value(PropertyUtils.STRING("DefectList", "0,0,1"))
-													.build();
-		
-		OperationResult result;
-		result = aiSvc.runOperation("Operation", List.of(defect), List.of(defectList),
-									Duration.ofMinutes(5), Duration.ofSeconds(5));
+		AASOperationClient opClient = new AASOperationClient(aiSvc, "Operation", Duration.ofSeconds(1));
+		opClient.setInputVariableValue("Defect", new StringPropertyValue("0,1,0,0,1,0,1,0,0"));
+		opClient.setInputVariableValue("DefectList", new StringPropertyValue("0,0,1"));
+		OperationResult result = opClient.run();
 		System.out.printf("inoutputs=%s, outputs=%s%n", result.getInoutputArguments(), result.getOutputArguments());
 
-
-		defect = new DefaultOperationVariable.Builder()
-												.value(PropertyUtils.STRING("Defect", "0,0,0,0,0,0,0,0,0"))
-												.build();
-		defectList = new DefaultOperationVariable.Builder()
-													.value(PropertyUtils.STRING("DefectList", "0,0,1,0,0,0,0,1,1,0"))
-													.build();
-		result = aiSvc.runOperation("Operation", List.of(defect), List.of(defectList),
-									Duration.ofMinutes(5), Duration.ofSeconds(5));
+		opClient = new AASOperationClient(aiSvc, "Operation", Duration.ofSeconds(1));
+		opClient.setInputVariableValue("Defect", new StringPropertyValue("0,0,0,0,0,0,0,0,0"));
+		opClient.setInputVariableValue("DefectList", new StringPropertyValue("0,0,1,0,0,0,0,1,1,0"));
+		result = opClient.run();
 		System.out.printf("inoutputs=%s, outputs=%s%n", result.getInoutputArguments(), result.getOutputArguments());
 	}
 }

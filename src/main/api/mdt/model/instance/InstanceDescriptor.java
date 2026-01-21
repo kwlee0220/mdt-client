@@ -1,10 +1,10 @@
 package mdt.model.instance;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.annotation.Nullable;
-
-import org.eclipse.digitaltwin.aas4j.v3.model.AssetKind;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -44,7 +44,6 @@ public class InstanceDescriptor {
 	private @Nullable String m_aasIdShort;
 	private @Nullable String m_globalAssetId;
 	private @Nullable MDTAssetType m_assetType;
-	private @Nullable AssetKind m_assetKind;
 	
 	/**
 	 * 대상 MDTInstance의 식별자를 반환한다.
@@ -116,16 +115,6 @@ public class InstanceDescriptor {
 		return m_assetType;
 	}
 	
-	/**
-	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 자산 종류를 반환한다.
-	 * 
-	 * @return	자산 종류.
-	 */
-	@Nullable
-	public AssetKind getAssetKind() {
-		return m_assetKind;
-	}
-	
 	public String getParameterEndpoint(int paramIdx, String smEndpoint) {
 		if ( m_baseEndpoint == null ) {
 			throw new IllegalStateException("no base endpoint");
@@ -137,8 +126,10 @@ public class InstanceDescriptor {
             default -> throw new IllegalArgumentException("MDTParameter is not supported for assetType: " + m_assetType);
 		};
 		
-		return String.format("%s/submodel-elements/DataInfo.%s.%sParameterValues[%d]",
-							smEndpoint, assetTypeName, assetTypeName, paramIdx);
+		String idShortPath = String.format("DataInfo.%s.%sParameterValues[%d].ParameterValue",
+											assetTypeName, assetTypeName, paramIdx);
+		String encodedIdShortPath = URLEncoder.encode(idShortPath, StandardCharsets.UTF_8);
+		return String.format("%s/submodel-elements/%s", smEndpoint, encodedIdShortPath);
 	}
 
 	public static class Serializer extends StdSerializer<InstanceDescriptor> {
@@ -161,7 +152,6 @@ public class InstanceDescriptor {
 			gen.writeStringField("aasIdShort", desc.getAasIdShort());
 			gen.writeStringField("globalAssetId", desc.getGlobalAssetId());
 			gen.writeStringField("assetType", (desc.getAssetType() != null) ? desc.getAssetType().name() : null);
-			gen.writeStringField("assetKind", (desc.getAssetKind() != null) ? desc.getAssetKind().name() : null);
 			gen.writeStringField("status", desc.getStatus().name());
 			gen.writeStringField("baseEndpoint", desc.getBaseEndpoint());
 			
@@ -193,7 +183,6 @@ public class InstanceDescriptor {
 			desc.setAasIdShort(getText(node.get("aasIdShort")));
 			desc.setGlobalAssetId(getText(node.get("globalAssetId")));
 			desc.setAssetType(MDTAssetType.valueOf(node.get("assetType").asText()));
-			desc.setAssetKind(AssetKind.valueOf(node.get("assetKind").asText().toUpperCase()));
 			desc.setStatus(MDTInstanceStatus.valueOf(node.get("status").asText()));
 			
 			JsonNode be = node.get("baseEndpoint");

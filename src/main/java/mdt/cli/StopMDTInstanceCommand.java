@@ -20,7 +20,7 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "stop",
+	name = "instance",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,

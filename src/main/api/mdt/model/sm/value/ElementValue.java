@@ -12,11 +12,11 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
  */
 public interface ElementValue {
 	/**
-	 * Polymorphic한 JSON 표현을 제외한 값에 해당하는 부분의 Java 객체를 반환한다.
-	 * 
-	 * @return	값에 해당하는 부분의 Java 객체.
+	 * ElementValue에 해당하는 자바 객체를 반환한다.
+	 *
+	 * @return 	자바 객체.
 	 */
-	public Object toValueJsonObject();
+	public Object toValueObject();
 	
 	/**
 	 * Polymorphic한 JSON 표현을 포함한 전체 JSON 문자열을 반환한다.

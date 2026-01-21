@@ -2,33 +2,24 @@ package mdt.model.sm.ai;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
-import com.google.common.base.Preconditions;
-
-import lombok.experimental.Delegate;
-
 import mdt.model.SubmodelService;
+import mdt.model.sm.OperationSubmodelService;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class AISubmodelService implements SubmodelService {
-	@Delegate private final SubmodelService m_service;
-	private final DefaultAI m_ai;
-	
+public class AISubmodelService extends OperationSubmodelService {
 	public AISubmodelService(SubmodelService service) {
-		Submodel submodel = service.getSubmodel();
-		Preconditions.checkArgument(submodel.getSemanticId().equals(AI.SEMANTIC_ID_REFERENCE),
-									"Not AI Submodel, but=" + submodel); 
-		
-		m_service = service;
-		
-		m_ai = new DefaultAI();
-		m_ai.updateFromAasModel(submodel);
+		super(service);
 	}
 	
 	public AI getAI() {
-		return m_ai;
+		Submodel submodel = m_service.getSubmodel();
+		DefaultAI ai = new DefaultAI();
+		ai.updateFromAasModel(submodel);
+		
+		return ai;
 	}
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.eclipse.digitaltwin.aas4j.v3.model.Range;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -25,11 +24,11 @@ import mdt.model.MDTModelSerDe;
 public final class RangeValue<T> extends AbstractElementValue implements DataElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:range";
 	
-	@NonNull private final DataType<T> m_vtype;
+	private final DataType<T> m_vtype;
 	private final T m_min;
 	private final T m_max;
 	
-	public RangeValue(@NonNull DataType<T> vtype, T min, T max) {
+	public RangeValue(DataType<T> vtype, T min, T max) {
 		m_vtype = vtype;
 		m_min = min;
 		m_max = max;
@@ -37,6 +36,20 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	
 	public DataType<?> getValueType() {
 		return m_vtype;
+	}
+	
+	public void update(Range rg) {
+		rg.setMin(m_vtype.toValueString(m_min));
+		rg.setMax(m_vtype.toValueString(m_max));
+	}
+	
+	@Override
+	public Map<String,T> toValueObject() {
+		Map<String, T> value = Maps.newLinkedHashMap();
+		value.put(FIELD_MIN, m_min);
+		value.put(FIELD_MAX, m_max);
+
+		return value;
 	}
 	
 	public T getMin() {
@@ -51,22 +64,38 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	public String toJsonString() throws IOException {
 		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
+
+	public static RangeValue<?> from(Range rg) {
+		DataType<?> vtype = DataTypes.fromAas4jDatatype(rg.getValueType());
+		Object min = vtype.parseValueString(rg.getMin());
+		Object max = vtype.parseValueString(rg.getMax());
+
+		return new RangeValue(vtype, min, max);
+	}
 	
-	public static RangeValue<?> parseValueJsonNode(Range range, JsonNode vnode) {
+	public static RangeValue<?> fromValueObject(Object value, Range range) throws IOException {
+		if ( value instanceof Map vmap ) {
+			DataType<?> vtype = DataTypes.fromAas4jDatatype(range.getValueType());
+			Object min = vtype.fromJdbcObject(vmap.get(FIELD_MIN));
+			Object max = vtype.fromJdbcObject(vmap.get(FIELD_MAX));
+
+			return new RangeValue(vtype, min, max);
+		}
+		else {
+			throw new IOException("invalid RangeValue object: " + value);
+		}
+	}
+	
+	public static RangeValue<?> parseValueJsonNode(JsonNode vnode, Range range) throws IOException {
+		if ( !vnode.isObject() ) {
+			throw new IOException("RangeValue expects an 'Object' node: JsonNode=" + vnode);
+		}
+		
 		DataType<?> vtype = DataTypes.fromAas4jDatatype(range.getValueType());
 		Object min = vtype.fromJsonNode(JacksonUtils.getFieldOrNull(vnode, FIELD_MIN));
 		Object max = vtype.fromJsonNode(JacksonUtils.getFieldOrNull(vnode, FIELD_MAX));
 				
 		return new RangeValue(vtype, min, max);
-	}
-
-	@Override
-	public Object toValueJsonObject() {
-		Map<String,Object> value = Maps.newLinkedHashMap();
-		value.put(FIELD_MIN, m_vtype.toJdbcObject(m_min));
-		value.put(FIELD_MAX, m_vtype.toJdbcObject(m_max));
-		
-		return value;
 	}
 	
 	@Override

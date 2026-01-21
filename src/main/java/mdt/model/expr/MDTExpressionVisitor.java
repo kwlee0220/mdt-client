@@ -205,7 +205,7 @@ public class MDTExpressionVisitor extends MdtExprBaseVisitor<MDTExpression> {
 		PropertyValue min = (PropertyValue)ctx.getChild(1).accept(this).evaluate();
 		PropertyValue max = (PropertyValue)ctx.getChild(3).accept(this).evaluate();
 		
-		return new RangeValueSpec(min.getDataType(), min.get(), max.get());
+		return new RangeValueSpec(min.getDataType(), min.toValueObject(), max.toValueObject());
 	}
 	
 	@Override

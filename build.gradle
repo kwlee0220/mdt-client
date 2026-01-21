@@ -1,7 +1,8 @@
 plugins {
 	id 'java'
 	id 'application'
-	id 'com.github.johnrengelman.shadow' version '8.1.1'
+	// id 'com.github.johnrengelman.shadow' version '8.1.1'
+	id("com.gradleup.shadow") version "9.3.0"
 }
 
 group = 'etri'
@@ -12,8 +13,8 @@ application {
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
@@ -44,7 +45,7 @@ sourceSets {
 repositories {
     mavenLocal()
 	maven {
-		url "https://maven.aksw.org/repository/internal/"
+		url = uri("https://maven.aksw.org/repository/internal/")
 		allowInsecureProtocol = true
 	}
 	mavenCentral()
@@ -53,8 +54,8 @@ repositories {
 dependencies {
 	implementation project(":utils")
 	
-	// Checker framework
-	implementation("org.checkerframework:checker:${checker_version}")
+	// @Nullable
+	compileOnly "com.google.code.findbugs:jsr305:${findbugs_version}"
 
 	// Lombok (from the project :utils)
 	compileOnly "org.projectlombok:lombok:${lombok_version}"

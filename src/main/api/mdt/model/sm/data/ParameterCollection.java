@@ -54,7 +54,7 @@ public interface ParameterCollection {
 	 */
 	public default Parameter getParameter(String paramId) throws ResourceNotFoundException {
 		return Funcs.findFirst(this.getParameterList(), param -> param.getParameterId().equals(paramId))
-					.getOrThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId));
+					.orElseThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId));
 	}
 	
 	/**
@@ -79,7 +79,7 @@ public interface ParameterCollection {
 	 */
 	public default ParameterValue getParameterValue(String paramId) throws ResourceNotFoundException {
 		return Funcs.findFirst(this.getParameterValueList(), param -> param.getParameterId().equals(paramId))
-				.getOrThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId));
+				.orElseThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId));
 	}
 	
 	/**

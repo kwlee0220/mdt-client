@@ -1,23 +1,78 @@
-{
-  "id" : "simulation",
-  "type" : "mdt.task.builtin.AASOperationTask",
-  "dependencies" : [ "copy-data2", "set-sleeptime", "set-expected", "copy-data1" ],
-  "variables" : [ ],
-  "options" : [ {
-    "name" : "operation",
-    "optionType" : "sme_ref",
-    "twinId" : "Test",
-    "submodelIdShort" : "Simulation",
-    "smePath" : "SimulationOperation"
-  }, {
-    "name" : "async",
-    "optionType" : "bool",
-    "value" : true
-  }, {
-    "name" : "timeout",
-    "optionType" : "string",
-    "value" : "5m"
-  } ],
-  "labels" : [ ]
-}
+
+    {
+      "id": "add-and-sleep",
+      "name": "대기 후 더하기",
+      "type": "mdt.task.builtin.AASOperationTask",
+      "submodel": "test:AddAndSleep",
+      "description": "지정된 시간(초) 동안 대기한 후 두 수를 더하는 작업입니다.",
+      "dependencies": [],
+      "inputVariables": [
+        {
+          "@type": "mdt:variable:reference",
+          "name": "Data",
+          "description": "입력 데이터",
+          "reference": {
+            "@type": "mdt:ref:param",
+            "instanceId": "test",
+            "parameterExpr": "Data"
+          }
+        },
+        {
+          "@type": "mdt:variable:reference",
+          "name": "IncAmount",
+          "description": "증가량",
+          "reference": {
+            "@type": "mdt:ref:param",
+            "instanceId": "test",
+            "parameterExpr": "IncAmount"
+          }
+        },
+        {
+          "@type": "mdt:variable:reference",
+          "name": "SleepTime",
+          "description": "대기 시간(초)",
+          "reference": {
+            "@type": "mdt:ref:param",
+            "instanceId": "test",
+            "parameterExpr": "SleepTime"
+          }
+        }
+      ],
+      "outputVariables": [
+        {
+          "@type": "mdt:variable:reference",
+          "name": "Output",
+          "description": "증가된 데이터",
+          "reference": {
+            "@type": "mdt:ref:param",
+            "instanceId": "test",
+            "parameterExpr": "Data"
+          }
+        }
+      ],
+      "options": [
+        {
+          "name": "loglevel",
+          "value": "info"
+        },
+        {
+          "name": "poll",
+          "value": "1.0"
+        },
+        {
+          "name": "operation",
+          "value": "test:AddAndSleep:Operation"
+        },
+        {
+          "name": "timeout",
+          "value": ""
+        }
+      ],
+      "labels": [
+        {
+          "name": "mdt-operation",
+          "value": "test:AnddAndSleep"
+        }
+      ]
+    }
 

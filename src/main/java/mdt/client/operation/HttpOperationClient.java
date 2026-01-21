@@ -16,6 +16,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
 
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+
 import utils.async.AbstractThreadedExecution;
 import utils.async.CancellableWork;
 import utils.async.Guard;
@@ -25,10 +29,6 @@ import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 
 import mdt.model.MDTModelSerDe;
-
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
-import okhttp3.RequestBody;
 
 
 /**
@@ -46,7 +46,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 	private final Duration m_pollInterval;
 	private final Duration m_timeout;
 	
-	private final HttpRESTfulClient m_restfulStatusClient;
+	private final HttpRESTfulClient m_restClient;
 	
 	private final Guard m_guard = Guard.create();
 	@GuardedBy("m_guard") private Thread m_workerThread = null;
@@ -61,11 +61,11 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 		m_pollInterval = builder.m_pollInterval;
 		m_timeout = builder.m_timeout;
 		
-		m_restfulStatusClient = HttpRESTfulClient.builder()
-												.httpClient(builder.m_httpClient)
-												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
-												.jsonMapper(MAPPER)
-												.build();
+		m_restClient = HttpRESTfulClient.builder()
+										.httpClient(builder.m_httpClient)
+										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
+										.jsonMapper(MAPPER)
+										.build();
 		
 		setLogger(s_logger);
 	}
@@ -109,7 +109,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 						isFirst = false;
 					}
 					
-					resp = m_restfulStatusClient.get(statusUrl, m_opRespDeser);
+					resp = m_restClient.get(statusUrl, m_opRespDeser);
 					if ( getLogger().isInfoEnabled() ) {
 						getLogger().info("received from HTTPOperationServer: {}", resp);
 					}
@@ -162,20 +162,14 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 	private OperationResponse start(OperationRequest request) {
 		Preconditions.checkState(request.getOperation() != null, "'operation' is null");
 		
-		HttpRESTfulClient client = HttpRESTfulClient.builder()
-												.httpClient(m_httpClient)
-												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
-												.jsonMapper(MAPPER)
-												.build();
-		
 		String requestJson = MDTModelSerDe.toJsonString(request);
 		RequestBody reqBody = RequestBody.create(requestJson, HttpRESTfulClient.MEDIA_TYPE_JSON);
-		return client.post(m_endpoint + "/operations", reqBody, m_opRespDeser);
+		return m_restClient.post(m_endpoint + "/operations", reqBody, m_opRespDeser);
 	}
 	
 	private OperationResponse sendCancelRequest(String sessionId) {
 		String deleteUrl = String.format("%s/sessions/%s", m_endpoint, sessionId);
-		return m_restfulStatusClient.delete(deleteUrl, m_opRespDeser);
+		return m_restClient.delete(deleteUrl, m_opRespDeser);
 	}
 	
 	public static Builder builder() {
@@ -223,7 +217,8 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 	private ResponseBodyDeserializer<OperationResponse> m_opRespDeser = new ResponseBodyDeserializer<>() {
 		@Override
 		public OperationResponse deserialize(Headers headers, String respBody) throws IOException {
-			return MAPPER.readValue(respBody, RESPONSE_TYPE_REF);
+			return OperationResponse.fromJsonString(respBody);
+//			return MAPPER.readValue(respBody, RESPONSE_TYPE_REF);
 		}
 	};
 }

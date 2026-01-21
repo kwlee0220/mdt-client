@@ -64,7 +64,8 @@ public class Fa3stHttpClient implements HttpClientProxy {
 			return RequestBody.create(str, JSON);
 		}
 		else {
-			return RequestBody.create(MDTModelSerDe.toJsonString(desc), JSON);
+			String jsonStr = MDTModelSerDe.toJsonString(desc);
+			return RequestBody.create(jsonStr, JSON);
 		}
 	}
 
@@ -162,6 +163,9 @@ public class Fa3stHttpClient implements HttpClientProxy {
 							
 							return null;
 						}
+						else if ( JsonNode.class.isAssignableFrom(valueType) ) {
+							return (T)MDTModelSerDe.MAPPER.readTree(respBody.string());
+						}
 						else {
 							String respBodyStr = respBody.string();
 							if ( respBodyStr.length() > 0 ) {
@@ -237,6 +241,10 @@ public class Fa3stHttpClient implements HttpClientProxy {
 				else if ( resp.code() >= 500 && resp.code() < 600 ) {
 					throw msg.toClientException();
 				}
+			}
+			if ( msg.getCode() == null ) {
+				String details = msg.getText() + ", ts=" + msg.getTimestamp();
+				throw new RESTfulRemoteException(details);
 			}
 			
 			@SuppressWarnings("unchecked")

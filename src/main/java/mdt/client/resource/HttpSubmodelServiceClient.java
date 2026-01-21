@@ -3,6 +3,7 @@ package mdt.client.resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
@@ -45,6 +47,8 @@ import mdt.client.Fa3stHttpClient;
 import mdt.model.MDTOperationHandle;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.value.FileValue;
 
 
@@ -70,8 +74,19 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 	
 	@Override
-	public Submodel getSubmodel() {
-		Request req = new Request.Builder().url(getEndpoint()).get().build();
+	public Submodel getSubmodel(Modifier modifier) {
+		String endpoint = getEndpoint();
+		switch (modifier) {
+			case NONE:
+				// no-op
+				break;
+			case METADATA:
+				endpoint += "/$metadata";
+				break;
+			case VALUE:
+				throw new IllegalArgumentException("Unsupported modifier: VALUE");
+		}
+		Request req = new Request.Builder().url(endpoint).get().build();
 		return call(req, Submodel.class);
 	}
 	
@@ -97,12 +112,35 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public SubmodelElement getSubmodelElementByPath(String idShortPath) {
+	public SubmodelElement getSubmodelElementByPath(String idShortPath, Modifier modifier) {
 		idShortPath = encodeIdShortPath(idShortPath);
-		String url = String.format("%s/submodel-elements/%s", getEndpoint(), idShortPath);
+		String format = switch (modifier) {
+			case NONE -> "%s/submodel-elements/%s";
+			case METADATA -> "%s/submodel-elements/%s/$metadata";
+			case VALUE -> throw new IllegalArgumentException("Unsupported modifier: VALUE");
+		};
+		String url = String.format(format, getEndpoint(), idShortPath);
 		
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, SubmodelElement.class);
+	}
+
+	@Override
+	public ElementValue getSubmodelElementValueByPath(String idShortPath, SubmodelElement prototype)
+		throws ResourceNotFoundException {
+		idShortPath = encodeIdShortPath(idShortPath);
+		String url = String.format("%s/submodel-elements/%s/$value", getEndpoint(), idShortPath);
+		
+		Request req = new Request.Builder().url(url).get().build();
+		JsonNode jnode = call(req, JsonNode.class);
+		
+		JsonNode root = jnode.get(prototype.getIdShort());
+		try {
+			return ElementValues.parseValueJsonNode(root, prototype);
+		}
+		catch ( IOException e ) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	@Override
@@ -164,7 +202,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void updateSubmodelElementByPath(String idShortPath, String valueJsonString) {
+	public void updateSubmodelElementValueByPath(String idShortPath, String valueJsonString) {
 		try {
 			String url = String.format("%s/submodel-elements/%s/$value",
 										getEndpoint(), encodeIdShortPath(idShortPath));
@@ -185,38 +223,6 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		Request req = new Request.Builder().url(url).delete().build();
 		send(req);
 	}
-
-//	@Override
-//	public byte[] getFileByPath(String idShortPath) {
-//		String url = String.format("%s/submodel-elements/%s/attachment",
-//									getEndpoint(), encodeIdShortPath(idShortPath));
-//		
-//		Request req = new Request.Builder().url(url).get().build();
-//		return call(req, byte[].class);
-//	}
-//
-//	@Override
-//	public void putFileByPath(String idShortPath, byte[] payload) {
-//		try {
-//			String url = String.format("%s/submodel-elements/%s/attachment",
-//										getEndpoint(), encodeIdShortPath(idShortPath));
-//			RequestBody reqBody = createRequestBody(payload);
-//			
-//			Request req = new Request.Builder().url(url).put(reqBody).build();
-//			send(req);
-//		}
-//		catch ( IOException e ) {
-//			throw new InternalException("" + e);
-//		}
-//	}
-//
-//	@Override
-//	public void deleteFileByPath(String idShortPath) {
-//		String url = String.format("%s/submodel-elements/%s/attachment",
-//									getEndpoint(), encodeIdShortPath(idShortPath));
-//		Request req = new Request.Builder().url(url).delete().build();
-//		send(req);
-//	}
 	
 	@Data
 	@JsonInclude(Include.NON_NULL)
@@ -293,15 +299,6 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, OperationResult.class);
-//		OperationResultResponse resp = call(req, OperationResultResponse.class);
-//		
-//		return new DefaultOperationResult.Builder()
-//					.executionState(resp.executionState)
-//					.success(resp.success)
-//					.messages(resp.messages)
-//					.inoutputArguments(resp.inoutputArguments)
-//					.outputArguments(resp.outputArguments)
-//					.build();
 	}
 
 	@Override
@@ -315,23 +312,6 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		Request req = new Request.Builder().url(url).get().build();
 		return call(req, BaseOperationResult.class);
 	}
-	
-//	@Override
-//	public AASFile getAASFileByPath(String idShortPath) {
-//		try {
-//			SubmodelElement sme = getSubmodelElementByPath(idShortPath);
-//			Preconditions.checkArgument(sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File,
-//										"the SubmodelElement is not a File: idShortPath=%s", idShortPath);
-//			
-//			org.eclipse.digitaltwin.aas4j.v3.model.File aasFile = (org.eclipse.digitaltwin.aas4j.v3.model.File) sme;
-//			java.io.File file = getAASFileContentByPath(idShortPath);
-//			
-//			return DefaultAASFile.builder().aasFile(aasFile).file(file).build();
-//		}
-//		catch ( IOException e ) {
-//			throw new RESTfulIOException("Failed to get AASFile by path: " + idShortPath, e);
-//		}
-//	}
 
 	@Override
 	public void getAttachmentByPath(String idShortPath, OutputStream output) {

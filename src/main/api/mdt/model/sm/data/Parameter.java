@@ -1,8 +1,8 @@
 package mdt.model.sm.data;
 
-import javax.annotation.Nullable;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+
+import javax.annotation.Nullable;
 
 import utils.Keyed;
 

@@ -1,9 +1,12 @@
 package mdt.sample;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+
+import okhttp3.OkHttpClient;
 
 import utils.async.AsyncResult;
 import utils.http.OkHttpClientUtils;
@@ -14,11 +17,8 @@ import mdt.client.operation.HttpOperationClient;
 import mdt.client.operation.OperationRequest;
 import mdt.client.operation.OperationResponse;
 import mdt.model.instance.MDTInstance;
+import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ref.MDTParameterReference;
-import mdt.model.sm.variable.Variables;
-
-import okhttp3.OkHttpClient;
-
 
 /**
  *
@@ -45,15 +45,16 @@ public class SampleRunHttpOperation {
 		sleepTime.activate(manager);
 		SubmodelElement sleepTimeSme = sleepTime.read();
 //		Property sleepTimeSme = PropertyUtils.INT("SleepTime", 10);
+		
+		SubmodelElement output = SubmodelUtils.duplicate(dataSme);
+		output.setIdShort("Output");
 			
 		OkHttpClient http = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
 		
 		OperationRequest req = new OperationRequest();
 		req.setOperation("test/Simulation");
-		req.getInputVariables().add(Variables.newInstance("Data", "", dataSme));
-		req.getInputVariables().add(Variables.newInstance("IncAmount", "", incAmountSme));
-		req.getInputVariables().add(Variables.newInstance("SleepTime", "", sleepTimeSme));
-		req.getOutputVariables().add(Variables.newInstance("Data", "", dataSme));
+		req.setInputArguments(Map.of("Data", dataSme, "IncAmount", incAmountSme, "SleepTime", sleepTimeSme));
+		req.setOutputArguments(Map.of("Output", output));
 		
 		HttpOperationClient opClient = HttpOperationClient.builder()
 														.setHttpClient(http)

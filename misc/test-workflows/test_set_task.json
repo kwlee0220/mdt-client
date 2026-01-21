@@ -2,15 +2,30 @@
   "id" : "set-sleeptime",
   "type" : "mdt.task.builtin.SetTask",
   "dependencies" : [ ],
-  "variables" : [ {
-    "name" : "to",
-    "kind" : "OUTPUT",
-    "valueReference" : {
-      "twinId" : "Test",
-      "submodelIdShort" : "Simulation",
-      "idShortPath" : "SimulationInfo.Inputs[2].InputValue"
+  "inputVariables" : [ 
+    {
+      "@type": "mdt:variable:reference",
+      "name": "Data",
+      "description": "입력 데이터",
+      "reference": {
+        "@type": "mdt:ref:param",
+        "instanceId": "test",
+        "parameterExpr": "Data"
+      }
     }
-  } ],
+  ],
+  "outputVariables": [
+    {
+      "@type": "mdt:variable:reference",
+      "name": "Output",
+      "description": "증가된 데이터",
+      "reference": {
+        "@type": "mdt:ref:param",
+        "instanceId": "test",
+        "parameterExpr": "Data"
+      }
+    }
+  ],
   "options" : [ {
     "name" : "value",
     "optionType" : "string",
@@ -18,4 +33,3 @@
   } ],
   "labels" : [ ]
 }
-

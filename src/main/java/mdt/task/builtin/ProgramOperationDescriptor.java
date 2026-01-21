@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -16,14 +17,15 @@ import com.fasterxml.jackson.core.exc.StreamReadException;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
-import utils.KeyedValueList;
 import utils.UnitUtils;
 import utils.func.FOption;
 import utils.stream.FStream;
 
 import mdt.model.sm.ref.MDTSubmodelReference;
-import mdt.model.sm.variable.Variable;
+import mdt.workflow.model.ArgumentSpec;
+import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
 
 
 /**
@@ -37,8 +39,8 @@ public final class ProgramOperationDescriptor {
 	private List<String> m_commandLine = Collections.emptyList();
 	private @Nullable File m_workingDirectory;
 	private @Nullable MDTSubmodelReference m_operationSubmodelRef;
-	private KeyedValueList<String,Variable> m_inputVariables = KeyedValueList.with(Variable::getName);
-	private KeyedValueList<String,Variable> m_outputVariables = KeyedValueList.with(Variable::getName);
+	private Map<String,ArgumentSpec> m_inputArguments = Maps.newHashMap();
+	private Map<String,ReferenceArgumentSpec> m_outputArguments = Maps.newHashMap();
 	private boolean m_concurrent = false;
 	private @Nullable Duration m_timeout;
 	
@@ -79,24 +81,24 @@ public final class ProgramOperationDescriptor {
 		m_operationSubmodelRef = ref;
 	}
 
-	@JsonProperty("inputVariables")
-	public KeyedValueList<String,Variable> getInputVariables() {
-		return m_inputVariables;
+	@JsonProperty("inputArguments")
+	public Map<String,ArgumentSpec> getInputArguments() {
+		return m_inputArguments;
 	}
 
-	@JsonProperty("inputVariables")
-	public void setInputVariables(List<Variable> variables) {
-		m_inputVariables = KeyedValueList.from(variables, Variable::getName);
+	@JsonProperty("inputArguments")
+	public void setInputArguments(Map<String,ArgumentSpec> arguments) {
+		m_inputArguments = arguments;
 	}
 
-	@JsonProperty("outputVariables")
-	public KeyedValueList<String,Variable> getOutputVariables() {
-		return m_outputVariables;
+	@JsonProperty("outputArguments")
+	public Map<String,ReferenceArgumentSpec> getOutputArguments() {
+		return m_outputArguments;
 	}
 
-	@JsonProperty("outputVariables")
-	public void getOutputVariables(List<Variable> variables) {
-		m_outputVariables = KeyedValueList.from(variables, Variable::getName);
+	@JsonProperty("outputArguments")
+	public void getOutputArguments(Map<String,ReferenceArgumentSpec> arguments) {
+		m_outputArguments = arguments;
 	}
 
 	@JsonProperty("concurrent")
@@ -128,8 +130,8 @@ public final class ProgramOperationDescriptor {
 	@Override
 	public String toString() {
 		String smStr = ( m_operationSubmodelRef != null ) ? String.format(", submodel=%s", m_operationSubmodelRef) : "";
-		String inVarNames = FStream.from(m_inputVariables).map(Variable::getName).join(",", "{", "}");
-		String outVarNames = FStream.from(m_outputVariables).map(Variable::getName).join(",", "{", "}");
+		String inVarNames = FStream.from(m_inputArguments.keySet()).join(",", "{", "}");
+		String outVarNames = FStream.from(m_outputArguments.keySet()).join(",", "{", "}");
 		String workingDirStr = FOption.mapOrElse(getWorkingDirectory(),
 												f -> String.format(", working-dir=%s", f), "");
 		return String.format("command=%s%s%s, inputs=%s, outputs=%s",

@@ -1,45 +1,26 @@
 package mdt.task.builtin;
-
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import javax.annotation.concurrent.GuardedBy;
-
-import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
-import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
-import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
-
-import utils.DataUtils;
-import utils.LoggerSettable;
 import utils.Throwables;
-import utils.UnitUtils;
-import utils.async.CancellableWork;
-import utils.async.Guard;
-import utils.func.FOption;
-import utils.http.RESTfulRemoteException;
-import utils.stream.FStream;
+import utils.stream.KeyValueFStream;
 
-import mdt.client.operation.HttpOperationClient;
+import mdt.client.operation.AASOperationClient;
 import mdt.model.AASUtils;
-import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
-import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
-import mdt.model.sm.variable.Variable;
-import mdt.task.MDTTask;
+import mdt.task.AbstractMDTTask;
 import mdt.task.TaskException;
 import mdt.workflow.model.TaskDescriptor;
 
@@ -48,268 +29,68 @@ import mdt.workflow.model.TaskDescriptor;
  * 
  * @author Kang-Woo Lee (ETRI)
  */
-public class AASOperationTask implements MDTTask, CancellableWork, LoggerSettable {
+public class AASOperationTask extends AbstractMDTTask {
 	private static final Logger s_logger = LoggerFactory.getLogger(AASOperationTask.class);
 	private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 	private static final javax.xml.datatype.Duration INFINITE = AASUtils.DATATYPE_FACTORY.newDuration("P7D");
 
 	public static final String OPTION_OPERATION = "operation";
-	public static final String OPTION_POLL_INTERVAL = "poll";
-	public static final String OPTION_TIMEOUT = "timeout";	// optional
-	public static final String OPTION_LOG_LEVEL = "loglevel";
-	public static final String OPTION_UPDATE_OPVARS = "updateOperationVariables";
-	public static final String OPTION_SHOW_RESULT = "showResult";
 	
-	private final TaskDescriptor m_descriptor;
-	private Logger m_logger;
-	
-	private final Guard m_guard = Guard.create();
-	@GuardedBy("m_guard") private HttpOperationClient m_httpOp = null;
-	@GuardedBy("m_guard") private OperationResult m_opResult;
+	private AASOperationClient m_opClient = null;
 	
 	public AASOperationTask(TaskDescriptor descriptor) {
-		Preconditions.checkArgument(descriptor != null, "TaskDescriptor is null");
+		super(descriptor);
 		
-		m_descriptor = descriptor;
+		setLogger(s_logger);
 	}
 
 	@Override
-	public TaskDescriptor getTaskDescriptor() {
-		return m_descriptor;
-	}
-
-	@Override
-	public void run(MDTInstanceManager manager)
+	protected Map<String,SubmodelElement> invoke(MDTInstanceManager manager,
+												Map<String,SubmodelElement> inputArguments,
+												Map<String,SubmodelElement> outputArguments)
 		throws TimeoutException, InterruptedException, CancellationException, TaskException {
-		Instant started = Instant.now();
-		
 		TaskDescriptor descriptor = getTaskDescriptor();
-		
-		//
-		// TaskDescriptor의 'operation' 옵션에 기술된 Operation SubmodelElement를 획득한다.
-		//
-		Operation op;
-		MDTElementReference opRef
-					= descriptor.findOptionValue(OPTION_OPERATION)
-								.map(ElementReferences::parseExpr)
-								.orElseThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
 		try {
+			MDTElementReference opRef
+				= descriptor.findOptionValue(OPTION_OPERATION)
+							.map(ElementReferences::parseExpr)
+							.orElseThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
 			opRef.activate(manager);
-			SubmodelElement sme = opRef.read();
-			Preconditions.checkState(sme instanceof Operation, "Target SubmodelElement is not an Operation: " + sme);
-			op = (Operation)sme;
+			
+			Duration pollInterval = getPollInterval().orElse(DEFAULT_POLL_INTERVAL);
+			m_opClient = new AASOperationClient(opRef, pollInterval);
+	
+			// TaskDescriptor에 기술된 input variable을 이용해서 입력 인자를 설정한다.
+			Map<String,ElementValue> inputValues = KeyValueFStream.from(inputArguments)
+																	.mapValue(ElementValues::getValue)
+																	.toMap();
+			m_opClient.setInputVariableValues(inputValues);
+			
+			// AASOperation을 실행하고 완료될 때까지 대기한다.
+			m_opClient.run();
+
+			// 출력 변수의 값을 수집된 출력 값으로 갱신한다.
+			Map<String,ElementValue> outputValues = m_opClient.getOutputVariableValues();
+			KeyValueFStream.from(outputValues)
+							.match(outputArguments)
+							.forEach((argId, match) -> {
+								ElementValues.update(match._2, match._1);
+							});
+			getLogger().info("AASOperation completed: ref={}, out={}", opRef, outputValues);
+			
+			return outputArguments;
 		}
 		catch ( IOException e ) {
-			throw new TaskException("Failed to read Operation: ref=" + opRef, e);
+			throw new TaskException("fails to execute AASOperationTask", e);
 		}
-		
-		// TaskDescriptor에 기술된 input/output variable을 이용해서 in/inout OperationVariable을 설정한다.
-		setInputVariables(manager, op);
-		
-		OperationResult result = invokeOperation(opRef, op);
-		m_guard.run(() -> m_opResult = result);
-		
-		if ( !result.getSuccess() ) {
-			String fullMsg = FStream.from(m_opResult.getMessages())
-									.map(msg -> msg.getText())
-									.join(System.lineSeparator());
-			throw new TaskException(new RESTfulRemoteException("Operation failed: msg=" + fullMsg));
-		}
-		
-		if ( getLogger().isInfoEnabled() ) {
-			List<ElementValue> outArgs =  FStream.from(result.getOutputArguments())
-												.map(opv -> ElementValues.getValue(opv.getValue()))
-												.toList();
-			List<ElementValue> inoutArgs =  FStream.from(result.getInoutputArguments())
-													.map(opv -> ElementValues.getValue(opv.getValue()))
-													.toList();
-			getLogger().info("AASOperation completed: ref={}, out={}, inout={}", opRef, outArgs, inoutArgs);
-		}
-		
-		// ASOperation 수행 결과를 output task variable들에 반영한다.
-		updateOutputVariables(m_opResult);
-		
-		boolean updateOperationVariables = descriptor.findOptionValue(OPTION_UPDATE_OPVARS)
-														.map(DataUtils::asBoolean)
-														.orElse(false);
-		if ( updateOperationVariables ) {
-			try {
-				op.setInoutputVariables(result.getInoutputArguments());
-				op.setOutputVariables(result.getOutputArguments());
-				opRef.write(op);
-			}
-			catch ( IOException e ) {
-				getLogger().warn("Failed to update OperationVariables: ref=" + opRef, e);
-			}
-		}
-
-		// LastExecutionTime 정보가 제공된 경우 task의 수행 시간을 계산하여 해당 SubmodelElement를 갱신한다.
-		TaskUtils.updateLastExecutionTime(manager, m_descriptor, started, getLogger());
-		
-		boolean showResult = descriptor.findOptionValue(OPTION_SHOW_RESULT)
-										.map(DataUtils::asBoolean)
-										.orElse(false);
-		if ( showResult ) {
-			for ( OperationVariable opVar: result.getOutputArguments() ) {
-				ElementValue ev = ElementValues.getValue(opVar.getValue());
-				System.out.printf("[output] %s: %s%n", opVar.getValue().getIdShort(), ev.toDisplayString());
-			}
-			for ( OperationVariable opVar: result.getInoutputArguments() ) {
-				ElementValue ev = ElementValues.getValue(opVar.getValue());
-				System.out.printf("[inoutput] %s: %s%n", opVar.getValue().getIdShort(), ev.toDisplayString());
-			}
+		catch ( ExecutionException e ) {
+			Throwable cause = Throwables.unwrapThrowable(e);
+			throw new TaskException("fails to execute AASOperationTask", cause);
 		}
 	}
 
 	@Override
 	public boolean cancel() {
 		return false;
-	}
-
-	@Override
-	public boolean cancelWork() {
-		return true;
-	}
-
-	@Override
-	public Logger getLogger() {
-		return FOption.getOrElse(m_logger, s_logger);
-	}
-
-	@Override
-	public void setLogger(Logger logger) {
-		m_logger = logger;
-	}
-	
-	
-	private void setInputVariables(MDTInstanceManager manager, Operation op) throws TaskException {
-		TaskDescriptor descriptor = getTaskDescriptor();
-		
-		// TaskDescriptor에	설정된 input/output variable들을 활성화한다.
-		FStream.from(descriptor.getInputVariables())
-				.concatWith(FStream.from(descriptor.getOutputVariables()))
-				.castSafely(ReferenceVariable.class)
-				.forEach(refVar -> refVar.activate(manager));
-		
-		
-		// 명령어 인자로 parameter 값들이 설정된 경우에는, 설정된 값으로 OperationVariable을 채운다.
-		try {
-			for ( OperationVariable opv: op.getInputVariables() ) {
-				String opvId = opv.getValue().getIdShort();
-				Variable taskVar = descriptor.getInputVariables().getOfKey(opvId);
-				if ( taskVar != null ) {
-					ElementValue srcVal = taskVar.readValue();
-					SubmodelElement opvSme = opv.getValue();
-					ElementValues.update(opvSme, srcVal);
-					if ( getLogger().isInfoEnabled() ) {
-						getLogger().info("Set: input OperationVariable[{}]: {}", opvId, srcVal);
-					}
-				}
-			}
-			for ( OperationVariable opv: op.getInoutputVariables() ) {
-				String opvId = opv.getValue().getIdShort();
-				Variable taskVar = descriptor.getInputVariables().getOfKey(opvId);
-				if ( taskVar != null ) {
-					SubmodelElement varSme = taskVar.read();
-					ElementValues.update(opv.getValue(), ElementValues.getValue(varSme));
-				}
-			}
-		}
-		catch ( IOException e ) {
-			throw new TaskException("Failed to update OperationVariable", e);
-		}
-	}
-
-	private OperationResult invokeOperation(MDTElementReference opRef, Operation op)
-		throws TimeoutException, InterruptedException, CancellationException, TaskException {
-		TaskDescriptor descriptor = getTaskDescriptor();
-		
-		SubmodelService svc = opRef.getSubmodelService();
-		String opIdShortPath = opRef.getIdShortPathString();
-
-		Duration pollInterval = descriptor.findOptionValue(OPTION_POLL_INTERVAL)
-											.map(UnitUtils::parseSecondDuration)
-											.orElse(DEFAULT_POLL_INTERVAL);
-		Duration timeout = descriptor.findOptionValue(OPTION_TIMEOUT)
-									.map(UnitUtils::parseSecondDuration)
-									.orElse(null);
-		
-		OperationResult result = null;
-//		if ( !sync ) {
-			getLogger().info("invoking AASOperation: op={}, timeout={}, pollInterval={}",
-							opRef, timeout, pollInterval);	
-			try {
-				result = svc.runOperation(opIdShortPath, op.getInputVariables(),
-											op.getInoutputVariables(), timeout, pollInterval);
-			}
-			catch ( ExecutionException e ) {
-				Throwable cause = Throwables.unwrapThrowable(e);
-				if ( cause instanceof RESTfulRemoteException rmt ) {
-					if ( rmt.getCause() != null ) {
-						cause = Throwables.unwrapThrowable(rmt.getCause());
-					}
-				}
-				Throwables.throwIfInstanceOf(cause, TaskException.class);
-				throw new TaskException(cause);
-			}
-//		}
-//		else {
-//			getLogger().info("invoking AASOperation synchronously: op={}, timeout={}", opRef, timeout);	
-//			javax.xml.datatype.Duration jtimeout
-//								= FOption.mapOrElse(timeout,
-//													to -> AASUtils.DATATYPE_FACTORY.newDuration(to.toMillis()), INFINITE);
-//			result = svc.invokeOperationSync(opIdShortPath, op.getInputVariables(),
-//														op.getInoutputVariables(), jtimeout);
-//		}
-		
-		return result;
-	}
-	
-	private void updateOutputVariables(OperationResult opResult) {
-		TaskDescriptor descriptor = getTaskDescriptor();
-		
-		FStream.from(opResult.getInoutputArguments())
-				.forEachOrIgnore(opvar -> {
-					SubmodelElement resultSme = opvar.getValue();
-					Variable taskVar = descriptor.getOutputVariables().getOfKey(resultSme.getIdShort());
-					if ( taskVar != null ) {
-						// 업데이트 시에는 SubmodelElement 전체가 아닌 값만 추출하여 갱신하도록 변경함.
-						// 그렇지 않으면 idShort 값이 덮어써져서 구조가 깨지는 문제가 발생함.
-//						taskVar.update(resultSme);
-						
-						ElementValue resultValue = ElementValues.getValue(resultSme);
-						taskVar.updateValue(resultValue);
-						if ( getLogger().isInfoEnabled() ) {
-							getLogger().info("Updated: output variable[{}]: {}",
-											taskVar.getName(), ElementValues.getValue(resultSme));
-						}
-					}
-				});
-		FStream.from(opResult.getOutputArguments())
-				.forEachOrIgnore(opvar -> {
-					SubmodelElement resultSme = opvar.getValue();
-					Variable taskVar = descriptor.getOutputVariables().getOfKey(resultSme.getIdShort());
-					if ( taskVar != null ) {
-						// 업데이트 시에는 SubmodelElement 전체가 아닌 값만 추출하여 갱신하도록 변경함.
-						// 그렇지 않으면 idShort 값이 덮어써져서 구조가 깨지는 문제가 발생함.
-//						taskVar.update(resultSme);
-						
-						ElementValue resultValue = ElementValues.getValue(resultSme);
-						taskVar.updateValue(resultValue);
-						if ( getLogger().isInfoEnabled() ) {
-							getLogger().info("Updated: output variable[{}]: {}",
-											taskVar.getName(), ElementValues.getValue(resultSme));
-						}
-					}
-				});
-	}
-	private Duration parseDuration(Object seconds) {
-		try {
-			long millSeconds = Math.round(DataUtils.asDouble(seconds) * 1000);
-			return Duration.ofMillis(millSeconds);
-		}
-		catch ( NumberFormatException e ) {
-			return UnitUtils.parseDuration("" + seconds);
-		}
 	}
 }

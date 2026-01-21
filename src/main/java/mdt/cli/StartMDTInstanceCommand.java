@@ -21,7 +21,7 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "start",
+	name = "instance",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,

@@ -1,7 +1,5 @@
 package mdt.model.instance;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.google.common.base.Preconditions;
 
@@ -9,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import javax.annotation.Nullable;
 
 
 /**

@@ -16,7 +16,6 @@ import java.util.Set;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 
-import org.checkerframework.com.google.common.base.Preconditions;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.DeserializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
@@ -31,9 +30,13 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEnvironment;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
 import lombok.experimental.UtilityClass;
+
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
 
 import utils.Throwables;
 import utils.http.HttpRESTfulClient;
@@ -44,9 +47,6 @@ import utils.stream.FStream;
 
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.instance.MDTInstanceManagerException;
-
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
 
 
 /**

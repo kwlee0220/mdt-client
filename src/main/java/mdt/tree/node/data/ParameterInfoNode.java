@@ -40,7 +40,7 @@ public final class ParameterInfoNode extends TerminalNode {
 	
 	private String getFieldStringOrNull(SubmodelElement smc, String field) {
 		return SubmodelUtils.findPropertyById(smc, field)
-							.map(idxed -> idxed.value().getValue())
+							.map(f -> f.getValue())
 							.orElse(null);
 	}
 	

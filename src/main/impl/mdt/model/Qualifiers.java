@@ -1,12 +1,12 @@
 package mdt.model;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Qualifier;
 
 import lombok.experimental.UtilityClass;
 
-import utils.func.FOption;
 import utils.stream.FStream;
 
 
@@ -25,9 +25,10 @@ public class Qualifiers {
 	public static final String QUALIFIER_UPDATE_OPVAR = "http://mdt.etri.re.kr/quantifier/operation/updateVariable";
 	public static final String QUALIFIER_LAST_EXEC_TIME = "http://mdt.etri.re.kr/quantifier/operation/lastExecutionTime";
 	
-	public static FOption<String> findQualifierByType(List<Qualifier> qualifiers, String type) {
+	public static Optional<String> findQualifierByType(List<Qualifier> qualifiers, String type) {
 		return FStream.from(qualifiers)
 						.findFirst(q -> type.equals(q.getType()))
-						.map(Qualifier::getValue);
+						.map(Qualifier::getValue)
+						.toOptional();
 	}
 }

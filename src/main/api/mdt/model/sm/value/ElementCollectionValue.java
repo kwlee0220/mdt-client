@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -31,8 +30,15 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	public ElementCollectionValue(Map<String,? extends ElementValue> elements) {
 		m_fields = Maps.newLinkedHashMap(elements);
 	}
+
+	@Override
+	public Map<String,Object> toValueObject() {
+		return KeyValueFStream.from(m_fields)
+								.mapValue(ElementValue::toValueObject)
+								.toMap();
+	}
 	
-	public Map<String,? extends ElementValue> getFieldAll() {
+	public Map<String,? extends ElementValue> getFieldMap() {
 		return m_fields;
 	}
 	
@@ -54,27 +60,55 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 		}
 	}
 	
-	public static ElementCollectionValue parseValueJsonNode(SubmodelElementCollection smc, JsonNode vnode)
+	public void update(SubmodelElementCollection smc) {
+		FStream.from(smc.getValue())
+				.tagKey(v -> v.getIdShort())
+				.match(m_fields)
+				.forEach(match -> ElementValues.update(match.value()._1, match.value()._2));
+	}
+	
+	public static ElementCollectionValue from(SubmodelElementCollection smc) {
+		var members = FStream.from(smc.getValue())
+							.mapToKeyValue(member -> KeyValue.of(member.getIdShort(), ElementValues.getValue(member)))
+							.toMap();
+		return new ElementCollectionValue(members);
+	}
+	
+	public static ElementCollectionValue fromValueObject(Object obj, SubmodelElementCollection smc)
+		throws IOException {
+		if ( obj instanceof Map vmap ) {
+			Map<String,ElementValue> smevMap
+						= FStream.from(smc.getValue())
+								.mapToKeyValueOrThrow(member -> {
+									Object fieldValue = vmap.get(member.getIdShort());
+									ElementValue elmVal = (fieldValue != null)
+			                                                ? ElementValues.fromValueObject(fieldValue, member)
+			                                                : null;
+									return KeyValue.of(member.getIdShort(), elmVal);
+								})
+								.toMap();
+			return new ElementCollectionValue(smevMap);
+		}
+		else {
+			throw new IOException("ElementCollectionValue value is not Map: obj=" + obj);
+		}
+	}
+	
+	public static ElementCollectionValue parseValueJsonNode(JsonNode vnode, SubmodelElementCollection smc)
 		throws IOException {
 		if ( !vnode.isObject() ) {
-			throw new IOException("JsonNode is not 'Object' node, JsonNode=" + vnode);
+			throw new IOException("ElementCollectionValue expects an 'Object' node: JsonNode=" + vnode);
 		}
 		
-		Map<String,ElementValue> values = Maps.newLinkedHashMap();
-		for ( SubmodelElement elmNode : smc.getValue() ) {
-			JsonNode field = JacksonUtils.getFieldOrNull(vnode, elmNode.getIdShort());
-			if ( field != null ) {
-				values.put(elmNode.getIdShort(), ElementValues.parseValueJsonNode(elmNode, field));
-			}
-		}
-		return new ElementCollectionValue(values);
-	}
-
-	@Override
-	public Object toValueJsonObject() {
-		return KeyValueFStream.from(m_fields)
-								.mapValue(elmVal -> ((AbstractElementValue)elmVal).toValueJsonObject())
-								.toMap();
+		var valueFields
+			= FStream.from(smc.getValue())
+					.mapToKeyValueOrThrow(member -> {
+						JsonNode field = JacksonUtils.getFieldOrNull(vnode, member.getIdShort());
+						ElementValue fieldVal = (field != null) ? ElementValues.parseValueJsonNode(field, member) : null;
+						return KeyValue.of(member.getIdShort(), fieldVal);
+					})
+					.toMap(new LinkedHashMap<>());
+		return new ElementCollectionValue(valueFields);
 	}
 	
 	@Override

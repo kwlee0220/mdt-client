@@ -6,12 +6,12 @@ import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.AASOperationTask;
 import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -45,20 +45,20 @@ public class SampleWorkflowDescriptor3_1 {
 	}
 	
 	private static TaskDescriptor newHttpTask(MDTInstanceManager manager, String taskId) {
-		TaskDescriptor task = new TaskDescriptor(taskId, "", HttpTask.class.getName());
+		TaskDescriptor descriptor = new TaskDescriptor(taskId, "", HttpTask.class.getName());
 		
 		MDTElementReference opRef = DefaultElementReference.newInstance("test", "AddAndSleep", "Operation");
-		task.addOption(AASOperationTask.OPTION_OPERATION, opRef.toStringExpr());
-		task.addOption(AASOperationTask.OPTION_POLL_INTERVAL, "1.0");
-		task.addOption(AASOperationTask.OPTION_TIMEOUT, "60");
-		task.addOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
-		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
+		descriptor.addOption(AASOperationTask.OPTION_OPERATION, opRef.toStringExpr());
+		descriptor.addOption(AASOperationTask.OPTION_POLL_INTERVAL, "1.0");
+		descriptor.addOption(AASOperationTask.OPTION_TIMEOUT, "60");
+		descriptor.addOption(AASOperationTask.OPTION_LOG_LEVEL, "info");
+		descriptor.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "test:AddAndSleep"));
 		
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("Data", "", "param:test:Data"));
-		task.getInputVariables().addOrReplace(Variables.newValueVariable("IncAmount", "", "7"));
-		task.getInputVariables().addOrReplace(Variables.newReferenceVariable("SleepTime", "", "param:test:SleepTime"));
-		task.getOutputVariables().addOrReplace(Variables.newReferenceVariable("Output", "", "param:test:Data"));
+		descriptor.addInputArgumentSpec("Data", ArgumentSpec.reference("param:test:Data"));
+		descriptor.addInputArgumentSpec("IncAmount", ArgumentSpec.literal(7));
+		descriptor.addInputArgumentSpec("SleepTime", ArgumentSpec.reference("param:test:SleepTime"));
+		descriptor.addOutputArgumentSpec("Output", ArgumentSpec.reference("param:test:Data"));
 		
-		return task;
+		return descriptor;
 	}
 }

@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Objects;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
@@ -18,7 +17,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 
-import utils.Indexed;
 import utils.stream.FStream;
 
 import mdt.client.HttpMDTManager;
@@ -145,10 +143,8 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 		List<SubmodelElement> argList = FStream.from(((SubmodelElementList)argValue).getValue())
 												.castSafely(SubmodelElementCollection.class)
 												.map(smc -> {
-													String argName = SubmodelUtils.getFieldById(smc, idField, Property.class)
-																					.value().getValue();
+													String argName = SubmodelUtils.getStringFieldById(smc, idField);
 													SubmodelElement field = SubmodelUtils.findFieldById(smc, valueField)
-																							.map(Indexed::value)
 																							.orElse(null);
 													field.setIdShort(argName);
 													return field;
@@ -333,7 +329,7 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 			String field = String.format("%sID", argKindStr);
 			SubmodelElementList argsList = (SubmodelElementList)m_submodelRef.get().getSubmodelElementByPath(pathPrefix);
 			argIndex = SubmodelUtils.findFieldSMCByIdValue(argsList.getValue(), field, m_argSpec)
-									.getOrThrow(() -> new ResourceNotFoundException("MDTArgument", "arg=" + m_argSpec))
+									.orElseThrow(() -> new ResourceNotFoundException("MDTArgument", "arg=" + m_argSpec))
 									.index();
 		}
 		

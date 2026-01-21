@@ -2,7 +2,6 @@ package mdt.workflow;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -42,7 +41,8 @@ public class Workflow {
         m_creationTime = creationTime;
         m_startTime = startTime;
         m_finishTime = finishTime;
-        m_tasks = sortTopologically(tasks);
+//        m_tasks = sortTopologically(tasks);
+        m_tasks = tasks;
     }
 	
 	public Workflow(Builder builder) {
@@ -55,7 +55,8 @@ public class Workflow {
 		m_creationTime = builder.m_creationTime;
 		m_startTime = builder.m_startTime;
 		m_finishTime = builder.m_finishTime;
-		m_tasks = sortTopologically(builder.m_tasks);
+//		m_tasks = sortTopologically(builder.m_tasks);
+        m_tasks = builder.m_tasks;
 	}
 
 	public String getName() {
@@ -95,28 +96,28 @@ public class Workflow {
 							m_name, m_modelId, m_status, nodesStatusStr);
 	}
 	
-	private static List<NodeTask> sortTopologically(List<NodeTask> nodeTasks) {
-		List<NodeTask> remains = Lists.newArrayList(nodeTasks);
-		List<NodeTask> sorted = Lists.newArrayList();
-		Set<String> sortedNames = FStream.from(sorted)
-                                            .map(NodeTask::getTaskId)
-                                            .toSet();
-		
-		while ( remains.size() > 0 ) {
-			NodeTask task = remains.remove(0);
-			
-			if ( FStream.from(task.getDependents())
-						.exists(t -> !sortedNames.contains(t)) ) {
-				remains.add(task);
-			}
-			else {
-				sorted.add(task);
-				sortedNames.add(task.getTaskId());
-			}
-		}
-		
-		return sorted;
-	}
+//	private static List<NodeTask> sortTopologically(List<NodeTask> nodeTasks) {
+//		List<NodeTask> remains = Lists.newArrayList(nodeTasks);
+//		List<NodeTask> sorted = Lists.newArrayList();
+//		Set<String> sortedNames = FStream.from(sorted)
+//                                            .map(NodeTask::getTaskId)
+//                                            .toSet();
+//		
+//		while ( remains.size() > 0 ) {
+//			NodeTask task = remains.remove(0);
+//			
+//			if ( FStream.from(task.getDependents())
+//						.exists(t -> !sortedNames.contains(t)) ) {
+//				remains.add(task);
+//			}
+//			else {
+//				sorted.add(task);
+//				sortedNames.add(task.getTaskId());
+//			}
+//		}
+//		
+//		return sorted;
+//	}
 	
 	public static Builder builder() {
 		return new Builder();

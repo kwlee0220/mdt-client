@@ -10,6 +10,12 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.AasSubmodelElements;
+import org.eclipse.digitaltwin.aas4j.v3.model.AnnotatedRelationshipElement;
+import org.eclipse.digitaltwin.aas4j.v3.model.Blob;
+import org.eclipse.digitaltwin.aas4j.v3.model.Capability;
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
+import org.eclipse.digitaltwin.aas4j.v3.model.Entity;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.Key;
 import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
@@ -18,6 +24,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.Range;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
+import org.eclipse.digitaltwin.aas4j.v3.model.RelationshipElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
@@ -46,15 +53,14 @@ import lombok.experimental.UtilityClass;
 import utils.CSV;
 import utils.Indexed;
 import utils.InternalException;
-import utils.func.FOption;
 import utils.func.Funcs;
 import utils.func.Try;
 import utils.stream.FStream;
 
-import mdt.aas.DataType;
 import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
-import mdt.model.ReferenceUtils;
+import mdt.model.MDTSemanticIds;
+import mdt.model.ModelValidationException;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
@@ -100,7 +106,7 @@ public class SubmodelUtils {
 		return switch ( matches.size() ) {
 			case 0 -> matches;
 			case 2 -> List.of(matches.get(0));
-			case 4 -> List.of(matches.get(1));
+			case 4 -> List.of(matches.get(0));
 			case 5 -> List.of(matches.get(0), matches.get(2));
 			default -> throw new AssertionError();
 		};
@@ -258,9 +264,9 @@ public class SubmodelUtils {
 	public static boolean containsFieldById(SubmodelElementCollection smc, String fieldName) {
 		return Funcs.findFirst(smc.getValue(), field -> field.getIdShort().equals(fieldName)).isPresent();
 	}
-	public static Optional<Indexed<SubmodelElement>> findFieldById(SubmodelElement smc, String fieldName) {
+	public static Optional<SubmodelElement> findFieldById(SubmodelElement smc, String fieldName) {
 		if ( smc instanceof SubmodelElementCollection coll ) {
-			return Funcs.findFirstIndexed(coll.getValue(), field -> field.getIdShort().equals(fieldName));
+			return Funcs.findFirst(coll.getValue(), field -> field.getIdShort().equals(fieldName));
 		}
 		else {
 			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
@@ -276,12 +282,12 @@ public class SubmodelUtils {
 			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
 		}
 	}
-	public static Optional<Indexed<Property>> findPropertyById(SubmodelElement smc, String fieldName) {
+	public static Optional<Property> findPropertyById(SubmodelElement smc, String fieldName) {
 		return findFieldById(smc, fieldName)
-				.filter(idxed -> idxed.value() instanceof Property)
-				.map(idxed -> Indexed.with((Property) idxed.value(), idxed.index()));
+				.filter(field -> field instanceof Property)
+				.map(field -> (Property)field);
 	}
-	public static Indexed<SubmodelElement> getFieldById(SubmodelElement smc, String fieldName)
+	public static SubmodelElement getFieldById(SubmodelElement smc, String fieldName)
 		throws IllegalArgumentException {
 		return findFieldById(smc, fieldName)
 					.orElseThrow(() -> {
@@ -293,30 +299,34 @@ public class SubmodelUtils {
 						return new IllegalArgumentException(msg);
 					});
 	}
-	public static <T extends SubmodelElement> Indexed<T> getFieldById(SubmodelElement smc,
-																		String fieldName,
-	                                            						Class<T> outputClass)
-        throws IllegalArgumentException {
-		Indexed<SubmodelElement> idxed = getFieldById(smc, fieldName);
-		return Indexed.with(cast(idxed.value(), outputClass), idxed.index());
+	public static <T extends SubmodelElement> T getFieldById(SubmodelElement smc, String fieldName,
+                                    						Class<T> outputClass) throws IllegalArgumentException {
+		SubmodelElement field = getFieldById(smc, fieldName);
+		return cast(field, outputClass);
 	}
 	
-	public static Indexed<Property> getPropertyById(SubmodelElementCollection smc, String fieldName) {
-		Indexed<SubmodelElement> idxed = getFieldById(smc, fieldName);
-		if ( idxed.value() instanceof Property prop ) {
-			return Indexed.with(prop, idxed.index());
+	public static Property getPropertyFieldById(SubmodelElement smc, String fieldName) {
+		Preconditions.checkArgument(smc instanceof SubmodelElementCollection,
+									"Not a SubmodelElementCollection: " + smc.getClass());
+		
+		SubmodelElement field = getFieldById(smc, fieldName);
+		if ( field instanceof Property prop) {
+			return prop;
 		}
 		else {
 			throw new IllegalArgumentException("Not a Property: " + fieldName);
 		}
 	}
-	public static Indexed<String> getPropertyValueById(SubmodelElement smc, String fieldName) {
-		Indexed<SubmodelElement> idxed = getFieldById(smc, fieldName);
-		if ( idxed.value() instanceof Property prop ) {
-			return Indexed.with(prop.getValue(), idxed.index());
+	public static String getStringFieldById(SubmodelElement smc, String fieldName) {
+		Preconditions.checkArgument(smc instanceof SubmodelElementCollection,
+									"Not a SubmodelElementCollection: " + smc.getClass());
+		
+		SubmodelElement field = getFieldById(smc, fieldName);
+		if ( field instanceof Property prop && prop.getValueType() == DataTypeDefXsd.STRING) {
+			return prop.getValue();
 		}
 		else {
-			throw new IllegalArgumentException("Not a Property: " + fieldName);
+			throw new IllegalArgumentException("Not a Property(xs:string): " + fieldName);
 		}
 	}
 
@@ -357,7 +367,7 @@ public class SubmodelUtils {
 	 * @param value		찾을 값.
 	 * @return	검색된 SubmodelElementCollection
 	 */
-	public static FOption<Indexed<SubmodelElementCollection>>
+	public static Optional<Indexed<SubmodelElementCollection>>
 	findFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) {
 		return FStream.from(smeList)
 						.castSafely(SubmodelElementCollection.class)
@@ -366,7 +376,7 @@ public class SubmodelUtils {
 							SubmodelElementCollection smc = idxed.value();
 							return findFieldById(smc, fieldName)
 									.filter(isme -> {
-										if ( isme.value() instanceof Property prop ) {
+										if ( isme instanceof Property prop ) {
                                             return prop.getValue().equals(value);
                                         }
                                         else {
@@ -374,12 +384,13 @@ public class SubmodelUtils {
                                         }
 									})
 									.isPresent();
-						});
+						})
+						.toOptional();
 	}
 	public static Indexed<SubmodelElementCollection>
 	getFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) throws IllegalArgumentException {
 		return findFieldSMCByIdValue(smeList, fieldName, value)
-				.getOrThrow(() -> {
+				.orElseThrow(() -> {
 					String msg = String.format("Failed to find SMC of %s=%s", fieldName, value);
 					return new IllegalArgumentException(msg);
 				});
@@ -399,19 +410,28 @@ public class SubmodelUtils {
 												.value(values)
 												.build();
 	}
+
+	public static String getSemanticIdStringOrNull(Reference semanticId) {
+		return (semanticId != null) ? semanticId.getKeys().get(0).getValue() : null;
+	}
 	
 	public static boolean isInformationModel(Submodel sm) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return InformationModel.SEMANTIC_ID.equals(semanticId);
 	}
 	
 	public static boolean isDataSubmodel(Submodel sm) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return Data.SEMANTIC_ID.equals(semanticId);
 	}
 	
+	public static boolean isTimeSeriesSubmodel(Submodel sm) {
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		return TimeSeries.SEMANTIC_ID.equals(semanticId);
+	}
+	
 	public static boolean isParameterValue(SubmodelElement sme) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sme.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sme.getSemanticId());
 		return ParameterValue.SEMANTIC_ID.equals(semanticId);
 	}
 	
@@ -462,49 +482,184 @@ public class SubmodelUtils {
 	}
 	
 	public static boolean isAISubmodel(Submodel sm) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return AI.SEMANTIC_ID.equals(semanticId);
 	}
 	
 	public static boolean isSimulationSubmodel(Submodel sm) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return Simulation.SEMANTIC_ID.equals(semanticId);
 	}
 	
 	public static boolean isEquipment(SubmodelElement element) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(element.getSemanticId());
 		return Equipment.SEMANTIC_ID.equals(semanticId);
 	}
 	
-	public static boolean isOperation(SubmodelElement element) {
-		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
+	public static boolean isAASOperation(SubmodelElement element) {
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(element.getSemanticId());
 		return Operation.SEMANTIC_ID.equals(semanticId);
 	}
 	
-	public static String getTypeString(SubmodelElement element) {
-		if ( element instanceof Property prop ) {
-			DataType<?> type = DataTypes.fromAas4jDatatype(prop.getValueType());
-			return type.getId();
+	public static class OperationSubmodelDescriptor {
+		private final String m_id;
+		private final String m_semanticIdString;
+		private final Map<String,SubmodelArgumentDescriptor> m_inputs;
+		private final Map<String,SubmodelArgumentDescriptor> m_outputs;
+		
+		public OperationSubmodelDescriptor(String id, String semanticIdStr,
+											Map<String,SubmodelArgumentDescriptor> inputs,
+											Map<String,SubmodelArgumentDescriptor> outputs) {
+			m_id = id;
+			m_semanticIdString = semanticIdStr;
+			m_inputs = inputs;
+			m_outputs = outputs;
 		}
-		else if ( element instanceof File ) {
-			return "File";
+		
+		public String getId() {
+			return m_id;
 		}
-		else if ( element instanceof SubmodelElementCollection ) {
-			return "SubmodelElementCollection";
+		
+		public String getSemanticIdString() {
+			return m_semanticIdString;
 		}
-		else if ( element instanceof SubmodelElementList ) {
-			return "SubmodelElementList";
+		
+		public Map<String,SubmodelArgumentDescriptor> getInputs() {
+			return m_inputs;
 		}
-		else if ( element instanceof MultiLanguageProperty ) {
-			return "MultiLanguageProperty";
+		
+		public Map<String,SubmodelArgumentDescriptor> getOutputs() {
+			return m_outputs;
 		}
-		else if ( element instanceof Range ) {
-			return "Range";
+	}
+	
+	public static class SubmodelArgumentDescriptor {
+		private final String m_id;
+		private final int m_index;
+		private final String m_idShortPath;
+		private final SubmodelElement m_sme;
+		
+		public SubmodelArgumentDescriptor(String id, int index, String idShortPath, SubmodelElement sme) {
+			m_id = id;
+			m_index = index;
+			m_idShortPath = idShortPath;
+			m_sme = sme;
 		}
-		else {
-			String msg = String.format("Unsupported SubmodelElement: type=%s", element.getClass());
-			throw new IllegalArgumentException(msg);
+		
+		public String getId() {
+			return m_id;
 		}
+		
+		public int getIndex() {
+			return m_index;
+		}
+		
+		public String idShortPath() {
+			return m_idShortPath;
+		}
+		
+		public SubmodelElement getSubmodelElement() {
+			return m_sme;
+		}
+	}
+	
+	public static OperationSubmodelDescriptor loadOperationSubmodelDescriptor(Submodel submodel) {
+		// 입출력 인자 SubmodelElement를 가져온다.
+		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+		if ( semanticId == null ) {
+			throw new ModelValidationException("Submodel semanticId is missing: submodel idShort="
+                                                + submodel.getIdShort());
+		}
+		String pathPrefix = switch ( semanticId ) {
+            case MDTSemanticIds.SUBMODEL_AI -> "AIInfo";
+            case MDTSemanticIds.SUBMODEL_SIMULATION -> "SimulationInfo";
+            default ->
+                throw new ModelValidationException("Unsupported Operation Submodel semanticId: " + semanticId);
+        };
+        SubmodelElementList inputsSml = traverse(submodel, pathPrefix + ".Inputs", SubmodelElementList.class);
+        SubmodelElementList outputsSml = traverse(submodel, pathPrefix + ".Outputs", SubmodelElementList.class);
+        
+        return new OperationSubmodelDescriptor(submodel.getIdShort(), semanticId,
+								        		loadArgumentList(inputsSml, pathPrefix + ".Inputs", "Input"),
+								        		loadArgumentList(outputsSml, pathPrefix + ".Outputs", "Output"));
+	}
+	private Map<String,SubmodelArgumentDescriptor> loadArgumentList(SubmodelElementList argSmcList,
+																	String idShortPathPrefix, String argKind) {
+		return FStream.from(argSmcList.getValue())
+				.zipWithIndex()
+				.map(idxed -> {
+					Property idProp = SubmodelUtils.traverse(idxed.value(), argKind+"ID", Property.class);
+					SubmodelElement argValue = SubmodelUtils.traverse(idxed.value(), argKind+"Value");
+					String idShortPath = String.format("%s[%d].%sValue", idShortPathPrefix, idxed.index(), argKind);
+					return new SubmodelArgumentDescriptor(idProp.getValue(), idxed.index(), idShortPath, argValue);
+				})
+				.tagKey(SubmodelArgumentDescriptor::getId)
+				.toMap();
+	}
+	
+	private static final class SMETypeDesc {
+		private final String m_name;
+		private final AasSubmodelElements m_type;
+		private final Class<? extends SubmodelElement> m_elementClass;
+		
+		SMETypeDesc(String name, AasSubmodelElements type,
+								Class<? extends SubmodelElement> elementCls) {
+			m_name = name;
+			m_type = type;
+			m_elementClass = elementCls;
+		}
+		
+		public String getName() {
+			return m_name;
+		}
+		
+		public AasSubmodelElements getType() {
+			return m_type;
+		}
+		
+		public Class<? extends SubmodelElement> getElementClass() {
+			return m_elementClass;
+		}
+	};
+	
+	private static final List<SMETypeDesc> TYPE_DESCS = Lists.newArrayList();
+	static {
+		TYPE_DESCS.add(new SMETypeDesc("Property", AasSubmodelElements.PROPERTY, Property.class));
+		TYPE_DESCS.add(new SMETypeDesc("SubmodelElementCollection", AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION,
+										SubmodelElementCollection.class));
+		TYPE_DESCS.add(new SMETypeDesc("SubmodelElementList", AasSubmodelElements.SUBMODEL_ELEMENT_LIST,
+										SubmodelElementList.class));
+		TYPE_DESCS.add(new SMETypeDesc("File", AasSubmodelElements.FILE, File.class));
+		TYPE_DESCS.add(new SMETypeDesc("MultiLanguageProperty", AasSubmodelElements.MULTI_LANGUAGE_PROPERTY,
+										MultiLanguageProperty.class));
+		TYPE_DESCS.add(new SMETypeDesc("Range", AasSubmodelElements.RANGE, Range.class));
+		TYPE_DESCS.add(new SMETypeDesc("Operation", AasSubmodelElements.OPERATION,
+										org.eclipse.digitaltwin.aas4j.v3.model.Operation.class));
+		TYPE_DESCS.add(new SMETypeDesc("AnnotatedRelationshipElement", AasSubmodelElements.ANNOTATED_RELATIONSHIP_ELEMENT,
+										AnnotatedRelationshipElement.class));
+		TYPE_DESCS.add(new SMETypeDesc("Blob", AasSubmodelElements.BLOB, Blob.class));
+		TYPE_DESCS.add(new SMETypeDesc("Capability", AasSubmodelElements.CAPABILITY, Capability.class));
+		TYPE_DESCS.add(new SMETypeDesc("Entity", AasSubmodelElements.ENTITY, Entity.class));
+		TYPE_DESCS.add(new SMETypeDesc("RelationshipElement",
+												AasSubmodelElements.RELATIONSHIP_ELEMENT, RelationshipElement.class));
+	};
+	
+	private static SMETypeDesc getTypeDescriptor(SubmodelElement element) {
+		return FStream.from(TYPE_DESCS)
+						.findFirst(desc -> desc.m_elementClass.isInstance(element))
+						.getOrThrow(() -> new IllegalArgumentException("Unknown SubmodelElement type: " + element.getClass()));
+	}
+	
+	public static AasSubmodelElements getSubmodelElementType(SubmodelElement element) {
+		return getTypeDescriptor(element).getType();
+	}
+	
+	public static String getValueTypeString(SubmodelElement element) {
+		SMETypeDesc desc = getTypeDescriptor(element);
+		return switch ( desc.m_name ) {
+			case "Property" -> DataTypes.fromAas4jDatatype(((Property)element).getValueType()).getId();
+			default -> desc.m_name;
+		};
 	}
 
 	private static @Nullable SubmodelElement hop(SubmodelElement sme, String seg) {
@@ -659,14 +814,6 @@ public class SubmodelUtils {
 			ObjectNode root = (ObjectNode)node;
 			
 			return DefaultSubmodelReference.parseJson(root);
-//			String refType = FOption.mapOrElse(node.get(DefaultSubmodelReference.FIELD_REFERENCE_TYPE), JsonNode::asText,
-//												ElementReferenceType.DEFAULT.name());
-//			
-//			SubmodelReferenceType type = SubmodelReferenceType.fromName(refType);
-//			return switch ( type ) {
-//				case DEFAULT -> DefaultSubmodelReference.parseJson(root);
-//				default -> throw new IllegalArgumentException("Unknown SubmodelReference type: " + type);
-//			};
 		}
 	}
 

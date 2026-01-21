@@ -20,6 +20,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import utils.io.TempFile;
 
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.FileValue;
 
 
@@ -29,12 +30,22 @@ import mdt.model.sm.value.FileValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface SubmodelService {
+	public static enum Modifier {
+		NONE,
+		METADATA,
+		VALUE
+	};
+	
+	public Submodel getSubmodel(Modifier modifier);
+	
 	/**
 	 * 본 서비스에 통해 제공하는 {@link Submodel} 객체를 반환한다.
 	 *
 	 * @return	{@link Submodel} 객체
 	 */
-	public Submodel getSubmodel();
+	public default Submodel getSubmodel() {
+		return getSubmodel(Modifier.NONE);
+	}
 	
 	/**
 	 * 본 서비스에 통해 제공하는 {@link Submodel} 객체를 설정한다.
@@ -55,11 +66,20 @@ public interface SubmodelService {
 	 * 주어진 idShort에 해당하는 SubmodelElement 객체를 반환한다.
 	 *
 	 * @param idShortPath    SubmodelElement 객체의 idShortPath.
+	 * @param modifier       SubmodelElement 조회시 적용할 Modifier.
 	 * @return {@link SubmodelElement} 객체
 	 * @throws ResourceNotFoundException 해당 idShortPath에 해당하는 SubmodelElement 객체가 존재하지
 	 *                                   않는 경우
 	 */
-	public SubmodelElement getSubmodelElementByPath(String idShortPath) throws ResourceNotFoundException;
+	public SubmodelElement getSubmodelElementByPath(String idShortPath, Modifier modifier)
+		throws ResourceNotFoundException;
+	
+	public default SubmodelElement getSubmodelElementByPath(String idShortPath) throws ResourceNotFoundException {
+		return getSubmodelElementByPath(idShortPath, Modifier.NONE);
+	}
+	
+	public ElementValue getSubmodelElementValueByPath(String idShortPath, SubmodelElement prototype)
+		throws ResourceNotFoundException;
 	
 	/**
 	 * 주어진 SubmodelElement를 Submodel 객체 하위로 새로 추가한다.
@@ -83,7 +103,7 @@ public interface SubmodelService {
 	public SubmodelElement addSubmodelElementByPath(String idShortPath, SubmodelElement element);
 	
 	/**
-	 * 주어진 idShortPath에 해당하는 SubmodelElement 객체를 주어진 {@link element}로 대체시킨다.
+	 * 주어진 idShortPath에 해당하는 SubmodelElement 객체를 주어진 element로 대체시킨다.
 	 * 
 	 * @param idShortPath Submodel내의 대체 대상 idShortPath.
 	 * @param element     새 SubmodelElement 객체.
@@ -94,7 +114,7 @@ public interface SubmodelService {
 	
 	/**
 	 * 주어진 idShortPath에 해당하는 SubmodelElement 객체의 값을
-	 * 주어진 {@link element}의 값으로 변경한다.
+	 * 주어진 element의 값으로 변경한다.
 	 * 
 	 * @param idShortPath	Submodel내의 변경 대상 idShortPath.
 	 * @param element	    변경할 값을 가진 SubmodelElement 객체.
@@ -110,7 +130,7 @@ public interface SubmodelService {
 	 * @param valueJsonString	변경할 SubmodelElement의 json 문자열.
 	 * @throws ResourceNotFoundException	해당 idShortPath에 해당하는 SubmodelElement 객체가 존재하지 않는 경우.
 	 */
-	public void updateSubmodelElementByPath(String idShortPath, String valueJsonString)
+	public void updateSubmodelElementValueByPath(String idShortPath, String valueJsonString)
 		throws ResourceNotFoundException;
 	
 	/**
@@ -264,9 +284,9 @@ public interface SubmodelService {
 	 * @throws ExecutionException	기타 이유로 연산이 실패한 경우.
 	 */
 	public default OperationResult runOperation(String operationPath,
-													List<OperationVariable> inputArguments,
-													List<OperationVariable> inoutputArguments,
-													Duration timeout, Duration pollInterval)
+												List<OperationVariable> inputArguments,
+												List<OperationVariable> inoutputArguments,
+												Duration timeout, Duration pollInterval)
 		throws InterruptedException, CancellationException, TimeoutException, ExecutionException {
 		javax.xml.datatype.Duration jtimeout = (timeout != null)
 											? AASUtils.DATATYPE_FACTORY.newDuration(timeout.toMillis())

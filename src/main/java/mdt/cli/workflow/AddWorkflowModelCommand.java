@@ -48,6 +48,11 @@ public class AddWorkflowModelCommand extends AbstractMDTCommand {
 		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
 		
 		WorkflowModel wfDesc = WorkflowModel.parseJsonFile(m_file);
+		
+		
+		
+		
+		
 		while ( true ) {
 			try {
 				wfMgr.addWorkflowModel(wfDesc);

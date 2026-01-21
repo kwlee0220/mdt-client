@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 
@@ -30,7 +31,6 @@ import lombok.experimental.UtilityClass;
 import utils.DataUtils;
 import utils.Tuple;
 import utils.Utilities;
-import utils.func.Try;
 
 import mdt.model.ModelGenerationException;
 
@@ -129,9 +129,8 @@ public class DataTypes {
 	}
 
 	public static class DateTimeType extends AbstractDataType<Instant> implements DataType<Instant> {
-		private static final DateTimeFormatter DT_FORMATTER1 = DateTimeFormatter.ISO_LOCAL_DATE_TIME
-																			.withZone(ZoneOffset.systemDefault());
-		
+		private static final Pattern TZ_PATTERN = Pattern.compile(".*([Zz]|[+-]\\d{2}:\\d{2})(\\[.+])?$");
+
 		private DateTimeType() {
 			super("xs:dateTime", DataTypeDefXsd.DATE_TIME, Instant.class);
 		}
@@ -161,9 +160,14 @@ public class DataTypes {
 			if ( str == null || str.trim().length() == 0 ) {
 				return null;
 			}
-			return Try.get(() -> Instant.parse(str))
-						.recover(() -> ZonedDateTime.parse(str, DT_FORMATTER1).toInstant())
-						.get();
+			
+		    if (TZ_PATTERN.matcher(str).matches()) {
+		        return ZonedDateTime.parse(str).toInstant();
+		    }
+		    else {
+		    	LocalDateTime ldt = LocalDateTime.parse(str);
+				return ldt.toInstant(ZoneOffset.systemDefault().getRules().getOffset(ldt));
+		    }
 		}
 
 		@Override
@@ -174,77 +178,6 @@ public class DataTypes {
 		@Override
 		public Instant fromJdbcObject(Object jdbcObj) {
 			return DataUtils.asInstant(jdbcObj);
-		}
-	}
-
-	public static class DateType extends AbstractDataType<Date> implements DataType<Date> {
-		private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd");
-		
-		private DateType() {
-			super("xs:date", DataTypeDefXsd.DATE, Date.class);
-		}
-	
-		@Override
-		public String toValueString(Object obj) {
-			Date value = DataUtils.asDate(obj);
-			return (value != null) ? DATE_FORMATTER.format(value) : null;
-		}
-	
-		@Override
-		public Date parseValueString(String str) {
-			try {
-				return (str != null) ? DATE_FORMATTER.parse(str) : null;
-			}
-			catch ( ParseException e ) {
-				throw new IllegalArgumentException("Invalid string (not xs:date string): " + str);
-			}
-		}
-
-		@Override
-		public java.sql.Date toJdbcObject(Date value) {
-			return (value != null) ? new java.sql.Date(value.getTime()) : null;
-		}
-
-		@Override
-		public Date fromJdbcObject(Object jdbcObj) {
-			return new Date(((java.sql.Date)jdbcObj).getTime());
-		}
-	}
-
-	public static class DoubleType extends AbstractDataType<Double> implements DataType<Double> {
-		private DoubleType() {
-			super("xs:double", DataTypeDefXsd.DOUBLE, Double.class);
-		}
-	
-		@Override
-		public String toValueString(Object obj) {
-			Double value = DataUtils.asDouble(obj);
-			return (value != null) ? ""+obj : null;
-		}
-	
-		@Override
-		public Double parseValueString(String str) {
-			return (str != null) ? Double.parseDouble(str) : null;
-		}
-
-		@Override
-		public Double toJdbcObject(Double value) {
-			return value;
-		}
-
-		@Override
-		public Double fromJdbcObject(Object jdbcObj) {
-			return (Double)jdbcObj;
-		}
-
-		@Override
-		public Object toJsonObject(Double value) {
-			return value;
-		}
-
-		@Override
-		public Double fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : jnode.asDouble();
 		}
 	}
 
@@ -291,6 +224,40 @@ public class DataTypes {
 			else {
 				throw new IllegalArgumentException("Invalid Duration value: " + jdbcObj);
 			}
+		}
+	}
+
+	public static class DateType extends AbstractDataType<Date> implements DataType<Date> {
+		private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd");
+		
+		private DateType() {
+			super("xs:date", DataTypeDefXsd.DATE, Date.class);
+		}
+	
+		@Override
+		public String toValueString(Object obj) {
+			Date value = DataUtils.asDate(obj);
+			return (value != null) ? DATE_FORMATTER.format(value) : null;
+		}
+	
+		@Override
+		public Date parseValueString(String str) {
+			try {
+				return (str != null) ? DATE_FORMATTER.parse(str) : null;
+			}
+			catch ( ParseException e ) {
+				throw new IllegalArgumentException("Invalid string (not xs:date string): " + str);
+			}
+		}
+
+		@Override
+		public java.sql.Date toJdbcObject(Date value) {
+			return (value != null) ? new java.sql.Date(value.getTime()) : null;
+		}
+
+		@Override
+		public Date fromJdbcObject(Object jdbcObj) {
+			return new Date(((java.sql.Date)jdbcObj).getTime());
 		}
 	}
 
@@ -458,6 +425,43 @@ public class DataTypes {
 		@Override
 		public Short fromJsonNode(JsonNode jnode) {
 			return (jnode == null || jnode.isNull()) ? null : (short)jnode.asInt();
+		}
+	}
+
+	public static class DoubleType extends AbstractDataType<Double> implements DataType<Double> {
+		private DoubleType() {
+			super("xs:double", DataTypeDefXsd.DOUBLE, Double.class);
+		}
+	
+		@Override
+		public String toValueString(Object obj) {
+			Double value = DataUtils.asDouble(obj);
+			return (value != null) ? ""+obj : null;
+		}
+	
+		@Override
+		public Double parseValueString(String str) {
+			return (str != null) ? Double.parseDouble(str) : null;
+		}
+
+		@Override
+		public Double toJdbcObject(Double value) {
+			return value;
+		}
+
+		@Override
+		public Double fromJdbcObject(Object jdbcObj) {
+			return (Double)jdbcObj;
+		}
+
+		@Override
+		public Object toJsonObject(Double value) {
+			return value;
+		}
+
+		@Override
+		public Double fromJsonNode(JsonNode jnode) {
+			return (jnode == null || jnode.isNull()) ? null : jnode.asDouble();
 		}
 	}
 

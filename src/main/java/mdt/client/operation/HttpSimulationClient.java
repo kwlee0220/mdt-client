@@ -9,19 +9,20 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import utils.LoggerSettable;
-import utils.func.FOption;
-import utils.http.HttpClientProxy;
-import utils.http.RESTfulIOException;
-import utils.http.RESTfulRemoteException;
-
-import mdt.client.HttpRESTfulClientOld;
-
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import utils.LoggerSettable;
+import utils.func.FOption;
+import utils.func.Optionals;
+import utils.http.HttpClientProxy;
+import utils.http.RESTfulIOException;
+import utils.http.RESTfulRemoteException;
+
+import mdt.client.HttpRESTfulClientOld;
 
 /**
  *
@@ -109,7 +110,7 @@ public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 
 	@Override
 	public Logger getLogger() {
-		return FOption.getOrElse(m_logger, s_logger);
+		return Optionals.getOrElse(m_logger, s_logger);
 	}
 
 	@Override

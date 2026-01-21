@@ -11,6 +11,7 @@ import utils.io.FileUtils;
 
 import mdt.client.MDTClientConfig;
 import mdt.model.MDTManager;
+
 import picocli.CommandLine.Command;
 
 /**
@@ -53,7 +54,7 @@ public class EndpointCommand extends AbstractMDTCommand {
 		
 		// 그렇지 않은 경우는 설정 정보를 사용하거나 환경 변수를 활용하여 MDT Manager에 접속한다.
 		File clientHomeDir = Utilities.getEnvironmentVariableFile("MDT_CLIENT_HOME")
-										.getOrElse(FileUtils.getCurrentWorkingDirectory());
+										.orElse(FileUtils.getCurrentWorkingDirectory());
 		File clientConfigFile = FileUtils.path(clientHomeDir, CLIENT_CONFIG_FILE);
 		if ( clientConfigFile.canRead() ) {
 			try {

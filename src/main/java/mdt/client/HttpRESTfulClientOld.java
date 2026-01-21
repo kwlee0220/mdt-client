@@ -6,8 +6,6 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,16 +19,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import lombok.Data;
 
-import utils.InternalException;
-import utils.LoggerSettable;
-import utils.Tuple;
-import utils.func.FOption;
-import utils.http.HttpClientProxy;
-import utils.http.RESTfulIOException;
-import utils.http.RESTfulRemoteException;
-
-import mdt.client.operation.HttpSimulationClient;
-import mdt.model.MDTExceptionEntity;
+import javax.annotation.Nullable;
 
 import okhttp3.Headers;
 import okhttp3.MediaType;
@@ -38,6 +27,17 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import utils.InternalException;
+import utils.LoggerSettable;
+import utils.Tuple;
+import utils.func.Optionals;
+import utils.http.HttpClientProxy;
+import utils.http.RESTfulIOException;
+import utils.http.RESTfulRemoteException;
+
+import mdt.client.operation.HttpSimulationClient;
+import mdt.model.MDTExceptionEntity;
 
 
 /**
@@ -204,7 +204,7 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 
 	@Override
 	public Logger getLogger() {
-		return FOption.getOrElse(m_logger, s_logger);
+		return Optionals.getOrElse(m_logger, s_logger);
 	}
 
 	@Override

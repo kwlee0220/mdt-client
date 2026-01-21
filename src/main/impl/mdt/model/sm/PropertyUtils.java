@@ -5,8 +5,6 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
-import javax.annotation.Nullable;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.LangStringTextType;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
@@ -16,6 +14,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultMultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 
 import lombok.experimental.UtilityClass;
+
+import javax.annotation.Nullable;
 
 import utils.stream.FStream;
 

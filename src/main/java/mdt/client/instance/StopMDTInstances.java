@@ -26,7 +26,7 @@ import utils.async.Executions;
 import utils.async.Guard;
 import utils.async.StartableExecution;
 import utils.func.CheckedRunnableX;
-import utils.func.FOption;
+import utils.func.Optionals;
 import utils.func.Try;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
@@ -65,11 +65,11 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 		
 		m_manager = builder.m_manager;
         m_instanceIdList = builder.m_instanceIdList;
-        m_pollingInterval = FOption.getOrElse(builder.m_pollingInterval, DEFAULT_POLLING_INTERVAL);
+        m_pollingInterval = Optionals.getOrElse(builder.m_pollingInterval, DEFAULT_POLLING_INTERVAL);
         m_timeout = builder.m_timeout;
         m_nowait = builder.m_nowait;
         m_stopAll = builder.m_stopAll;
-        m_executor = FOption.getOrElse(builder.m_executor, DEFAULT_EXECUTOR);
+        m_executor = Optionals.getOrElse(builder.m_executor, DEFAULT_EXECUTOR);
         m_recursive = builder.m_recursive;
 	}
 	

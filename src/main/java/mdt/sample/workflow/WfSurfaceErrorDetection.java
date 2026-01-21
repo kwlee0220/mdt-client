@@ -4,11 +4,11 @@ import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.NameValue;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.variable.Variables;
 import mdt.task.builtin.HttpTask;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -58,9 +58,9 @@ public class WfSurfaceErrorDetection {
 		task.addOption("timeout", "1m");
 		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:SurfaceErrorDetection"));
-		
-		task.getInputVariables().add(Variables.newInstance("TestImage", "", "inspector:Data:0"));
-		task.getOutputVariables().add(Variables.newInstance("ErrorTypeClass", "", "inspector:Data:1"));
+
+		task.addInputArgumentSpec("TestImage", ArgumentSpec.reference("inspector:Data:0"));
+		task.addOutputArgumentSpec("ErrorTypeClass", ArgumentSpec.reference("inspector:Data:1"));
 		
 		return task;
 	}
@@ -74,7 +74,7 @@ public class WfSurfaceErrorDetection {
 		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:STErrorPrediction"));
 
-		task.getOutputVariables().add(Variables.newInstance("STErrorPossibility", "", "inspector:Data:2"));
+		task.addOutputArgumentSpec("STErrorPossibility", ArgumentSpec.reference("inspector:Data:2"));
 		
 		return task;
 	}
@@ -88,7 +88,7 @@ public class WfSurfaceErrorDetection {
 		task.addOption("loglevel", "info");
 		task.getLabels().add(NameValue.of(TaskUtils.LABEL_MDT_OPERATION, "ktech_inspector:LTErrorPrediction"));
 
-		task.getOutputVariables().add(Variables.newInstance("LTErrorPrediction", "", "inspector:Data:3"));
+		task.addOutputArgumentSpec("LTErrorPrediction", ArgumentSpec.reference("inspector:Data:3"));
 		
 		return task;
 	}

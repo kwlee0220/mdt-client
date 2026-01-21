@@ -1,13 +1,13 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.function.Supplier;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import javax.annotation.Nullable;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -22,7 +22,7 @@ import mdt.model.MDTModelSerDe;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public abstract class PropertyValue<T> extends AbstractElementValue implements DataElementValue, Supplier<T> {
+public abstract class PropertyValue<T> extends AbstractElementValue implements DataElementValue {
 	protected final T m_value;
 	
 	abstract public DataType<T> getDataType();
@@ -31,9 +31,8 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		m_value = value;
 	}
 
-	@Override
-	public T get() {
-		return m_value;
+	public void update(Property prop) {
+		prop.setValue((m_value != null) ? getDataType().toValueString(m_value) : null);
 	}
 
 	@Override
@@ -41,7 +40,34 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		return getDataType().toValueString(m_value);
 	}
 	
-	static PropertyValue<?> parseValueJsonNode(Property prop, JsonNode vnode) {
+	public static PropertyValue<?> fromValueObject(Object v, Property prop) {
+		switch ( prop.getValueType() ) {
+			case STRING:
+				return new StringPropertyValue((String)v);
+			case INT:
+				return new IntegerPropertyValue((Integer)v);
+			case FLOAT:
+				return new FloatPropertyValue((Float)v);
+			case DOUBLE:
+				return new DoublePropertyValue((Double)v);
+			case BOOLEAN:
+				return new BooleanPropertyValue((Boolean)v);
+			case DATE_TIME:
+				return new DateTimePropertyValue((Instant)v);
+			case DURATION:
+				return new DurationPropertyValue((Duration)v);
+			case LONG:
+				return new LongPropertyValue((Long)v);
+			case SHORT:
+				return new ShortPropertyValue((Short)v);
+			case DECIMAL:
+				return new DecimalPropertyValue((BigDecimal)v);
+			default:
+				throw new IllegalArgumentException("unknown data type: " + prop.getValueType());
+		}
+	}
+	
+	public static PropertyValue<?> parseValueJsonNode(JsonNode vnode, Property prop) {
 		switch ( prop.getValueType() ) {
 			case STRING:
 				return StringPropertyValue.deserializeValue(vnode);
@@ -57,14 +83,15 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 				return DateTimePropertyValue.deserializeValue(vnode);
 			case DURATION:
 				return DurationPropertyValue.deserializeValue(vnode);
+			case LONG:
+				return LongPropertyValue.deserializeValue(vnode);
+			case SHORT:
+				return ShortPropertyValue.deserializeValue(vnode);
+			case DECIMAL:
+				return DecimalPropertyValue.deserializeValue(vnode);
 			default:
 				throw new IllegalArgumentException("unknown data type: " + prop.getValueType());
 		}
-	}
-
-	@Override
-	public Object toValueJsonObject() {
-		return getDataType().toJsonObject(m_value);
 	}
 
 	@Override
@@ -74,7 +101,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 
 	@Override
 	public void serializeValue(JsonGenerator gen) throws IOException {
-		gen.writeObject(toValueJsonObject());
+		gen.writeObject(toValueObject());
 	}
 	
 	@Override
@@ -96,7 +123,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 				&& Objects.equals(getDataType(), other.getDataType());
 	}
 	
-	public static PropertyValue<?> from(@NonNull Property prop) {
+	public static PropertyValue<?> from(Property prop) {
 		String value = prop.getValue();
 		switch ( prop.getValueType() ) {
 			case STRING:
@@ -115,6 +142,10 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 				return DURATION(DataTypes.DURATION.parseValueString(value));
 			case LONG:
 				return LONG(DataTypes.LONG.parseValueString(value));
+			case SHORT:
+				return SHORT(DataTypes.SHORT.parseValueString(value));
+			case DECIMAL:
+				return DECIMAL(DataTypes.DECIMAL.parseValueString(value));
 			default:
 				throw new IllegalArgumentException("unknown data type: " + prop.getValueType());
 		}
@@ -133,6 +164,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		@Override
 		public DataType<String> getDataType() {
 			return DataTypes.STRING;
+		}
+		
+		@Override
+		public String toValueObject() {
+			return m_value;
 		}
 
 		@Override
@@ -159,6 +195,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		public DataType<Integer> getDataType() {
 			return DataTypes.INT;
 		}
+		
+		@Override
+		public Integer toValueObject() {
+			return m_value;
+		}
 
 		@Override
 		public String getSerializationType() {
@@ -184,6 +225,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		public DataType<Float> getDataType() {
 			return DataTypes.FLOAT;
 		}
+		
+		@Override
+		public Float toValueObject() {
+			return m_value;
+		}
 
 		@Override
 		public String getSerializationType() {
@@ -208,6 +254,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		@Override
 		public DataType<Double> getDataType() {
 			return DataTypes.DOUBLE;
+		}
+		
+		@Override
+		public Double toValueObject() {
+			return m_value;
 		}
 
 		@Override
@@ -236,6 +287,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		}
 		
 		@Override
+		public Boolean toValueObject() {
+			return m_value;
+		}
+		
+		@Override
 		public String getSerializationType() {
 			return SERIALIZATION_TYPE;
 		}
@@ -258,6 +314,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		@Override
 		public DataType<Instant> getDataType() {
 			return DataTypes.DATE_TIME;
+		}
+		
+		@Override
+		public Instant toValueObject() {
+			return m_value;
 		}
 
 		@Override
@@ -284,10 +345,26 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		public DataType<Duration> getDataType() {
 			return DataTypes.DURATION;
 		}
+		
+		@Override
+		public Duration toValueObject() {
+			return m_value;
+		}
+
+		@Override
+		public String toValueJsonString() {
+			return m_value != null ? "\"" + DataTypes.DURATION.toValueString(m_value) + "\"" : "null";
+		}
 
 		@Override
 		public String getSerializationType() {
 			return SERIALIZATION_TYPE;
+		}
+
+		@Override
+		public void serializeValue(JsonGenerator gen) throws IOException {
+			String str = (m_value != null) ? m_value.toString() : null;
+			gen.writeObject(str);
 		}
 		
 		public static DurationPropertyValue deserializeValue(JsonNode vnode) {
@@ -308,6 +385,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		@Override
 		public DataType<Long> getDataType() {
 			return DataTypes.LONG;
+		}
+		
+		@Override
+		public Long toValueObject() {
+			return m_value;
 		}
 
 		@Override
@@ -334,6 +416,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		public DataType<Short> getDataType() {
 			return DataTypes.SHORT;
 		}
+		
+		@Override
+		public Short toValueObject() {
+			return m_value;
+		}
 
 		@Override
 		public String getSerializationType() {
@@ -342,6 +429,36 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		
 		public static ShortPropertyValue deserializeValue(JsonNode vnode) {
 			return new ShortPropertyValue(DataTypes.SHORT.fromJsonNode(vnode));
+		}
+	}
+
+	public static DecimalPropertyValue DECIMAL(BigDecimal value) {
+		return new DecimalPropertyValue(value);
+	}
+	public static class DecimalPropertyValue extends PropertyValue<BigDecimal> {
+		public static final String SERIALIZATION_TYPE = "mdt:value:decimal";
+		
+		public DecimalPropertyValue(BigDecimal value) {
+			super(value);
+		}
+
+		@Override
+		public DataType<BigDecimal> getDataType() {
+			return DataTypes.DECIMAL;
+		}
+		
+		@Override
+		public BigDecimal toValueObject() {
+			return m_value;
+		}
+
+		@Override
+		public String getSerializationType() {
+			return SERIALIZATION_TYPE;
+		}
+		
+		public static DecimalPropertyValue deserializeValue(JsonNode vnode) {
+			return new DecimalPropertyValue(DataTypes.DECIMAL.fromJsonNode(vnode));
 		}
 	}
 }

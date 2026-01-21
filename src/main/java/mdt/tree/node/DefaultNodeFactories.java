@@ -18,11 +18,12 @@ import com.google.common.collect.Maps;
 import lombok.experimental.UtilityClass;
 
 import utils.func.FOption;
+import utils.func.Optionals;
 import utils.stream.FStream;
 
 import mdt.model.Input;
 import mdt.model.Output;
-import mdt.model.ReferenceUtils;
+import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.data.Equipment;
 import mdt.model.sm.data.Parameter;
 import mdt.model.sm.data.ParameterValue;
@@ -80,7 +81,7 @@ public class DefaultNodeFactories {
 		Preconditions.checkArgument(smElm != null,
 									"SubmodelElement is not allowed to be null in DefaultNodeFactories");
 		
-		String semanticIdStr = ReferenceUtils.getSemanticIdStringOrNull(smElm.getSemanticId());
+		String semanticIdStr = SubmodelUtils.getSemanticIdStringOrNull(smElm.getSemanticId());
 		DefaultNodeFactory fact = FACTORY_REGISTRY.get(semanticIdStr);
 		if ( fact != null ) {
 			return fact.create(smElm);
@@ -127,7 +128,7 @@ public class DefaultNodeFactories {
 		@Override
 		public DefaultNode create(SubmodelElement element) {
 			File aasFile = (File)element;
-			String path = FOption.getOrElse(aasFile.getValue(), "None");
+			String path = Optionals.getOrElse(aasFile.getValue(), "None");
 			String value = String.format("%s (%s)", path, aasFile.getContentType());
 			return new TerminalNode(aasFile.getIdShort(), " (File)", value);
 		} 
@@ -188,7 +189,7 @@ public class DefaultNodeFactories {
 		public DefaultNode create(SubmodelElement element) {
 			MultiLanguageProperty mlp = (MultiLanguageProperty)element;
 			
-			MultiLanguagePropertyValue mlpv = ElementValues.getMLPValue(mlp);
+			MultiLanguagePropertyValue mlpv = MultiLanguagePropertyValue.from(mlp);
 			List<String> str = FStream.from(mlpv.getLangTextAll())
 						                .map(t -> String.format("%s:%s", t.getLanguage(), t.getText()))
 						                .toList();

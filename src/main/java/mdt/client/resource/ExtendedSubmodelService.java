@@ -37,7 +37,7 @@ public class ExtendedSubmodelService implements SubmodelService {
 		
 		SubmodelElement sme = getSubmodelElementByPath(idShortPath);
 		if ( sme instanceof Property ) {
-			updateSubmodelElementByPath(idShortPath, value);
+			updateSubmodelElementValueByPath(idShortPath, value);
 		}
 		else {
 			throw new ResourceNotFoundException("Property", "path=" + idShortPath);

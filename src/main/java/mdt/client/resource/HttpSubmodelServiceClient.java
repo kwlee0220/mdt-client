@@ -41,6 +41,7 @@ import utils.InternalException;
 import utils.Tuple;
 import utils.http.OkHttpClientUtils;
 import utils.http.RESTfulIOException;
+import utils.http.RESTfulRemoteException;
 import utils.io.IOUtils;
 
 import mdt.client.Fa3stHttpClient;
@@ -132,15 +133,31 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		String url = String.format("%s/submodel-elements/%s/$value", getEndpoint(), idShortPath);
 		
 		Request req = new Request.Builder().url(url).get().build();
-		JsonNode jnode = call(req, JsonNode.class);
-		
-		JsonNode root = jnode.get(prototype.getIdShort());
 		try {
+			JsonNode jnode = call(req, JsonNode.class);
+			JsonNode root = jnode.get(prototype.getIdShort());
 			return ElementValues.parseValueJsonNode(root, prototype);
+		}
+		catch ( RESTfulRemoteException e ) {
+			if ( !e.getMessage().contains("SerializationException") ) {
+				throw e;
+			}
+			
+			url = String.format("%s/submodel-elements/%s", getEndpoint(), idShortPath);
+			req = new Request.Builder().url(url).get().build();
+			SubmodelElement sme = call(req, SubmodelElement.class);
+			return ElementValues.getValue(sme);
 		}
 		catch ( IOException e ) {
 			throw new UncheckedIOException(e);
 		}
+		
+//		try {
+//			return ElementValues.parseValueJsonNode(root, prototype);
+//		}
+//		catch ( IOException e ) {
+//			throw new UncheckedIOException(e);
+//		}
 	}
 
 	@Override

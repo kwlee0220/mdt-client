@@ -140,8 +140,8 @@ public class ProgramTask extends AbstractMDTTask {
 		
 		CommandExecution.Builder builder = CommandExecution.builder()
 															.addCommand(commandLine)
-															.setWorkingDirectory(workingDir)
-															.setTimeout(timeout);
+															.workingDirectory(workingDir)
+															.timeout(timeout);
 		
 		KeyValueFStream.from(descriptor.getInputArgumentSpecs())
 						.map((argId, argSpec) -> {

@@ -34,7 +34,7 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	@Override
 	public Map<String,Object> toValueObject() {
 		return KeyValueFStream.from(m_fields)
-								.mapValue(ElementValue::toValueObject)
+								.mapValue(elm -> elm != null ? elm.toValueObject() : null)
 								.toMap();
 	}
 	

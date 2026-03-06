@@ -84,6 +84,7 @@ public abstract class AbstractGetElementCommand extends AbstractMDTCommand {
 			default -> throw new IllegalArgumentException("Invalid output type: " + m_output);
 		};
 		pw.print(outputString);
+		pw.println();
 	}
 
 	protected String toDisplayTree(SubmodelElement target, TreeOptions opts) throws Exception {

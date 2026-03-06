@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 
 import utils.InternalException;
+import utils.StopWatch;
 import utils.UnitUtils;
 import utils.Utilities;
 import utils.func.Optionals;
@@ -98,8 +99,13 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
 		
 		if ( m_repeat == null ) {
+			StopWatch watch = StopWatch.start();
 			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
 				printOutput(manager, pw);
+				watch.stop();
+				
+				double elapsed = watch.getElapsedInFloatingSeconds();
+				pw.printf("elapsed: %.3f%n", elapsed);
 			}
 			return;
 		}

@@ -1,23 +1,22 @@
-package mdt.cli.workflow;
+package mdt.cli.add;
 
 import mdt.cli.CommandCollection;
 
 import picocli.CommandLine.Command;
 
+
 /**
- *
+ * 
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name="model",
+	name="add",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="MDT Workflow related commands",
+	description="Add an MDT-entity (instance, workflow model, etc.)",
 	subcommands= {
-		ListWorkflowModelAllCommand.class,
-		GetWorkflowModelCommand.class,
+		AddMDTInstanceCommand.class,
 		AddWorkflowModelCommand.class,
-		RemoveWorkflowModelCommand.class,
 	})
-public class WorkflowModelCommands extends CommandCollection {}
+public class AddCommands extends CommandCollection {}

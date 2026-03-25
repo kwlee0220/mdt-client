@@ -23,12 +23,13 @@ import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
+import mdt.model.ReferenceUtils;
 import mdt.model.SubmodelService;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTOperationDescriptor;
 import mdt.model.instance.MDTParameterDescriptor;
+import mdt.model.instance.MDTParameterService;
 import mdt.model.instance.MDTSubmodelDescriptor;
-import mdt.model.sm.SubmodelUtils;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -124,7 +125,7 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 					table.addCell(" " + toDisplayName(tup.value()) + " ");
 				});
 		
-		FStream.from(instance.getMDTParameterDescriptorAll())
+		FStream.from(instance.getParameterServiceAll())
 				.zipWithIndex()
 				.forEach(tup -> {
 					table.addCell(String.format(" PARAMETER[%02d] ", tup.index()));
@@ -168,10 +169,11 @@ public class GetInstanceCommand extends AbstractMDTCommand {
 	}
 	
 	private static String toDisplayName(MDTSubmodelDescriptor ismdesc) {
-		return String.format("(%s) %s (%s)", SubmodelUtils.getShortSubmodelSemanticId(ismdesc.getSemanticId()),
+		return String.format("(%s) %s (%s)", ReferenceUtils.getShortSubmodelSemanticId(ismdesc.getSemanticId()),
 							ismdesc.getId(), ismdesc.getIdShort());
 	}
-	private static String toDisplayName(MDTParameterDescriptor paramDesc) {
+	private static String toDisplayName(MDTParameterService paramSvc) {
+		MDTParameterDescriptor paramDesc = paramSvc.getDescriptor();
 		return String.format("%s (%s)", paramDesc.getId(), paramDesc.getValueType());
 	}
 	private static String toDisplayName(MDTOperationDescriptor opDesc) {

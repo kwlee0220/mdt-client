@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.add;
 
 import java.io.File;
 
@@ -11,6 +11,7 @@ import mdt.model.MDTManager;
 import mdt.model.ResourceAlreadyExistsException;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -20,7 +21,7 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "add",
+	name = "wfmodel",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,

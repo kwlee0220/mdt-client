@@ -1,10 +1,11 @@
-package mdt.cli;
+package mdt.cli.add;
 
 import java.io.File;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import mdt.cli.AbstractMDTCommand;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 
@@ -18,7 +19,7 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "add",
+	name = "instance",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,

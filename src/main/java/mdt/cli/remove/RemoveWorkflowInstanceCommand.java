@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.remove;
 
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
@@ -24,14 +24,14 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "remove",
+	name = "workflow",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "Remove the MDT Workflow Descriptor of the given id."
+	description = "Remove the MDT Workflow instance."
 )
-public class RemoveWorkflowCommand extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(RemoveWorkflowCommand.class);
+public class RemoveWorkflowInstanceCommand extends AbstractMDTCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(RemoveWorkflowInstanceCommand.class);
 
 	@Parameters(index="0..*", paramLabel="ids", description="WorkflowDescriptor ids to remove")
 	private List<String> m_wfIds;
@@ -47,10 +47,10 @@ public class RemoveWorkflowCommand extends AbstractMDTCommand {
 	private boolean m_removeAll;
 
 	public static final void main(String... args) throws Exception {
-		main(new RemoveWorkflowCommand(), args);
+		main(new RemoveWorkflowInstanceCommand(), args);
 	}
 	
-	public RemoveWorkflowCommand() {
+	public RemoveWorkflowInstanceCommand() {
 		setLogger(s_logger);
 	}
 

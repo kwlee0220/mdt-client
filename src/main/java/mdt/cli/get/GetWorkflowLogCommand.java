@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.get;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

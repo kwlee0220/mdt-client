@@ -144,8 +144,7 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 												.castSafely(SubmodelElementCollection.class)
 												.map(smc -> {
 													String argName = SubmodelUtils.getStringFieldById(smc, idField);
-													SubmodelElement field = SubmodelUtils.findFieldById(smc, valueField)
-																							.orElse(null);
+													SubmodelElement field = SubmodelUtils.getFieldById(smc, valueField);
 													field.setIdShort(argName);
 													return field;
 												})

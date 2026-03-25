@@ -1,5 +1,6 @@
 package mdt.model.sm.info;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,10 +43,10 @@ public class MDTInfoTest {
 		field = SubmodelUtils.getStringFieldById(smc, "Status");
 		Assert.assertEquals(MDTAssetStatus.Created.name(), field);
 		
-		SubmodelUtils.getPropertyFieldById(smc, "IdShort").setValue("idShort2");
-		SubmodelUtils.getPropertyFieldById(smc, "AssetName").setValue("name2");
-		SubmodelUtils.getPropertyFieldById(smc, "AssetType").setValue(MDTAssetType.Process.name());
-		SubmodelUtils.getPropertyFieldById(smc, "Status").setValue(MDTAssetStatus.Executed.name());
+		SubmodelUtils.getFieldById(smc, "IdShort", Property.class).setValue("idShort2");
+		SubmodelUtils.getFieldById(smc, "AssetName", Property.class).setValue("name2");
+		SubmodelUtils.getFieldById(smc, "AssetType", Property.class).setValue(MDTAssetType.Process.name());
+		SubmodelUtils.getFieldById(smc, "Status", Property.class).setValue(MDTAssetStatus.Executed.name());
 		info.updateFromAasModel(smc);
 		
 		Assert.assertEquals("idShort2", info.getIdShort());

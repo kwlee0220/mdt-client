@@ -1,4 +1,6 @@
-package mdt.cli;
+package mdt.cli.start;
+
+import mdt.cli.CommandCollection;
 
 import picocli.CommandLine.Command;
 
@@ -12,8 +14,9 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="MDT Task related commands",
+	description="Start MDT entity (instance, workflow, etc.)",
 	subcommands= {
 		StartMDTInstanceCommand.class,
+		StartWorkflowCommand.class,
 	})
 public class StartCommands extends CommandCollection {}

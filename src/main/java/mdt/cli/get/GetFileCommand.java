@@ -28,8 +28,8 @@ import picocli.CommandLine.Parameters;
 	mixinStandardHelpOptions = true,
 	description = "Get a file from the File SubmodelElement."
 )
-public class GetFile extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(GetFile.class);
+public class GetFileCommand extends AbstractMDTCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(GetFileCommand.class);
 
 	@Parameters(index="0", arity="1", paramLabel="element-ref",
 				description="Target File SubmodelElement reference")
@@ -42,10 +42,10 @@ public class GetFile extends AbstractMDTCommand {
 	private boolean m_verbose = false;
 
 	public static final void main(String... args) throws Exception {
-		main(new GetFile(), args);
+		main(new GetFileCommand(), args);
 	}
 	
-	public GetFile() {
+	public GetFileCommand() {
 		setLogger(s_logger);
 	}
 

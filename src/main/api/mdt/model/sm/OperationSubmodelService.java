@@ -27,6 +27,7 @@ import utils.stream.KeyValueFStream;
 
 import mdt.client.operation.AASOperationClient;
 import mdt.model.MDTModelSerDe;
+import mdt.model.ReferenceUtils;
 import mdt.model.SubmodelService;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
@@ -52,7 +53,7 @@ public class OperationSubmodelService implements SubmodelService {
 		
 		m_metadata = m_service.getSubmodel(Modifier.METADATA);
 
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(m_metadata.getSemanticId());
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(m_metadata.getSemanticId());
 		m_pathPrefix = switch ( semanticId ) {
 			case Data.SEMANTIC_ID -> "DataInfo";
 			case AI.SEMANTIC_ID -> "AIInfo";
@@ -134,11 +135,13 @@ public class OperationSubmodelService implements SubmodelService {
 		
 		public ArgumentCollection setValue(Map<String,ElementValue> values) {
 			for ( SubmodelElement sme: m_arguments.getValue() ) {
-				String id = SubmodelUtils.getStringFieldById(sme, String.format("%sID", m_argKind));
-				ElementValue ev = values.get(id);
-				if ( ev != null ) {
-					SubmodelElement value = SubmodelUtils.getFieldById(sme, String.format("%sValue", m_argKind));
-					ElementValues.update(value, ev);
+				if ( sme instanceof SubmodelElementCollection smc ) {
+					String id = SubmodelUtils.getStringFieldById(smc, String.format("%sID", m_argKind));
+					ElementValue ev = values.get(id);
+					if ( ev != null ) {
+						SubmodelElement value = SubmodelUtils.getFieldById(sme, String.format("%sValue", m_argKind));
+						ElementValues.update(value, ev);
+					}
 				}
 			}
 			return this;

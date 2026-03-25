@@ -82,39 +82,6 @@ public abstract class AbstractSetCommand extends AbstractMDTCommand {
 			mdtRef.activate(manager);
 		}
 		target.updateValue(valueJsonStr);
-		
-//		SubmodelElement sme = target.read();
-//
-//		MDTExpression expr = MDTExpressionParser.parseExpr(exprStr);
-//		if ( expr instanceof NullExpr nullExpr ) {
-//			Preconditions.checkArgument(sme instanceof Property, "Cannot set null to non-Property: %s", sme);
-//			((Property)sme).setValue(null);
-//			target.update(sme);
-//			return;
-//		}
-//		
-//		ElementValue newValue;
-//		Object src = MDTExpressionParser.parseExpr(exprStr).evaluate();
-//		if ( src instanceof MDTElementReference ref ) {
-//			ref.activate(manager);
-//			newValue = ref.readValue();
-//		}
-//		else if ( src instanceof ElementValue value ) {
-//			newValue = value;
-//		}
-//		else {
-//			throw new IllegalArgumentException("Invalid expression: " + exprStr);
-//		}
-//		
-//		// ParameterValue인 경우에는 'ParameterValue' 필드를 사용한다.
-//		if ( SubmodelUtils.isParameterValue(sme) ) {
-//			newValue = ParameterValue.builder()
-//									.eventDateTime(Instant.now())
-//									.value(newValue)
-//									.build();
-//		}
-//		target.updateValue(valueJsonStr);
-//		target.updateValue(newValue);
 	}
 	
 	/**

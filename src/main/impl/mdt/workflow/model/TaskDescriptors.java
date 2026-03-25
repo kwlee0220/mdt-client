@@ -17,6 +17,7 @@ import utils.stream.FStream;
 
 import mdt.model.ModelValidationException;
 import mdt.model.Qualifiers;
+import mdt.model.ReferenceUtils;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.SubmodelUtils.OperationSubmodelDescriptor;
 import mdt.model.sm.SubmodelUtils.SubmodelArgumentDescriptor;
@@ -98,7 +99,7 @@ public class TaskDescriptors {
 			loadArgumentSpecs(task, ref, "Simulation");
 		}
 		else {
-			String semanticId = SubmodelUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+			String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
 			throw new IllegalArgumentException("Unexpected Submodel: semanticId=" + semanticId);
 		}
 	}

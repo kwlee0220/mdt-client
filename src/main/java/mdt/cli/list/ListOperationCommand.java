@@ -33,7 +33,7 @@ import picocli.CommandLine.Option;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "\nList all operations (AI or Simulations) submodels."
+	description = "List all operations (AI or Simulations) submodels."
 )
 public class ListOperationCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListOperationCommand.class);

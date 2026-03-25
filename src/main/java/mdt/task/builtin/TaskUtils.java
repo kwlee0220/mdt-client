@@ -9,10 +9,10 @@ import org.slf4j.Logger;
 
 import lombok.experimental.UtilityClass;
 
+import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
@@ -38,7 +38,7 @@ public class TaskUtils {
 		if ( opSmRef != null ) {
 			opSmRef.activate(manager);
 			Submodel submodel = opSmRef.get().getSubmodel();
-			String semanticId = SubmodelUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+			String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
 			if ( AI.SEMANTIC_ID.equals(semanticId) ) {
 				return DefaultElementReference.newInstance(opSmRef, "AIInfo.Model.LastExecutionTime");
 			}

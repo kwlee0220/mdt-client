@@ -2,6 +2,7 @@ package mdt.tree.node.data;
 
 import java.util.Objects;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import utils.stream.FStream;
@@ -39,7 +40,7 @@ public final class ParameterInfoNode extends TerminalNode {
 	}
 	
 	private String getFieldStringOrNull(SubmodelElement smc, String field) {
-		return SubmodelUtils.findPropertyById(smc, field)
+		return SubmodelUtils.findFieldById(smc, field, Property.class)
 							.map(f -> f.getValue())
 							.orElse(null);
 	}

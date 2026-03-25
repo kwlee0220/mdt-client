@@ -18,10 +18,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 
 import mdt.model.AASUtils;
 import mdt.model.sm.info.MDTAssetType;
@@ -32,8 +29,6 @@ import mdt.model.sm.info.MDTAssetType;
  */
 @JsonSerialize(using=InstanceDescriptor.Serializer.class)
 @JsonDeserialize(using=InstanceDescriptor.Deserializer.class)
-@Getter @Setter
-@Accessors(prefix="m_")
 @NoArgsConstructor
 public class InstanceDescriptor {
 	private String m_id;
@@ -54,6 +49,10 @@ public class InstanceDescriptor {
 		return m_id;
 	}
 	
+	public void setId(String id) {
+		m_id = id;
+	}
+	
 	/**
 	 * 대상 MDTInstance의 상태를 반환한다.
 	 * 
@@ -63,6 +62,10 @@ public class InstanceDescriptor {
 		return m_status;
 	}
 	
+	public void setStatus(MDTInstanceStatus status) {
+		m_status = status;
+	}
+	
 	/**
 	 * 대상 MDTInstance에 부여된 기반 endpoint를 반환한다.
 	 * 대상 MDTInstance의 상태가 {@link MDTInstanceStatus#RUNNING}이 아닌 경우는
@@ -70,6 +73,10 @@ public class InstanceDescriptor {
 	 */
 	@Nullable public String getBaseEndpoint() {
 		return m_baseEndpoint;
+	}
+	
+	public void setBaseEndpoint(String endpoint) {
+		m_baseEndpoint = endpoint;
 	}
 	
 	/**
@@ -85,6 +92,10 @@ public class InstanceDescriptor {
 		return AASUtils.encodeBase64UrlSafe(m_aasId);
 	}
 	
+	public void setAasId(String aasId) {
+		m_aasId = aasId;
+	}
+	
 	/**
 	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 idShort를 반환한다.
 	 * 
@@ -93,6 +104,10 @@ public class InstanceDescriptor {
 	@Nullable
 	public String getAasIdShort() {
 		return m_aasIdShort;
+	}
+	
+	public void setAasIdShort(String aasIdShort) {
+		m_aasIdShort = aasIdShort;
 	}
 	
 	/**
@@ -105,6 +120,10 @@ public class InstanceDescriptor {
 		return m_globalAssetId;
 	}
 	
+	public void setGlobalAssetId(String assetId) {
+		m_globalAssetId = assetId;
+	}
+	
 	/**
 	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 자산 타입을 반환한다.
 	 * 
@@ -113,6 +132,10 @@ public class InstanceDescriptor {
 	@Nullable
 	public MDTAssetType getAssetType() {
 		return m_assetType;
+	}
+	
+	public void setAssetType(MDTAssetType assetType) {
+		m_assetType = assetType;
 	}
 	
 	public String getParameterEndpoint(int paramIdx, String smEndpoint) {

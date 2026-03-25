@@ -16,9 +16,9 @@ import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
+import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstance;
-import mdt.model.sm.SubmodelUtils;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -117,9 +117,9 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 		table.addCell(" ID_SHORT "); table.addCell(" " + getOrEmpty(smDesc.getIdShort()) + " ");
 		
 		table.addCell(" SEMANTIC_ID ");
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(smDesc.getSemanticId());
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(smDesc.getSemanticId());
 		if ( semanticId != null ) {
-			String msg = String.format(" (%s) %s", SubmodelUtils.getShortSubmodelSemanticId(semanticId), semanticId);
+			String msg = String.format(" (%s) %s", ReferenceUtils.getShortSubmodelSemanticId(semanticId), semanticId);
 			table.addCell(msg);
 		}
 		

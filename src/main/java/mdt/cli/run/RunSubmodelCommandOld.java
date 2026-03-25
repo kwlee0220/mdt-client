@@ -1,4 +1,4 @@
-package mdt.task.builtin;
+package mdt.cli.run;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.slf4j.Logger;
@@ -12,6 +12,10 @@ import mdt.model.SubmodelService.Modifier;
 import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.task.builtin.AASOperationTaskCommand;
+import mdt.task.builtin.HttpTaskCommand;
+import mdt.task.builtin.ProgramTaskCommand;
+import mdt.task.builtin.TaskUtils;
 import mdt.workflow.model.TaskDescriptor;
 
 import picocli.CommandLine.Command;
@@ -23,7 +27,7 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "submodel",
+	name = "submodel2",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
@@ -34,21 +38,20 @@ import picocli.CommandLine.Parameters;
 		AASOperationTaskCommand.class,
 	}
 )
-public class RunSubmodelCommand extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(RunSubmodelCommand.class);
+public class RunSubmodelCommandOld extends AbstractMDTCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(RunSubmodelCommandOld.class);
 	
 	@Parameters(index="0", paramLabel="submodel-ref",
 				description="target Submodel reference (<instance-id>:<submodel-idshort>)")
 	private String m_opSmRefExpr;
 	
-	public RunSubmodelCommand() {
+	public RunSubmodelCommandOld() {
 		setLogger(s_logger);
 	}
 
 	public void loadOperationSubmodel(MDTInstanceManager manager, TaskDescriptor descriptor)
 		throws ModelValidationException {
-		DefaultSubmodelReference opSmRef = MDTExpressionParser.parseSubmodelReference(m_opSmRefExpr)
-																.evaluate();
+		DefaultSubmodelReference opSmRef = MDTExpressionParser.parseSubmodelReference(m_opSmRefExpr).evaluate();
 		opSmRef.activate(manager);
 		descriptor.setSubmodelRef(opSmRef);
 		
@@ -60,7 +63,7 @@ public class RunSubmodelCommand extends AbstractMDTCommand {
 	}
 
 	public static void main(String... args) throws Exception {
-		main(new RunSubmodelCommand(), args);
+		main(new RunSubmodelCommandOld(), args);
 		System.exit(0);
 	}
 

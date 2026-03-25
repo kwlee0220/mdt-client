@@ -6,6 +6,7 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import mdt.cli.run.RunSubmodelCommandOld;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultElementReference;
@@ -32,7 +33,7 @@ public class AASOperationTaskCommand extends AbstractTaskCommand {
 	private static final String DEFAULT_POLL_INTERVAL = "1s";
 	
 	@ParentCommand
-	private RunSubmodelCommand m_parentCmd;
+	private RunSubmodelCommandOld m_parentCmd;
 
 	@Option(names={"--poll"}, paramLabel="duration", description="Status polling interval (e.g. \"1s\", \"500ms\"")
 	private String m_pollInterval = DEFAULT_POLL_INTERVAL;
@@ -52,7 +53,7 @@ public class AASOperationTaskCommand extends AbstractTaskCommand {
         // 해당 연산 Submodel을 읽어서 주요 TaskDescriptor 정보를 설정한다.
 		m_parentCmd.loadOperationSubmodel(manager, descriptor);
 		
-		loadTaskDescriptor(manager, descriptor);
+		loadTaskDescriptor(descriptor);
 		
 		DefaultElementReference opElmRef = DefaultElementReference.newInstance(descriptor.getSubmodelRef(),
 																				"Operation");

@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
@@ -16,8 +17,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 import org.slf4j.Logger;
 
 import com.google.common.collect.Lists;
-
-import javax.annotation.Nullable;
 
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -46,6 +45,8 @@ import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
 import mdt.model.instance.MDTOperationDescriptor;
 import mdt.model.instance.MDTParameterDescriptor;
+import mdt.model.instance.MDTParameterService;
+import mdt.model.instance.MDTParameterServiceCollection;
 import mdt.model.instance.MDTSubmodelDescriptor;
 import mdt.model.instance.MDTTwinCompositionDescriptor;
 import mdt.model.instance.MDTTwinCompositionDescriptor.MDTCompositionDependency;
@@ -219,12 +220,6 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	}
 	
 	@Override
-	public List<MDTParameterDescriptor> getMDTParameterDescriptorAll() {
-		String url = String.format("%s/model/parameters", getEndpoint());
-		return m_restfulClient.get(url, MDTModelSerDes.MDT_PARAM_LIST);
-	}
-	
-	@Override
 	public List<MDTOperationDescriptor> getMDTOperationDescriptorAll() {
 		String url = String.format("%s/model/operations", getEndpoint());
 		return m_restfulClient.get(url, MDTModelSerDes.MDT_OP_LIST);
@@ -282,6 +277,13 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 		else {
 			throw new ResourceNotFoundException("ParameterCollection", "id=" + getId());
 		}
+	}
+	
+	@Override
+	public List<MDTParameterService> getParameterServiceAll() {
+		String url = String.format("%s/model/parameters", getEndpoint());
+		List<MDTParameterDescriptor> paramDescList = m_restfulClient.get(url, MDTModelSerDes.MDT_PARAM_LIST);
+		return new MDTParameterServiceCollection(this, paramDescList);
 	}
 
 	@Override

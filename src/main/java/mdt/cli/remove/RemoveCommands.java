@@ -14,10 +14,12 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="\nRemove MDT entity",
+	description="Remove MDT entity (instance, file, workflow model, workflow instance).",
 	subcommands= {
 		RemoveMDTInstanceCommand.class,
 		RemoveFileCommand.class,
+		RemoveWorkflowModelCommand.class,
+		RemoveWorkflowInstanceCommand.class,
 	})
 public class RemoveCommands extends CommandCollection {
 }

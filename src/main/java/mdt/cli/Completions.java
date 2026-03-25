@@ -79,8 +79,8 @@ public class Completions {
 		
 		public FStream<String> listCandidates(MDTInstance instance) {
 			FStream<String> params
-							= FStream.from(instance.getMDTParameterDescriptorAll())
-									.map(desc -> String.format("param:%s:%s", instance.getId(), desc.getId()))
+							= FStream.from(instance.getParameterServiceAll())
+									.map(param -> String.format("param:%s:%s", instance.getId(), param.getId()))
 									.concatWith("param:" + instance.getId() + ":*");
 			
 			FStream<String> opArgs

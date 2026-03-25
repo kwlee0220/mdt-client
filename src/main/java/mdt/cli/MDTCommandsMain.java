@@ -6,11 +6,15 @@ import utils.LogbackConfigLoader;
 import utils.Picoclies;
 
 import mdt.cli.MDTCommandsMain.SimulationCommands;
+import mdt.cli.add.AddCommands;
 import mdt.cli.get.GetCommands;
 import mdt.cli.list.ListCommands;
 import mdt.cli.remove.RemoveCommands;
+import mdt.cli.resolve.ResolveCommands;
+import mdt.cli.run.RunCommands;
 import mdt.cli.set.SetCommands;
-import mdt.cli.workflow.WorkflowCommands;
+import mdt.cli.start.StartCommands;
+import mdt.cli.stop.StopCommands;
 
 import ch.qos.logback.classic.Level;
 import picocli.CommandLine;
@@ -25,6 +29,7 @@ import picocli.CommandLine.Command;
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
 	description="%nManufactoring DigitalTwin (MDT) related commands.",
+	version = "1.4.1",
 	subcommands = {
 		EndpointCommand.class,
 		BuildInstanceCommand.class,
@@ -32,11 +37,10 @@ import picocli.CommandLine.Command;
 		RemoveCommands.class,
 		StartCommands.class,
 		StopCommands.class,
-		AddMDTInstanceCommand.class,	
+		AddCommands.class,	
 		GetCommands.class,
 		SetCommands.class,
 		RunCommands.class,
-		WorkflowCommands.class,
 		ResolveCommands.class,
 		SimulationCommands.class,
 	})

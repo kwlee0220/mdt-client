@@ -14,11 +14,12 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="\nUpdate MDT entity",
+	description="Update MDT entity (element, parameter, argument, file)",
 	subcommands= {
 		SetElementCommand.class,
 		SetParameterCommand.class,
 		SetArgumentCommand.class,
+		SetFileCommand.class,
 	})
 public class SetCommands extends CommandCollection {
 }

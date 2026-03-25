@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.stop;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
-import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
+
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
@@ -16,23 +16,23 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "start",
+	name = "workflow",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "Start an MDT Workflow."
+	description = "Stop an MDT Workflow."
 )
-public class StartWorkflowCommand extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(StartWorkflowCommand.class);
+public class StopWorkflowCommand extends AbstractMDTCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(StopWorkflowCommand.class);
 	
-	@Parameters(index="0", paramLabel="model-id", description="Workflow model id to start")
-	private String m_wfModelId;
+	@Parameters(index="0", paramLabel="wf-id", description="Workflow instance id to stop")
+	private String m_wfId;
 
 	public static final void main(String... args) throws Exception {
-		main(new StartWorkflowCommand(), args);
+		main(new StopWorkflowCommand(), args);
 	}
 	
-	public StartWorkflowCommand() {
+	public StopWorkflowCommand() {
 		setLogger(s_logger);
 	}
 
@@ -40,7 +40,6 @@ public class StartWorkflowCommand extends AbstractMDTCommand {
 	public void run(MDTManager mdt) throws Exception {
 		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
 		
-		Workflow wf = wfMgr.startWorkflow(m_wfModelId);
-		System.out.println(wf);
+		wfMgr.stopWorkflow(m_wfId);
 	}
 }

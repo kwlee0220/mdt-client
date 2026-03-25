@@ -19,7 +19,6 @@ import utils.Tuple;
 import utils.Utilities;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.model.instance.MDTInstanceManager;
 import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
 
@@ -117,7 +116,7 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		}
 	}
 	
-	protected TaskArgumentsDescriptor loadTaskArgumentsFromCommandLine(MDTInstanceManager manager)
+	protected TaskArgumentsDescriptor loadTaskArgumentsFromCommandLine()
 		throws IOException {
 		// Command line에서 지정된 옵션을 파싱하여 input/output parameter를 추출한다.
 		// 이때, input/output parameter 관련 정보들은 unmatcheds에 포함되어 있다.
@@ -130,6 +129,11 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 		List<UnmatchedOption> unmatchedOptions = collectUnmatchedOptions();
 		for ( UnmatchedOption unmatchedOpt: unmatchedOptions ) {
 			String name = unmatchedOpt.getName();
+			String value = unmatchedOpt.getValue();
+			
+			if ( value == null ) {
+				throw new IllegalArgumentException("argument is not specified: arg=" + name);
+			}
 			
 			ArgumentSpec argSpec = ArgumentSpec.parseArgumentSpec(unmatchedOpt.getValue());
 			

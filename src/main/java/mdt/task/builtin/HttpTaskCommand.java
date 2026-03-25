@@ -11,6 +11,7 @@ import com.google.common.base.Preconditions;
 
 import utils.func.FOption;
 
+import mdt.cli.run.RunSubmodelCommandOld;
 import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.workflow.model.TaskDescriptor;
@@ -36,7 +37,7 @@ public class HttpTaskCommand extends AbstractTaskCommand {
 	private static final String DEFAULT_POLL_INTERVAL = "1.0";
 	
 	@ParentCommand
-	private RunSubmodelCommand m_parentCmd;
+	private RunSubmodelCommandOld m_parentCmd;
 
 	@Option(names={"--endpoint"}, paramLabel="endpoint",
 			description="The endpoint for the HTTP-based MDTOperationServer.")
@@ -66,7 +67,7 @@ public class HttpTaskCommand extends AbstractTaskCommand {
         // 해당 연산 Submodel을 읽어서 주요 TaskDescriptor 정보를 설정한다.
 		m_parentCmd.loadOperationSubmodel(manager, descriptor);
 		
-		loadTaskDescriptor(manager, descriptor);
+		loadTaskDescriptor(descriptor);
 		
 		FOption.accept(m_endpoint, ep -> descriptor.addOption(HttpTask.OPTION_SERVER_ENDPOINT, ep));
 		Preconditions.checkArgument(descriptor.findOptionValue(HttpTask.OPTION_SERVER_ENDPOINT).isPresent(),

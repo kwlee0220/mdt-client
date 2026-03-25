@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import utils.func.FOption;
 
-import mdt.model.instance.MDTInstanceManager;
 import mdt.task.MDTTask;
 import mdt.workflow.model.TaskDescriptor;
 
@@ -28,9 +27,9 @@ public abstract class AbstractTaskCommand extends MultiVariablesCommand {
 		setLogger(s_logger);
 	}
 	
-	protected void loadTaskDescriptor(MDTInstanceManager manager, TaskDescriptor descriptor) throws IOException {
+	protected void loadTaskDescriptor(TaskDescriptor descriptor) throws IOException {
 		// CommandLine을 참조하여 input/output argument 정보를 읽어온다.
-		TaskArgumentsDescriptor taskVarsDesc = loadTaskArgumentsFromCommandLine(manager);
+		TaskArgumentsDescriptor taskVarsDesc = loadTaskArgumentsFromCommandLine();
 		taskVarsDesc.getInputs().forEach(descriptor::addInputArgumentSpec);
 		taskVarsDesc.getOutputs().forEach(descriptor::addOutputArgumentSpec);
 

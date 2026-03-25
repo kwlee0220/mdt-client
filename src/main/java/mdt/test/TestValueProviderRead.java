@@ -69,8 +69,8 @@ public class TestValueProviderRead {
 		List<String> values = Lists.newArrayList();
 		for ( int i =0; i < sml.getValue().size(); ++i ) {
 			String subPath = String.format("[%d].ParameterValue", i);
-			SubmodelElement sme = SubmodelUtils.traverse(sml, subPath);
-			String value = ((Property)sme).getValue();
+			Property prop = SubmodelUtils.traverse(sml, subPath, Property.class);
+			String value = prop.getValue();
 			values.add(value);
 		}
 		
@@ -94,8 +94,8 @@ public class TestValueProviderRead {
 		List<String> values = Lists.newArrayList();
 		for ( int i =0; i < 4; ++i ) {
 			String subPath = String.format("[%d].ParameterID", i);
-			SubmodelElement sme = SubmodelUtils.traverse(sml, subPath);
-			String value = ((Property)sme).getValue();
+			Property prop = SubmodelUtils.traverse(sml, subPath, Property.class);
+			String value = prop.getValue();
 			values.add(value);
 		}
 		

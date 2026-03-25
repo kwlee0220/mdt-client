@@ -1,5 +1,6 @@
 package mdt.model.sm.info;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,9 +38,9 @@ public class CompositionDependencyTest {
 		Assert.assertEquals("dependencyType", field);
 
 		smc.setIdShort("idShort2");
-		SubmodelUtils.getPropertyFieldById(smc, "SourceId").setValue("sourceId2");
-		SubmodelUtils.getPropertyFieldById(smc, "TargetId").setValue("targetId2");
-		SubmodelUtils.getPropertyFieldById(smc, "DependencyType").setValue("dependencyType2");
+		SubmodelUtils.getFieldById(smc, "SourceId", Property.class).setValue("sourceId2");
+		SubmodelUtils.getFieldById(smc, "TargetId", Property.class).setValue("targetId2");
+		SubmodelUtils.getFieldById(smc, "DependencyType", Property.class).setValue("dependencyType2");
 		dep.updateFromAasModel(smc);
 		
 		Assert.assertEquals("idShort2", dep.getIdShort());

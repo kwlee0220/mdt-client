@@ -23,6 +23,10 @@ public class MDTParameterService {
 		m_descriptor = descriptor;
 	}
 	
+	public String getId() {
+		return m_descriptor.getId();
+	}
+	
 	/**
 	 * MDT 파라미터의 등록정보를 반환한다.
 	 * 
@@ -50,8 +54,18 @@ public class MDTParameterService {
 		return getReference().readValue();
 	}
 	
+	/**
+	 * MDT 파라미터의 값을 갱신한다.
+	 * 
+	 * @param newValue 갱신할 파라미터 값.
+	 * @throws IOException 파라미터 값 갱신 실패시.
+	 */
+	public void update(ElementValue newValue) throws IOException {
+		getReference().updateValue(newValue);
+	}
+	
 	private MDTParameterReference createReference() {
-		MDTParameterReference ref = MDTParameterReference.newInstance(m_instance.getId(), m_descriptor.getId());
+		MDTParameterReference ref = MDTParameterReference.newInstance(m_instance.getId(), getId());
 		ref.activate(m_instance.getInstanceManager());
 		return ref;
 	}

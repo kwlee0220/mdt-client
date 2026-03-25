@@ -68,12 +68,12 @@ public class EndpointCommand extends AbstractMDTCommand {
 			}
 		}
 
-		// client config file이 존재하지 않는 경우에는 환경변수 MDT_ENDPOINT에 기록된
+		// client config file이 존재하지 않는 경우에는 환경변수 MDT_URL에 기록된
 		// endpoint 정보를 사용하여 접속을 시도한다.
-		String mdtEndpoint = System.getenv("MDT_ENDPOINT");
-		if ( mdtEndpoint != null ) {
-			System.out.println("(from environment variable 'MDT_ENDPOINT')");
-			MDTClientConfig config = MDTClientConfig.of(mdtEndpoint);
+		String mdtUrl = System.getenv("MDT_URL");
+		if ( mdtUrl != null ) {
+			System.out.println("(from environment variable 'MDT_URL')");
+			MDTClientConfig config = MDTClientConfig.of(mdtUrl);
 			printMDTClientConfig(config);
 			return;
 		}
@@ -87,10 +87,10 @@ public class EndpointCommand extends AbstractMDTCommand {
 	}
 	
 	private void printMDTClientConfig(MDTClientConfig config) {
-		System.out.println("- mdt-endpoint: " + config.getMdtEndpoint());
+		System.out.println("- mdt-url: " + config.getMdtUrl());
 		System.out.println("  . connect-timeout: " + config.getConnectTimeout());
 		System.out.println("  . read-timeout: " + config.getReadTimeout());
-		System.out.println("- workflow-endpoint: " + config.getWorkflowManagerEndpoint());
+		System.out.println("- workflow-endpoint: " + config.getWorkflowManagerUrl());
 		System.out.println("- mqtt-endpoint: " + config.getMqttEndpoint());
 	}
 }

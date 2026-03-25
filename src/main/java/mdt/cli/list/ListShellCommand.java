@@ -37,7 +37,7 @@ import picocli.CommandLine.Option;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "\nList all AssetAdministrationShells."
+	description = "List all AssetAdministrationShells."
 )
 public class ListShellCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListShellCommand.class);

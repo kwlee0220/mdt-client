@@ -380,7 +380,7 @@ public final class TaskDescriptor {
 			// Output argument와 동일 이름을 가진 variable을 찾는다.
 			ArgumentSpec outArgSpec = m_outputArgumentSpecs.get(argId);
 			if ( outArgSpec == null ) {
-				logger.warn("Unknown output argument: id={}", argId);
+				logger.warn("Unknown output argument: id={}, output-args={}", argId, m_outputArgumentSpecs.keySet());
 				continue;
 			}
 			if ( outArgSpec instanceof ReferenceArgumentSpec refArgSpec ) {

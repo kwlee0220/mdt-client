@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.get;
 
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "get",
+	name = "wfmodel",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
@@ -35,8 +35,8 @@ import picocli.CommandLine.Parameters;
 public class GetWorkflowModelCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetWorkflowModelCommand.class);
 	
-	@Parameters(index="0", paramLabel="id", description="Workflow id to get")
-	private String m_id;
+	@Parameters(index="0", paramLabel="wfmodel_id", description="Workflow id to get")
+	private String m_wfModelId;
 	
 	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
 			description="output type (candidnates: table (default) or json)")
@@ -51,14 +51,14 @@ public class GetWorkflowModelCommand extends AbstractMDTCommand {
 	}
 	
 	public String getWorkflowModelId() {
-		return m_id;
+		return m_wfModelId;
 	}
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
 		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
 		
-		WorkflowModel wfModel = wfMgr.getWorkflowModel(m_id);
+		WorkflowModel wfModel = wfMgr.getWorkflowModel(m_wfModelId);
 		switch ( m_output ) {
 			case "table":
 				displayAsTable(wfModel);

@@ -24,12 +24,14 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="\nList all MDT-related entities",
+	description="List all MDT entities (MDT instances, shells, submodels, operations, workflow models, workflows).",
 	subcommands= {
 		ListMDTInstanceCommand.class,
 		ListShellCommand.class,
 		ListSubmodelCommand.class,
 		ListOperationCommand.class,
+		ListWorkflowModelAllCommand.class,
+		ListWorkflowAllCommand.class,
 	})
 public class ListCommands extends CommandCollection {
 	public static final String DELIM = "|";

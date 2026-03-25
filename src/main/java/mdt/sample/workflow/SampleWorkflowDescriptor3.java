@@ -20,7 +20,7 @@ import mdt.workflow.model.TaskDescriptor;
  */
 public class SampleWorkflowDescriptor3 {
 	private static final String WORKFLOW_ID = "sample-workflow-3";
-	private static final String HTTP_OP_SERVER_ENDPOINT = "http://${LOCAL_HOST}:12987";
+	private static final String HTTP_OP_SERVER_ENDPOINT = "http://${MDT_HOST}:12987";
 	
 	public static final void main(String... args) throws Exception {
 		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();

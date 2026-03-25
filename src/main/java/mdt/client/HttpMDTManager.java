@@ -38,6 +38,7 @@ import mdt.client.workflow.HttpServiceClientFactoryRegistry;
 import mdt.client.workflow.HttpWorkflowManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
+import mdt.model.instance.MDTInstanceManager;
 import mdt.workflow.WorkflowManager;
 
 /**
@@ -114,14 +115,14 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 			}
 		}
 		
-		// client config file이 존재하지 않는 경우에는 환경변수 MDT_ENDPOINT에 기록된
+		// client config file이 존재하지 않는 경우에는 환경변수 MDT_URL에 기록된
 		// endpoint 정보를 사용하여 접속을 시도한다.
-		String endpoint = System.getenv("MDT_ENDPOINT");
+		String endpoint = System.getenv("MDT_URL");
 		if ( endpoint == null ) {
-			throw new IllegalStateException("MDTInstanceManager's endpoint is missing");
+			throw new IllegalStateException("MDTPlatform URL is missing");
 		}
 		
-//		System.out.println("Connecting to MDTManager with endpoint: " + endpoint);
+//		System.out.println("Connecting to MDTManager with URL: " + URL);
 		
 		return connect(endpoint);
 	}
@@ -152,7 +153,7 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	
 	public static HttpMDTManager connect(MDTClientConfig clientConfig) {
 		HttpMDTManager.Builder builder = HttpMDTManager.builder()
-														.endpoint(clientConfig.getMdtEndpoint())
+														.endpoint(clientConfig.getMdtUrl())
 														.jsonMapper(MDTModelSerDe.getJsonMapper());
 		if ( clientConfig.getConnectTimeout() != null ) {
 			builder = builder.connectTimeout(clientConfig.getConnectTimeout());
@@ -164,11 +165,11 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 			builder = builder.mqttEndpoint(clientConfig.getMqttEndpoint());
 		}
 		
-		if ( clientConfig.getWorkflowManagerEndpoint() != null ) {
-            builder = builder.workflowManagerEndpoint(clientConfig.getWorkflowManagerEndpoint());
+		if ( clientConfig.getWorkflowManagerUrl() != null ) {
+            builder = builder.workflowManagerEndpoint(clientConfig.getWorkflowManagerUrl());
 		}
 		else {
-			builder = builder.workflowManagerEndpoint(clientConfig.getMdtEndpoint());
+			builder = builder.workflowManagerEndpoint(clientConfig.getMdtUrl());
 		}
 		
 		return builder.build();
@@ -213,6 +214,11 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 		
 	}
 	
+	/**
+	 * MDTManager가 사용하는 {@link MDTInstanceManager} proxy 객체를 반환한다.
+	 * 
+	 * @return	{@link MDTInstanceManager} proxy 객체
+	 */
 	public HttpMDTInstanceManager getInstanceManager() {
 		String endpoint = String.format("%s%s", getEndpoint(), INSTANCE_MANAGER_SUFFIX);
 		return HttpMDTInstanceManager.builder()
@@ -221,7 +227,12 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 									.build();
 	}
 	
-	public WorkflowManager getWorkflowManager() {
+	/**
+	 * MDTManager가 사용하는 {@link WorkflowManager} proxy 객체를 반환한다.
+	 *
+	 * @return {@link WorkflowManager} proxy 객체
+	 */
+	public HttpWorkflowManager getWorkflowManager() {
 //		return createClient(WorkflowModelManager.class);
 		return new HttpWorkflowManager(getHttpClient(), m_wfMgrEndpoint + WORKFLOW_MANAGER_SUFFIX);
 	}

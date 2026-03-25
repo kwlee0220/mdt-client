@@ -2,6 +2,7 @@ package mdt.model.sm.info;
 
 import java.util.List;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
@@ -68,8 +69,8 @@ public class TwinCompositionTest {
 		Assert.assertEquals(2, deps.size());
 		
 		smc.setIdShort("idShort2");
-		SubmodelUtils.getPropertyFieldById(smc, "CompositionID").setValue("compositionId2");
-		SubmodelUtils.getPropertyFieldById(smc, "CompositionType").setValue("compositionType2");
+		SubmodelUtils.getFieldById(smc, "CompositionID", Property.class).setValue("compositionId2");
+		SubmodelUtils.getFieldById(smc, "CompositionType", Property.class).setValue("compositionType2");
 		
 		SubmodelElementList sml = SubmodelUtils.getFieldById(smc, "CompositionItems", SubmodelElementList.class);
 		sml.getValue().remove(0);

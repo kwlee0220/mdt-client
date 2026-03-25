@@ -17,7 +17,7 @@ public class MDTSubmodelCollectionExpr implements MDTExpression {
 	}
 
 	@Override
-	public List<SubmodelService> evaluate() {
+	public List<? extends SubmodelService> evaluate() {
 		MDTInstance instance = m_instExpr.evaluate();
 		return instance.getSubmodelServiceAll();
 	}

@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.get;
 
 import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
@@ -27,7 +27,7 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "get",
+	name = "workflow",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
@@ -36,8 +36,8 @@ import picocli.CommandLine.Parameters;
 		GetWorkflowLogCommand.class
 	}
 )
-public class GetWorkflowCommand extends AbstractMDTCommand {
-	private static final Logger s_logger = LoggerFactory.getLogger(GetWorkflowCommand.class);
+public class GetWorkflowInstanceCommand extends AbstractMDTCommand {
+	private static final Logger s_logger = LoggerFactory.getLogger(GetWorkflowInstanceCommand.class);
 	
 	@Parameters(index="0", paramLabel="id", description="Workflow id to get")
 	private String m_id;
@@ -47,10 +47,10 @@ public class GetWorkflowCommand extends AbstractMDTCommand {
 	private String m_output = "table";
 
 	public static final void main(String... args) throws Exception {
-		main(new GetWorkflowCommand(), args);
+		main(new GetWorkflowInstanceCommand(), args);
 	}
 	
-	public GetWorkflowCommand() {
+	public GetWorkflowInstanceCommand() {
 		setLogger(s_logger);
 	}
 	

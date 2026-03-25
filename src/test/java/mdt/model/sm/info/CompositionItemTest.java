@@ -1,5 +1,6 @@
 package mdt.model.sm.info;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,8 +34,8 @@ public class CompositionItemTest {
 		Assert.assertEquals("reference", field);
 		Assert.assertFalse(SubmodelUtils.containsFieldById(smc, "Description"));
 		
-		SubmodelUtils.getPropertyFieldById(smc, "ID").setValue("id2");
-		SubmodelUtils.getPropertyFieldById(smc, "Reference").setValue("reference2");
+		SubmodelUtils.getFieldById(smc, "ID", Property.class).setValue("id2");
+		SubmodelUtils.getFieldById(smc, "Reference", Property.class).setValue("reference2");
 		item.updateFromAasModel(smc);
 		
 		Assert.assertEquals("id2", item.getIdShort());

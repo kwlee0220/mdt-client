@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.remove;
 
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
@@ -24,11 +24,11 @@ import picocli.CommandLine.Parameters;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "remove",
+	name = "wfmodel",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "Remove the MDT Workflow model(s) to remove."
+	description = "Remove the MDT Workflow model."
 )
 public class RemoveWorkflowModelCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(RemoveWorkflowModelCommand.class);

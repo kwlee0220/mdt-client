@@ -11,6 +11,8 @@ import com.google.common.base.Preconditions;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
+import mdt.model.ReferenceUtils;
+
 import javax.annotation.Nullable;
 
 /**
@@ -28,7 +30,7 @@ public class Metadata {
 	
 	public Metadata(SubmodelElement sme) {
 		m_idShort = sme.getIdShort();
-		m_modelType = SubmodelUtils.getSubmodelElementType(sme);
+		m_modelType = SubmodelElementTypeDescriptor.getTypeDescriptor(sme).getType(); 
 		if ( m_modelType.equals(AasSubmodelElements.PROPERTY) ) {
 			m_valueType = ((Property)sme).getValueType();
 			Preconditions.checkState(m_valueType != null, "Property SubmodelElement should have 'valueType'");
@@ -44,7 +46,7 @@ public class Metadata {
 			m_typeValueListElement = null;
 		}
 		
-		m_semanticId = SubmodelUtils.getSemanticIdStringOrNull(sme.getSemanticId());
+		m_semanticId = ReferenceUtils.getSemanticIdStringOrNull(sme.getSemanticId());
 	}
 	
 	@Override

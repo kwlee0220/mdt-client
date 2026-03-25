@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
@@ -192,7 +193,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		SubmodelElementList paramValues = (SubmodelElementList)m_ref.read();
 		FStream.from(paramValues.getValue())
 				.forEach(paramValue -> {
-					String memberId = SubmodelUtils.getStringFieldById(paramValue, "ParameterID");
+					String memberId = SubmodelUtils.getFieldById(paramValue, "ParameterID", Property.class).getValue();
 					SubmodelElement newValue = valueMap.get(memberId);
 					newValue.setIdShort("ParameterValue");
 					SubmodelUtils.replaceFieldbyId((SubmodelElementCollection)paramValue, "ParameterValue", newValue);

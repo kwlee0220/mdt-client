@@ -1,4 +1,4 @@
-package mdt.cli.workflow;
+package mdt.cli.list;
 
 import java.io.InterruptedIOException;
 import java.io.PrintWriter;
@@ -18,7 +18,6 @@ import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.cli.PeriodicRefreshingConsole;
-import mdt.cli.list.ListCommands;
 import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.model.ResourceNotFoundException;
@@ -33,7 +32,7 @@ import picocli.CommandLine.Option;
  * @author Kang-Woo Lee (ETRI)
  */
 @Command(
-	name = "list",
+	name = "wfmodels",
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
@@ -139,7 +138,7 @@ public class ListWorkflowModelAllCommand extends AbstractMDTCommand {
 	        PathMatcher matcher = FileSystems.getDefault().getPathMatcher(pattern);
 	        
 	        return FStream.from(wfMgr.getWorkflowModelAll())
-					        .filter(wf -> matcher.matches(Paths.get(wf.getName())))
+					        .filter(wf -> matcher.matches(Paths.get(wf.getId())))
 					        .toList();
 		}
 		else {

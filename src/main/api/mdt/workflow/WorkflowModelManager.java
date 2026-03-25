@@ -60,7 +60,4 @@ public interface WorkflowModelManager {
 	 * 모든 워크플로우 모델 등록정보를 삭제한다.
 	 */
 	public void removeWorkflowModelAll();
-	
-	public String getWorkflowScript(String wfModelId, String mdtEndpoint, String clientDockerImage)
-		throws ResourceNotFoundException;
 }

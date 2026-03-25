@@ -3,7 +3,6 @@ package mdt.client.workflow;
 import java.io.IOException;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
 
@@ -17,14 +16,13 @@ import utils.http.HttpRESTfulClient.ErrorEntityDeserializer;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 
-import mdt.model.AASUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceAlreadyExistsException;
 import mdt.model.ResourceNotFoundException;
-import mdt.workflow.MDTWorkflowInstanceManagerException;
 import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
 import mdt.workflow.WorkflowModel;
+import mdt.workflow.WorkflowStatus;
 
 
 /**
@@ -36,14 +34,14 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	private final HttpRESTfulClient m_restfulClient;
 	
 	public HttpWorkflowManager(OkHttpClient client, String endpoint) {
-		Preconditions.checkArgument(endpoint != null, "HttpWorkflowManager: endpoint is null");
+		Preconditions.checkArgument(endpoint != null, getClass().getSimpleName() + ": endpoint is null");
 		
 		m_endpoint = endpoint;
 		ErrorEntityDeserializer errorDeser = new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER);
 		m_restfulClient = HttpRESTfulClient.builder()
-										.httpClient(client)
-										.errorEntityDeserializer(errorDeser)
-										.build();
+											.httpClient(client)
+											.errorEntityDeserializer(errorDeser)
+											.build();
 	}
 
 	@Override
@@ -52,14 +50,19 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	}
 
 	@Override
-	public void onWorkflowModelAdded(WorkflowModel wfModel) throws MDTWorkflowInstanceManagerException { }
-
-	@Override
-	public void onWorkflowModelRemoved(String wfModelId) throws MDTWorkflowInstanceManagerException { }
-
-	@Override
 	public OkHttpClient getHttpClient() {
 		return m_restfulClient.getHttpClient();
+	}
+
+	@Override
+	public List<String> listWorkflowIds() {
+		throw new UnsupportedOperationException("listWorkflowIds is not supported in HttpWorkflowManager");
+	}
+
+	@Override
+	public WorkflowStatus getWorkflowStatus(String wfIdStr) throws ResourceNotFoundException {
+		String url = String.format("%s/workflows", m_endpoint);
+		throw new UnsupportedOperationException("listWorkflowIds is not supported in HttpWorkflowManager");
 	}
 
 	@Override
@@ -139,24 +142,8 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		return m_restfulClient.get(url, m_wfModelDeser);
 	}
 
-	@Override
-	public String getWorkflowScript(String id, String mdtEndpoint, String clientDockerImage)
-		throws ResourceNotFoundException {
-		StringBuilder builder = new StringBuilder();
-		if ( mdtEndpoint != null ) {
-			builder.append("mdt-endpoint=")
-					.append(AASUtils.encodeBase64UrlSafe(mdtEndpoint));
-		}
-		if ( clientDockerImage != null ) {
-			if ( builder.length() > 0 ) {
-				builder.append("&");
-			}
-			builder.append("client-docker-image=")
-					.append(AASUtils.encodeBase64UrlSafe(clientDockerImage));
-		}
-		
-		String paramsStr = builder.length() > 0 ? "?" + builder.toString() : "";
-		String url = String.format("%s/models/%s/script%s", m_endpoint, id, paramsStr);
+	public String getWorkflowScript(String wfModelId) throws ResourceNotFoundException {
+		String url = String.format("%s/models/%s/script", m_endpoint, wfModelId);
 		return m_restfulClient.get(url, HttpRESTfulClient.STRING_DESER);
 	}
 

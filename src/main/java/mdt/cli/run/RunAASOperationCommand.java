@@ -1,4 +1,4 @@
-package mdt.cli;
+package mdt.cli.run;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -48,12 +48,14 @@ public class RunAASOperationCommand extends MultiVariablesCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(RunAASOperationCommand.class);
 	private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 	
-	@Parameters(index="0", paramLabel="operation-ref",
-				description="target operation element reference (<instance-id>:<submodel-idshort>:<element-idshort>)")
-	public void setOperation(String refString) {
-		m_operationRef = (DefaultElementReference)ElementReferences.parseExpr(refString);
-	}
-	private DefaultElementReference m_operationRef;
+	@Parameters(index="0", paramLabel="id", description="MDTInstance id.")
+	private String m_instanceId;
+	
+	@Parameters(index="1", paramLabel="submodel-idShort", description="Target AI/Simulation submodel idShort")
+	private String m_submodelIdShort;
+	
+	@Parameters(index="2", paramLabel="path", defaultValue="*", description="Target SubmodelElement idShortPath")
+	private String m_path;
 	
 	@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\")")
 	public void setTimeout(String timeout) {
@@ -81,15 +83,16 @@ public class RunAASOperationCommand extends MultiVariablesCommand {
 	public void run(MDTManager mdt) throws Exception {
 		MDTInstanceManager manager = mdt.getInstanceManager();
 		
-		m_operationRef.activate(manager);
-		AASOperationClient opSvc = new AASOperationClient(m_operationRef.getSubmodelService(),
-															m_operationRef.getIdShortPathString(),
-															m_pollInterval);
+		String opRefStr = String.format("%s:%s:%s", m_instanceId, m_submodelIdShort, m_path);
+		DefaultElementReference opRef = (DefaultElementReference)ElementReferences.parseExpr(opRefStr);
+		opRef.activate(manager);
 		
-		loadArgumentFromAASOperation(m_operationRef);
+		loadArgumentFromAASOperation(opRef);
 
 		// Command line 인자를로부터 전달된 input/output/inoutput 변수 값을 수집한다.
-		TaskArgumentsDescriptor tvsDesc = loadTaskArgumentsFromCommandLine(manager);
+		TaskArgumentsDescriptor tvsDesc = loadTaskArgumentsFromCommandLine();
+		
+		AASOperationClient opSvc = new AASOperationClient(opRef.getSubmodelService(), m_path, m_pollInterval);
 		
 		// Command line의 input 변수 값을 input OperationVariable에 설정한다.
 		KeyValueFStream.from(tvsDesc.getInputs())

@@ -39,7 +39,7 @@ public class SetTaskCommand extends MultiVariablesCommand {
 		descriptor.setId("set");
 		descriptor.setType(SetTask.class.getName());
 		
-		TaskArgumentsDescriptor tad = loadTaskArgumentsFromCommandLine(manager);
+		TaskArgumentsDescriptor tad = loadTaskArgumentsFromCommandLine();
 		
 		ArgumentSpec src = tad.getInputs().get(SetTask.ARG_SOURCE);
 		src = MDTInstanceManagerAware.activate(src, manager);

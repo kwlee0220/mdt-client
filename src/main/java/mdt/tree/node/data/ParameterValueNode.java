@@ -2,6 +2,7 @@ package mdt.tree.node.data;
 
 import java.time.Instant;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import lombok.experimental.UtilityClass;
@@ -29,7 +30,7 @@ public final class ParameterValueNode {
 			String id = getFieldStringOrNull(sme, "ParameterID");
 			node.setTitle(id);
 
-			String tsStr = SubmodelUtils.findPropertyById(sme, "EventDateTime")
+			String tsStr = SubmodelUtils.findFieldById(sme, "EventDateTime", Property.class)
 										.map(tsProp -> {
 											Instant ts = DataTypes.DATE_TIME.parseValueString(tsProp.getValue());
 											return String.format(" (ts=%s)", DataTypes.DATE_TIME.toValueString(ts));
@@ -40,7 +41,7 @@ public final class ParameterValueNode {
 		}
 		
 		private String getFieldStringOrNull(SubmodelElement smc, String field) {
-			return SubmodelUtils.findPropertyById(smc, field)
+			return SubmodelUtils.findFieldById(smc, field, Property.class)
 								.map(prop -> prop.getValue())
 								.orElse(null);
 		}

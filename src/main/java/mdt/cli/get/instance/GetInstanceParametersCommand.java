@@ -9,6 +9,7 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import utils.func.Funcs;
 import utils.stream.FStream;
 
 import mdt.client.instance.HttpMDTInstanceClient;
@@ -16,8 +17,8 @@ import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTParameterDescriptor;
-import mdt.model.sm.ref.ElementReferences;
-import mdt.model.sm.ref.MDTElementReference;
+import mdt.model.instance.MDTParameterService;
+import mdt.model.sm.ref.MDTParameterReference;
 import mdt.tree.node.DefaultNode;
 import mdt.tree.node.DefaultNodeFactories;
 import mdt.tree.node.ListNode;
@@ -40,7 +41,7 @@ public class GetInstanceParametersCommand extends AbstractInstanceSubCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(GetInstanceParametersCommand.class);
 	
 	private HttpMDTInstanceManager m_manager;
-	private List<MDTParameterDescriptor> m_parameters;
+	private List<MDTParameterService> m_parameters;
 	private MDTParameterDescriptorListNode m_paramNodes;
 
 	public static final void main(String... args) throws Exception {
@@ -52,8 +53,9 @@ public class GetInstanceParametersCommand extends AbstractInstanceSubCommand {
 	}
 
 	@Override
-	protected void displayAsJson(HttpMDTInstanceClient instance, PrintWriter pw) throws SerializationException, IOException {
-		List<MDTParameterDescriptor> descList = instance.getMDTParameterDescriptorAll();
+	protected void displayAsJson(HttpMDTInstanceClient instance, PrintWriter pw)
+		throws SerializationException, IOException {
+		List<MDTParameterDescriptor> descList = Funcs.map(m_parameters, MDTParameterService::getDescriptor);
 		String json = MDTModelSerDe.JSON_SERIALIZER.writeList(descList);
 		pw.println(json);
 	}
@@ -64,7 +66,7 @@ public class GetInstanceParametersCommand extends AbstractInstanceSubCommand {
 		
 		 // parameter nodes
 		if ( m_paramNodes == null ) {
-			m_parameters = instance.getMDTParameterDescriptorAll();
+			m_parameters = instance.getParameterServiceAll();
 			m_paramNodes = new MDTParameterDescriptorListNode(instance.getId(), m_parameters);
 		}
 		
@@ -74,15 +76,12 @@ public class GetInstanceParametersCommand extends AbstractInstanceSubCommand {
 	private class MDTParameterDescriptorListNode extends ListNode {
 		private List<ParameterNode> m_paramNodes;
 		
-		public MDTParameterDescriptorListNode(String instId, List<MDTParameterDescriptor> paramDescList) {
+		public MDTParameterDescriptorListNode(String instId, List<MDTParameterService> parameters) {
 			setTitle("Parameters");
 			setRepeatable(true);
 			
-			m_paramNodes = FStream.from(paramDescList)
-									.map(pdesc -> {
-										MDTElementReference ref = ElementReferences.parseExpr(pdesc.getReference());
-										return create(pdesc, ref);
-									})
+			m_paramNodes = FStream.from(parameters)
+									.map(ParameterNode::new)
 									.toList();
 		}
 		
@@ -90,41 +89,31 @@ public class GetInstanceParametersCommand extends AbstractInstanceSubCommand {
 		protected List<? extends DefaultNode> getElementNodes() {
 			return m_paramNodes;
 		}
-		
-		public ParameterNode create(MDTParameterDescriptor pdesc, MDTElementReference ref)  {
-			ParameterNode node = new ParameterNode(pdesc, ref);
-			node.setTitle(pdesc.getId());
-			node.setValueType(String.format(" (%s)", pdesc.getValueType()));
-			node.setHideValue(true);
-			
-			return node;
-		}
 	}
 	
 	private class ParameterNode extends DefaultNode {
-		private final MDTParameterDescriptor m_pdesc;
-		private final MDTElementReference m_ref;
+		private final MDTParameterDescriptor m_paramDesc;
+		private final MDTParameterReference m_paramRef;
 		
-		public ParameterNode(MDTParameterDescriptor pdesc, MDTElementReference ref) {
-			m_pdesc = pdesc;
+		public ParameterNode(MDTParameterService param) {
+			m_paramDesc = param.getDescriptor();
+			m_paramRef = param.getReference();
 			
-			setTitle(pdesc.getId());
-			setValueType(String.format(" (%s)", pdesc.getValueType()));
+			setTitle(m_paramDesc.getId());
+			setValueType(String.format(" (%s)", m_paramDesc.getValueType()));
 			setHideValue(true);
-			
-			m_ref = ref;
 		}
 		
 		@Override
 		public List<? extends Node> getChildren() {
-			TerminalNode nameNode = new TerminalNode("name", "", m_pdesc.getName());
-			TerminalNode refNode = new TerminalNode("reference", "", m_pdesc.getReference());
-			TerminalNode epNode = new TerminalNode("endpoint", "", m_pdesc.getEndpoint());
+			TerminalNode nameNode = new TerminalNode("name", "", m_paramDesc.getName());
+			TerminalNode refNode = new TerminalNode("reference", "", m_paramDesc.getReference());
+			TerminalNode epNode = new TerminalNode("endpoint", "", m_paramDesc.getEndpoint());
 			try {
-				if ( !m_ref.isActivated() ) {
-					m_ref.activate(m_manager);
+				if ( !m_paramRef.isActivated() ) {
+					m_paramRef.activate(m_manager);
 				}
-				DefaultNode valueNode = DefaultNodeFactories.create(m_ref.read());
+				DefaultNode valueNode = DefaultNodeFactories.create(m_paramRef.read());
 				valueNode.setTitle("value");
 				return List.of(nameNode, refNode, epNode, valueNode);
 			}

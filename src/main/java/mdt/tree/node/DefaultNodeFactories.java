@@ -23,7 +23,7 @@ import utils.stream.FStream;
 
 import mdt.model.Input;
 import mdt.model.Output;
-import mdt.model.sm.SubmodelUtils;
+import mdt.model.ReferenceUtils;
 import mdt.model.sm.data.Equipment;
 import mdt.model.sm.data.Parameter;
 import mdt.model.sm.data.ParameterValue;
@@ -81,7 +81,7 @@ public class DefaultNodeFactories {
 		Preconditions.checkArgument(smElm != null,
 									"SubmodelElement is not allowed to be null in DefaultNodeFactories");
 		
-		String semanticIdStr = SubmodelUtils.getSemanticIdStringOrNull(smElm.getSemanticId());
+		String semanticIdStr = ReferenceUtils.getSemanticIdStringOrNull(smElm.getSemanticId());
 		DefaultNodeFactory fact = FACTORY_REGISTRY.get(semanticIdStr);
 		if ( fact != null ) {
 			return fact.create(smElm);

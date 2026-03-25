@@ -25,15 +25,15 @@ import utils.io.IOUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"mdtEndpoint", "connectTimeout", "readTimeout", "mqttEndpoint", "workflowManagerEndpoint"})
+@JsonPropertyOrder({"mdtUrl", "connectTimeout", "readTimeout", "mqttEndpoint", "workflowManagerUrl"})
 public final class MDTClientConfig {
 	private static final Logger s_logger = LoggerFactory.getLogger(MDTClientConfig.class);
 
-	private String m_mdtEndpoint;
+	private String m_mdtUrl;
 	private @Nullable Duration m_connectTimeout;
 	private @Nullable Duration m_readTimeout;
 	private @Nullable String m_mqttEndpoint;
-	private @Nullable String m_workflowManagerEndpoint;
+	private @Nullable String m_workflowManagerUrl;
 	
 	public static MDTClientConfig load(File configFile) throws IOException {
 		if ( s_logger.isInfoEnabled() ) {
@@ -50,19 +50,19 @@ public final class MDTClientConfig {
 		return config;
 	}
 	
-	public static MDTClientConfig of(String mdtEndpoint) {
+	public static MDTClientConfig of(String mdtUrl) {
 		MDTClientConfig config = new MDTClientConfig();
-		config.setMdtEndpoint(mdtEndpoint);
+		config.setMdtUrl(mdtUrl);
 		
 		return config;
 	}
 	
-	public String getMdtEndpoint() {
-		return m_mdtEndpoint;
+	public String getMdtUrl() {
+		return m_mdtUrl;
 	}
 	
-	public void setMdtEndpoint(String endpoint) {
-		m_mdtEndpoint = endpoint;
+	public void setMdtUrl(String url) {
+		m_mdtUrl = url;
 	}
 	
 	public Duration getConnectTimeout() {
@@ -99,22 +99,22 @@ public final class MDTClientConfig {
 		m_mqttEndpoint = endpoint;
 	}
 	
-	public String getWorkflowManagerEndpoint() {
-		return m_workflowManagerEndpoint;
+	public String getWorkflowManagerUrl() {
+		return m_workflowManagerUrl;
 	}
 	
-	public void setWorkflowManagerEndpoint(String endpoint) {
-		m_workflowManagerEndpoint = endpoint;
+	public void setWorkflowManagerUrl(String endpoint) {
+		m_workflowManagerUrl = endpoint;
 	}
 	
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("MDTClientConfig [mdtEndpoint=").append(m_mdtEndpoint)
+		builder.append("MDTClientConfig [mdtUrl=").append(m_mdtUrl)
 				.append(", connectTimeout=").append(m_connectTimeout)
 				.append(", readTimeout=").append(m_readTimeout)
 				.append(", mqttEndpoint=").append(m_mqttEndpoint)
-				.append(", workflowManagerEndpoint=").append(m_workflowManagerEndpoint)
+				.append(", workflowManagerUrl=").append(m_workflowManagerUrl)
 				.append("]");
 		return builder.toString();
 	}

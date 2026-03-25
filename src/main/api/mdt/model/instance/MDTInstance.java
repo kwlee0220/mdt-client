@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import javax.annotation.Nullable;
+
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
-
-import javax.annotation.Nullable;
 
 import mdt.aas.AssetAdministrationShellRegistry;
 import mdt.model.AssetAdministrationShellService;
@@ -198,7 +198,7 @@ public interface MDTInstance {
 	 * 
 	 * @see	SubmodelService
 	 */
-	public List<SubmodelService> getSubmodelServiceAll()
+	public List<? extends SubmodelService> getSubmodelServiceAll()
 		throws ResourceNotFoundException, MDTInstanceManagerException;
 	
 	/**
@@ -248,6 +248,14 @@ public interface MDTInstance {
 	public List<SubmodelService> getSubmodelServiceAllBySemanticId(String semanticId);
 	
 	/**
+	 * MDTInstance에 등록된 파라미터 서비스 목록 객체를 반환한다.
+	 *
+	 * @return	MDTInstance에 등록된 파라미터 서비스 목록 ({@link MDTParameterServiceCollection}) 객체.
+	 * @throws ResourceNotFoundException	MDTInstance에 MDTInstance에 Data 서브모델이 존재하지 않는 경우.
+	 */
+	public List<MDTParameterService> getParameterServiceAll() throws ResourceNotFoundException;
+	
+	/**
 	 * MDTInstance가 포함한 AssetAdministrationShell (AAS)의 기술자를 반환한다.
 	 * <p>
 	 * {@link AssetAdministrationShellDescriptor}를 활용하여 AssetAdministrationShell의
@@ -276,6 +284,12 @@ public interface MDTInstance {
 	 */
 	public List<SubmodelDescriptor> getAASSubmodelDescriptorAll();
 	
+	/**
+	 * MDTInstance에 등록된 파라미터 목록 객체를 반환한다.
+	 * 
+	 * @return MDTInstance에 등록된 파라미터 목록 ({@link ParameterCollection}) 객체.
+	 * @throws ResourceNotFoundException MDTInstance에 MDTInstance에 Data 서브모델이 존재하지 않는 경우.
+	 */
 	public ParameterCollection getParameterCollection() throws ResourceNotFoundException;
 	
 	/**
@@ -292,8 +306,18 @@ public interface MDTInstance {
 	 */
 	public List<MDTSubmodelDescriptor> getMDTSubmodelDescriptorAll();
 	
-	public List<MDTParameterDescriptor> getMDTParameterDescriptorAll();
+	/**
+	 * MDTInstance에 포함된 모든 MDTOperation 기술자({@link MDTOperationDescriptor})들을 반환한다.
+	 * 
+	 * @return MDTOperation 기술자 목록.
+	 */
 	public List<MDTOperationDescriptor> getMDTOperationDescriptorAll();
+	
+	/**
+	 * MDTInstance에 포함된 모든 TwinComposition 기술자({@link MDTTwinCompositionDescriptor})들을 반환한다.
+	 * 
+	 * @return TwinComposition 기술자 목록.
+	 */
 	public @Nullable MDTTwinCompositionDescriptor getMDTTwinCompositionDescriptor();
 	
 	public default List<MDTInstance> getComponentInstanceAll() {

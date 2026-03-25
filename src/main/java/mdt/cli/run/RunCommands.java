@@ -1,6 +1,6 @@
-package mdt.cli;
+package mdt.cli.run;
 
-import mdt.task.builtin.RunSubmodelCommand;
+import mdt.cli.CommandCollection;
 import mdt.task.builtin.SetTaskCommand;
 
 import picocli.CommandLine.Command;
@@ -15,7 +15,7 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="MDT Task related commands",
+	description="Run MDT Tasks (e.g., AAS operation, submodel, etc.)",
 	subcommands= {
 		RunAASOperationCommand.class,
 		SetTaskCommand.class,

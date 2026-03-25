@@ -11,6 +11,7 @@ import utils.func.FOption;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
+import mdt.cli.run.RunSubmodelCommandOld;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
@@ -37,7 +38,7 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpTaskCommand.class);
 	
 	@ParentCommand
-	private RunSubmodelCommand m_parentCmd;
+	private RunSubmodelCommandOld m_parentCmd;
 	
 	@Parameters(index="0", paramLabel="path", arity="1..1",  description="Path to the operation descriptor")
 	private File m_opDescFile;
@@ -68,7 +69,7 @@ public class ProgramTaskCommand extends AbstractTaskCommand {
 		FOption.accept(m_workingDir, dir -> descriptor.addOption(ProgramTask.OPTION_WORKING_DIRECTORY,
 																			dir.getAbsolutePath()));
 		
-		loadTaskDescriptor(manager, descriptor);
+		loadTaskDescriptor(descriptor);
 		
 		ProgramTask task = new ProgramTask(descriptor);
 		task.run(manager);

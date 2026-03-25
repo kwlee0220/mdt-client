@@ -1,12 +1,12 @@
-package mdt.cli.workflow;
+package mdt.cli.get;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.HttpMDTManager;
+import mdt.client.workflow.HttpWorkflowManager;
 import mdt.model.MDTManager;
-import mdt.workflow.WorkflowManager;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -30,9 +30,9 @@ public class GetWorkflowScriptCommand extends AbstractMDTCommand {
 	@ParentCommand
 	private GetWorkflowModelCommand m_parent;
 	
-	@Option(names={"--mdt-endpoint"}, paramLabel="url", required=false,
-			description="endpoint URL to the MDTManager")
-	private String m_mdtEndpoint = null;
+	@Option(names={"--mdt-url"}, paramLabel="url", required=false,
+			description="URL to the MDTPlatform")
+	private String m_mdtUrl = null;
 	
 	@Option(names={"--mdt-client-docker"}, paramLabel="image-id", required=false,
 			description="docker image of the MDTClient")
@@ -48,9 +48,9 @@ public class GetWorkflowScriptCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
+		HttpWorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
 		
-		String script = wfMgr.getWorkflowScript(m_parent.getWorkflowModelId(), m_mdtEndpoint, m_clientDockerImage);
+		String script = wfMgr.getWorkflowScript(m_parent.getWorkflowModelId());
 		System.out.println(script);
 	}
 }

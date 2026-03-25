@@ -11,20 +11,12 @@ import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AasSubmodelElements;
-import org.eclipse.digitaltwin.aas4j.v3.model.AnnotatedRelationshipElement;
-import org.eclipse.digitaltwin.aas4j.v3.model.Blob;
-import org.eclipse.digitaltwin.aas4j.v3.model.Capability;
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
-import org.eclipse.digitaltwin.aas4j.v3.model.Entity;
-import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.Key;
 import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
-import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
-import org.eclipse.digitaltwin.aas4j.v3.model.Range;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
-import org.eclipse.digitaltwin.aas4j.v3.model.RelationshipElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
@@ -61,6 +53,7 @@ import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
 import mdt.model.MDTSemanticIds;
 import mdt.model.ModelValidationException;
+import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.ai.AI;
 import mdt.model.sm.data.Data;
@@ -70,9 +63,7 @@ import mdt.model.sm.data.ParameterValue;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
-import mdt.model.sm.shape.Shape;
 import mdt.model.sm.simulation.Simulation;
-import mdt.model.sm.value.ElementValues;
 import mdt.model.timeseries.TimeSeries;
 
 /**
@@ -81,6 +72,13 @@ import mdt.model.timeseries.TimeSeries;
  */
 @UtilityClass
 public class SubmodelUtils {
+	/**
+	 * 주어진 SubmodelElement 객체를 복사하여 반환한다.
+	 *
+	 * @param sme 복제할 SubmodelElement 객체.
+	 * @return 주어진 SubmodelElement 객체의 깊은 복사본.
+	 * @throws InternalException JSON 직렬화 또는 역직렬화 과정에서 오류가 발생한 경우.
+	 */
 	public static SubmodelElement duplicate(SubmodelElement sme) {
 		try {
 			String jsonStr = MDTModelSerDe.toJsonString(sme);
@@ -91,6 +89,13 @@ public class SubmodelUtils {
 		}
 	}
 	
+	/**
+	 * 주어진 idShort 경로 문자열을 '.' 구분자로 분할하여 각 세그먼트를 개별적으로 파싱한 후,
+	 * 모든 세그먼트를 순서대로 반환하는 스트림을 생성하여 반환한다.
+	 *
+	 * @param idShortPath	idShort 경로 문자열.
+	 * @return	idShort 경로의 각 세그먼트를 순서대로 반환하는 스트림.
+	 */
 	public static FStream<String> parseIdShortPath(String idShortPath) {
 		return CSV.parseCsv(idShortPath, '.')
 					.flatMapIterable(seg -> parsePathSegment(seg));
@@ -112,6 +117,12 @@ public class SubmodelUtils {
 		};
 	}
 	
+	/**
+	 * 주어진 idShort 리스트를 기반으로 idShort 경로 문자열을 생성하여 반환한다.
+	 *
+	 * @param segList idShort 경로의 세그먼트 리스트. 각 세그먼트는 idShort 또는 인덱스 형태일 수 있다.
+	 * @return 생성된 idShort 경로 문자열.
+	 */
 	public static String buildIdShortPath(Iterable<String> segList) {
 		StringBuilder builder = new StringBuilder();
 		for ( String seg: segList ) {
@@ -129,13 +140,15 @@ public class SubmodelUtils {
 		
 		return builder.toString();
 	}
-	
-	public static <T> T getPropertyValueByPath(Submodel submodel, String idShortPath, Class<T> valueClass)
-		throws ResourceNotFoundException {
-		Property prop = cast(traverse(submodel, idShortPath), Property.class);
-		return getPropertyValue(prop, valueClass);
-	}
 
+	/**
+	 * 주어진 Property의 값을 지정된 class 타입으로 변환하여 반환한다.
+	 *
+	 * @param <T>	변환 대상 class의 타입 매개변수.
+	 * @param prop	값을 읽을 대상	Property 객체.
+	 * @param cls	변환 대상 class 객체. Property의 valueType과 호환되는 class 객체여야 한다.
+	 * @return	Property의 값이 cls로 변환된 객체.
+	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T getPropertyValue(Property prop, Class<T> cls) {
 		Object value = DataTypes.fromAas4jDatatype(prop.getValueType()).parseValueString(prop.getValue());
@@ -147,27 +160,53 @@ public class SubmodelUtils {
 		}
 	}
 
+	/**
+	 * 주어진 SubmodelElement에서 지정된 idShort 경로를 따라 탐색하여 최종적으로 도달한 Property의 값을 지정된
+	 * class 타입으로 변환하여 반환한다.
+	 *
+	 * @param <T>         변환 대상 class의 타입 매개변수.
+	 * @param start       탐색을 시작할 SubmodelElement 객체.
+	 * @param idShortPath 탐색할 idShort 경로명.
+	 * @param valueClass  Property의 값을 변환할 대상 class 객체. Property의 valueType과 호환되는
+	 *                    class 객체여야 한다.
+	 * @return 탐색 결과로 도달한 Property의 값이 valueClass로 변환된 객체.
+	 * @throws ResourceNotFoundException 탐색 경로에 해당하는 SubmodelElement가 존재하지 않는 경우.
+	 */
 	public static <T> T getPropertyValueByPath(SubmodelElement start, String idShortPath, Class<T> valueClass)
 		throws ResourceNotFoundException {
-		Property prop = cast(traverse(start, idShortPath), Property.class);
+		Property prop = traverse(start, idShortPath, Property.class);
 		return getPropertyValue(prop, valueClass);
 	}
 	
-	public static void updateSubBuffer(String bufferPath, SubmodelElement buffer,
-										String updatePath, SubmodelElement update) throws IOException {
-		String relPath = toRelativeIdShortPath(bufferPath, updatePath);
-		SubmodelElement subBuffer = traverse(buffer, relPath);
-		ElementValues.update(subBuffer, ElementValues.getValue(update));
+	/**
+	 * 주어진 Submodel에서 지정된 idShort 경로를 따라 탐색하여 최종적으로 도달한 Property의 값을 지정된
+	 * class 타입으로 변환하여 반환한다.
+	 *
+	 * @param <T>         변환 대상 class의 타입 매개변수.
+	 * @param submodel    탐색을 시작할 Submodel 객체.
+	 * @param idShortPath 탐색할 idShort 경로명.
+	 * @param valueClass  Property의 값을 변환할 대상 class 객체. Property의 valueType과 호환되는
+	 *                    class 객체여야 한다.
+	 * @return 탐색 결과로 도달한 Property의 값이 valueClass로 변환된 객체.
+	 * @throws ResourceNotFoundException 탐색 경로에 해당하는 SubmodelElement가 존재하지 않는 경우.
+	 */
+	public static <T> T getPropertyValueByPath(Submodel submodel, String idShortPath, Class<T> valueClass)
+		throws ResourceNotFoundException {
+		Property prop = cast(traverse(submodel, idShortPath), Property.class);
+		return getPropertyValue(prop, valueClass);
 	}
 	
 	/**
-	 * Returns the relative idShort path from the ancestor to the descendant.
+	 * 조상 idShort 경로와 자손 idShort 경로가 주어졌을 때, 조상에서 자손까지의 상대적인 idShort 경로를 반환한다.
+	 * <p>
+	 * 조상과 자손이 동일한 경우에는 빈 문자열을 반환한다. 자손이 조상의 자손이 아닌 경우에는
+	 * {@code null}을 반환한다.
 	 * 
-	 * @param ancestor	Ancestor idShort path.
-	 * @param descendant	Descendant idShort path.
-	 * @return	relative idShort path from the ancestor to the descendant.
-	 * 	            If the descendant is the same as the ancestor, it returns an empty string.
-	 * 				{@code null} if the descendant is not a descendant of the ancestor.
+	 * @param ancestor		조상 idshort 경로.
+	 * @param descendant    자손 idshort 경로.
+	 * @return		조상에서 자손까지의 상대적인 idShort 경로.
+	 * 				만약 조상과 자손이 동일한 경우에는 빈 문자열을 반환한다.
+	 * 				자손이 조상의 자손이 아닌 경우에는 {@code null}
 	 */
 	public static String toRelativeIdShortPath(String ancestor, String descendant) {
 		if ( descendant.equals(ancestor) ) {
@@ -187,10 +226,28 @@ public class SubmodelUtils {
 	}
 	
 	/**
-	 * Traverse to the target SubmodelElement with the given idShort path.
+	 * 주어진 SubmodelElement를 지정된 class로 타입 변환시킨다.
 	 * 
-	 * @param root			Root SubmodelElement to start the traversal from.
-	 * @param idShortPath	idShort path to traverse.
+	 * @param <T>		타입 변환 대상 SubmodelElement의 class 타입.
+	 * @param sme	 	타입 변환 대상 SubmodelElement 객체.
+	 * @param toClass	타입 변환 대상 class 객체.	
+	 * @return	타입 변환된 SubmodelElement 객체.
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T extends SubmodelElement> T cast(SubmodelElement sme, Class<T> toClass) {
+		if ( toClass.isAssignableFrom(sme.getClass()) ) {
+			return (T)sme;
+		}
+		else {
+			throw new IllegalArgumentException("Cannot cast to " + toClass);
+		}
+	}
+	
+	/**
+	 * 주어진 idShort 경로를 따라 SubmodelElement를 탐색하여 반환한다.
+	 * 
+	 * @param root			탐색을 시작할 SubmodelElement 객체.
+	 * @param idShortPath	탐색 idShort 경로명.
 	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
 	 */
 	public static SubmodelElement traverse(SubmodelElement root, String idShortPath) throws ResourceNotFoundException {
@@ -208,6 +265,16 @@ public class SubmodelUtils {
 		return current;
 	}
 	
+	/**
+	 * 주어진 idShort 경로를 따라 SubmodelElement를 탐색하여 반환한다.
+	 *
+	 * @param <T>         탐색 결과로 기대되는 SubmodelElement의 class 타입.
+	 * @param root        탐색을 시작할 SubmodelElement 객체.
+	 * @param idShortPath 탐색 idShort 경로명.
+	 * @param targetClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
+	 * @return	탐색 결과 SubmodelElement 객체.
+	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 */
 	public static <T extends SubmodelElement> T traverse(SubmodelElement start, String idShortPath, Class<T> targetClass)
 		throws ResourceNotFoundException {
 		return cast(traverse(start, idShortPath), targetClass);
@@ -230,63 +297,86 @@ public class SubmodelUtils {
 		return traverse(start, idShortPath);
 	}
 	
+	/**
+	 * 주어진 idShort 경로를 따라 Submodel을 탐색하여 SubmodelElement를 반환한다.
+	 *
+	 * @param <T>	    	탐색 결과로 기대되는 SubmodelElement의 class 타입.
+	 * @param submodel		탐색 대상 Submodel 객체.
+	 * @param idShortPath	탐색 idShort 경로명.
+	 * @param targetClass	탐색 결과로 기대되는 SubmodelElement의 class 객체.
+	 * @return
+	 * @throws ResourceNotFoundException
+	 */
 	public static <T extends SubmodelElement> T traverse(Submodel submodel, String idShortPath, Class<T> targetClass)
 		throws ResourceNotFoundException {
 		return cast(traverse(submodel, idShortPath), targetClass);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <T extends SubmodelElement> T cast(SubmodelElement sme, Class<T> toClass) {
-		if ( toClass.isAssignableFrom(sme.getClass()) ) {
-			return (T)sme;
-		}
-		else {
-			throw new IllegalArgumentException("Cannot cast to " + toClass);
-		}
-	}
-	
-	public static String getShortSubmodelSemanticId(String semanticIdStr) {
-		if ( semanticIdStr == null ) {
-			return "?";
-		}
-		
-		return switch ( semanticIdStr ) {
-			case InformationModel.SEMANTIC_ID -> "Info";
-			case Data.SEMANTIC_ID -> "Data";
-			case Simulation.SEMANTIC_ID -> "Sim";
-			case AI.SEMANTIC_ID -> "AI";
-			case TimeSeries.SEMANTIC_ID -> "TS";
-			case Shape.SEMANTIC_ID -> "Shape";
-			default -> throw new InternalException("unknown Submodel " + semanticIdStr);
-		};
-	}
-	
+	/**
+	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 존재 여부를 반환한다.
+	 *
+	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
+	 * @param fieldName 탐색할 idShort 이름.
+	 * @return	하위 요소 존재 여부.
+	 */
 	public static boolean containsFieldById(SubmodelElementCollection smc, String fieldName) {
-		return Funcs.findFirst(smc.getValue(), field -> field.getIdShort().equals(fieldName)).isPresent();
+		return Funcs.exists(smc.getValue(), field -> field.getIdShort().equals(fieldName));
 	}
+	
+	/**
+	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 반환한다.
+	 * <p>
+	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는 Optional.empty()를 반환한다.
+	 *
+	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
+	 * @param fieldName 탐색할 idShort 이름.
+	 * @return idShort가 fieldName인 하위 요소. 존재하지 않는 경우에는 Optional.empty()를 반환한다.
+	 */
 	public static Optional<SubmodelElement> findFieldById(SubmodelElement smc, String fieldName) {
 		if ( smc instanceof SubmodelElementCollection coll ) {
 			return Funcs.findFirst(coll.getValue(), field -> field.getIdShort().equals(fieldName));
 		}
 		else {
-			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
+			return Optional.empty();
 		}
 	}
-	public static <T extends SubmodelElement> Optional<Indexed<T>>
+	
+	/**
+	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 지정된 class 타입으로 반환한다.
+	 * <p>
+	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
+	 * Optional.empty()를 반환한다.
+	 *
+	 * @param <T>         탐색 결과로 기대되는 SubmodelElement의 class 타입.
+	 * @param smc         탐색 대상 SubmodelElementCollection 객체.
+	 * @param fieldName   탐색할 idShort 이름.
+	 * @param outputClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
+	 * @return idShort가 fieldName인 하위 요소. 존재하지 않는 경우에는 Optional.empty()를 반환한다.
+	 */
+	public static <T extends SubmodelElement> Optional<T>
 	findFieldById(SubmodelElement smc, String fieldName, Class<T> outputClass) {
 		if ( smc instanceof SubmodelElementCollection coll ) {
-			return Funcs.findFirstIndexed(coll.getValue(), field -> field.getIdShort().equals(fieldName))
-						.map(idxed -> Indexed.with(cast(idxed.value(), outputClass), idxed.index()));
+			return Funcs.findFirst(coll.getValue(), field -> field.getIdShort().equals(fieldName))
+					    .map(field -> cast(field, outputClass));
 		}
 		else {
-			throw new IllegalArgumentException("Not a SubmodelElementCollection: " + smc.getClass());
+			return Optional.empty();
 		}
 	}
-	public static Optional<Property> findPropertyById(SubmodelElement smc, String fieldName) {
-		return findFieldById(smc, fieldName)
-				.filter(field -> field instanceof Property)
-				.map(field -> (Property)field);
-	}
+	
+	/**
+	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 반환한다.
+	 * <p>
+	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
+	 * IllegalArgumentException이 발생한다. 또한, 탐색 결과가 존재하지 않는 경우에도
+	 * IllegalArgumentException이 발생한다.
+	 *
+	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
+	 * @param fieldName 탐색할 idShort 이름.
+	 * @return idShort가 fieldName인 하위 요소.
+	 * @throws IllegalArgumentException 탐색 대상이 SubmodelElementCollection이 아닌 경우 또는
+	 *                                  탐색 결과가 존재하지 않는 경우.
+	 */
 	public static SubmodelElement getFieldById(SubmodelElement smc, String fieldName)
 		throws IllegalArgumentException {
 		return findFieldById(smc, fieldName)
@@ -299,53 +389,60 @@ public class SubmodelUtils {
 						return new IllegalArgumentException(msg);
 					});
 	}
+	
+	/**
+	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 지정된 class 타입으로 반환한다.
+	 * <p>
+	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
+	 * IllegalArgumentException이 발생한다. 또한, 탐색 결과가 존재하지 않는 경우에도
+	 * IllegalArgumentException이 발생한다.
+	 *
+	 * @param <T>         탐색 결과로 기대되는 SubmodelElement의 class 타입.
+	 * @param smc         탐색 대상 SubmodelElementCollection 객체.
+	 * @param fieldName   탐색할 idShort 이름.
+	 * @param outputClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
+	 * @return idShort가 fieldName인 하위 요소.
+	 * @throws IllegalArgumentException 탐색 대상이 SubmodelElementCollection이 아닌 경우 또는
+	 *                                  탐색 결과가 존재하지 않는 경우.
+	 */
 	public static <T extends SubmodelElement> T getFieldById(SubmodelElement smc, String fieldName,
                                     						Class<T> outputClass) throws IllegalArgumentException {
 		SubmodelElement field = getFieldById(smc, fieldName);
 		return cast(field, outputClass);
 	}
 	
-	public static Property getPropertyFieldById(SubmodelElement smc, String fieldName) {
+	/**
+	 * 주어진 SubmodelElementCollection에서 idShort가 fieldName인 하위 {@link Property} 요소를
+	 * 탐색하여 그 값을 반환한다.
+	 * <p>
+	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
+	 * IllegalArgumentException이 발생한다. 또한, 탐색 결과가 존재하지 않는 경우에도
+	 * IllegalArgumentException이 발생한다.
+	 *
+	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
+	 * @param fieldName 탐색할 idShort 이름.
+	 * @return idShort가 fieldName인 하위 요소의 값.
+	 * @throws IllegalArgumentException 탐색 대상이 SubmodelElementCollection이 아닌 경우 또는
+	 *                                  탐색 결과가 존재하지 않는 경우.
+	 */
+	public static String getStringFieldById(SubmodelElementCollection smc, String fieldName) {
 		Preconditions.checkArgument(smc instanceof SubmodelElementCollection,
 									"Not a SubmodelElementCollection: " + smc.getClass());
-		
-		SubmodelElement field = getFieldById(smc, fieldName);
-		if ( field instanceof Property prop) {
-			return prop;
-		}
-		else {
-			throw new IllegalArgumentException("Not a Property: " + fieldName);
-		}
-	}
-	public static String getStringFieldById(SubmodelElement smc, String fieldName) {
-		Preconditions.checkArgument(smc instanceof SubmodelElementCollection,
-									"Not a SubmodelElementCollection: " + smc.getClass());
-		
-		SubmodelElement field = getFieldById(smc, fieldName);
-		if ( field instanceof Property prop && prop.getValueType() == DataTypeDefXsd.STRING) {
-			return prop.getValue();
-		}
-		else {
-			throw new IllegalArgumentException("Not a Property(xs:string): " + fieldName);
-		}
+		return getFieldById(smc, fieldName, Property.class).getValue();
 	}
 
-	public static void removeFieldById(SubmodelElementList sml, String idShort) {
-		sml.getValue().removeIf(field -> field.getIdShort().equals(idShort));
-	}
+	/**
+	 * 주어진 SubmodelElementCollection에서 idShort가 fieldName인 하위 요소를 탐색하여 삭제한다.
+	 * <p>
+	 * 탐색 결과가 존재하지 않는 경우는 무시한다.
+	 *
+	 * @param smc       탐색 대상 부모 SubmodelElementCollection 객체.
+	 * @param idShort	삭제 대상 하위 요소의 idShort 식별자.
+	 */
 	public static void removeFieldById(SubmodelElementCollection smc, String idShort) {
 		smc.getValue().removeIf(field -> field.getIdShort().equals(idShort));
 	}
-	public static void replaceFieldbyId(SubmodelElementList sml, String idShort, SubmodelElement newField) {
-		List<SubmodelElement> fieldList = sml.getValue();
-		for ( int i = 0; i < fieldList.size(); ++i ) {
-			SubmodelElement field = fieldList.get(i);
-			if ( field.getIdShort().equals(idShort) ) {
-				fieldList.set(i, newField);
-				return;
-			}
-		}
-	}
+
 	public static void replaceFieldbyId(SubmodelElementCollection smc, String idShort, SubmodelElement newField) {
 		List<SubmodelElement> fieldList = smc.getValue();
 		for ( int i = 0; i < fieldList.size(); ++i ) {
@@ -374,16 +471,9 @@ public class SubmodelUtils {
 						.zipWithIndex()
 						.findFirst(idxed -> {
 							SubmodelElementCollection smc = idxed.value();
-							return findFieldById(smc, fieldName)
-									.filter(isme -> {
-										if ( isme instanceof Property prop ) {
-                                            return prop.getValue().equals(value);
-                                        }
-                                        else {
-                                            return false;
-                                        }
-									})
-									.isPresent();
+							return findFieldById(smc, fieldName, Property.class)
+										.map(prop -> prop.getValue().equals(value))
+										.orElse(false);
 						})
 						.toOptional();
 	}
@@ -396,45 +486,124 @@ public class SubmodelUtils {
 				});
 	}
 	
+	/**
+	 * 주어진 idShort과 SubmodelElement 리스트를 기반으로 새로운 SubmodelElementCollection 객체를 생성하여 반환한다.
+	 *
+	 * @param idShort	생성될 SubmodelElementCollection의 idShort 값.
+	 * @param elements	생성될 SubmodelElementCollection의 하위 요소로 포함될 SubmodelElement 리스트.
+	 * @return	생성된 SubmodelElementCollection 객체.
+	 */
 	public static DefaultSubmodelElementCollection newSubmodelElementCollection(String idShort,
-																				List<SubmodelElement> values) {
+																				List<SubmodelElement> elements) {
 		return new DefaultSubmodelElementCollection.Builder()
 													.idShort(idShort)
-													.value(values)
+													.value(elements)
 													.build();
 	}
-	public static DefaultSubmodelElementList newSubmodelElementList(String idShort, List<SubmodelElement> values) {
+	
+	/**
+	 * 주어진 idShort과 SubmodelElement 리스트를 기반으로 새로운 SubmodelElementList 객체를 생성하여 반환한다.
+	 * <p>
+	 * 원소 SubmodelElement의 타입은 Property가 아니어야 한다.
+	 *
+	 * @param idShort 생성될 SubmodelElementList의 idShort 값.
+	 * @param elements  생성될 SubmodelElementList의 요소로 포함될 SubmodelElement 리스트.
+	 * @param orderRelevant 생성될 SubmodelElementList의 요소 순서가 중요한지 여부.
+	 * @param elementType 생성될 SubmodelElementList의 요소 타입을 나타내는 AasSubmodelElements 열거형 값.
+	 * @return 생성된 SubmodelElementList 객체.
+	 */
+	public static DefaultSubmodelElementList newSubmodelElementList(String idShort, List<SubmodelElement> elements,
+			                                                        boolean orderRelevant,
+			                                                        AasSubmodelElements elementType) {
+		Preconditions.checkNotNull(elementType != AasSubmodelElements.PROPERTY, "elementType should not be PROPERTY");
+		
 		return new DefaultSubmodelElementList.Builder()
 												.idShort(idShort)
-												.orderRelevant(true)
-												.value(values)
+												.orderRelevant(orderRelevant)
+												.typeValueListElement(elementType)
+												.value(elements)
+												.build();
+	}
+	
+	/**
+	 * 주어진 idShort과 Property 원소 리스트를 기반으로 새로운 SubmodelElementList 객체를 생성하여 반환한다.
+	 * 
+	 * @param idShort	생성될 SubmodelElementList의 idShort 값.
+	 * @param elements	생성될 SubmodelElementList의 요소로 포함될 Property 리스트.
+	 * @param orderRelevant 생성될 SubmodelElementList의 요소 순서가 중요한지 여부.
+	 * @param xsdType	생성될 SubmodelElementList의 요소 타입을 나타내는 DataTypeDefXsd 열거형 값.
+	 * 					이 값은 Property의 valueType과 호환되어야 한다.
+	 */
+	public static DefaultSubmodelElementList newSubmodelElementList(String idShort, List<Property> elements,
+			                                                        boolean orderRelevant,
+			                                                        DataTypeDefXsd xsdType) {
+		List<SubmodelElement> elms = Funcs.map(elements, sme -> (SubmodelElement)sme);
+		return new DefaultSubmodelElementList.Builder()
+												.idShort(idShort)
+												.orderRelevant(orderRelevant)
+												.typeValueListElement(AasSubmodelElements.PROPERTY)
+												.valueTypeListElement(xsdType)
+												.value(elms)
 												.build();
 	}
 
-	public static String getSemanticIdStringOrNull(Reference semanticId) {
-		return (semanticId != null) ? semanticId.getKeys().get(0).getValue() : null;
-	}
-	
+	/**
+	 * 주어진 Submodel이 InformationModel Submodel인지 여부를 반환한다.
+	 *
+	 * @param sm	검사 대상 Submodel 객체.
+	 * @return	주어진 Submodel이 InformationModel Submodel인 경우에는 true, 그렇지 않은 경우에는 false.
+	 */
 	public static boolean isInformationModel(Submodel sm) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return InformationModel.SEMANTIC_ID.equals(semanticId);
 	}
 	
+	/**
+	 * 주어진 Submodel이 Data Submodel인지 여부를 반환한다.
+	 *
+	 * @param sm 검사 대상 Submodel 객체.
+	 * @return 주어진 Submodel이 Data Submodel인 경우에는 true, 그렇지 않은 경우에는 false.
+	 */
 	public static boolean isDataSubmodel(Submodel sm) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return Data.SEMANTIC_ID.equals(semanticId);
 	}
 	
+	/**
+	 * 주어진 Submodel이 TimeSeries Submodel인지 여부를 반환한다.
+	 *
+	 * @param sm 검사 대상 Submodel 객체.
+	 * @return 주어진 Submodel이 TimeSeries Submodel인 경우에는 true, 그렇지 않은 경우에는 false.
+	 */
 	public static boolean isTimeSeriesSubmodel(Submodel sm) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
 		return TimeSeries.SEMANTIC_ID.equals(semanticId);
 	}
 	
+	/**
+	 * 주어진 SubmodelElement가 ParameterValue SubmodelElement인지 여부를 반환한다.
+	 *
+	 * @param sme 검사 대상 SubmodelElement 객체.
+	 * @return 주어진 SubmodelElement가 ParameterValue SubmodelElement인 경우에는 true, 그렇지
+	 *         않은 경우에는 false.
+	 */
 	public static boolean isParameterValue(SubmodelElement sme) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sme.getSemanticId());
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sme.getSemanticId());
 		return ParameterValue.SEMANTIC_ID.equals(semanticId);
 	}
 	
+	/**
+	 * 주어진 Data Submodel에서 사용하는 ParameterValue SubmodelElement의 idShort 경로 접두어를 반환한다.
+	 * <p>
+	 * Data Submodel의 DataInfo 요소에 Equipment 요소가 포함된 경우에는
+	 * "DataInfo.Equipment.EquipmentParameterValues"를, Operation 요소가 포함된 경우에는
+	 * "DataInfo.Operation.OperationParameterValues"를 반환한다.
+	 *
+	 * @param dataSubmodel ParameterValue SubmodelElement가 포함된 Data Submodel 객체.
+	 * @return ParameterValue SubmodelElement의 idShort 경로 접두어.
+	 * @throws IllegalArgumentException Data Submodel의 DataInfo 요소에 Equipment 또는
+	 *                                  Operation 요소가 포함되어 있지 않은 경우.
+	 */
 	public static String getParameterValuePrefix(Submodel dataSubmodel) {
 		SubmodelElementCollection dataInfo = traverse(dataSubmodel, "DataInfo", SubmodelElementCollection.class);
 		if ( containsFieldById(dataInfo, "Equipment") ) {
@@ -447,6 +616,65 @@ public class SubmodelUtils {
 			throw new IllegalArgumentException("Invalid DataInfo: " + dataInfo.getIdShort());
 		}
 	}
+	
+	/**
+	 * 주어진 Submodel이 AI Submodel인지 여부를 반환한다.
+	 *
+	 * @param sm 검사 대상 Submodel 객체.
+	 * @return 주어진 Submodel이 AI Submodel인 경우에는 true, 그렇지 않은 경우에는 false.
+	 */
+	public static boolean isAISubmodel(Submodel sm) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		return AI.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	/**
+	 * 주어진 Submodel이 Simulation Submodel인지 여부를 반환한다.
+	 *
+	 * @param sm 검사 대상 Submodel 객체.
+	 * @return 주어진 Submodel이 Simulation Submodel인 경우에는 true, 그렇지 않은 경우에는 false.
+	 */
+	public static boolean isSimulationSubmodel(Submodel sm) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(sm.getSemanticId());
+		return Simulation.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	/**
+	 * 주어진 SubmodelElement가 Equipment SubmodelElement인지 여부를 반환한다.
+	 *
+	 * @param element 검사 대상 SubmodelElement 객체.
+	 * @return 주어진 SubmodelElement가 Equipment SubmodelElement인 경우에는 true, 그렇지 않은
+	 *         경우에는 false.
+	 */
+	public static boolean isEquipment(SubmodelElement element) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
+		return Equipment.SEMANTIC_ID.equals(semanticId);
+	}
+	
+	/**
+	 * 주어진 SubmodelElement가 Operation SubmodelElement인지 여부를 반환한다.
+	 *
+	 * @param element 검사 대상 SubmodelElement 객체.
+	 * @return 주어진 SubmodelElement가 Operation SubmodelElement인 경우에는 true, 그렇지 않은
+	 *         경우에는 false.
+	 */
+	public static boolean isAASOperation(SubmodelElement element) {
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
+		return Operation.SEMANTIC_ID.equals(semanticId);
+	}
+	
+//	public static String getParameterValuePrefix(Submodel dataSubmodel) {
+//		SubmodelElementCollection dataInfo = traverse(dataSubmodel, "DataInfo", SubmodelElementCollection.class);
+//		if ( containsFieldById(dataInfo, "Equipment") ) {
+//			return "DataInfo.Equipment.EquipmentParameterValues";
+//		}
+//		else if ( containsFieldById(dataInfo, "Operation") ) {
+//			return "DataInfo.Operation.OperationParameterValues";
+//		}
+//		else {
+//			throw new IllegalArgumentException("Invalid DataInfo: " + dataInfo.getIdShort());
+//		}
+//	}
 	
 	public static String resolveParameterValueElementPath(String paramPathPrefix, String paramExpr,
 															Function<String,Integer> resolveParameterIndex) {
@@ -479,26 +707,6 @@ public class SubmodelUtils {
 			paramIdx = resolveParameterIndex.apply(paramId);
 		}
 		return String.format("%s[%d].ParameterValue%s", paramPathPrefix, paramIdx, subPath);
-	}
-	
-	public static boolean isAISubmodel(Submodel sm) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
-		return AI.SEMANTIC_ID.equals(semanticId);
-	}
-	
-	public static boolean isSimulationSubmodel(Submodel sm) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(sm.getSemanticId());
-		return Simulation.SEMANTIC_ID.equals(semanticId);
-	}
-	
-	public static boolean isEquipment(SubmodelElement element) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(element.getSemanticId());
-		return Equipment.SEMANTIC_ID.equals(semanticId);
-	}
-	
-	public static boolean isAASOperation(SubmodelElement element) {
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(element.getSemanticId());
-		return Operation.SEMANTIC_ID.equals(semanticId);
 	}
 	
 	public static class OperationSubmodelDescriptor {
@@ -565,7 +773,7 @@ public class SubmodelUtils {
 	
 	public static OperationSubmodelDescriptor loadOperationSubmodelDescriptor(Submodel submodel) {
 		// 입출력 인자 SubmodelElement를 가져온다.
-		String semanticId = SubmodelUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
 		if ( semanticId == null ) {
 			throw new ModelValidationException("Submodel semanticId is missing: submodel idShort="
                                                 + submodel.getIdShort());
@@ -595,71 +803,6 @@ public class SubmodelUtils {
 				})
 				.tagKey(SubmodelArgumentDescriptor::getId)
 				.toMap();
-	}
-	
-	private static final class SMETypeDesc {
-		private final String m_name;
-		private final AasSubmodelElements m_type;
-		private final Class<? extends SubmodelElement> m_elementClass;
-		
-		SMETypeDesc(String name, AasSubmodelElements type,
-								Class<? extends SubmodelElement> elementCls) {
-			m_name = name;
-			m_type = type;
-			m_elementClass = elementCls;
-		}
-		
-		public String getName() {
-			return m_name;
-		}
-		
-		public AasSubmodelElements getType() {
-			return m_type;
-		}
-		
-		public Class<? extends SubmodelElement> getElementClass() {
-			return m_elementClass;
-		}
-	};
-	
-	private static final List<SMETypeDesc> TYPE_DESCS = Lists.newArrayList();
-	static {
-		TYPE_DESCS.add(new SMETypeDesc("Property", AasSubmodelElements.PROPERTY, Property.class));
-		TYPE_DESCS.add(new SMETypeDesc("SubmodelElementCollection", AasSubmodelElements.SUBMODEL_ELEMENT_COLLECTION,
-										SubmodelElementCollection.class));
-		TYPE_DESCS.add(new SMETypeDesc("SubmodelElementList", AasSubmodelElements.SUBMODEL_ELEMENT_LIST,
-										SubmodelElementList.class));
-		TYPE_DESCS.add(new SMETypeDesc("File", AasSubmodelElements.FILE, File.class));
-		TYPE_DESCS.add(new SMETypeDesc("MultiLanguageProperty", AasSubmodelElements.MULTI_LANGUAGE_PROPERTY,
-										MultiLanguageProperty.class));
-		TYPE_DESCS.add(new SMETypeDesc("Range", AasSubmodelElements.RANGE, Range.class));
-		TYPE_DESCS.add(new SMETypeDesc("Operation", AasSubmodelElements.OPERATION,
-										org.eclipse.digitaltwin.aas4j.v3.model.Operation.class));
-		TYPE_DESCS.add(new SMETypeDesc("AnnotatedRelationshipElement", AasSubmodelElements.ANNOTATED_RELATIONSHIP_ELEMENT,
-										AnnotatedRelationshipElement.class));
-		TYPE_DESCS.add(new SMETypeDesc("Blob", AasSubmodelElements.BLOB, Blob.class));
-		TYPE_DESCS.add(new SMETypeDesc("Capability", AasSubmodelElements.CAPABILITY, Capability.class));
-		TYPE_DESCS.add(new SMETypeDesc("Entity", AasSubmodelElements.ENTITY, Entity.class));
-		TYPE_DESCS.add(new SMETypeDesc("RelationshipElement",
-												AasSubmodelElements.RELATIONSHIP_ELEMENT, RelationshipElement.class));
-	};
-	
-	private static SMETypeDesc getTypeDescriptor(SubmodelElement element) {
-		return FStream.from(TYPE_DESCS)
-						.findFirst(desc -> desc.m_elementClass.isInstance(element))
-						.getOrThrow(() -> new IllegalArgumentException("Unknown SubmodelElement type: " + element.getClass()));
-	}
-	
-	public static AasSubmodelElements getSubmodelElementType(SubmodelElement element) {
-		return getTypeDescriptor(element).getType();
-	}
-	
-	public static String getValueTypeString(SubmodelElement element) {
-		SMETypeDesc desc = getTypeDescriptor(element);
-		return switch ( desc.m_name ) {
-			case "Property" -> DataTypes.fromAas4jDatatype(((Property)element).getValueType()).getId();
-			default -> desc.m_name;
-		};
 	}
 
 	private static @Nullable SubmodelElement hop(SubmodelElement sme, String seg) {

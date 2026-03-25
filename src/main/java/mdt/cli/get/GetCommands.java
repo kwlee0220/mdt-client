@@ -15,7 +15,7 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="Show MDT-related entity's properties",
+	description="Show MDT entity's information",
 	subcommands= {
 		GetInstanceCommand.class,
 		GetMdtInfoCommand.class,
@@ -26,9 +26,12 @@ import picocli.CommandLine.Command;
 		
 		GetShellCommand.class,
 		GetSubmodelCommand.class,
-		GetFile.class,
+		GetFileCommand.class,
 		
 		GetTimeSeriesCommand.class,
+
+		GetWorkflowModelCommand.class,
+		GetWorkflowInstanceCommand.class,
 	})
 public class GetCommands extends CommandCollection { }
 

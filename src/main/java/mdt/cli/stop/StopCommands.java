@@ -1,4 +1,6 @@
-package mdt.cli;
+package mdt.cli.stop;
+
+import mdt.cli.CommandCollection;
 
 import picocli.CommandLine.Command;
 
@@ -12,8 +14,9 @@ import picocli.CommandLine.Command;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description="Stop commands",
+	description="Stop MDT entities (e.g., MDT instance, workflow, etc.)",
 	subcommands= {
 		StopMDTInstanceCommand.class,
+		StopWorkflowCommand.class,
 	})
 public class StopCommands extends CommandCollection {}

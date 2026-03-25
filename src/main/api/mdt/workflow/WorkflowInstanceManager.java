@@ -4,13 +4,14 @@ import java.util.List;
 
 import mdt.model.ResourceNotFoundException;
 
+
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public interface WorkflowInstanceManager {
-	public void onWorkflowModelAdded(WorkflowModel wfModel) throws MDTWorkflowInstanceManagerException;
-	public void onWorkflowModelRemoved(String wfModelId) throws MDTWorkflowInstanceManagerException;
+	public List<String> listWorkflowIds();
+	public WorkflowStatus getWorkflowStatus(String wfIdStr) throws ResourceNotFoundException;
 	
 	/**
 	 * 모든 워크플로우 등록정보를 반환한다.

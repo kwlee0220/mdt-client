@@ -35,11 +35,11 @@ import mdt.client.instance.HttpMDTInstanceClient;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
+import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
-import mdt.model.sm.SubmodelUtils;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -53,7 +53,7 @@ import picocli.CommandLine.Option;
 	parameterListHeading = "Parameters:%n",
 	optionListHeading = "Options:%n",
 	mixinStandardHelpOptions = true,
-	description = "\nList all MDTInstances."
+	description = "List all MDTInstances."
 )
 public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListMDTInstanceCommand.class);
@@ -310,7 +310,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	private Object[] toLongColumns(int seqNo, MDTInstance instance, String format) {
 		List<String> outputs = Lists.newArrayList();
 		FStream.from(instance.getMDTSubmodelDescriptorAll())
-				.map(isdesc -> SubmodelUtils.getShortSubmodelSemanticId(isdesc.getSemanticId()))
+				.map(isdesc -> ReferenceUtils.getShortSubmodelSemanticId(isdesc.getSemanticId()))
 				.tagKey(n -> n)
 				.groupByKey()
 				.switcher()

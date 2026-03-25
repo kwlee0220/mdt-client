@@ -1,4 +1,6 @@
-package mdt.cli;
+package mdt.cli.resolve;
+
+import mdt.cli.CommandCollection;
 
 import picocli.CommandLine.Command;
 

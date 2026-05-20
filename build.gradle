@@ -43,6 +43,7 @@ ext {
 	logback_version = '1.5.18'
 	lombok_version = '1.18.46'
 	findbugs_version = '3.0.2'
+	jetbrains_version = '24.1.0'
 
 	commons_beanutils_version = '1.9.4'
 
@@ -63,6 +64,8 @@ dependencies {
 	implementation project(":utils")
 	
 	// @Nullable
+	compileOnly "org.jetbrains:annotations:${jetbrains_version}"
+	// @GuardedBy
 	compileOnly "com.google.code.findbugs:jsr305:${findbugs_version}"
 
 	// Lombok (from the project :utils)

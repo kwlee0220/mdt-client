@@ -9,6 +9,10 @@
 			"path": "."
 		},
 		{
+			"name": "mdt-cli",
+			"path": "../mdt-cli"
+		},
+		{
 			"name": "mdt-manager",
 			"path": "../mdt-manager"
 		},
@@ -21,7 +25,7 @@
 			"path": "../mdt-operation-http"
 		},
 		{
-			"path": "../mdt-cli"
+			"path": "../mdt-apps"
 		}
 	],
 	"settings": {

@@ -22,7 +22,6 @@
 *.zip
 *.tar.gz
 *.rar
-utils
 
 /classes/
 /.gradle/

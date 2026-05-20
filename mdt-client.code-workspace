@@ -19,6 +19,9 @@
 		{
 			"name": "mdt-operation-http",
 			"path": "../mdt-operation-http"
+		},
+		{
+			"path": "../mdt-cli"
 		}
 	],
 	"settings": {

@@ -1,16 +1,11 @@
 plugins {
-	id 'java'
-	id 'application'
+	id 'java-library'
 	id("com.gradleup.shadow") version "9.3.0"
 	id 'eclipse'
 }
 
 group = 'etri'
 version = System.getenv("MDT_BUILD_VERSION") ?: "unknown"
-
-application {
-	mainClass = 'mdt.cli.MDTCommandsMain'
-}
 
 java {
 	toolchain {
@@ -27,7 +22,6 @@ sourceSets {
 			srcDirs = [
 				'src/main/java',
 				'src/main/api',
-				'src/main/impl',
 				'src/main/antlr'
 			]
 			
@@ -43,6 +37,26 @@ repositories {
 		url = uri("https://maven.aksw.org/repository/internal/")
 		// allowInsecureProtocol = true
 	}
+}
+
+ext {
+	logback_version = '1.5.18'
+	lombok_version = '1.18.46'
+	findbugs_version = '3.0.2'
+
+	commons_beanutils_version = '1.9.4'
+
+	jackson_version = '2.18.4'
+	okhttp_version = '4.12.0'
+	aas4j_version = '1.0.5'
+	antlr_version = '4.13.2'
+
+	paho_version = '1.2.5'
+	tika_version = '2.9.2'
+	spring_boot_version = '3.5.4'
+
+	junit_jupiter_version = '5.10.2'
+	mockito_version = '4.11.0'
 }
 
 dependencies {
@@ -63,8 +77,8 @@ dependencies {
 	implementation "org.springframework:spring-web"
 	
 	// AAS model
-	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
-	implementation "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"
+	api "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
+	api "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"
 	
 	implementation ("commons-beanutils:commons-beanutils:${commons_beanutils_version}") {
 		exclude group: 'commons-logging', module: 'commons-logging'
@@ -80,22 +94,12 @@ dependencies {
 	
 	// Tika
 	implementation "org.apache.tika:tika-core:${tika_version}"
-		
-	// picocli command line parser
-	implementation "info.picocli:picocli:${picocli_version}"
-	annotationProcessor "info.picocli:picocli-codegen:${picocli_version}"
-	implementation "org.jline:jline:${jline_version}"
 	
 	// MQTT
 	implementation "org.eclipse.paho:org.eclipse.paho.client.mqttv3:${paho_version}"
 	
 	// Antlr
 	implementation "org.antlr:antlr4-runtime:${antlr_version}"
-	
-	// CLI에서 테이블 형태로 text 출력할 때 사용
-	implementation "org.nocrala.tools.texttablefmt:text-table-formatter:${text_table_version}"
-	// CLI에서 트리 형태로 text 출력할 때 사용
-	implementation "org.barfuin.texttree:text-tree:${text_tree_version}"
 
 	// test (JUnit 5 / Jupiter)
 	testImplementation "org.junit.jupiter:junit-jupiter:${junit_jupiter_version}"
@@ -117,21 +121,6 @@ jar {
 	exclude 'logback-spring.xml'
 }
 
-shadowJar {
-	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-	mergeServiceFiles()
-
-	manifest {
-		attributes 'Main-Class': application.mainClass.get()
-	}
-
-	exclude 'logback-test.xml'
-	exclude 'logback-spring.xml'
-	exclude 'META-INF/*.SF'
-	exclude 'META-INF/*.DSA'
-	exclude 'META-INF/*.RSA'
-}
-
 eclipse {
 	classpath {
 		defaultOutputDir = file('build/classes/java/main')
@@ -141,13 +130,7 @@ eclipse {
 					if (entry.kind == 'src' && entry.path == 'src/main/java') {
 						entry.output = 'build/classes/java/main'
 					}
-					if (entry.kind == 'src' && entry.path == 'bin/generated-sources/annotations') {
-						entry.output = 'build/classes/java/main'
-					}
 					if (entry.kind == 'src' && entry.path == 'src/main/api') {
-						entry.output = 'build/classes/java/main'
-					}
-					if (entry.kind == 'src' && entry.path == 'src/main/impl') {
 						entry.output = 'build/classes/java/main'
 					}
 					if (entry.kind == 'src' && entry.path == 'src/main/antlr') {

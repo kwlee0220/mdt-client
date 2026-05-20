@@ -14,26 +14,20 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import utils.UnitUtils;
 import utils.async.AsyncState;
 import utils.thread.Guard;
 
-import mdt.cli.AbstractMDTCommand;
 import mdt.client.operation.HttpSimulationClient;
 import mdt.client.operation.OperationStatus;
 import mdt.client.operation.OperationStatusResponse;
 import mdt.client.resource.HttpSubmodelServiceClient;
-import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.SubmodelUtils;
-import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.SubmodelReference;
 import mdt.model.sm.simulation.Simulation;
 import mdt.task.MDTTask;
 import mdt.task.TaskException;
 import mdt.workflow.model.TaskDescriptor;
-
-import picocli.CommandLine.Option;
 
 
 /**
@@ -42,7 +36,7 @@ import picocli.CommandLine.Option;
  */
 public class SKKUSimulationTask implements MDTTask {
 	private static final Logger s_logger = LoggerFactory.getLogger(SKKUSimulationTask.class);
-	private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
+	static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 	private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(5);
 
 	private SubmodelReference m_simRef;
@@ -164,46 +158,6 @@ public class SKKUSimulationTask implements MDTTask {
 		}
 		finally {
 			m_guard.unlock();
-		}
-	}
-
-	@picocli.CommandLine.Command(name = "skku", description = "SKKU Simulation")
-	public static class Command extends AbstractMDTCommand {
-		@Option(names={"--simulation"}, paramLabel="reference",
-				description="the reference to Simulation Submodel")
-		private String m_simSubmodelRefString;
-		
-		protected Duration m_timeout = null;
-		@Option(names={"--timeout"}, paramLabel="duration", description="Invocation timeout (e.g. \"30s\", \"1m\"")
-		public void setTimeout(String toStr) {
-			m_timeout = UnitUtils.parseDuration(toStr);
-		}
-
-		private Duration m_pollInterval = DEFAULT_POLL_INTERVAL;
-		@Option(names={"--pollInterval"}, paramLabel="duration",
-				description="Status polling interval (e.g. \"1s\", \"500ms\"")
-		public void setPollInterval(String intvStr) {
-			m_pollInterval = UnitUtils.parseDuration(intvStr);
-		}
-
-		@Override
-		protected void run(MDTManager mdt) throws Exception {
-			MDTInstanceManager manager = mdt.getInstanceManager();
-			
-			SKKUSimulationTask task = new SKKUSimulationTask();
-			
-			DefaultSubmodelReference simRef = DefaultSubmodelReference.parseStringExpr(m_simSubmodelRefString);
-			simRef.activate(manager);
-			
-			task.setSimulationSubmodelReference(simRef);
-			task.setPollInterval(m_pollInterval);
-			task.setTimeout(m_timeout);
-			
-			task.run(manager);
-		}
-
-		public static final void main(String... args) throws Exception {
-			main(new Command(), args);
 		}
 	}
 }

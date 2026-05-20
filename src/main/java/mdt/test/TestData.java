@@ -1,7 +1,5 @@
 package mdt.test;
 
-import org.barfuin.texttree.api.TreeOptions;
-import org.barfuin.texttree.api.style.TreeStyles;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
 import mdt.client.resource.HttpSubmodelServiceClient;
@@ -48,10 +46,6 @@ public class TestData {
 				}
 			}
 		}
-		
-		TreeOptions opts = new TreeOptions();
-		opts.setStyle(TreeStyles.UNICODE_ROUNDED);
-		opts.setMaxDepth(5);
 		
 //		KSX9101Node root = KSX9101Node.builder()
 //										.mdtId("KRCW-02ER1A101")

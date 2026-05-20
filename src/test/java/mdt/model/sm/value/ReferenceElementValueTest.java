@@ -7,8 +7,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -41,15 +41,15 @@ public class ReferenceElementValueTest {
 		
 		String json = value.toJsonString();
 //		System.out.println(json);
-		Assert.assertEquals(JSON, json);
-		Assert.assertEquals(VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(JSON, json);
+		Assertions.assertEquals(VALUE_JSON, value.toValueJsonString());
 	}
 
 	@Test
 	public void testParseJsonNode() throws IOException {
 		ElementValue value = ElementValues.parseJsonString(JSON);
-		Assert.assertTrue(value instanceof ReferenceElementValue);
+		Assertions.assertTrue(value instanceof ReferenceElementValue);
 		ReferenceElementValue refValue = (ReferenceElementValue)value;
-		Assert.assertEquals(REFFERENCE, refValue.getReference());
+		Assertions.assertEquals(REFFERENCE, refValue.getReference());
 	}
 }

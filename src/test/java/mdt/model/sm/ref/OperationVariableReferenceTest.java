@@ -1,7 +1,7 @@
 package mdt.model.sm.ref;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -31,30 +31,30 @@ public class OperationVariableReferenceTest {
 		OperationVariableReference ref = OperationVariableReference.newInstance(opRef, Kind.INOUTPUT, 0);
 		
 		String json = m_mapper.writeValueAsString(ref);
-		Assert.assertEquals(JSON_STRING, json);
+		Assertions.assertEquals(JSON_STRING, json);
 	}
 
 	@Test
 	public void testDeserialize() throws JsonMappingException, JsonProcessingException {
 		OperationVariableReference ref = (OperationVariableReference)m_mapper.readValue(JSON_STRING, ElementReference.class);
 		
-		Assert.assertEquals("test", ref.getInstanceId());
+		Assertions.assertEquals("test", ref.getInstanceId());
 		DefaultElementReference opRef = (DefaultElementReference)ref.getOperationReference();
-		Assert.assertEquals(DefaultSubmodelReference.ofIdShort("test", "AddAndSleep"), opRef.getSubmodelReference());
-		Assert.assertEquals(Kind.INOUTPUT, ref.getVariableKind());
-		Assert.assertEquals(0, ref.getVariableOrdinal());
+		Assertions.assertEquals(DefaultSubmodelReference.ofIdShort("test", "AddAndSleep"), opRef.getSubmodelReference());
+		Assertions.assertEquals(Kind.INOUTPUT, ref.getVariableKind());
+		Assertions.assertEquals(0, ref.getVariableOrdinal());
 	}
 	
 	@Test
 	public void testParseExpr() throws JsonProcessingException {
 		MDTElementReference ref = ElementReferences.parseExpr(EXPR);
 		
-		Assert.assertTrue(ref instanceof OperationVariableReference);
+		Assertions.assertTrue(ref instanceof OperationVariableReference);
 		
 		OperationVariableReference varRef = (OperationVariableReference)ref;
-		Assert.assertEquals("test", ref.getInstanceId());
-		Assert.assertEquals(Kind.OUTPUT, varRef.getVariableKind());
-		Assert.assertEquals(1, varRef.getVariableOrdinal());
+		Assertions.assertEquals("test", ref.getInstanceId());
+		Assertions.assertEquals(Kind.OUTPUT, varRef.getVariableKind());
+		Assertions.assertEquals(1, varRef.getVariableOrdinal());
 	}
 
 	@Test
@@ -64,10 +64,10 @@ public class OperationVariableReferenceTest {
 		OperationVariableReference ref = OperationVariableReference.newInstance(opRef, Kind.OUTPUT, 1);
 		
 		String expr = ref.toStringExpr();
-		Assert.assertEquals(EXPR, expr);
+		Assertions.assertEquals(EXPR, expr);
 		
 		ElementReference ref2 = ElementReferences.parseExpr(expr);
-		Assert.assertEquals(ref, ref2);
+		Assertions.assertEquals(ref, ref2);
 	}
 	
 	@Test
@@ -75,6 +75,6 @@ public class OperationVariableReferenceTest {
 		ByIdShortSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("test", "AddAndSleep");
 		DefaultElementReference elmRef = DefaultElementReference.newInstance(smRef, "Operation");
 		OperationVariableReference ref = OperationVariableReference.newInstance(elmRef, Kind.OUTPUT, 1);
-		Assert.assertEquals(EXPR, ref.toStringExpr());
+		Assertions.assertEquals(EXPR, ref.toStringExpr());
 	}
 }

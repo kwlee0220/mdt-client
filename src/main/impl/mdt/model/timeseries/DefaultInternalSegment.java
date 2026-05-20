@@ -26,8 +26,8 @@ public class DefaultInternalSegment extends DefaultSegment implements InternalSe
 		
 		setRecordCount(recList.size());
 		if ( recList.size() > 0 ) {
-			DefaultRecord first = recList.getFirst();
-			DefaultRecord last = recList.getLast();
+			DefaultRecord first = recList.get(0);
+			DefaultRecord last = recList.get(recList.size() - 1);
 
 			setStartTime(first.getTimestamp());
 			setEndTime(last.getTimestamp());

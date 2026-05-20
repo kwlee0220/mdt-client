@@ -1,7 +1,7 @@
 package mdt.workflow.model;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -27,13 +27,13 @@ public class ValueVariableTest {
 		
 		String json = m_mapper.writeValueAsString(var);
 //		System.out.println(json);
-		Assert.assertEquals(JSON_STR, json);
+		Assertions.assertEquals(JSON_STR, json);
 	}
 
 	@Test
 	public void testDeserialize() throws JsonMappingException, JsonProcessingException {
 		ValueVariable value = m_mapper.readValue(JSON_STR, ValueVariable.class);
-		Assert.assertEquals("id1", value.getName());
-		Assert.assertEquals(PropertyValue.INTEGER(222), value.readValue());
+		Assertions.assertEquals("id1", value.getName());
+		Assertions.assertEquals(PropertyValue.INTEGER(222), value.readValue());
 	}
 }

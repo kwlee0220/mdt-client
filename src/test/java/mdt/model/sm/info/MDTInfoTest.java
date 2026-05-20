@@ -2,9 +2,9 @@ package mdt.model.sm.info;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 
@@ -19,7 +19,7 @@ import mdt.model.sm.SubmodelUtils;
 public class MDTInfoTest {
 	public static final JsonMapper MAPPER = MDTModelSerDe.MAPPER;
 	
-	@Before
+	@BeforeEach
 	public void setup() {
 	}
 	
@@ -35,13 +35,13 @@ public class MDTInfoTest {
 		String field;
 
 		field = SubmodelUtils.getStringFieldById(smc, "IdShort");
-		Assert.assertEquals("mdt-info", field);
+		Assertions.assertEquals("mdt-info", field);
 		field = SubmodelUtils.getStringFieldById(smc, "AssetName");
-		Assert.assertEquals("inspector-1", field);
+		Assertions.assertEquals("inspector-1", field);
 		field = SubmodelUtils.getStringFieldById(smc, "AssetType");
-		Assert.assertEquals(MDTAssetType.Machine.name(), field);
+		Assertions.assertEquals(MDTAssetType.Machine.name(), field);
 		field = SubmodelUtils.getStringFieldById(smc, "Status");
-		Assert.assertEquals(MDTAssetStatus.Created.name(), field);
+		Assertions.assertEquals(MDTAssetStatus.Created.name(), field);
 		
 		SubmodelUtils.getFieldById(smc, "IdShort", Property.class).setValue("idShort2");
 		SubmodelUtils.getFieldById(smc, "AssetName", Property.class).setValue("name2");
@@ -49,9 +49,9 @@ public class MDTInfoTest {
 		SubmodelUtils.getFieldById(smc, "Status", Property.class).setValue(MDTAssetStatus.Executed.name());
 		info.updateFromAasModel(smc);
 		
-		Assert.assertEquals("idShort2", info.getIdShort());
-		Assert.assertEquals("name2", info.getAssetName());
-		Assert.assertEquals(MDTAssetType.Process, info.getAssetType());
-		Assert.assertEquals(MDTAssetStatus.Executed, info.getStatus());
+		Assertions.assertEquals("idShort2", info.getIdShort());
+		Assertions.assertEquals("name2", info.getAssetName());
+		Assertions.assertEquals(MDTAssetType.Process, info.getAssetType());
+		Assertions.assertEquals(MDTAssetStatus.Executed, info.getStatus());
 	}
 }

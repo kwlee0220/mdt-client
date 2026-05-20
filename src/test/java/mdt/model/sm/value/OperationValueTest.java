@@ -3,8 +3,8 @@ package mdt.model.sm.value;
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -30,26 +30,26 @@ public class OperationValueTest {
 		
 		String json = value.toJsonString();
 //		System.out.println(json);
-		Assert.assertEquals(VALUE_JSON, json);
-		Assert.assertEquals(VALUE_SERIALIZATION, value.toValueJsonString());
+		Assertions.assertEquals(VALUE_JSON, json);
+		Assertions.assertEquals(VALUE_SERIALIZATION, value.toValueJsonString());
 	}
 
 	@Test
 	public void deserializeNamedProperty() throws IOException {
 		ElementValue value = ElementValues.parseJsonString(VALUE_JSON);
-		Assert.assertTrue(value instanceof OperationVariableValue);
+		Assertions.assertTrue(value instanceof OperationVariableValue);
 		OperationVariableValue opVarValue = (OperationVariableValue)value;
 		
 		List<ElementValue> inputs = opVarValue.getInputValues();
-		Assert.assertEquals(2, inputs.size());
-		Assert.assertEquals(0, ((PropertyValue)inputs.get(0)).toValueObject());
-		Assert.assertEquals(1, ((PropertyValue)inputs.get(1)).toValueObject());
+		Assertions.assertEquals(2, inputs.size());
+		Assertions.assertEquals(0, ((PropertyValue)inputs.get(0)).toValueObject());
+		Assertions.assertEquals(1, ((PropertyValue)inputs.get(1)).toValueObject());
 		
 		List<ElementValue> outputs = opVarValue.getOutputValues();
-		Assert.assertEquals(1, outputs.size());
-		Assert.assertEquals(0, ((PropertyValue)inputs.get(0)).toValueObject());
+		Assertions.assertEquals(1, outputs.size());
+		Assertions.assertEquals(0, ((PropertyValue)inputs.get(0)).toValueObject());
 		
 		List<ElementValue> inoutputs = opVarValue.getInoutputValues();
-		Assert.assertEquals(0, inoutputs.size());
+		Assertions.assertEquals(0, inoutputs.size());
 	}
 }

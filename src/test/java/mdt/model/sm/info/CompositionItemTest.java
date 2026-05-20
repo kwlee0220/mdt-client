@@ -2,9 +2,9 @@ package mdt.model.sm.info;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import mdt.model.sm.SubmodelUtils;
 
@@ -14,7 +14,7 @@ import mdt.model.sm.SubmodelUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public class CompositionItemTest {
-	@Before
+	@BeforeEach
 	public void setup() {
 	}
 	
@@ -29,18 +29,18 @@ public class CompositionItemTest {
 		String field;
 
 		field = SubmodelUtils.getStringFieldById(smc, "ID");
-		Assert.assertEquals("id", field);
+		Assertions.assertEquals("id", field);
 		field = SubmodelUtils.getStringFieldById(smc, "Reference");
-		Assert.assertEquals("reference", field);
-		Assert.assertFalse(SubmodelUtils.containsFieldById(smc, "Description"));
+		Assertions.assertEquals("reference", field);
+		Assertions.assertFalse(SubmodelUtils.containsFieldById(smc, "Description"));
 		
 		SubmodelUtils.getFieldById(smc, "ID", Property.class).setValue("id2");
 		SubmodelUtils.getFieldById(smc, "Reference", Property.class).setValue("reference2");
 		item.updateFromAasModel(smc);
 		
-		Assert.assertEquals("id2", item.getIdShort());
-		Assert.assertEquals("id2", item.getID());
-		Assert.assertEquals("reference2", item.getReference());
+		Assertions.assertEquals("id2", item.getIdShort());
+		Assertions.assertEquals("id2", item.getID());
+		Assertions.assertEquals("reference2", item.getReference());
 	}
 	
 	@Test

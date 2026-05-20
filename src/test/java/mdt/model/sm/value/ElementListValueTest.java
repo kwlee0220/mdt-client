@@ -3,8 +3,8 @@ package mdt.model.sm.value;
 import java.io.IOException;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -23,8 +23,8 @@ public class ElementListValueTest {
 		ElementListValue value = new ElementListValue(List.of(pv1, pv2));
 		
 		String json = value.toJsonString();
-		Assert.assertEquals(JSON, json);
-		Assert.assertEquals(VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(JSON, json);
+		Assertions.assertEquals(VALUE_JSON, value.toValueJsonString());
 	}
 
 	@Test
@@ -33,10 +33,10 @@ public class ElementListValueTest {
 		PropertyValue<String> pv2 = PropertyValue.STRING("def");
 		
 		ElementValue value = ElementValues.parseJsonString(JSON);
-		Assert.assertTrue(value instanceof ElementListValue);
+		Assertions.assertTrue(value instanceof ElementListValue);
 		ElementListValue listValue = (ElementListValue)value;
-		Assert.assertEquals(2, listValue.getElementAll().size());
-		Assert.assertEquals(pv1, listValue.getElementAll().get(0));
-		Assert.assertEquals(pv2, listValue.getElementAll().get(1));
+		Assertions.assertEquals(2, listValue.getElementAll().size());
+		Assertions.assertEquals(pv1, listValue.getElementAll().get(0));
+		Assertions.assertEquals(pv2, listValue.getElementAll().get(1));
 	}
 }

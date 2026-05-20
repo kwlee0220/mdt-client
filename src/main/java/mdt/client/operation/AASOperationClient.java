@@ -183,7 +183,7 @@ public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> 
 	}
 	
 	private String toMessage(BaseOperationResult result) {
-		Message msg = result.getMessages().getFirst();
+		Message msg = result.getMessages().get(0);
 		return String.format("[%s]: %s", msg.getMessageType(), msg.getText());
 	}
 }

@@ -8,8 +8,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultFile;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -33,9 +33,9 @@ public class VariableTest {
 	public void getPropertyVariable1() throws IOException {
 		ElementVariable port = Variables.newInstance("test", null, PROPERTY);
 		SubmodelElement sme = port.read();
-		Assert.assertTrue(sme instanceof Property);
-		Assert.assertEquals("intProp", sme.getIdShort());
-		Assert.assertEquals("25.5", ((Property)sme).getValue());
+		Assertions.assertTrue(sme instanceof Property);
+		Assertions.assertEquals("intProp", sme.getIdShort());
+		Assertions.assertEquals("25.5", ((Property)sme).getValue());
 		
 	}
 	
@@ -45,13 +45,13 @@ public class VariableTest {
 	public void getPropertyVariable2() throws IOException {
 		ElementVariable tvar = Variables.newInstance("test", null, PROPERTY);
 		String jsonStr = tvar.toJsonString();
-		Assert.assertEquals(PROP_JSON_STRING.trim(), toCompactJson(jsonStr));
+		Assertions.assertEquals(PROP_JSON_STRING.trim(), toCompactJson(jsonStr));
 	}
 	@Test
 	public void getPropertyVariable3() throws IOException {
 		Variable tvar = Variables.parseJsonString(PROP_JSON_STRING);
-		Assert.assertTrue(tvar instanceof ElementVariable);
-		Assert.assertEquals("25.5", tvar.readValue().toString());
+		Assertions.assertTrue(tvar instanceof ElementVariable);
+		Assertions.assertEquals("25.5", tvar.readValue().toString());
 	} 
 	
 	private static final File FILE = new DefaultFile.Builder()

@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,11 +19,11 @@ public class NameValueTest {
 		NameValue pair = NameValue.of("nickName", "Tommy");
 
 		JsonNode written = MAPPER.readTree(MAPPER.writeValueAsString(pair));
-		Assert.assertEquals(MAPPER.readTree(JSON), written);
+		Assertions.assertEquals(MAPPER.readTree(JSON), written);
 
 		NameValue read = MAPPER.readValue(JSON, NameValue.class);
-		Assert.assertEquals("nickName", read.getName());
-		Assert.assertEquals("Tommy", read.getValue());
+		Assertions.assertEquals("nickName", read.getName());
+		Assertions.assertEquals("Tommy", read.getValue());
 	}
 
 	@Test
@@ -33,15 +33,15 @@ public class NameValueTest {
 		NameValue differentValue = NameValue.of("nickName", "Thomas");
 		NameValue differentName = NameValue.of("other", "nickName");
 
-		Assert.assertEquals(pair, same);
-		Assert.assertEquals(pair.hashCode(), same.hashCode());
-		Assert.assertNotEquals(pair, differentValue);
-		Assert.assertNotEquals(pair, differentName);
+		Assertions.assertEquals(pair, same);
+		Assertions.assertEquals(pair.hashCode(), same.hashCode());
+		Assertions.assertNotEquals(pair, differentValue);
+		Assertions.assertNotEquals(pair, differentName);
 
 		Set<NameValue> set = new HashSet<>();
 		set.add(pair);
-		Assert.assertTrue(set.contains(same));
-		Assert.assertFalse(set.contains(differentValue));
-		Assert.assertFalse(set.contains(differentName));
+		Assertions.assertTrue(set.contains(same));
+		Assertions.assertFalse(set.contains(differentValue));
+		Assertions.assertFalse(set.contains(differentName));
 	}
 }

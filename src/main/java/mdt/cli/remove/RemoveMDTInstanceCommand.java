@@ -3,6 +3,7 @@ package mdt.cli.remove;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 
@@ -72,9 +73,19 @@ public class RemoveMDTInstanceCommand extends AbstractMDTCommand {
 			manager.removeInstanceAll();
 		}
 		else {
-			try ( ExecutorService exector = Executors.newFixedThreadPool(8) ) {
+			ExecutorService exector = Executors.newFixedThreadPool(8);
+			try {
 				for ( String instId: m_instanceIds ) {
 					exector.submit(() -> deleteInstance(manager, instId));
+				}
+			}
+			finally {
+				exector.shutdown();
+				try {
+					exector.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+				}
+				catch ( InterruptedException e ) {
+					Thread.currentThread().interrupt();
 				}
 			}
 		}

@@ -1,7 +1,7 @@
 package mdt.model.sm.ref;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -28,29 +28,29 @@ public class MDTArgumentReferenceTest {
 		MDTArgumentReference ref = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.INPUT, "1");
 		
 		String json = m_mapper.writeValueAsString(ref);
-		Assert.assertEquals(JSON_STRING, json);
+		Assertions.assertEquals(JSON_STRING, json);
 	}
 
 	@Test
 	public void testDeserialize() throws JsonMappingException, JsonProcessingException {
 		MDTArgumentReference ref = m_mapper.readValue(JSON_STRING, MDTArgumentReference.class);
-		Assert.assertEquals("test", ref.getInstanceId());
-		Assert.assertEquals(DefaultSubmodelReference.ofIdShort("test", "Simulation"), ref.getSubmodelReference());
-		Assert.assertEquals(MDTArgumentKind.INPUT, ref.getKind());
-		Assert.assertEquals("1", ref.getArgumentSpec());
+		Assertions.assertEquals("test", ref.getInstanceId());
+		Assertions.assertEquals(DefaultSubmodelReference.ofIdShort("test", "Simulation"), ref.getSubmodelReference());
+		Assertions.assertEquals(MDTArgumentKind.INPUT, ref.getKind());
+		Assertions.assertEquals("1", ref.getArgumentSpec());
 	}
 	
 	@Test
 	public void testParseExpr() throws JsonProcessingException {
 		MDTElementReference ref = ElementReferences.parseExpr(EXPR);
 		
-		Assert.assertTrue(ref instanceof MDTArgumentReference);
+		Assertions.assertTrue(ref instanceof MDTArgumentReference);
 		
 		MDTArgumentReference argRef = (MDTArgumentReference)ref;
-		Assert.assertTrue(argRef.getSubmodelReference() instanceof ByIdShortSubmodelReference);
-		Assert.assertEquals("test", ref.getInstanceId());
-		Assert.assertEquals(MDTArgumentKind.OUTPUT, argRef.getKind());
-		Assert.assertEquals("SleepTime", argRef.getArgumentSpec());
+		Assertions.assertTrue(argRef.getSubmodelReference() instanceof ByIdShortSubmodelReference);
+		Assertions.assertEquals("test", ref.getInstanceId());
+		Assertions.assertEquals(MDTArgumentKind.OUTPUT, argRef.getKind());
+		Assertions.assertEquals("SleepTime", argRef.getArgumentSpec());
 	}
 
 	@Test
@@ -59,16 +59,16 @@ public class MDTArgumentReferenceTest {
 		MDTArgumentReference ref = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.OUTPUT, "SleepTime");
 		
 		String expr = ref.toStringExpr();
-		Assert.assertEquals(EXPR, expr);
+		Assertions.assertEquals(EXPR, expr);
 		
 		ElementReference ref2 = ElementReferences.parseExpr(expr);
-		Assert.assertEquals(ref, ref2);
+		Assertions.assertEquals(ref, ref2);
 	}
 	
 	@Test
 	public void testToStringExpr() throws JsonProcessingException {
 		ByIdShortSubmodelReference smRef = DefaultSubmodelReference.ofIdShort("test", "Simulation");
 		MDTArgumentReference ref = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.OUTPUT, "SleepTime");
-		Assert.assertEquals(EXPR, ref.toStringExpr());
+		Assertions.assertEquals(EXPR, ref.toStringExpr());
 	}
 }

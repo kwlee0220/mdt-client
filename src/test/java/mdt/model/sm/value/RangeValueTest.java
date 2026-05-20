@@ -2,8 +2,8 @@ package mdt.model.sm.value;
 
 import java.io.IOException;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import mdt.aas.DataTypes;
 
@@ -21,18 +21,18 @@ public class RangeValueTest {
 		RangeValue<Integer> value = new RangeValue<>(DataTypes.INT, 1, 10);
 
 //		System.out.println(value.toJson());
-		Assert.assertEquals(JSON, value.toJsonString());
-		Assert.assertEquals(VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(JSON, value.toJsonString());
+		Assertions.assertEquals(VALUE_JSON, value.toValueJsonString());
 	}
 
 	@Test
 	public void testParseJsonNode() throws IOException {
 		ElementValue value = ElementValues.parseJsonString(JSON);
-		Assert.assertTrue(value instanceof RangeValue);
+		Assertions.assertTrue(value instanceof RangeValue);
 		@SuppressWarnings("unchecked")
 		RangeValue<Integer> rangeValue = (RangeValue<Integer>)value;
 		
-		Assert.assertEquals(Integer.valueOf(1), rangeValue.getMin());
-		Assert.assertEquals(Integer.valueOf(10), rangeValue.getMax());
+		Assertions.assertEquals(Integer.valueOf(1), rangeValue.getMin());
+		Assertions.assertEquals(Integer.valueOf(10), rangeValue.getMax());
 	}
 }

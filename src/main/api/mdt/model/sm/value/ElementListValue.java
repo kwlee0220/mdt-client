@@ -58,7 +58,7 @@ public class ElementListValue extends AbstractElementValue implements ElementVal
 	
 	public static ElementListValue fromValueObject(Object obj, SubmodelElementList sml)
 		throws IOException {
-		if ( obj instanceof Iterable iter ) {
+		if ( obj instanceof Iterable<?> iter ) {
 			List<ElementValue> members
 					= FStream.from(sml.getValue())
 							.zipWith(FStream.<Object>from(iter))

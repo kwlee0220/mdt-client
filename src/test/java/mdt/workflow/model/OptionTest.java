@@ -2,8 +2,8 @@ package mdt.workflow.model;
 
 import java.io.IOException;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -22,10 +22,10 @@ public class OptionTest {
 		Option opt = new Option("nickName", "Tommy");
 		
 		String jsonStr = m_mapper.writeValueAsString(opt);
-		Assert.assertEquals(PROP_JSON_STRING, jsonStr);
+		Assertions.assertEquals(PROP_JSON_STRING, jsonStr);
 		
 		Option read = m_mapper.readValue(jsonStr, Option.class);
-		Assert.assertEquals("nickName", read.getName());
-		Assert.assertEquals("Tommy", read.getValue());
+		Assertions.assertEquals("nickName", read.getName());
+		Assertions.assertEquals("Tommy", read.getValue());
 	}
 }

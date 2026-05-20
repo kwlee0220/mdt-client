@@ -2,8 +2,8 @@ package mdt.model.sm.ref;
 
 import java.io.File;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -24,12 +24,12 @@ public class FileStoreReferenceTest {
 		FileStoreReference ref = new FileStoreReference(new File("/tmp/test.json"));
 		
 		String json = m_mapper.writeValueAsString(ref);
-		Assert.assertEquals(JSON_STRING, json);
+		Assertions.assertEquals(JSON_STRING, json);
 	}
 
 	@Test
 	public void testDeserialize() throws JsonMappingException, JsonProcessingException {
 		FileStoreReference ref = m_mapper.readValue(JSON_STRING, FileStoreReference.class);
-		Assert.assertEquals(new File("/tmp/test.json"), ref.getFile());
+		Assertions.assertEquals(new File("/tmp/test.json"), ref.getFile());
 	}
 }

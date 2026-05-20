@@ -13,8 +13,9 @@ application {
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
 }
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
@@ -96,13 +97,15 @@ dependencies {
 	// CLI에서 트리 형태로 text 출력할 때 사용
 	implementation "org.barfuin.texttree:text-tree:${text_tree_version}"
 
-	// test
-	testImplementation "junit:junit:${junit_version}"
+	// test (JUnit 5 / Jupiter)
+	testImplementation "org.junit.jupiter:junit-jupiter:${junit_jupiter_version}"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 	testImplementation "org.mockito:mockito-core:${mockito_version}"
+	testImplementation "org.mockito:mockito-junit-jupiter:${mockito_version}"
 }
 
 tasks.named('test') {
-	useJUnit()
+	useJUnitPlatform()
 	jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
 }
 

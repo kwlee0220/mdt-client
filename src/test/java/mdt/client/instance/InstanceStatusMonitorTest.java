@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
@@ -93,10 +93,10 @@ public class InstanceStatusMonitorTest {
 		setStatus(inst, MDTInstanceStatus.RUNNING);
 
 		monitor.runOneIteration();
-		Assert.assertTrue("listener 비동기 통지 대기 timeout",
-							notified.await(ASYNC_WAIT_MS, TimeUnit.MILLISECONDS));
-		Assert.assertSame(inst, seenInst.get());
-		Assert.assertEquals(MDTInstanceStatus.RUNNING, seenStatus.get());
+		Assertions.assertTrue(notified.await(ASYNC_WAIT_MS, TimeUnit.MILLISECONDS),
+							"listener 비동기 통지 대기 timeout");
+		Assertions.assertSame(inst, seenInst.get());
+		Assertions.assertEquals(MDTInstanceStatus.RUNNING, seenStatus.get());
 
 		// 두 번째 주기: 이미 unwatch 되었으므로 getStatus 추가 호출 없음.
 		monitor.runOneIteration();
@@ -125,9 +125,9 @@ public class InstanceStatusMonitorTest {
 		// "same"은 그대로 둠.
 
 		monitor.runOneIteration();
-		Assert.assertTrue("listener 비동기 통지 대기 timeout",
-							notified.await(ASYNC_WAIT_MS, TimeUnit.MILLISECONDS));
-		Assert.assertSame(changed, seenInst.get());
+		Assertions.assertTrue(notified.await(ASYNC_WAIT_MS, TimeUnit.MILLISECONDS),
+							"listener 비동기 통지 대기 timeout");
+		Assertions.assertSame(changed, seenInst.get());
 
 		// "same"은 다음 주기에도 조회되어야 함 (총 2번).
 		monitor.runOneIteration();
@@ -182,9 +182,9 @@ public class InstanceStatusMonitorTest {
 		monitor.runOneIteration();
 
 		// "ok"는 정상 통지.
-		Assert.assertTrue("listener 비동기 통지 대기 timeout",
-							notified.await(ASYNC_WAIT_MS, TimeUnit.MILLISECONDS));
-		Assert.assertSame(ok, seenInst.get());
+		Assertions.assertTrue(notified.await(ASYNC_WAIT_MS, TimeUnit.MILLISECONDS),
+							"listener 비동기 통지 대기 timeout");
+		Assertions.assertSame(ok, seenInst.get());
 
 		// "fail"은 흡수되어 등록부에 남음 → 다음 주기에서 재시도.
 		monitor.runOneIteration();
@@ -235,28 +235,36 @@ public class InstanceStatusMonitorTest {
 
 	// --- constructor argument validation ---
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void constructorRejectsNullInterval() {
-		new InstanceStatusMonitor(null, (i, s) -> {});
+		Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			new InstanceStatusMonitor(null, (i, s) -> {});
+		});
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void watchInstanceRejectsNullInstance() {
-		InstanceStatusMonitor monitor = new InstanceStatusMonitor(INTERVAL, null);
-		monitor.watchInstance(null, MDTInstanceStatus.STARTING);
+		Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			InstanceStatusMonitor monitor = new InstanceStatusMonitor(INTERVAL, null);
+			monitor.watchInstance(null, MDTInstanceStatus.STARTING);
+		});
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void watchInstanceRejectsNullStatus() {
-		InstanceStatusMonitor monitor = new InstanceStatusMonitor(INTERVAL, null);
-		MDTInstance inst = mockInstance("inst-1", MDTInstanceStatus.STARTING);
-		monitor.watchInstance(inst, null);
+		Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			InstanceStatusMonitor monitor = new InstanceStatusMonitor(INTERVAL, null);
+			MDTInstance inst = mockInstance("inst-1", MDTInstanceStatus.STARTING);
+			monitor.watchInstance(inst, null);
+		});
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test
 	public void unwatchInstanceRejectsNullId() {
-		InstanceStatusMonitor monitor = new InstanceStatusMonitor(INTERVAL, null);
-		monitor.unwatchInstance(null);
+		Assertions.assertThrows(IllegalArgumentException.class, () -> {
+			InstanceStatusMonitor monitor = new InstanceStatusMonitor(INTERVAL, null);
+			monitor.unwatchInstance(null);
+		});
 	}
 
 	// --- helpers ---

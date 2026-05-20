@@ -83,7 +83,7 @@ public class TimeSeriesOperationReference implements MDTElementReference {
 		opClient.setInputVariableValue("Timespan", m_timeSpan);
 		try {
 			OperationResult result = opClient.run();
-			return result.getOutputArguments().getFirst().getValue();
+			return result.getOutputArguments().get(0).getValue();
 		}
 		catch ( CancellationException e ) {
 			throw new IOException("operation is cancelled: " + m_opRef.getIdShortPathString(), e);

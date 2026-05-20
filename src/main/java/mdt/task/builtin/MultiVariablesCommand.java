@@ -72,7 +72,7 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 				unmatchedOptions.add(new UnmatchedOption(type, name, null));
 			}
 			else {
-				unmatchedOptions.add(new UnmatchedOption(type, name, remains.removeFirst()));
+				unmatchedOptions.add(new UnmatchedOption(type, name, remains.remove(0)));
 			}
 		}
 		

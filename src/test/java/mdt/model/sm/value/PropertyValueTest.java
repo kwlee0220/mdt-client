@@ -6,8 +6,8 @@ import java.time.Instant;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import mdt.aas.DataTypes;
 import mdt.model.sm.value.PropertyValue.BooleanPropertyValue;
@@ -30,28 +30,28 @@ public class PropertyValueTest {
 	@Test
 	public void testStringPropertyValue() throws IOException {
 		StringPropertyValue value = PropertyValue.STRING("abc");
-		Assert.assertEquals(STRING_JSON, value.toJsonString());
+		Assertions.assertEquals(STRING_JSON, value.toJsonString());
 		
 		ElementValue ev = ElementValues.parseJsonString(STRING_JSON);
-		Assert.assertTrue(ev instanceof StringPropertyValue);
+		Assertions.assertTrue(ev instanceof StringPropertyValue);
 		StringPropertyValue parsedValue = (StringPropertyValue)ev;
-		Assert.assertEquals("abc", parsedValue.toValueObject());
+		Assertions.assertEquals("abc", parsedValue.toValueObject());
 		
 		StringPropertyValue nullValue = PropertyValue.STRING(null);
-		Assert.assertEquals(STRING_NULL_JSON, nullValue.toJsonString());
-		Assert.assertEquals(STRING_NULL_VALUE_JSON, nullValue.toValueJsonString());
+		Assertions.assertEquals(STRING_NULL_JSON, nullValue.toJsonString());
+		Assertions.assertEquals(STRING_NULL_VALUE_JSON, nullValue.toValueJsonString());
 		
 		ev = ElementValues.parseJsonString(STRING_NULL_JSON);
-		Assert.assertTrue(ev instanceof StringPropertyValue);
+		Assertions.assertTrue(ev instanceof StringPropertyValue);
 		parsedValue = (StringPropertyValue)ev;
-		Assert.assertEquals(null, parsedValue.toValueObject());
+		Assertions.assertEquals(null, parsedValue.toValueObject());
 		
-		Assert.assertEquals(STRING_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(STRING_VALUE_JSON, value.toValueJsonString());
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.STRING);
 		ElementValues.updateWithValueJsonString(prop, STRING_VALUE_JSON);
-		Assert.assertEquals("abc", prop.getValue());
+		Assertions.assertEquals("abc", prop.getValue());
 	}
 	
 	private static final String INTEGER_JSON = "{\"@type\":\"mdt:value:integer\",\"value\":11}";
@@ -61,26 +61,26 @@ public class PropertyValueTest {
 	public void testIntegerPropertyValue() throws IOException {
 		IntegerPropertyValue value = PropertyValue.INTEGER(11);
 		
-		Assert.assertEquals(INTEGER_JSON, value.toJsonString());
-		Assert.assertEquals(INTEGER_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(INTEGER_JSON, value.toJsonString());
+		Assertions.assertEquals(INTEGER_VALUE_JSON, value.toValueJsonString());
 		
 		IntegerPropertyValue nullValue = PropertyValue.INTEGER(null);
-		Assert.assertEquals(INTEGER_NULL_JSON, nullValue.toJsonString());
+		Assertions.assertEquals(INTEGER_NULL_JSON, nullValue.toJsonString());
 		
 		ElementValue ev = ElementValues.parseJsonString(INTEGER_JSON);
-		Assert.assertTrue(ev instanceof IntegerPropertyValue);
+		Assertions.assertTrue(ev instanceof IntegerPropertyValue);
 		IntegerPropertyValue parsedValue = (IntegerPropertyValue)ev;
-		Assert.assertEquals(Integer.valueOf(11), parsedValue.toValueObject());
+		Assertions.assertEquals(Integer.valueOf(11), parsedValue.toValueObject());
 		
 		ev = ElementValues.parseJsonString(INTEGER_NULL_JSON);
-		Assert.assertTrue(ev instanceof IntegerPropertyValue);
+		Assertions.assertTrue(ev instanceof IntegerPropertyValue);
 		parsedValue = (IntegerPropertyValue)ev;
-		Assert.assertEquals(null, parsedValue.toValueObject());
+		Assertions.assertEquals(null, parsedValue.toValueObject());
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.INT);
 		ElementValues.updateWithValueJsonString(prop, INTEGER_VALUE_JSON);
-		Assert.assertEquals("11", prop.getValue());
+		Assertions.assertEquals("11", prop.getValue());
 	}
 	
 	private static final String DOUBLE_JSON = "{\"@type\":\"mdt:value:double\",\"value\":0.234}";
@@ -90,26 +90,26 @@ public class PropertyValueTest {
 	public void testDoublePropertyValue() throws IOException {
 		DoublePropertyValue value = PropertyValue.DOUBLE(0.234);
 		
-		Assert.assertEquals(DOUBLE_JSON, value.toJsonString());
-		Assert.assertEquals(DOUBLE_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(DOUBLE_JSON, value.toJsonString());
+		Assertions.assertEquals(DOUBLE_VALUE_JSON, value.toValueJsonString());
 		
 		ElementValue ev = ElementValues.parseJsonString(DOUBLE_JSON);
-		Assert.assertTrue(ev instanceof DoublePropertyValue);
+		Assertions.assertTrue(ev instanceof DoublePropertyValue);
 		DoublePropertyValue parsedValue = (DoublePropertyValue)ev;
-		Assert.assertEquals(Double.valueOf(0.234), parsedValue.toValueObject());
+		Assertions.assertEquals(Double.valueOf(0.234), parsedValue.toValueObject());
 		
 		ev = ElementValues.parseJsonString(DOUBLE_NULL_JSON);
-		Assert.assertTrue(ev instanceof DoublePropertyValue);
+		Assertions.assertTrue(ev instanceof DoublePropertyValue);
 		parsedValue = (DoublePropertyValue)ev;
-		Assert.assertEquals(null, parsedValue.toValueObject());
+		Assertions.assertEquals(null, parsedValue.toValueObject());
 		
 		DoublePropertyValue nullValue = PropertyValue.DOUBLE(null);
-		Assert.assertEquals(DOUBLE_NULL_JSON, nullValue.toJsonString());
+		Assertions.assertEquals(DOUBLE_NULL_JSON, nullValue.toJsonString());
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.DOUBLE);
 		ElementValues.updateWithValueJsonString(prop, DOUBLE_VALUE_JSON);
-		Assert.assertEquals("0.234", prop.getValue());
+		Assertions.assertEquals("0.234", prop.getValue());
 	}
 	
 	private static final String FLOAT_JSON = "{\"@type\":\"mdt:value:float\",\"value\":12.5}";
@@ -119,26 +119,26 @@ public class PropertyValueTest {
 	public void testFloatPropertyValue() throws IOException {
 		FloatPropertyValue value = PropertyValue.FLOAT(12.5f);
 		
-		Assert.assertEquals(FLOAT_JSON, value.toJsonString());
-		Assert.assertEquals(FLOAT_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(FLOAT_JSON, value.toJsonString());
+		Assertions.assertEquals(FLOAT_VALUE_JSON, value.toValueJsonString());
 		
 		FloatPropertyValue nullValue = PropertyValue.FLOAT(null);
-		Assert.assertEquals(FLOAT_NULL_JSON, nullValue.toJsonString());
+		Assertions.assertEquals(FLOAT_NULL_JSON, nullValue.toJsonString());
 		
 		ElementValue ev = ElementValues.parseJsonString(FLOAT_JSON);
-		Assert.assertTrue(ev instanceof FloatPropertyValue);
+		Assertions.assertTrue(ev instanceof FloatPropertyValue);
 		FloatPropertyValue parsedValue = (FloatPropertyValue)ev;
-		Assert.assertEquals(Float.valueOf(12.5f), parsedValue.toValueObject());
+		Assertions.assertEquals(Float.valueOf(12.5f), parsedValue.toValueObject());
 		
 		ev = ElementValues.parseJsonString(FLOAT_NULL_JSON);
-		Assert.assertTrue(ev instanceof FloatPropertyValue);
+		Assertions.assertTrue(ev instanceof FloatPropertyValue);
 		parsedValue = (FloatPropertyValue)ev;
-		Assert.assertEquals(null, parsedValue.toValueObject());
+		Assertions.assertEquals(null, parsedValue.toValueObject());
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.FLOAT);
 		ElementValues.updateWithValueJsonString(prop, FLOAT_VALUE_JSON);
-		Assert.assertEquals("12.5", prop.getValue());
+		Assertions.assertEquals("12.5", prop.getValue());
 	}
 	
 	private static final String BOOLEAN_JSON = "{\"@type\":\"mdt:value:boolean\",\"value\":true}";
@@ -148,26 +148,26 @@ public class PropertyValueTest {
 	public void testBooleanPropertyValue() throws IOException {
 		BooleanPropertyValue value = PropertyValue.BOOLEAN(true);
 		
-		Assert.assertEquals(BOOLEAN_JSON, value.toJsonString());
-		Assert.assertEquals(BOOLEAN_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(BOOLEAN_JSON, value.toJsonString());
+		Assertions.assertEquals(BOOLEAN_VALUE_JSON, value.toValueJsonString());
 		
 		BooleanPropertyValue nullValue = PropertyValue.BOOLEAN(null);
-		Assert.assertEquals(BOOLEAN_NULL_JSON, nullValue.toJsonString());
+		Assertions.assertEquals(BOOLEAN_NULL_JSON, nullValue.toJsonString());
 		
 		ElementValue ev = ElementValues.parseJsonString(BOOLEAN_JSON);
-		Assert.assertTrue(ev instanceof BooleanPropertyValue);
+		Assertions.assertTrue(ev instanceof BooleanPropertyValue);
 		BooleanPropertyValue parsedValue = (BooleanPropertyValue)ev;
-		Assert.assertEquals(Boolean.valueOf(true), parsedValue.toValueObject());
+		Assertions.assertEquals(Boolean.valueOf(true), parsedValue.toValueObject());
 		
 		ev = ElementValues.parseJsonString(BOOLEAN_NULL_JSON);
-		Assert.assertTrue(ev instanceof BooleanPropertyValue);
+		Assertions.assertTrue(ev instanceof BooleanPropertyValue);
 		parsedValue = (BooleanPropertyValue)ev;
-		Assert.assertEquals(null, parsedValue.toValueObject());
+		Assertions.assertEquals(null, parsedValue.toValueObject());
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.BOOLEAN);
 		ElementValues.updateWithValueJsonString(prop, BOOLEAN_VALUE_JSON);
-		Assert.assertEquals("true", prop.getValue());
+		Assertions.assertEquals("true", prop.getValue());
 	}
 	
 	private static final String DATE_TIME_JSON = "{\"@type\":\"mdt:value:dateTime\",\"value\":\"2023-10-01T03:00:00Z\"}";
@@ -179,30 +179,30 @@ public class PropertyValueTest {
 		Instant dt = DataTypes.DATE_TIME.parseValueString("2023-10-01T12:00:00");
 		DateTimePropertyValue value = PropertyValue.DATE_TIME(dt);
 		
-		Assert.assertEquals(DATE_TIME_JSON, value.toJsonString());
-		Assert.assertEquals(DATE_TIME_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(DATE_TIME_JSON, value.toJsonString());
+		Assertions.assertEquals(DATE_TIME_VALUE_JSON, value.toValueJsonString());
 		
 		Instant inst = DataTypes.DATE_TIME.parseValueString("2023-10-01T03:00:00Z");
-		Assert.assertEquals(dt, inst);
+		Assertions.assertEquals(dt, inst);
 		
 		value = PropertyValue.DATE_TIME(null);
-		Assert.assertEquals(DATE_TIME_NULL_JSON, value.toJsonString());
-		Assert.assertEquals(DATE_TIME_NULL_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(DATE_TIME_NULL_JSON, value.toJsonString());
+		Assertions.assertEquals(DATE_TIME_NULL_VALUE_JSON, value.toValueJsonString());
 		
 		ElementValue ev = ElementValues.parseJsonString(DATE_TIME_JSON);
-		Assert.assertTrue(ev instanceof DateTimePropertyValue);
+		Assertions.assertTrue(ev instanceof DateTimePropertyValue);
 		DateTimePropertyValue parsedValue = (DateTimePropertyValue)ev;
-		Assert.assertEquals(dt, parsedValue.toValueObject());
+		Assertions.assertEquals(dt, parsedValue.toValueObject());
 		
 		ev = ElementValues.parseJsonString(DATE_TIME_NULL_JSON);
-		Assert.assertTrue(ev instanceof DateTimePropertyValue);
+		Assertions.assertTrue(ev instanceof DateTimePropertyValue);
 		parsedValue = (DateTimePropertyValue)ev;
-		Assert.assertEquals(null, parsedValue.toValueObject());
+		Assertions.assertEquals(null, parsedValue.toValueObject());
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.DATE_TIME);
 		ElementValues.updateWithValueJsonString(prop, DATE_TIME_VALUE_JSON);
-		Assert.assertEquals("2023-10-01T12:00:00", prop.getValue());
+		Assertions.assertEquals("2023-10-01T12:00:00", prop.getValue());
 	}
 	
 	private static final String DURATION_JSON = "{\"@type\":\"mdt:value:duration\",\"value\":\"PT11S\"}";
@@ -213,26 +213,26 @@ public class PropertyValueTest {
 	public void testDurationPropertyValue() throws IOException {
 		DurationPropertyValue value = PropertyValue.DURATION(Duration.ofSeconds(11));
 		
-		Assert.assertEquals(DURATION_JSON, value.toJsonString());
-		Assert.assertEquals(DURATION_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(DURATION_JSON, value.toJsonString());
+		Assertions.assertEquals(DURATION_VALUE_JSON, value.toValueJsonString());
 		
 		value = PropertyValue.DURATION(null);
-		Assert.assertEquals(DURATION_NULL_JSON, value.toJsonString());
-		Assert.assertEquals(DURATION_NULL_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals(DURATION_NULL_JSON, value.toJsonString());
+		Assertions.assertEquals(DURATION_NULL_VALUE_JSON, value.toValueJsonString());
 		
 		ElementValue ev = ElementValues.parseJsonString(DURATION_JSON);
-		Assert.assertTrue(ev instanceof DurationPropertyValue);
+		Assertions.assertTrue(ev instanceof DurationPropertyValue);
 		DurationPropertyValue parsedValue = (DurationPropertyValue)ev;
-		Assert.assertEquals(Duration.ofSeconds(11), parsedValue.toValueObject());
+		Assertions.assertEquals(Duration.ofSeconds(11), parsedValue.toValueObject());
 		
 		ev = ElementValues.parseJsonString(DURATION_NULL_JSON);
-		Assert.assertTrue(ev instanceof DurationPropertyValue);
+		Assertions.assertTrue(ev instanceof DurationPropertyValue);
 		parsedValue = (DurationPropertyValue)ev;
-		Assert.assertEquals(null, parsedValue.toValueObject());
+		Assertions.assertEquals(null, parsedValue.toValueObject());
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.DURATION);
 		ElementValues.updateWithValueJsonString(prop, DURATION_VALUE_JSON);
-		Assert.assertEquals("PT11S", prop.getValue());
+		Assertions.assertEquals("PT11S", prop.getValue());
 	}
 }

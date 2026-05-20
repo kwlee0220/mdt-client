@@ -2,9 +2,9 @@ package mdt.model.sm.info;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import mdt.model.sm.SubmodelUtils;
 
@@ -14,7 +14,7 @@ import mdt.model.sm.SubmodelUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public class CompositionDependencyTest {
-	@Before
+	@BeforeEach
 	public void setup() {
 	}
 	
@@ -29,13 +29,13 @@ public class CompositionDependencyTest {
 		SubmodelElementCollection smc = dep.newSubmodelElement();
 		String field;
 
-		Assert.assertEquals("idShort", smc.getIdShort());
+		Assertions.assertEquals("idShort", smc.getIdShort());
 		field = SubmodelUtils.getStringFieldById(smc, "SourceId");
-		Assert.assertEquals("sourceId", field);
+		Assertions.assertEquals("sourceId", field);
 		field = SubmodelUtils.getStringFieldById(smc, "TargetId");
-		Assert.assertEquals("targetId", field);
+		Assertions.assertEquals("targetId", field);
 		field = SubmodelUtils.getStringFieldById(smc, "DependencyType");
-		Assert.assertEquals("dependencyType", field);
+		Assertions.assertEquals("dependencyType", field);
 
 		smc.setIdShort("idShort2");
 		SubmodelUtils.getFieldById(smc, "SourceId", Property.class).setValue("sourceId2");
@@ -43,9 +43,9 @@ public class CompositionDependencyTest {
 		SubmodelUtils.getFieldById(smc, "DependencyType", Property.class).setValue("dependencyType2");
 		dep.updateFromAasModel(smc);
 		
-		Assert.assertEquals("idShort2", dep.getIdShort());
-		Assert.assertEquals("sourceId2", dep.getSourceId());
-		Assert.assertEquals("targetId2", dep.getTargetId());
-		Assert.assertEquals("dependencyType2", dep.getDependencyType());
+		Assertions.assertEquals("idShort2", dep.getIdShort());
+		Assertions.assertEquals("sourceId2", dep.getSourceId());
+		Assertions.assertEquals("targetId2", dep.getTargetId());
+		Assertions.assertEquals("dependencyType2", dep.getDependencyType());
 	}
 }

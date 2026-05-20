@@ -7,10 +7,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import utils.func.FOption;
 
@@ -28,14 +28,14 @@ public class PeriodicRefreshingConsoleTest {
 	private PrintStream m_originalOut;
 	private ByteArrayOutputStream m_capturedOut;
 
-	@Before
+	@BeforeEach
 	public void redirectStdout() {
 		m_originalOut = System.out;
 		m_capturedOut = new ByteArrayOutputStream();
 		System.setOut(new PrintStream(m_capturedOut, true, StandardCharsets.UTF_8));
 	}
 
-	@After
+	@AfterEach
 	public void restoreStdout() {
 		System.setOut(m_originalOut);
 	}
@@ -52,8 +52,8 @@ public class PeriodicRefreshingConsoleTest {
 		PeriodicRefreshingConsole console = new RecordingConsole(pw -> pw.print("hello"));
 		console.performPeriodicAction(0);
 
-		Assert.assertTrue("output should start with ANSI clear sequence: " + captured(),
-							captured().startsWith(CLEAR_CONSOLE_CONTROL));
+		Assertions.assertTrue(captured().startsWith(CLEAR_CONSOLE_CONTROL),
+							"output should start with ANSI clear sequence: " + captured());
 	}
 
 	/**
@@ -64,8 +64,8 @@ public class PeriodicRefreshingConsoleTest {
 		PeriodicRefreshingConsole console = new RecordingConsole(pw -> pw.print("hello world"));
 		console.performPeriodicAction(0);
 
-		Assert.assertTrue("captured output should contain printed content: " + captured(),
-							captured().contains("hello world"));
+		Assertions.assertTrue(captured().contains("hello world"),
+							"captured output should contain printed content: " + captured());
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class PeriodicRefreshingConsoleTest {
 		console.performPeriodicAction(1);
 		console.performPeriodicAction(2);
 
-		Assert.assertEquals(3, printCount.get());
+		Assertions.assertEquals(3, printCount.get());
 	}
 
 	/**
@@ -95,8 +95,8 @@ public class PeriodicRefreshingConsoleTest {
 		console.setVerbose(true);
 		console.performPeriodicAction(0);
 
-		Assert.assertTrue("verbose output should include 'elapsed:': " + captured(),
-							captured().contains("elapsed:"));
+		Assertions.assertTrue(captured().contains("elapsed:"),
+							"verbose output should include 'elapsed:': " + captured());
 	}
 
 	/**
@@ -107,8 +107,8 @@ public class PeriodicRefreshingConsoleTest {
 		PeriodicRefreshingConsole console = new RecordingConsole(pw -> pw.print("body"));
 		console.performPeriodicAction(0);
 
-		Assert.assertFalse("non-verbose output should not include 'elapsed:': " + captured(),
-							captured().contains("elapsed:"));
+		Assertions.assertFalse(captured().contains("elapsed:"),
+							"non-verbose output should not include 'elapsed:': " + captured());
 	}
 
 	/**
@@ -120,8 +120,8 @@ public class PeriodicRefreshingConsoleTest {
 		PeriodicRefreshingConsole console = new RecordingConsole(pw -> pw.print(korean));
 		console.performPeriodicAction(0);
 
-		Assert.assertTrue("UTF-8 content should be preserved: " + captured(),
-							captured().contains(korean));
+		Assertions.assertTrue(captured().contains(korean),
+							"UTF-8 content should be preserved: " + captured());
 	}
 
 	/**
@@ -132,7 +132,7 @@ public class PeriodicRefreshingConsoleTest {
 		PeriodicRefreshingConsole console = new RecordingConsole(pw -> pw.print("ok"));
 		FOption<Void> result = console.performPeriodicAction(0);
 
-		Assert.assertTrue("result should be empty FOption", result.isAbsent());
+		Assertions.assertTrue(result.isAbsent(), "result should be empty FOption");
 	}
 
 	// --- helpers ---

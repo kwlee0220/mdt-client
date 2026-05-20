@@ -3,8 +3,8 @@ package mdt.model.sm.value;
 import java.io.IOException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultFile;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -21,24 +21,24 @@ public class FileValueTest {
 		FileValue nev = new FileValue("/home/kwlee/image.jpg", "application/jpeg");
 		
 //		System.out.println(nev.toJson());
-		Assert.assertEquals(JSON, nev.toJsonString());
-		Assert.assertEquals(VALUE_JSON, nev.toValueJsonString());
+		Assertions.assertEquals(JSON, nev.toJsonString());
+		Assertions.assertEquals(VALUE_JSON, nev.toValueJsonString());
 	}
 
 	@Test
 	public void testParseJsonNode() throws IOException {
 		ElementValue value = ElementValues.parseJsonString(JSON);
-		Assert.assertTrue(value instanceof FileValue);
+		Assertions.assertTrue(value instanceof FileValue);
 		FileValue fileValue = (FileValue)value;
-		Assert.assertEquals("/home/kwlee/image.jpg", fileValue.getValue());
-		Assert.assertEquals("application/jpeg", fileValue.getMimeType());
+		Assertions.assertEquals("/home/kwlee/image.jpg", fileValue.getValue());
+		Assertions.assertEquals("application/jpeg", fileValue.getMimeType());
 	}
 
 	@Test
 	public void testUpdateWithRawString() throws IOException {
 		DefaultFile aasFile = new DefaultFile();
 		ElementValues.updateWithValueJsonString(aasFile, VALUE_JSON);
-		Assert.assertEquals("/home/kwlee/image.jpg", aasFile.getValue());
-		Assert.assertEquals("application/jpeg", aasFile.getContentType());
+		Assertions.assertEquals("/home/kwlee/image.jpg", aasFile.getValue());
+		Assertions.assertEquals("application/jpeg", aasFile.getContentType());
 	}
 }

@@ -9,6 +9,8 @@ import org.barfuin.texttree.api.TreeOptions;
 import org.barfuin.texttree.api.style.TreeStyles;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import picocli.CommandLine.Option;
+
 import utils.UnitUtils;
 
 import mdt.cli.AbstractMDTCommand;
@@ -19,8 +21,6 @@ import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.tree.node.DefaultNodeFactories;
-
-import picocli.CommandLine.Option;
 
 /**
  * 
@@ -59,7 +59,7 @@ public abstract class AbstractGetElementCommand extends AbstractMDTCommand {
 			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
-				protected void print(PrintWriter pw) throws Exception {
+				protected void print(PrintWriter pw) {
 					try {
 						if ( elmRef instanceof MDTElementReference iref && !iref.isActivated()) {
 							iref.activate(manager);

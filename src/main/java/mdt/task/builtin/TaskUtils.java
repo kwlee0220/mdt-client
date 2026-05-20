@@ -7,8 +7,6 @@ import java.time.Instant;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.slf4j.Logger;
 
-import lombok.experimental.UtilityClass;
-
 import mdt.model.ReferenceUtils;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.expr.MDTExpressionParser;
@@ -26,8 +24,11 @@ import mdt.workflow.model.TaskDescriptor;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class TaskUtils {
+public final class TaskUtils {
+	private TaskUtils() {
+		throw new AssertionError("Should not be called: class=" + TaskUtils.class.getName());
+	}
+	
 	public static final String LABEL_MDT_OPERATION = "mdt-operation";
 	static DefaultElementReference loadLastExecutionTimeRef(MDTInstanceManager manager,
 															TaskDescriptor descriptor) throws TaskException {

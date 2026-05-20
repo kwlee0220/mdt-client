@@ -5,8 +5,6 @@ import java.util.Optional;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Qualifier;
 
-import lombok.experimental.UtilityClass;
-
 import utils.stream.FStream;
 
 
@@ -14,8 +12,11 @@ import utils.stream.FStream;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class Qualifiers {
+public final class Qualifiers {
+	private Qualifiers() {
+		throw new AssertionError("Should not be called: class=" + Qualifiers.class.getName());
+	}
+	
 	public static final String QUALIFIER_OPERATION_METHOD = "http://mdt.etri.re.kr/quantifier/operation/method";
 	public static final String QUALIFIER_OPERATION_SERVER_ENDPOINT
 														= "http://mdt.etri.re.kr/quantifier/operation/endpoint";

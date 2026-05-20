@@ -2,12 +2,10 @@ package mdt.workflow;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -24,7 +22,6 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import utils.InternalException;
-import utils.stream.FStream;
 
 import mdt.model.MDTModelSerDe;
 import mdt.workflow.model.TaskDescriptor;
@@ -81,28 +78,5 @@ public class WorkflowModel {
 	public String toString() {
 		return String.format("WorkflowModel(id=%s, name=%s, #tasks=%d)",
 								m_id, m_name, m_taskDescriptors.size());
-	}
-	
-	private static List<TaskDescriptor> sortTopologically(Collection<TaskDescriptor> tasks) {
-		List<TaskDescriptor> remains = Lists.newArrayList(tasks);
-		List<TaskDescriptor> sorted = Lists.newArrayList();
-		Set<String> sortedNames = FStream.from(sorted)
-                                            .map(TaskDescriptor::getId)
-                                            .toSet();
-		
-		while ( remains.size() > 0 ) {
-			TaskDescriptor taskDesc = remains.remove(0);
-			
-			if ( FStream.from(taskDesc.getDependencies())
-						.exists(t -> !sortedNames.contains(t)) ) {
-				remains.add(taskDesc);
-			}
-			else {
-				sorted.add(taskDesc);
-				sortedNames.add(taskDesc.getId());
-			}
-		}
-		
-		return sorted;
 	}
 }

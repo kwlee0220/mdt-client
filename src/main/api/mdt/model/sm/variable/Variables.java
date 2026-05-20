@@ -17,8 +17,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
-import lombok.experimental.UtilityClass;
-
 import utils.Throwables;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
@@ -39,8 +37,11 @@ import mdt.model.sm.variable.AbstractVariable.ValueVariable;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class Variables {
+public final class Variables {
+	private Variables() {
+		throw new AssertionError("Should not be called: class=" + Variables.class.getName());
+	}
+	
 	public static void activate(Variable var, MDTInstanceManager manager) {
 		Preconditions.checkArgument(var != null, "Variable is null");
 		Preconditions.checkArgument(manager != null, "MDTInstanceManager is null");

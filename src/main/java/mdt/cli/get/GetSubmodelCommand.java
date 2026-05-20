@@ -64,9 +64,11 @@ public class GetSubmodelCommand extends AbstractMDTCommand {
 		if ( m_smIdShort != null ) {
 			MDTInstance instance = manager.getInstance(m_id);
 			smDesc = Funcs.findFirst(instance.getAASSubmodelDescriptorAll(),
-									desc -> desc.getIdShort().equals(m_smIdShort))
-					.orElseThrow(() -> new ResourceNotFoundException("Submodel",
-															"instance-id=" + m_id + ", idShort=" + m_smIdShort));
+									desc -> desc.getIdShort().equals(m_smIdShort));
+			if ( smDesc == null ) {
+				throw new ResourceNotFoundException("Submodel",
+													"instance-id=" + m_id + ", idShort=" + m_smIdShort);
+			}
 		}
 		else {
 			smDesc = mdt.getSubmodelRegistry().getSubmodelDescriptorById(m_id);

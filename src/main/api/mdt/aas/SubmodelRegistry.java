@@ -11,7 +11,7 @@ import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.PostExchange;
 import org.springframework.web.service.annotation.PutExchange;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import mdt.model.ResourceAlreadyExistsException;
 import mdt.model.ResourceNotFoundException;

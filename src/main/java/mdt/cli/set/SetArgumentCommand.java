@@ -42,9 +42,11 @@ public class SetArgumentCommand extends AbstractSetCommand {
 		
 		MDTInstance inst = manager.getInstance(m_instanceId);
 		MDTOperationDescriptor op
-				= Funcs.findFirst(inst.getMDTOperationDescriptorAll(), o -> o.getId().equals(m_opId))
-						.orElseThrow(() -> new IllegalArgumentException("No such operation id=" + m_opId
-																		+ " in the instance " + m_instanceId));
+				= Funcs.findFirst(inst.getMDTOperationDescriptorAll(), o -> o.getId().equals(m_opId));
+		if ( op == null ) {
+			throw new IllegalArgumentException("No such operation id=" + m_opId
+                                            + " in the instance " + m_instanceId);
+		}
 		String elmRef = FStream.from(op.getOutputArguments())
 								.findFirst(arg -> arg.getId().equals(m_argumentId))
 								.map(ArgumentDescriptor::getReference)

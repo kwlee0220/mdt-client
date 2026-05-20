@@ -9,6 +9,9 @@ import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
 import utils.InternalException;
 import utils.UnitUtils;
 
@@ -27,9 +30,6 @@ import mdt.model.sm.data.Data;
 import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.simulation.Simulation;
 import mdt.model.timeseries.TimeSeries;
-
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
 /**
  *
@@ -80,7 +80,7 @@ public class ListSubmodelCommand extends AbstractMDTCommand {
 			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
-				protected void print(PrintWriter pw) throws Exception {
+				protected void print(PrintWriter pw) {
 					try {
 						printOutput(manager, pw);
 					}

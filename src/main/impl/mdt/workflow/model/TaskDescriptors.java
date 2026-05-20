@@ -11,8 +11,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Qualifier;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import lombok.experimental.UtilityClass;
-
 import utils.stream.FStream;
 
 import mdt.model.ModelValidationException;
@@ -35,8 +33,11 @@ import mdt.task.builtin.TaskUtils;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
 public class TaskDescriptors {
+	private TaskDescriptors() {
+		throw new AssertionError("Should not be called: class=" + TaskDescriptors.class.getName());
+	}
+	
 	private final static Map<String,String> CLASS_TO_SHORT_ID_MAP = Map.of(
 		AASOperationTask.class.getName(), "AASOperation",
 		HttpTask.class.getName(), "Http",

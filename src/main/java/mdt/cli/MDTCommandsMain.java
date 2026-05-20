@@ -1,9 +1,12 @@
 package mdt.cli;
 
+import java.io.File;
 import java.time.Duration;
 
 import utils.LogbackConfigLoader;
 import utils.Picoclies;
+import utils.Utilities;
+import utils.io.FileUtils;
 
 import mdt.cli.MDTCommandsMain.SimulationCommands;
 import mdt.cli.add.AddCommands;
@@ -45,8 +48,21 @@ import picocli.CommandLine.Command;
 		SimulationCommands.class,
 	})
 public class MDTCommandsMain {
+	private static final String LOGBACK_CONFIG_FILE = "logback.xml";
+	
+	public static File getClientHomeDir() {
+		return Utilities.getEnvironmentVariableFile("MDT_CLIENT_HOME")
+						.orElse(FileUtils.getCurrentWorkingDirectory());
+	}
+	
 	public static final void main(String... args) throws Exception {
-		LogbackConfigLoader.loadLogbackConfigFromClass(MDTCommandsMain.class);
+		File logbackConfigFile = new File(getClientHomeDir(), LOGBACK_CONFIG_FILE);
+		if ( logbackConfigFile.exists() && logbackConfigFile.isFile() ) {
+			LogbackConfigLoader.loadLogbackConfigFromFile(logbackConfigFile);
+		}
+		else {
+			LogbackConfigLoader.loadLogbackConfigFromClass(MDTCommandsMain.class, LOGBACK_CONFIG_FILE);
+		}
 		
 		CommandLine cmdLine = new CommandLine(new MDTCommandsMain())
 									.setCaseInsensitiveEnumValuesAllowed(true)

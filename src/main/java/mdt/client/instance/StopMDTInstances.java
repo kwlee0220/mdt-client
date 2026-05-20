@@ -23,7 +23,7 @@ import com.google.common.collect.Sets;
 import utils.InternalException;
 import utils.UnitUtils;
 import utils.async.Executions;
-import utils.async.Guard;
+import utils.thread.Guard;
 import utils.async.StartableExecution;
 import utils.func.CheckedRunnableX;
 import utils.func.Optionals;

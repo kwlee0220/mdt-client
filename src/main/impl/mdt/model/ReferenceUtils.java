@@ -9,8 +9,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
-import lombok.experimental.UtilityClass;
-
 import utils.InternalException;
 import utils.stream.FStream;
 
@@ -27,8 +25,11 @@ import mdt.model.timeseries.TimeSeries;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class ReferenceUtils {
+public final class ReferenceUtils {
+	private ReferenceUtils() {
+		throw new AssertionError("Should not be called: class=" + ReferenceUtils.class.getName());
+	}
+	
 	public static void assertModelReference(Reference ref) {
 		if ( ref.getType() != ReferenceTypes.MODEL_REFERENCE ) {
 			throw new IllegalArgumentException("Not ModelReference: type=" + ref.getType());

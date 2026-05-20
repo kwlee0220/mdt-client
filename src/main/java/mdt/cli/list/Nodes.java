@@ -6,8 +6,6 @@ import org.barfuin.texttree.api.Node;
 
 import com.google.common.collect.Maps;
 
-import lombok.experimental.UtilityClass;
-
 import utils.Keyed;
 import utils.KeyedValueList;
 import utils.stream.KeyValueFStream;
@@ -19,8 +17,11 @@ import mdt.model.instance.MDTInstanceStatus;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class Nodes {
+public final class Nodes {
+	private Nodes() {
+		throw new AssertionError("Should not be called: class=" + Nodes.class.getName());
+	}
+	
 	static boolean s_showEndpoint = false;
 	
 	static class RootNode implements Node {

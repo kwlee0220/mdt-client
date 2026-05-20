@@ -232,6 +232,7 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	 *
 	 * @return {@link WorkflowManager} proxy 객체
 	 */
+	@Override
 	public HttpWorkflowManager getWorkflowManager() {
 //		return createClient(WorkflowModelManager.class);
 		return new HttpWorkflowManager(getHttpClient(), m_wfMgrEndpoint + WORKFLOW_MANAGER_SUFFIX);

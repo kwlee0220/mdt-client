@@ -26,11 +26,8 @@ import com.fasterxml.jackson.core.io.BigDecimalParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 
-import lombok.experimental.UtilityClass;
-
 import utils.DataUtils;
-import utils.Tuple;
-import utils.Utilities;
+import utils.Split;
 
 import mdt.model.ModelGenerationException;
 
@@ -39,8 +36,11 @@ import mdt.model.ModelGenerationException;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class DataTypes {
+public final class DataTypes {
+	private DataTypes() {
+		throw new AssertionError("Should not be called: class=" + DataTypes.class.getName());
+	}
+	
 	public static StringType STRING = new StringType();
 	public static BooleanType BOOLEAN = new BooleanType();
 	public static ShortType SHORT = new ShortType();
@@ -144,11 +144,12 @@ public class DataTypes {
 			LocalDateTime ldt = DataUtils.asDatetime(obj);
 			String ldtStr = ldt.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 			if ( ldtStr.indexOf('.') >= 0 ) {
-				Tuple<String,String> tup = Utilities.splitLast(ldtStr, ':');
+				Split split = Split.splitLast(ldtStr, ":");
+				String tail = split.tail().get();
 				
-				int end = Math.min(tup._2.indexOf('.') + 4, tup._2.length());
-				String formatted = tup._2.substring(0, end);
-				return String.format("%s:%s", tup._1, formatted);
+				int end = Math.min(tail.indexOf('.') + 4, tail.length());
+				String formatted = tail.substring(0, end);
+				return String.format("%s:%s", split.head(), formatted);
 			}
 			else {
 				return ldtStr;

@@ -12,10 +12,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultLangStringTextType;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultMultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
-
-import lombok.experimental.UtilityClass;
-
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import utils.stream.FStream;
 
@@ -26,8 +23,11 @@ import mdt.model.sm.value.MultiLanguagePropertyValue;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class PropertyUtils {
+public final class PropertyUtils {
+	private PropertyUtils() {
+		throw new AssertionError("Should not be called: class=" + PropertyUtils.class.getName());
+	}
+	
 	public static Property newProperty(String id, DataTypeDefXsd valueType, @Nullable String value) {
 		return new DefaultProperty.Builder()
 									.idShort(id)

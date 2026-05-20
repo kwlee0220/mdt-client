@@ -3,16 +3,18 @@ package mdt.workflow.model;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.annotation.Nullable;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -24,7 +26,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import utils.InternalException;
@@ -62,6 +63,8 @@ import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
 					"inputVariables", "outputVariables", "options", "labels" })
 @JsonInclude(Include.NON_NULL)
 public final class TaskDescriptor {
+	private static final Logger s_logger = org.slf4j.LoggerFactory.getLogger(TaskDescriptor.class);
+
 	private String m_id;
 	private @Nullable String m_name;
 	private String m_type;
@@ -69,11 +72,11 @@ public final class TaskDescriptor {
 	
 	private DefaultSubmodelReference m_submodelRef;
 	
-	private Set<String> m_dependencies = Sets.newHashSet();
-	private LinkedHashMap<String,ArgumentSpec> m_inputArgumentSpecs = Maps.newLinkedHashMap();
-	private LinkedHashMap<String,ReferenceArgumentSpec> m_outputArgumentSpecs = Maps.newLinkedHashMap();
-	private Map<String, Option> m_options = Maps.newHashMap();
-	private List<NameValue> m_labels = Lists.newArrayList();
+	private Set<String> m_dependencies = new HashSet<>();
+	private LinkedHashMap<String,ArgumentSpec> m_inputArgumentSpecs = new LinkedHashMap<>();
+	private LinkedHashMap<String,ReferenceArgumentSpec> m_outputArgumentSpecs = new LinkedHashMap<>();
+	private Map<String, Option> m_options = new LinkedHashMap<>();
+	private List<NameValue> m_labels = new ArrayList<>();
 	
 	public TaskDescriptor() { }
 	
@@ -138,7 +141,7 @@ public final class TaskDescriptor {
 	}
 	
 	public Set<String> getDependencies() {
-		return m_dependencies;
+		return Collections.unmodifiableSet(m_dependencies);
 	}
 	
 	public void addDependency(String... dependency) {
@@ -157,7 +160,11 @@ public final class TaskDescriptor {
 		return m_inputArgumentSpecs;
 	}
 	public void addInputArgumentSpec(String argId, ArgumentSpec spec) {
+		Preconditions.checkArgument(argId != null, "argId must not be null");
 		Preconditions.checkArgument(spec != null, "Input argument spec must not be null");
+		if ( m_inputArgumentSpecs.containsKey(argId) ) {
+			throw new IllegalArgumentException("Input argument spec already exists: " + argId);
+		}
 		m_inputArgumentSpecs.put(argId, spec);
 	}
 	
@@ -179,8 +186,11 @@ public final class TaskDescriptor {
 		return m_outputArgumentSpecs;
 	}
 	public void addOutputArgumentSpec(String argId, ReferenceArgumentSpec spec) {
+		Preconditions.checkArgument(argId != null, "argId must not be null");
 		Preconditions.checkArgument(spec != null, "Output argument spec must not be null");
-
+		if ( m_outputArgumentSpecs.containsKey(argId) ) {
+			throw new IllegalArgumentException("Output argument spec already exists: " + argId);
+		}
 		m_outputArgumentSpecs.put(argId, spec);
 	}
 	
@@ -193,7 +203,7 @@ public final class TaskDescriptor {
 
 	@JsonProperty("outputVariables")
 	public void setOutputVariables(Iterable<Variable> vars) {
-		m_outputArgumentSpecs = Maps.newLinkedHashMap();
+		m_outputArgumentSpecs = new LinkedHashMap<>();
 		for ( Variable var : vars ) {
 			Preconditions.checkArgument(var instanceof ReferenceVariable,
 										"Output variable must be ReferenceVariable: %s", var);
@@ -205,7 +215,7 @@ public final class TaskDescriptor {
 	}
 	
 	public Map<String,Option> getOptions() {
-		return m_options;
+		return Collections.unmodifiableMap(m_options);
 	}
 	
 	public Optional<String> findOptionValue(String optName) {
@@ -227,26 +237,28 @@ public final class TaskDescriptor {
 		
 		m_options = FStream.from(options)
 							.tagKey(Option::getName)
-							.toMap();
+							.toMap(new LinkedHashMap<>());
 		
-		// 만일 optiona 중에 operation이 포함되어 있고, submodelRef가 비어있다면
+		// 옵션 중에 operation이 포함되어 있고, submodelRef가 비어있다면
 		// operation 값을 이용해서 submodelRef를 설정한다.
 		if ( m_submodelRef == null ) {
-			Funcs.findFirst(options, opt -> opt.getName().equals("operation"))
-					.map(Option::getValue)
-					.ifPresent(opStr -> {
-						try {
-							SubmodelBasedElementReference opRef = (SubmodelBasedElementReference)ElementReferences.parseExpr(opStr);
-							m_submodelRef = (DefaultSubmodelReference)opRef.getSubmodelReference();
-						}
-						catch ( Throwable ignored ) { }
-					});
+			Option option = Funcs.findFirst(options, opt -> opt.getName().equals("operation"));
+			if ( option != null ) {
+				var opStr = option.getValue();
+				try {
+					SubmodelBasedElementReference opRef = (SubmodelBasedElementReference)ElementReferences.parseExpr(opStr);
+					m_submodelRef = (DefaultSubmodelReference)opRef.getSubmodelReference();
+				}
+				catch ( Exception e ) {
+					s_logger.debug("Failed to derive submodelRef from operation option: opStr={}, cause={}", opStr, e.toString());
+				}
+			}
 		}
 		
 	}
 	
 	public List<NameValue> getLabels() {
-		return m_labels;
+		return Collections.unmodifiableList(m_labels);
 	}
 	public FOption<String> findLabel(String name) {
 		return FStream.from(m_labels)
@@ -303,7 +315,7 @@ public final class TaskDescriptor {
 		String fullStr = IOUtils.stringify(bytes);
 		
 	    int length = fullStr.length();
-	    List<String> chunks = Lists.newArrayList();
+	    List<String> chunks = new ArrayList<>();
 	    for (int i = 0; i < length; i += CHUNK_SIZE) {
 	        int endIndex = Math.min(i + CHUNK_SIZE, length);
 	        chunks.add(fullStr.substring(i, endIndex));
@@ -311,19 +323,22 @@ public final class TaskDescriptor {
 	    
 	    return chunks;
 	}
+	
 	public static TaskDescriptor parseEncodedString(List<String> chunks) throws IOException {
 		try {
 			String encodedStr = FStream.from(chunks)
 										.fold(new StringBuilder(), StringBuilder::append)
 										.toString();
-			
+
 			byte[] bytes = IOUtils.destringify(encodedStr);
 			String jsonStr = new String(bytes, StandardCharsets.UTF_8);
 			return parseJsonString(jsonStr);
 		}
-		catch ( Throwable e ) {
-			e.printStackTrace();
-			return null;
+		catch ( IOException e ) {
+			throw e;
+		}
+		catch ( Exception e ) {
+			throw new InternalException("Failed to parse encoded TaskDescriptor", e);
 		}
 	}
 
@@ -354,7 +369,7 @@ public final class TaskDescriptor {
 			case "mdt.task.builtin.HttpTask" -> "Http";
 			case "mdt.task.builtin.AASOperationTask" -> "AAS";
 //			case "mdt.task.builtin.JsltTask" -> "Jslt";
-			default -> throw new AssertionError();
+			default -> TaskDescriptors.toShortTaskTypeId(m_type);
 		};
 
 //		String optList = FStream.from(m_options)
@@ -391,7 +406,7 @@ public final class TaskDescriptor {
 								argId, refArgSpec.getReferenceString(), argValue);
 				}
 				catch ( IOException e ) {
-					logger.error("Failed to update output variable[{}], cause={}", argId, e);
+					logger.error("Failed to update output variable[{}]", argId, e);
 				}
             }
 		}

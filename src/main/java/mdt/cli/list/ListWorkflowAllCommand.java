@@ -12,20 +12,19 @@ import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
 import utils.UnitUtils;
 import utils.http.RESTfulIOException;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.cli.PeriodicRefreshingConsole;
-import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.model.ResourceNotFoundException;
 import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
-
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
 /**
  * 
@@ -72,7 +71,7 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		WorkflowManager wfManager = ((HttpMDTManager)mdt).getWorkflowManager();
+		WorkflowManager wfManager = mdt.getWorkflowManager();
 
 		if ( m_repeat == null ) {
 			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
@@ -84,7 +83,7 @@ public class ListWorkflowAllCommand extends AbstractMDTCommand {
 			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
-				protected void print(PrintWriter pw) throws Exception {
+				protected void print(PrintWriter pw) {
 					try {
 						printOutput(wfManager, pw);
 					}

@@ -1,7 +1,6 @@
 package mdt.model.timeseries;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
@@ -51,12 +50,12 @@ public class DefaultSegments extends SubmodelElementCollectionEntity implements 
 		SubmodelElementCollection smc = (SubmodelElementCollection)sme;
 		
 		for ( DefaultSegment segment : segments ) {
-			Optional<SubmodelElement> ochild = SubmodelUtils.findFieldById(smc, segment.getIdShort());
+			SubmodelElement child = SubmodelUtils.findFieldById(smc, segment.getIdShort());
 			
 			SubmodelElement target;
-			if ( ochild.isPresent() ) {
-				smc.getValue().remove(ochild.get());
-				target = ochild.get();
+			if ( child != null ) {
+				smc.getValue().remove(child);
+				target = child;
 			}
 			else {
 				target = segment.newSubmodelElement();

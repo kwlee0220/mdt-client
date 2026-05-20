@@ -39,7 +39,7 @@ public class GetWorkflowLogCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-//		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
+//		WorkflowManager wfMgr = mdt.getWorkflowManager();
 //		
 //		String log = wfMgr.getWorkflowLog(m_parent.getWorkflowModelId(), m_podName);
 //		System.out.println(log);

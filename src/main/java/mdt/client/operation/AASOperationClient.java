@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.BaseOperationResult;
 import org.eclipse.digitaltwin.aas4j.v3.model.Message;
@@ -18,9 +18,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import utils.KeyValue;
-import utils.async.AbstractStatePoller;
-import utils.func.Funcs;
+import utils.async.AbstractPeriodicPoller;
+import utils.func.FOption;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
@@ -34,7 +33,7 @@ import mdt.model.sm.value.ElementValues;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class AASOperationClient extends AbstractStatePoller<OperationResult> {
+public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> {
 	private static final Logger s_logger = LoggerFactory.getLogger(AASOperationClient.class);
 	private static final javax.xml.datatype.Duration INFINITE = AASUtils.DATATYPE_FACTORY.newDuration("P7D");
 	
@@ -94,25 +93,25 @@ public class AASOperationClient extends AbstractStatePoller<OperationResult> {
 	};
 
 	@Override
-	protected Optional<OperationResult> pollState() throws Exception {
+	protected FOption<OperationResult> tryPoll() throws ExecutionException {
 		BaseOperationResult result = m_submodelSvc.getOperationAsyncStatus(m_opHandle);
 		getLogger().info("polled operation result: {}", result.getExecutionState());
 		switch ( result.getExecutionState() ) {
 			case COMPLETED:
-				return Optional.of(m_submodelSvc.getOperationAsyncResult(m_opHandle));
+				return FOption.of(m_submodelSvc.getOperationAsyncResult(m_opHandle));
 			case FAILED:
-				throw new Exception("operation execution failed: " + toMessage(result));
+				throw new ExecutionException(new Exception("operation execution failed: " + toMessage(result)));
 			case CANCELED:
 				throw new CancellationException("operation execution cancelled: " + toMessage(result));
 			case TIMEOUT:
 				return null;
 			default:
-				return Optional.empty();
+				return FOption.empty();
 		}
 	}
 	
 	@Override
-	protected void finalizePoller(OperationResult result) throws Exception {
+	protected void finalizePoller(OperationResult result) {
 		if ( result != null ) {
 			m_outputs = toMap(result.getOutputArguments()); 
 			m_inoutputs = toMap(result.getInoutputArguments());
@@ -178,7 +177,9 @@ public class AASOperationClient extends AbstractStatePoller<OperationResult> {
 	}
 	
 	private Map<String, OperationVariable> toMap(Iterable<OperationVariable> opvIter) {
-		return Funcs.toMap(opvIter, opv -> KeyValue.of(opv.getValue().getIdShort(), opv));
+		return FStream.from(opvIter)
+						.tagKey(opv -> opv.getValue().getIdShort())
+						.toMap();
 	}
 	
 	private String toMessage(BaseOperationResult result) {

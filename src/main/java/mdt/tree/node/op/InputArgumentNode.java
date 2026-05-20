@@ -5,8 +5,6 @@ import java.util.List;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
-import lombok.experimental.UtilityClass;
-
 import utils.func.FOption;
 import utils.stream.FStream;
 
@@ -23,8 +21,11 @@ import mdt.tree.node.SimpleListNode;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
 public final class InputArgumentNode {
+	private InputArgumentNode() {
+		throw new AssertionError("Should not be called: class=" + getClass().getName());
+	}
+	
 	public static InputArgumentNodeFactory FACTORY = new InputArgumentNodeFactory();
 	public static class InputArgumentNodeFactory implements DefaultNodeFactory {
 		@Override

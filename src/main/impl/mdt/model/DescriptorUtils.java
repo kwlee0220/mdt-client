@@ -12,20 +12,20 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultAssetAdministrationShe
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultEndpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProtocolInformation;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelDescriptor;
+import org.jetbrains.annotations.Nullable;
 
 import com.google.common.base.Preconditions;
-
-import lombok.experimental.UtilityClass;
-
-import javax.annotation.Nullable;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class DescriptorUtils {
+public final class DescriptorUtils {
+	private DescriptorUtils() {
+		throw new AssertionError("Should not be called: class=" + DescriptorUtils.class.getName());
+	}
+	
 	static final DefaultEndpoint NULL_ENDPOINT = newEndpoint("", "UNKNOWN");
 	
 	public static DefaultAssetAdministrationShellDescriptor createAssetAdministrationShellDescriptor(

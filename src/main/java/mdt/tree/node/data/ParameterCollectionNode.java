@@ -3,7 +3,9 @@ package mdt.tree.node.data;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.jetbrains.annotations.NotNull;
 
+import utils.Preconditions;
 import utils.stream.FStream;
 
 import mdt.model.sm.SubmodelUtils;
@@ -24,7 +26,8 @@ import mdt.tree.node.ListNode;
 public class ParameterCollectionNode extends ListNode {
 	protected ParameterCollection m_paramColl;
 	
-	public ParameterCollectionNode(ParameterCollection coll) {
+	public ParameterCollectionNode(@NotNull ParameterCollection coll) {
+		Preconditions.checkNotNullArgument(coll, "coll is null");
 		m_paramColl = coll;
 		
 		setTitle("Parameters");
@@ -59,8 +62,8 @@ public class ParameterCollectionNode extends ListNode {
 			}
 		}
 		
-		public DefaultNode create(ParameterCollection ParameterCollection) {
-			return new ParameterCollectionNode(ParameterCollection);
+		public DefaultNode create(@NotNull ParameterCollection parameterCollection) {
+			return new ParameterCollectionNode(parameterCollection);
 		}
 	}
 }

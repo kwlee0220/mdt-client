@@ -27,7 +27,7 @@ import com.google.common.primitives.Primitives;
 
 import utils.InternalException;
 import utils.ReflectionUtils;
-import utils.Utilities;
+import utils.Throwables;
 import utils.stream.FStream;
 
 import mdt.aas.DataType;
@@ -80,7 +80,7 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 	protected List<SubmodelElement> readSubmodelElementFromFields() {
 		List<SubmodelElement> elements = Lists.newArrayList();
 		
-		for ( Field field: ReflectionUtils.getAllFieldsList(getClass()) ) {
+		for ( Field field: ReflectionUtils.getFieldList(getClass()) ) {
 			if ( getSMEEntityField(field) == null ) {
 				continue;
 			}
@@ -344,7 +344,7 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 		
 		try {
-			SubmodelElementEntity entity = (SubmodelElementEntity)Utilities.newInstance(entityType);
+			SubmodelElementEntity entity = (SubmodelElementEntity)ReflectionUtils.newInstance(entityType);
 			entity.updateFromAasModel(smc);
 			PropertyUtils.setSimpleProperty(this, field.getName(), entity);
 		}
@@ -441,9 +441,21 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 	fromSubmodelElementList(Class<?> elmEntityClass, List<SubmodelElement> members) {
 		return FStream.from(members)
 						.map(elm -> {
-							SubmodelElementEntity entity = (SubmodelElementEntity)Utilities.newInstance(elmEntityClass);
-							entity.updateFromAasModel(elm);
-							return entity;
+							try {
+								SubmodelElementEntity entity = (SubmodelElementEntity)ReflectionUtils.newInstance(elmEntityClass);
+								entity.updateFromAasModel(elm);
+								return entity;
+							}
+							catch ( Exception e ) {
+								Throwable cause = e;
+								if ( e instanceof InternalException ie ) {
+									cause = Throwables.unwrapThrowable(ie);
+								}
+								String msg = String.format("Failed to create SubmodelElementEntity from SubmodelElement: "
+															+ "element=%s, entityClass=%s, cause=%s",
+															elm, elmEntityClass, cause);
+								throw new InternalException(msg, cause);
+							}
 						})
 						.toList();
 	}

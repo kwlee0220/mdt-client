@@ -22,7 +22,7 @@ import okhttp3.RequestBody;
 
 import utils.async.AbstractThreadedExecution;
 import utils.async.CancellableWork;
-import utils.async.Guard;
+import utils.thread.Guard;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;

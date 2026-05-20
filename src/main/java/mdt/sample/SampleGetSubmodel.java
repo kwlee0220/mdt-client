@@ -14,6 +14,7 @@ import com.google.common.collect.Lists;
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.ReferenceUtils;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.sm.value.ElementValue;
@@ -34,7 +35,8 @@ public class SampleGetSubmodel {
 		HttpMDTInstanceManager manager = HttpMDTManager.connect(ENDPOINT).getInstanceManager();
 		
 		MDTInstance inst = manager.getInstance("Test");
-		SubmodelService svc = inst.getSubmodelServiceByIdShort("Data");
+		SubmodelService svc = inst.getSubmodelServiceByIdShort("Data")
+									.getOrThrow(() -> ResourceNotFoundException.ofIdShort("Submodel", "Data"));
 		Submodel submodel = svc.getSubmodel();
 		
 		System.out.printf("%-20s: %s%n", "id", submodel.getId());

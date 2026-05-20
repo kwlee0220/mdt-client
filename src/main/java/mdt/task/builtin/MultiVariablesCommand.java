@@ -15,8 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import utils.Tuple;
-import utils.Utilities;
+import utils.Split;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.workflow.model.ArgumentSpec;
@@ -64,13 +63,16 @@ public abstract class MultiVariablesCommand extends AbstractMDTCommand {
 			String optName = remains.remove(0);
 			
 			optName = trimHeadingDashes(optName);
-			Tuple<String, String> tup = Utilities.split(optName, '.', Tuple.of("in", optName));
+			
+			var split = Split.split(optName, ".");
+			String type = split.tail().isPresent() ? split.head() : "in";
+			String name = split.tail().orElse(optName);
 			if ( remains.size() == 0 || remains.get(0).startsWith("-") ) {
 				// 옵션의 value가 지정되지 않은 경우
-				unmatchedOptions.add(new UnmatchedOption(tup._1, tup._2, null));
+				unmatchedOptions.add(new UnmatchedOption(type, name, null));
 			}
 			else {
-				unmatchedOptions.add(new UnmatchedOption(tup._1, tup._2, remains.removeFirst()));
+				unmatchedOptions.add(new UnmatchedOption(type, name, remains.removeFirst()));
 			}
 		}
 		

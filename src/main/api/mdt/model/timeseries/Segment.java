@@ -3,7 +3,7 @@ package mdt.model.timeseries;
 import java.time.Duration;
 import java.time.Instant;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 

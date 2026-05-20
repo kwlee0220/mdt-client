@@ -3,7 +3,6 @@ package mdt.client.support;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -15,6 +14,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,15 +23,14 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.util.concurrent.AbstractService;
 
-import javax.annotation.Nullable;
-
 import utils.InternalException;
 import utils.LoggerSettable;
 import utils.Throwables;
 import utils.UnitUtils;
-import utils.async.Guard;
 import utils.async.PeriodicLoopExecution;
+import utils.func.FOption;
 import utils.func.Unchecked;
+import utils.thread.Guard;
 
 import ch.qos.logback.classic.LoggerContext;
 
@@ -376,14 +375,14 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		
 		PeriodicLoopExecution<Void> publishing = new PeriodicLoopExecution<Void>(Duration.ofSeconds(1)) {
 			@Override
-			protected Optional<Void> performPeriodicAction(long loopIndex) throws Exception {
+			protected FOption<Void> performPeriodicAction(long loopIndex) {
 				try {
 					mqttSvc.publish("test/topic/1", "Hello MQTT!");
 				}
 				catch ( MqttException ignored ) {
 					System.out.println("Publish failed, broker not connected.");
 				}
-				return Optional.empty();
+				return FOption.empty();
 			}
 		};
 		publishing.start();

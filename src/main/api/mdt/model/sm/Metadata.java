@@ -13,7 +13,7 @@ import lombok.experimental.Accessors;
 
 import mdt.model.ReferenceUtils;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 /**
  *

@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../common/utils"
+		},
+		{
+			"path": "../mdt-manager"
+		},
+		{
+			"path": "../mdt-workflow-argo"
+		},
+		{
+			"path": "../mdt-operation-http"
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "automatic",
+		"workbench.tree.indent": 14,
+		"java.configuration.updateBuildConfiguration": "automatic"
+	}
+}

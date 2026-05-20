@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import mdt.model.sm.info.MDTAssetType;
 

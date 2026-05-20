@@ -15,8 +15,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
-import lombok.experimental.UtilityClass;
-
 import utils.func.FOption;
 import utils.func.Optionals;
 import utils.stream.FStream;
@@ -50,8 +48,11 @@ import mdt.tree.node.timeseries.TimeseriesSubmodelNodeFactories.RecordTransform;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
 public class DefaultNodeFactories {
+	private DefaultNodeFactories() {
+		throw new AssertionError("Should not be called: class=" + getClass().getName());
+	}
+	
 	public static DefaultNodeFactory SMC_FACT = new DefaultNodeFactory() {
 		@Override
 		public DefaultNode create(SubmodelElement element) {

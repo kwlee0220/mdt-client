@@ -25,7 +25,7 @@ import utils.KeyValue;
 import utils.async.AbstractThreadedExecution;
 import utils.async.AsyncState;
 import utils.async.CancellableWork;
-import utils.async.Guard;
+import utils.thread.Guard;
 import utils.func.Optionals;
 import utils.io.IOUtils;
 import utils.stream.FStream;

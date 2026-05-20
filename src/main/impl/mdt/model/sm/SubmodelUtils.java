@@ -8,8 +8,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.Nullable;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.AasSubmodelElements;
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.Key;
@@ -25,6 +23,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementList;
+import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -39,8 +38,6 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
-import lombok.experimental.UtilityClass;
 
 import utils.CSV;
 import utils.Indexed;
@@ -70,8 +67,11 @@ import mdt.model.timeseries.TimeSeries;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class SubmodelUtils {
+public final class SubmodelUtils {
+	private SubmodelUtils() {
+		throw new AssertionError("Should not be called: class=" + SubmodelUtils.class.getName());
+	}
+	
 	/**
 	 * 주어진 SubmodelElement 객체를 복사하여 반환한다.
 	 *
@@ -330,14 +330,14 @@ public class SubmodelUtils {
 	 *
 	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
 	 * @param fieldName 탐색할 idShort 이름.
-	 * @return idShort가 fieldName인 하위 요소. 존재하지 않는 경우에는 Optional.empty()를 반환한다.
+	 * @return idShort가 fieldName인 하위 요소. 존재하지 않는 경우에는 {@code null}를 반환한다.
 	 */
-	public static Optional<SubmodelElement> findFieldById(SubmodelElement smc, String fieldName) {
+	public static SubmodelElement findFieldById(SubmodelElement smc, String fieldName) {
 		if ( smc instanceof SubmodelElementCollection coll ) {
 			return Funcs.findFirst(coll.getValue(), field -> field.getIdShort().equals(fieldName));
 		}
 		else {
-			return Optional.empty();
+			return null;
 		}
 	}
 	
@@ -353,14 +353,19 @@ public class SubmodelUtils {
 	 * @param outputClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
 	 * @return idShort가 fieldName인 하위 요소. 존재하지 않는 경우에는 Optional.empty()를 반환한다.
 	 */
-	public static <T extends SubmodelElement> Optional<T>
+	public static <T extends SubmodelElement> T
 	findFieldById(SubmodelElement smc, String fieldName, Class<T> outputClass) {
 		if ( smc instanceof SubmodelElementCollection coll ) {
-			return Funcs.findFirst(coll.getValue(), field -> field.getIdShort().equals(fieldName))
-					    .map(field -> cast(field, outputClass));
+			SubmodelElement field = Funcs.findFirst(coll.getValue(), f -> f.getIdShort().equals(fieldName));
+			if ( field != null ) {
+				return cast(field, outputClass);
+			}
+			else {
+				return null;
+			}
 		}
 		else {
-			return Optional.empty();
+			return null;
 		}
 	}
 	
@@ -379,15 +384,17 @@ public class SubmodelUtils {
 	 */
 	public static SubmodelElement getFieldById(SubmodelElement smc, String fieldName)
 		throws IllegalArgumentException {
-		return findFieldById(smc, fieldName)
-					.orElseThrow(() -> {
-						String fieldNames = FStream.from(((SubmodelElementCollection)smc).getValue())
-													.map(SubmodelElement::getIdShort)
-													.join(", ");
-						String msg = String.format("Failed to find the field '%s' from %s{%s}",
-													fieldName, smc.getIdShort(), fieldNames);
-						return new IllegalArgumentException(msg);
-					});
+		SubmodelElement field = findFieldById(smc, fieldName);
+		if ( field != null ) {
+			return field;
+		}
+
+		String fieldNames = FStream.from(((SubmodelElementCollection)smc).getValue())
+									.map(SubmodelElement::getIdShort)
+									.join(", ");
+		String msg = String.format("Failed to find the field '%s' from %s{%s}",
+									fieldName, smc.getIdShort(), fieldNames);
+		throw new IllegalArgumentException(msg);
 	}
 	
 	/**
@@ -471,9 +478,13 @@ public class SubmodelUtils {
 						.zipWithIndex()
 						.findFirst(idxed -> {
 							SubmodelElementCollection smc = idxed.value();
-							return findFieldById(smc, fieldName, Property.class)
-										.map(prop -> prop.getValue().equals(value))
-										.orElse(false);
+							var prop = findFieldById(smc, fieldName, Property.class);
+							if ( prop != null ) {
+								return prop.getValue().equals(value);
+							}
+							else {
+								return false;
+							}
 						})
 						.toOptional();
 	}
@@ -791,7 +802,7 @@ public class SubmodelUtils {
 								        		loadArgumentList(inputsSml, pathPrefix + ".Inputs", "Input"),
 								        		loadArgumentList(outputsSml, pathPrefix + ".Outputs", "Output"));
 	}
-	private Map<String,SubmodelArgumentDescriptor> loadArgumentList(SubmodelElementList argSmcList,
+	private static Map<String,SubmodelArgumentDescriptor> loadArgumentList(SubmodelElementList argSmcList,
 																	String idShortPathPrefix, String argKind) {
 		return FStream.from(argSmcList.getValue())
 				.zipWithIndex()

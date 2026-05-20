@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import lombok.Data;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import okhttp3.Headers;
 import okhttp3.MediaType;

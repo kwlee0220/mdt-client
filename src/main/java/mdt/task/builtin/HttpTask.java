@@ -17,7 +17,7 @@ import utils.DataUtils;
 import utils.Throwables;
 import utils.UnitUtils;
 import utils.async.CancellableWork;
-import utils.async.Guard;
+import utils.thread.Guard;
 import utils.http.OkHttpClientUtils;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;

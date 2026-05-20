@@ -19,11 +19,17 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.io.Files;
 
-import utils.async.Guard;
+import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
+
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.io.ZipFile;
 import utils.stream.FStream;
+import utils.thread.Guard;
 
 import mdt.client.HttpMDTManager;
 import mdt.client.HttpMDTServiceProxy;
@@ -38,12 +44,6 @@ import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTInstanceManagerException;
 import mdt.model.sm.ref.DefaultElementReference;
-
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.RequestBody;
 
 
 /**
@@ -117,7 +117,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return m_endpoint;
 	}
 
-	InstanceDescriptor getInstanceDescriptor(String id) {
+	public InstanceDescriptor getInstanceDescriptor(String id) {
 		String url = String.format("%s/instances/%s", getEndpoint(), id);
 		return m_restfulClient.get(url, MDTModelSerDes.INSTANCE_DESC_RESP);
 	}
@@ -205,6 +205,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return createInstance(desc);
 	}
 	
+	@Override
 	public HttpMDTInstanceClient addInstance(String id, int port, File instanceFile) throws MDTInstanceManagerException {
 		Preconditions.checkArgument(id != null, "MDTInstance id must not be null");
 		Preconditions.checkArgument(instanceFile != null, "MDTInstance file must not be null");

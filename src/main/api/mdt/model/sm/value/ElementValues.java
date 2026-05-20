@@ -3,7 +3,7 @@ package mdt.model.sm.value;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;

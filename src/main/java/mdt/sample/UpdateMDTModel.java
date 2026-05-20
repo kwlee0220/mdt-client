@@ -65,16 +65,13 @@ public class UpdateMDTModel {
 	}
 
 	private static boolean isData(Submodel sm) {
-		return Funcs.findFirst(sm.getSubmodelElements(), sme -> sme.getIdShort().equals("DataInfo"))
-						.isPresent();
+		return Funcs.findFirst(sm.getSubmodelElements(), sme -> sme.getIdShort().equals("DataInfo")) != null;
 	}
 	private static boolean isSimulation(Submodel sm) {
-		return Funcs.findFirst(sm.getSubmodelElements(), sme -> sme.getIdShort().equals("SimulationInfo"))
-						.isPresent();
+		return Funcs.findFirst(sm.getSubmodelElements(), sme -> sme.getIdShort().equals("SimulationInfo")) != null;
 	}
 	private static boolean isAI(Submodel sm) {
-		return Funcs.findFirst(sm.getSubmodelElements(), sme -> sme.getIdShort().equals("AIInfo"))
-						.isPresent();
+		return Funcs.findFirst(sm.getSubmodelElements(), sme -> sme.getIdShort().equals("AIInfo")) != null;
 	}
 	private static boolean isEquipment(Submodel sm) {
 		return Try.run(() -> SubmodelUtils.traverse(sm, "DataInfo.Equipment")).isSuccessful();

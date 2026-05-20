@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.HttpMDTManager;
 import mdt.client.workflow.HttpWorkflowManager;
 import mdt.model.MDTManager;
 
@@ -48,7 +47,7 @@ public class GetWorkflowScriptCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		HttpWorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
+		HttpWorkflowManager wfMgr = (HttpWorkflowManager)mdt.getWorkflowManager();
 		
 		String script = wfMgr.getWorkflowScript(m_parent.getWorkflowModelId());
 		System.out.println(script);

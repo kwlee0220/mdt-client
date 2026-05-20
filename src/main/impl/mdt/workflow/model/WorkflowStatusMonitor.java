@@ -1,9 +1,9 @@
 package mdt.workflow.model;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import utils.async.PeriodicLoopExecution;
+import utils.func.FOption;
 import utils.func.Unchecked;
 
 import mdt.workflow.Workflow;
@@ -36,23 +36,23 @@ public class WorkflowStatusMonitor extends PeriodicLoopExecution<Void> {
 	}
 	
 	@Override
-	protected void finalizeLoop() throws Exception {
+	protected void finalizeLoop() {
 		getLogger().info("[{}]: finalize loop for monitoring workflow: {} ({})",
 							getClass().getSimpleName(), m_wfName, m_status);
 	}
 
 	@Override
-	protected Optional<Void> performPeriodicAction(long loopIndex) throws Exception {
+	protected FOption<Void> performPeriodicAction(long loopIndex) {
 		Workflow workflow = m_wfManager.getWorkflow(m_wfName);
 		WorkflowStatus status = workflow.getStatus();
 		getLogger().debug("[#%03d] Workflow: {}, status={}", loopIndex, m_wfName, status);
-		
+
 		status = statusChanged(status);
 		if ( isFinished(status) ) {
 			return null;
 		}
 		else {
-			return Optional.empty();
+			return FOption.empty();
 		}
 	}
 	

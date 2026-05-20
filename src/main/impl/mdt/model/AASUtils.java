@@ -33,8 +33,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
-import lombok.experimental.UtilityClass;
-
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 
@@ -43,6 +41,7 @@ import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.http.OkHttpClientUtils;
+import utils.io.FileUtils;
 import utils.stream.FStream;
 
 import mdt.client.resource.HttpSubmodelServiceClient;
@@ -53,11 +52,14 @@ import mdt.model.instance.MDTInstanceManagerException;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class AASUtils {
+public final class AASUtils {
 	public static final DatatypeFactory DATATYPE_FACTORY;
 	private static final Encoder BASE64URL_ENCODER = Base64.getUrlEncoder();
 	private static final Decoder BASE64URL_DECODER = Base64.getUrlDecoder();
+	
+	private AASUtils() {
+		throw new AssertionError("Should not be called: class=" + FileUtils.class.getName());
+	}
 	
 	static {
 		try {
@@ -225,7 +227,7 @@ public class AASUtils {
 		}
 	}
 	
-	public ResponseBodyDeserializer<List<AssetAdministrationShell>> SHELL_LIST_DESER
+	public static ResponseBodyDeserializer<List<AssetAdministrationShell>> SHELL_LIST_DESER
 		= new ResponseBodyDeserializer<>() {
 				@Override
 				public List<AssetAdministrationShell> deserialize(Headers headers, String respBody) throws IOException {

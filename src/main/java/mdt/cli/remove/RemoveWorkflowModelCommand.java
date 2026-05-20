@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.workflow.WorkflowManager;
 
@@ -53,7 +52,7 @@ public class RemoveWorkflowModelCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		WorkflowManager svc = ((HttpMDTManager)mdt).getWorkflowManager();
+		WorkflowManager svc = mdt.getWorkflowManager();
 
 		if ( m_removeAll ) {
 			svc.removeWorkflowModelAll();

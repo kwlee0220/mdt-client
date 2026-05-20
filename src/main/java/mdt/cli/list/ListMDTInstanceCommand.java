@@ -1,5 +1,6 @@
 package mdt.cli.list;
 
+import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.PrintWriter;
 import java.time.Duration;
@@ -18,6 +19,9 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
+
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 import utils.InternalException;
 import utils.StopWatch;
@@ -41,10 +45,18 @@ import mdt.model.instance.InstanceDescriptor;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
 
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
-
 /**
+ * 등록된 MDT 인스턴스 전체를 다양한 형식으로 나열하는 CLI 명령({@code instances}).
+ * <p>
+ * 출력 형식은 {@code --output} 옵션으로 선택한다.
+ * <ul>
+ *   <li>{@code CSV} (기본값): 구분자로 구분된 한 줄짜리 레코드</li>
+ *   <li>{@code TABLE}: 사람이 읽기 좋은 테이블</li>
+ *   <li>{@code TREE}: 컴포넌트 의존 관계를 트리로 표현</li>
+ *   <li>{@code JSON}: JSON 직렬화</li>
+ * </ul>
+ * {@code --long}을 지정하면 자산 타입/ID, 서브모델 요약, 엔드포인트 등 자세한 정보가 함께 출력된다.
+ * {@code --repeat}을 지정하면 주기적으로 화면을 갱신한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -58,52 +70,103 @@ import picocli.CommandLine.Option;
 public class ListMDTInstanceCommand extends AbstractMDTCommand {
 	private static final Logger s_logger = LoggerFactory.getLogger(ListMDTInstanceCommand.class);
 
-	@Option(names={"--filter", "-f"}, paramLabel="filter-expr", description="instance filter.")
-	private String m_filter = null;
-	
-	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
-			description="output type (candidnates: 'csv' (default), 'table', 'tree', or 'json')")
-	private String m_output = "csv";
-	
-	@Option(names={"--table", "-t"}, description="'table' format output (same to '--output=table')")
-	public void setTable(boolean flag) {
-		m_output = "table";
+	/** {@code json} 출력에 사용하는 공용 AAS JSON 직렬기. */
+	private static final JsonSerializer JSON_SERIALIZER = new JsonSerializer();
+
+	/**
+	 * 지원하는 출력 형식. picocli의 case-insensitive enum 변환과 결합되어
+	 * 사용자는 {@code csv}/{@code CSV} 등으로 입력할 수 있다.
+	 */
+	public enum OutputType {
+		/** 구분자로 구분된 한 줄짜리 레코드. */
+		CSV,
+		/** 사람이 읽기 좋은 테이블 형식. */
+		TABLE,
+		/** 컴포넌트 의존 관계를 트리 형태로 표현. */
+		TREE,
+		/** JSON 직렬화 출력. */
+		JSON
 	}
 
+	/** 인스턴스 필터 표현식. {@code null}이면 모든 인스턴스를 대상으로 한다. */
+	@Option(names={"--filter", "-f"}, paramLabel="filter-expr", description="instance filter.")
+	private String m_filter = null;
+
+	/** 출력 형식. 기본값은 {@link OutputType#CSV}. */
+	@Option(names={"--output", "-o"}, paramLabel="type", required=false,
+			description="output type (candidates: ${COMPLETION-CANDIDATES}, default: ${DEFAULT-VALUE})")
+	private OutputType m_output = OutputType.CSV;
+
+	/**
+	 * {@code --output=TABLE}을 강제하는 단축 옵션.
+	 * <p>
+	 * 인자 순서와 무관하게 {@code --output}보다 우선 적용된다. 즉, {@code --output=JSON -t}와
+	 * {@code -t --output=JSON} 모두 최종 출력 형식은 {@link OutputType#TABLE}이 된다.
+	 * 우선 적용은 {@link #run(MDTManager)} 진입 시점에 수행된다.
+	 */
+	@Option(names={"--table", "-t"},
+			description="force 'TABLE' format output. Takes precedence over --output regardless of order.")
+	private boolean m_forceTable = false;
+
+	/**
+	 * 주기적 갱신 간격(예: {@code "1s"}, {@code "500ms"}). {@code null}이면 단발 실행.
+	 */
 	@Option(names={"--repeat", "-r"}, paramLabel="interval",
 			description="repeat interval (e.g. \"1s\", \"500ms\")")
 	private String m_repeat = null;
 
-	@Option(names={"--long", "-l"}, description="show detailed information. valid only for 'simple' and 'table' output")
+	/** 자세한 정보 출력 여부. {@code CSV}/{@code TABLE} 출력에만 유효. */
+	@Option(names={"--long", "-l"}, description="show detailed information. valid only for CSV and TABLE output")
 	private boolean m_long = false;
 
+	/** {@code CSV} 출력에서 사용할 필드 구분자. 기본값은 {@link ListCommands#DELIM}. */
 	@Option(names={"--delimiter", "-d"}, paramLabel="delimiter",
-					description="delimiter (for 'csv' output only)")
+					description="delimiter (for CSV output only)")
 	private String m_delimiter = ListCommands.DELIM;
 
-	@Option(names={"--pretty"}, description="pretty print (for 'json' output only)")
+	/** {@code JSON} 출력 시 보기 좋게 들여쓰기 여부. */
+	@Option(names={"--pretty"}, description="pretty print (for JSON output only)")
 	private boolean m_prettyPrint = false;
-	
-	@Option(names={"--show-endpoint"}, description="show endpoint for running MDT instances. valid only for 'tree' output")
+
+	/** {@code TREE} 출력에서 실행 중 인스턴스의 엔드포인트를 함께 표시할지 여부. */
+	@Option(names={"--show-endpoint"}, description="show endpoint for running MDT instances. valid only for TREE output")
 	private boolean m_showEndpoint = false;
-	
+
+	/** 주기적 갱신 모드에서의 verbose 출력 여부. */
 	@Option(names={"-v"}, description="verbose")
 	private boolean m_verbose = false;
-	
+
+	/**
+	 * 이 명령의 로거를 {@code ListMDTInstanceCommand} 이름으로 초기화하는 생성자.
+	 */
 	public ListMDTInstanceCommand() {
 		setLogger(s_logger);
 	}
 
+	/**
+	 * 명령의 본체. 인스턴스 목록을 조회하여 선택된 형식으로 출력한다.
+	 * <p>
+	 * {@code --repeat}이 지정되지 않은 경우 한 번 출력하고 경과 시간을 함께 표시한다. 지정된
+	 * 경우 {@link PeriodicRefreshingConsole}을 통해 주기적으로 화면을 갱신한다.
+	 *
+	 * @param mdt 부모 클래스가 접속을 완료한 {@link MDTManager}.
+	 * @throws Exception 출력 또는 주기 실행 중 발생한 예외.
+	 */
 	@Override
 	public void run(MDTManager mdt) throws Exception {
+		// --table/-t는 인자 순서와 무관하게 --output보다 우선한다.
+		if ( m_forceTable ) {
+			m_output = OutputType.TABLE;
+		}
+
 		HttpMDTInstanceManager manager = (HttpMDTInstanceManager)mdt.getInstanceManager();
-		
+
 		if ( m_repeat == null ) {
 			StopWatch watch = StopWatch.start();
 			try ( PrintWriter pw = new PrintWriter(System.out, true) ) {
 				printOutput(manager, pw);
 				watch.stop();
-				
+
 				double elapsed = watch.getElapsedInFloatingSeconds();
 				pw.printf("elapsed: %.3f%n", elapsed);
 			}
@@ -113,12 +176,16 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
-				protected void print(PrintWriter pw) throws Exception {
+				protected void print(PrintWriter pw) throws InterruptedException {
 					try {
 						printOutput(manager, pw);
 					}
-					catch ( Exception ignored ) {
-						pw.println("failed to list MDTInstances: cause=" + ignored);
+					catch ( InterruptedException e ) {
+						Thread.currentThread().interrupt();
+						throw e;
+					}
+					catch ( Exception e ) {
+						pw.println("failed to list MDTInstances: cause=" + e);
 					}
 				}
 			};
@@ -126,7 +193,14 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			pwriter.run();
 		}
 	}
-	
+
+	/**
+	 * 인스턴스 목록을 조회한 뒤 {@code --output}과 {@code --long} 조합에 따라 적절한 렌더링을 수행한다.
+	 *
+	 * @param manager 인스턴스 조회에 사용할 매니저.
+	 * @param pw      출력 대상 writer.
+	 * @throws InterruptedException 주기적 갱신 중 IO 인터럽트가 발생한 경우.
+	 */
 	private void printOutput(HttpMDTInstanceManager manager, PrintWriter pw) throws InterruptedException {
 		try {
 			List<HttpMDTInstanceClient> instances;
@@ -138,54 +212,42 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			}
 
 			if ( m_long ) {
-				if ( m_output.equals("csv") ) {
-					printLongCsv(instances, pw);
+				switch ( m_output ) {
+					case CSV -> printLongCsv(instances, pw);
+					case TABLE -> printLongTable(instances, pw);
+					case TREE -> printTree(instances, pw);
+					case JSON -> printJson(instances, pw);
+					default -> throw new IllegalStateException("unsupported output type: " + m_output);
 				}
-				else if ( m_output.equals("table") ) {
-                    printLongTable(instances, pw);
-                }
-				else if ( m_output.equals("tree") ) {
-					printTree(instances, pw);
+			}
+			else {
+				switch ( m_output ) {
+					case CSV -> printShortCsv(instances, pw);
+					case TABLE -> printShortTable(instances, pw);
+					case TREE -> printTree(instances, pw);
+					case JSON -> printJson(instances, pw);
+					default -> throw new IllegalStateException("unsupported output type: " + m_output);
 				}
-				else {
-					printJson(instances, pw);
-				}
-            }
-            else {
-				if ( m_output.equals("csv") ) {
-					printShortCsv(instances, pw);
-				}
-				else if ( m_output.equals("table") ) {
-                    printShortTable(instances, pw);
-                }
-				else if ( m_output.equals("tree") ) {
-					printTree(instances, pw);
-				}
-                else {
-					printJson(instances, pw);
-                }
-            }
+			}
 		}
 		catch ( ResourceNotFoundException e ) {
-			pw.println("fails to list MDTInstances: " + e.getCause());
+			pw.println("failed to list MDTInstances: " + Optionals.getOrElse(e.getCause(), e));
 		}
 		catch ( RESTfulIOException e ) {
 			Throwable cause = e.getCause();
 			if ( cause instanceof InterruptedIOException ) {
+				Thread.currentThread().interrupt();
 				throw new InterruptedException("interrupted while listing MDTInstances");
 			}
 			else {
-				pw.println("fails to list MDTInstances: " + e.getCause());
+				pw.println("failed to list MDTInstances: " + Optionals.getOrElse(cause, e));
 			}
 		}
 	}
-	
-	private void printId(List<? extends MDTInstance> instances, PrintWriter pw) {
-		for ( MDTInstance inst : instances ) {
-			pw.println(inst.getId());
-		}
-	}
-	
+
+	/**
+	 * 순번/ID/상태 세 컬럼만 갖는 CSV 형식으로 출력한다.
+	 */
 	private void printShortCsv(List<? extends MDTInstance> instances, PrintWriter pw) {
 		int seqNo = 1;
 		for ( MDTInstance inst : instances ) {
@@ -196,13 +258,16 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			++seqNo;
 		}
 	}
-	
+
+	/**
+	 * 순번/ID/상태 세 컬럼만 갖는 테이블 형식으로 출력한다.
+	 */
 	private void printShortTable(List<? extends MDTInstance> instances, PrintWriter pw) {
 		Table table = new Table(3);
 		table.addCell(" # ");
 		table.addCell(" INSTANCE ");
 		table.addCell(" STATUS ");
-		
+
 		int seqNo = 1;
 		for ( MDTInstance inst : instances ) {
 			table.addCell(String.format("%3d", seqNo));
@@ -212,7 +277,10 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		}
 		pw.println(table.render());
 	}
-	
+
+	/**
+	 * 자산 타입/ID, 서브모델 요약, 엔드포인트까지 포함한 자세한 CSV를 출력한다.
+	 */
 	private void printLongCsv(List<? extends MDTInstance> instances, PrintWriter pw) {
 		int seqNo = 1;
 		for ( MDTInstance inst : instances ) {
@@ -222,7 +290,10 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			++seqNo;
 		}
 	}
-	
+
+	/**
+	 * 자산 타입/ID, 서브모델 요약, 엔드포인트까지 포함한 자세한 테이블을 출력한다.
+	 */
 	private void printLongTable(List<? extends MDTInstance> instances, PrintWriter pw) {
 		Table table = new Table(7);
 		table.setColumnWidth(3, 10, 50);
@@ -234,7 +305,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		table.addCell(" SUB_MODELS ");
 		table.addCell(" STATUS ");
 		table.addCell(" ENDPOINT ");
-		
+
 		int seqNo = 1;
 		for ( MDTInstance inst : instances ) {
 			Object[] cells = toLongColumns(seqNo, inst, "%3d");
@@ -243,17 +314,21 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		}
 		pw.println(table.render());
 	}
-	
 
-	public static final JsonSerializer JSON_SERIALIZER = new JsonSerializer();
-	public void printJson(List<HttpMDTInstanceClient> instances, PrintWriter pw) {
+	/**
+	 * 각 인스턴스의 {@link InstanceDescriptor}를 JSON 배열로 직렬화하여 출력한다.
+	 * {@code --pretty}가 설정된 경우 들여쓰기를 적용한다.
+	 *
+	 * @throws InternalException JSON 직렬화에 실패한 경우.
+	 */
+	private void printJson(List<HttpMDTInstanceClient> instances, PrintWriter pw) {
 		try {
 			List<InstanceDescriptor> modelList = FStream.from(instances)
-												        .map(inst -> inst.getInstanceDescriptor())
-												        .toList();
-			
+														.map(inst -> inst.getInstanceDescriptor())
+														.toList();
+
 			JsonNode modelsNode = JSON_SERIALIZER.toNode(modelList);
-			
+
 			String json;
 			if ( m_prettyPrint ) {
 				json = MDTModelSerDe.MAPPER.writerWithDefaultPrettyPrinter()
@@ -264,14 +339,20 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			}
 			pw.println(json);
 		}
-		catch ( Exception e ) {
-			throw new InternalException("fails to serialize MDTInstances to JSON, cause=" + e);
+		catch ( IOException | RuntimeException e ) {
+			throw new InternalException("failed to serialize MDTInstances to JSON", e);
 		}
-    }
+	}
 
+	/**
+	 * 실행 중인 인스턴스의 컴포넌트 의존 관계를 반영하여 트리 형태로 출력한다.
+	 * <p>
+	 * 모든 인스턴스를 일단 루트 자식으로 추가한 뒤, 실행 중인 부모 인스턴스의 컴포넌트로 참조되는
+	 * (그리고 자신도 실행 중인) 자식들을 부모 아래로 옮긴다. 트리 스타일은 OS에 따라 다르게 적용된다.
+	 */
 	private void printTree(List<? extends MDTInstance> instances, PrintWriter pw) {
 		Nodes.s_showEndpoint = m_showEndpoint;
-		
+
 		// take a snapshot
 		Map<String,InstanceNode> nodes = FStream.from(instances)
 												.castSafely(HttpMDTInstanceClient.class)
@@ -288,7 +369,7 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 			}
 			root.addChild(node);
 		}
-		
+
 		FStream.from(runningNodes)
 				.forEach(node -> {
 					for ( MDTInstance comp: node.getInstance().getComponentInstanceAll() ) {
@@ -307,6 +388,17 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 		pw.print(TextTree.newInstance(opts).render(root));
 	}
 
+	/**
+	 * {@code --long} 모드의 CSV/테이블에서 사용할 컬럼 값들을 계산한다.
+	 * <p>
+	 * 서브모델 의미 ID를 그룹화하여 {@code Info}/{@code Data}는 그대로 표시하고, 나머지는
+	 * {@code 그룹명(개수)} 형식으로 요약한다.
+	 *
+	 * @param seqNo    출력 순번.
+	 * @param instance 대상 인스턴스.
+	 * @param format   순번 포맷 문자열(예: {@code "%d"}, {@code "%3d"}).
+	 * @return 한 행을 구성하는 컬럼 값들의 배열.
+	 */
 	private Object[] toLongColumns(int seqNo, MDTInstance instance, String format) {
 		List<String> outputs = Lists.newArrayList();
 		FStream.from(instance.getMDTSubmodelDescriptorAll())
@@ -317,21 +409,9 @@ public class ListMDTInstanceCommand extends AbstractMDTCommand {
 				.ifCase("Info").consume(grp -> outputs.add("Info"))
 				.ifCase("Data").consume(grp -> outputs.add("Data"))
 				.otherwise().forEach((k, grp) -> outputs.add(String.format("%s(%d)", k, grp.size())));
-		
+
 		String submodelIdCsv = FStream.from(outputs).join(',');
-		
-//		String assetName = "";
-//		if ( instance.getStatus() == MDTInstanceStatus.RUNNING ) {
-//			assetName = FStream.from(instance.getSubmodelServiceAllBySemanticId(InformationModel.SEMANTIC_ID))
-//								.findFirst()
-//								.map(infoSvc -> {
-//									SubmodelElement nameSme = infoSvc.getSubmodelElementByPath("MDTInfo.AssetName");
-//									return (nameSme instanceof Property prop) ? prop.getValue() : "";
-//								})
-//								.getOrElse("");
-//		}
-//		assetName = "'" + Utilities.padRight(assetName, 20) + "'";
-		
+
 		String serviceEndpoint = ObjectUtils.defaultIfNull(instance.getServiceEndpoint(), "");
 		return new Object[] {
 			String.format(format, seqNo),

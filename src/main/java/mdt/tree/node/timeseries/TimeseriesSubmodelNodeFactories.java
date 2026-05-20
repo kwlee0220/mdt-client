@@ -2,8 +2,6 @@ package mdt.tree.node.timeseries;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import lombok.experimental.UtilityClass;
-
 import utils.stream.FStream;
 
 import mdt.model.timeseries.DefaultMetadata;
@@ -18,8 +16,11 @@ import mdt.tree.node.TerminalNode;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
 public final class TimeseriesSubmodelNodeFactories {
+	private TimeseriesSubmodelNodeFactories() {
+		throw new AssertionError("Should not be called: class=" + getClass().getName());
+	}
+	
 	public static class RecordTransform implements DefaultNodeFactory {
 		@Override
 		public DefaultNode create(SubmodelElement sme) {

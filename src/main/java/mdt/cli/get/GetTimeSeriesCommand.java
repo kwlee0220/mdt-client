@@ -152,7 +152,7 @@ public class GetTimeSeriesCommand extends AbstractGetElementCommand {
 	
 	protected void printAsCsv(ElementCollectionValue value, PrintWriter pw) {
 		if ( m_header ) {
-			ElementCollectionValue first = (ElementCollectionValue)Funcs.getFirst(value.getFieldMap().values()).get();
+			ElementCollectionValue first = (ElementCollectionValue)Funcs.getFirst(value.getFieldMap().values());
 			String header = FStream.from(first.getFieldMap().keySet()).join(m_delim);
 			pw.println(header);
 		}

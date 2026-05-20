@@ -11,7 +11,6 @@ import utils.func.Optionals;
 import utils.stream.FStream;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.model.MDTModelSerDe;
 import mdt.workflow.NodeTask;
@@ -60,7 +59,7 @@ public class GetWorkflowInstanceCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
+		WorkflowManager wfMgr = mdt.getWorkflowManager();
 		
 		Workflow workflow = wfMgr.getWorkflow(m_id);
 		switch (m_output) {

@@ -12,8 +12,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
-import lombok.experimental.UtilityClass;
-
 import mdt.model.sm.ref.DefaultElementReference;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdSubmodelReference;
@@ -22,8 +20,11 @@ import mdt.model.sm.ref.DefaultSubmodelReference.ByIdSubmodelReference;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class References {
+public final class References {
+	private References() {
+		throw new AssertionError("Should not be called: class=" + References.class.getName());
+	}
+	
 	private static class KeySpec {
 		private final KeyTypes m_type;
 		private final boolean m_isSubmodelElement;

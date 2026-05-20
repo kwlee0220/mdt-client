@@ -25,7 +25,6 @@ public class ParameterValue extends ElementCollectionValue {
 		return SERIALIZATION_TYPE;
 	}
 	
-	@SuppressWarnings("unchecked")
 	public Instant getEventDateTime() {
 		return findField("EventDateTime")
 				.map(ev -> ((DateTimePropertyValue)ev).toValueObject())

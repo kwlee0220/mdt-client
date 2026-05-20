@@ -9,6 +9,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable;
 
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.sm.PropertyUtils;
@@ -25,7 +26,8 @@ public class TestRCKSimulation {
 		HttpMDTInstanceManager manager = mdt.getInstanceManager();
 		
 		MDTInstance instance = manager.getInstance("PressProcess");
-		SubmodelService svc = instance.getSubmodelServiceByIdShort("PressSimulation");
+		SubmodelService svc = instance.getSubmodelServiceByIdShort("PressSimulation")
+								.getOrThrow(() -> ResourceNotFoundException.ofIdShort("Submodel", "PressSimulation"));
 		
 		MDTElementReference ref = ElementReferences.parseExpr("oparg:PressProcess:PressSimulation:in:RCKServerEndpoint");
 		ref.activate(manager);

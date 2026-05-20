@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import utils.UnitUtils;
 import utils.async.AsyncState;
-import utils.async.Guard;
+import utils.thread.Guard;
 
 import mdt.cli.AbstractMDTCommand;
 import mdt.client.operation.HttpSimulationClient;

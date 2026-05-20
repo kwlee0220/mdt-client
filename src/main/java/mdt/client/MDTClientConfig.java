@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import utils.UnitUtils;
 import utils.io.IOUtils;
@@ -36,9 +36,7 @@ public final class MDTClientConfig {
 	private @Nullable String m_workflowManagerUrl;
 	
 	public static MDTClientConfig load(File configFile) throws IOException {
-		if ( s_logger.isInfoEnabled() ) {
-			s_logger.info("reading a configuration from {}", configFile.getAbsolutePath());
-		}
+		s_logger.debug("reading a configuration from {}", configFile.getAbsolutePath());
 		
 		String confYamlString = IOUtils.toString(configFile);
 		StringSubstitutor interpolator = StringSubstitutor.createInterpolator();

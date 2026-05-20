@@ -6,8 +6,6 @@ import java.util.Iterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import lombok.experimental.UtilityClass;
-
 import utils.stream.FStream;
 
 import mdt.client.HttpMDTManager;
@@ -19,8 +17,11 @@ import mdt.model.instance.MDTOperationDescriptor;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class Completions {
+public final class Completions {
+	private Completions() {
+		throw new AssertionError("Should not be called: class=" + Completions.class.getName());
+	}
+	
 	private static final Logger s_logger = LoggerFactory.getLogger(Completions.class);
 
 	public static class RunningInstanceIdCompletions implements Iterable<String> {

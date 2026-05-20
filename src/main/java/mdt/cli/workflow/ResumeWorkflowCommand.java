@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.workflow.Workflow;
 import mdt.workflow.WorkflowManager;
@@ -39,7 +38,7 @@ public class ResumeWorkflowCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
+		WorkflowManager wfMgr = mdt.getWorkflowManager();
 		
 		Workflow wf = wfMgr.resumeWorkflow(m_wfName);
 		System.out.println(wf);

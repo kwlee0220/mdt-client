@@ -6,14 +6,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
-import lombok.experimental.UtilityClass;
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
 public final class MDTSemanticIds {
+	private MDTSemanticIds() {
+		throw new AssertionError("Should not be called: class=" + MDTSemanticIds.class.getName());
+	}
+	
 	public static final String MDT_PREFIX = "https://etri.re.kr/mdt";
 	public static final String VERSION = "/1/1";
 

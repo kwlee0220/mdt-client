@@ -53,8 +53,11 @@ public interface ParameterCollection {
 	 * @throws ResourceNotFoundException	식별자에 해당하는 파라미터가 존재하지 않는 경우.
 	 */
 	public default Parameter getParameter(String paramId) throws ResourceNotFoundException {
-		return Funcs.findFirst(this.getParameterList(), param -> param.getParameterId().equals(paramId))
-					.orElseThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId));
+		var param = Funcs.findFirst(this.getParameterList(), p -> p.getParameterId().equals(paramId));
+		if ( param != null ) {
+			return param;
+		}
+		throw new ResourceNotFoundException("Parameter", "id=" + paramId);
 	}
 	
 	/**
@@ -65,9 +68,11 @@ public interface ParameterCollection {
 	 * @throws ResourceNotFoundException 식별자에 해당하는 파라미터가 존재하지 않는 경우.
 	 */
 	public default int getParameterIndex(String paramId) throws ResourceNotFoundException {
-		return Funcs.findFirstIndexed(this.getParameterList(), param -> param.getParameterId().equals(paramId))
-						.orElseThrow(() -> new ResourceNotFoundException("Parameter", "id=" + paramId))
-						.index();
+		var idxed = Funcs.findFirstIndexed(this.getParameterList(), param -> param.getParameterId().equals(paramId));
+		if ( idxed != null ) {
+			return idxed.index();
+		}
+		throw new ResourceNotFoundException("Parameter", "id=" + paramId);
 	}
 	
 	/**
@@ -78,8 +83,11 @@ public interface ParameterCollection {
 	 * @throws ResourceNotFoundException	식별자에 해당하는 파라미터가 존재하지 않는 경우.
 	 */
 	public default ParameterValue getParameterValue(String paramId) throws ResourceNotFoundException {
-		return Funcs.findFirst(this.getParameterValueList(), param -> param.getParameterId().equals(paramId))
-				.orElseThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId));
+		var param = Funcs.findFirst(this.getParameterValueList(), p -> p.getParameterId().equals(paramId));
+		if ( param != null ) {
+			return param;
+		}
+		throw new ResourceNotFoundException("ParameterValue", "id=" + paramId);
 	}
 	
 	/**
@@ -90,9 +98,11 @@ public interface ParameterCollection {
 	 * @throws ResourceNotFoundException 식별자에 해당하는 파라미터가 존재하지 않는 경우.
 	 */
 	public default int getParameterValueIndex(String paramId) throws ResourceNotFoundException {
-		return Funcs.findFirstIndexed(this.getParameterValueList(), param -> param.getParameterId().equals(paramId))
-					.orElseThrow(() -> new ResourceNotFoundException("ParameterValue", "id=" + paramId))
-					.index();
+		var idxed = Funcs.findFirstIndexed(this.getParameterValueList(), param -> param.getParameterId().equals(paramId));
+		if ( idxed != null ) {
+			return idxed.index();
+		}
+		throw new ResourceNotFoundException("ParameterValue", "id=" + paramId);
 	}
 //	public SubmodelElement getParameterValueAsSubmodelElement(String paramId) throws ResourceNotFoundException;
 //	public String getIdShortPathOfParameterValue(String paramId);

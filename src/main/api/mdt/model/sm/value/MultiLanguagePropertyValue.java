@@ -68,9 +68,8 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 		List<LangStringTextType> textList
 				= FStream.from(vnode.elements())
 							.mapOrThrow(elm -> {
-								Map.Entry<String,JsonNode> ent
-									= Funcs.getFirst(elm.properties())
-											.orElseThrow(() -> new IllegalStateException("No language field"));
+								Map.Entry<String,JsonNode> ent = Funcs.getFirst(elm.properties());
+								if ( ent == null ) throw new IllegalStateException("No language field");
 								return buildLangStringTextType(ent.getKey(), ent.getValue().asText());
 							})
 							.toList();
@@ -112,9 +111,8 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 		List<LangStringTextType> textList
 				= FStream.from(vnode.elements())
 							.mapOrThrow(elm -> {
-								Map.Entry<String,JsonNode> ent
-									= Funcs.getFirst(elm.properties())
-											.orElseThrow(() -> new IllegalStateException("No language field"));
+								Map.Entry<String,JsonNode> ent = Funcs.getFirst(elm.properties());
+								if ( ent == null ) throw new IllegalStateException("No language field");
 								return buildLangStringTextType(ent.getKey(), ent.getValue().asText());
 							})
 							.toList();

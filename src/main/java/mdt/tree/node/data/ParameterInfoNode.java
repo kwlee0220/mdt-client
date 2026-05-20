@@ -40,9 +40,8 @@ public final class ParameterInfoNode extends TerminalNode {
 	}
 	
 	private String getFieldStringOrNull(SubmodelElement smc, String field) {
-		return SubmodelUtils.findFieldById(smc, field, Property.class)
-							.map(f -> f.getValue())
-							.orElse(null);
+		Property prop = SubmodelUtils.findFieldById(smc, field, Property.class);
+		return (prop != null) ? prop.getValue() : null;
 	}
 	
 	public static ParameterInfoNodeFactory FACTORY = new ParameterInfoNodeFactory();

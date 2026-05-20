@@ -5,14 +5,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 
-import lombok.experimental.UtilityClass;
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@UtilityClass
-public class TimeSeriesSemanticIds {
+public final class TimeSeriesSemanticIds {
+	private TimeSeriesSemanticIds() {
+		throw new AssertionError("Should not be called: class=" + TimeSeriesSemanticIds.class.getName());
+	}
+	
 	public static final String TIME_SERIES = "https://admin-shell.io/idta/TimeSeries/1/1";
 	public static final DefaultReference TIME_SERIES_REFERENCE = toExternalReference(TIME_SERIES);
 	

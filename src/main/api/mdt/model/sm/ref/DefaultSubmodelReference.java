@@ -66,7 +66,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		
 		@Override
 		public SubmodelService get() throws ResourceNotFoundException {
-			return getInstance().getSubmodelServiceById(m_submodelId);
+			return getInstance().getSubmodelServiceById(m_submodelId)
+								.getOrThrow(() -> ResourceNotFoundException.ofId("Submodel", m_submodelId));
 		}
 
 		@Override
@@ -144,7 +145,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		
 		@Override
 		public SubmodelService get() throws ResourceNotFoundException {
-			return getInstance().getSubmodelServiceByIdShort(m_submodelIdShort);
+			return getInstance().getSubmodelServiceByIdShort(m_submodelIdShort)
+								.getOrThrow(() -> ResourceNotFoundException.ofIdShort("Submodel", m_submodelIdShort));
 		}
 
 		@Override

@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import mdt.cli.AbstractMDTCommand;
-import mdt.client.HttpMDTManager;
 import mdt.model.MDTManager;
 import mdt.workflow.WorkflowManager;
 
@@ -38,7 +37,7 @@ public class StopWorkflowCommand extends AbstractMDTCommand {
 
 	@Override
 	public void run(MDTManager mdt) throws Exception {
-		WorkflowManager wfMgr = ((HttpMDTManager)mdt).getWorkflowManager();
+		WorkflowManager wfMgr = mdt.getWorkflowManager();
 		
 		wfMgr.stopWorkflow(m_wfId);
 	}

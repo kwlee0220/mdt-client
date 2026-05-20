@@ -3,6 +3,8 @@ package mdt.model.expr;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
+import mdt.model.ResourceNotFoundException;
+import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.sm.SubmodelUtils;
 
@@ -24,7 +26,10 @@ public class MDTDefaultSubmodelElementExpr implements MDTExpression {
 	@Override
 	public SubmodelElement evaluate() {
 		MDTInstance instance = m_instanceExpr.evaluate();
-		Submodel submodel = instance.getSubmodelServiceByIdShort(m_submodelIdShort).getSubmodel();
+		Submodel submodel = instance.getSubmodelServiceByIdShort(m_submodelIdShort)
+                .map(SubmodelService::getSubmodel)
+                .getOrThrow(() -> ResourceNotFoundException.ofIdShort("Submodel", m_submodelIdShort));
+
 		return SubmodelUtils.traverse(submodel, m_idShortPath);
 	}
 }

@@ -11,6 +11,9 @@ import org.nocrala.tools.texttablefmt.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+
 import utils.UnitUtils;
 import utils.stream.FStream;
 
@@ -24,9 +27,6 @@ import mdt.model.MDTManager;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTSubmodelDescriptor;
-
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
 
 /**
  *
@@ -77,7 +77,7 @@ public class ListShellCommand extends AbstractMDTCommand {
 			Duration repeatInterval = UnitUtils.parseDuration(m_repeat);
 			PeriodicRefreshingConsole pwriter = new PeriodicRefreshingConsole(repeatInterval) {
 				@Override
-				protected void print(PrintWriter pw) throws Exception {
+				protected void print(PrintWriter pw) {
 					try {
 						printOutput(manager, pw);
 					}

@@ -19,13 +19,6 @@
 		{
 			"name": "mdt-workflow-argo",
 			"path": "../mdt-workflow-argo"
-		},
-		{
-			"name": "mdt-operation-http",
-			"path": "../mdt-operation-http"
-		},
-		{
-			"path": "../mdt-apps"
 		}
 	],
 	"settings": {

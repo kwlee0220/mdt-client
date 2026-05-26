@@ -15,8 +15,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Preconditions;
 
+import utils.Preconditions;
 import utils.stream.FStream;
 
 import mdt.client.HttpMDTManager;
@@ -67,8 +67,8 @@ public class MDTArgumentReference extends SubmodelBasedElementReference implemen
 	private volatile DefaultElementReference m_argRef;
 	
 	private MDTArgumentReference(DefaultSubmodelReference submodelRef, MDTArgumentKind kind, String argSpec) {
-		Preconditions.checkArgument(submodelRef != null, "Null OperationSubmodelReference");
-		Preconditions.checkArgument(argSpec != null, "Null argSpec");
+		Preconditions.checkNotNullArgument(submodelRef, "Null OperationSubmodelReference");
+		Preconditions.checkNotNullArgument(argSpec, "Null argSpec");
 		
 		m_submodelRef = submodelRef;
 		m_kind = kind;

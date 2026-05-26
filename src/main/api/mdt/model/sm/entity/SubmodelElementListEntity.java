@@ -8,9 +8,9 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementList;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
+import utils.Preconditions;
 import utils.stream.FStream;
 
 
@@ -57,7 +57,7 @@ public abstract class SubmodelElementListEntity<E extends SubmodelElementEntity>
 
 	@Override
 	public void updateFromAasModel(SubmodelElement sme) {
-		Preconditions.checkArgument(sme != null);
+		Preconditions.checkNotNullArgument(sme, "sme is null");
 
 		if ( sme instanceof SubmodelElementList sml ) {
 			setIdShort(sml.getIdShort());
@@ -81,7 +81,7 @@ public abstract class SubmodelElementListEntity<E extends SubmodelElementEntity>
 
 	@Override
 	public void updateAasModel(SubmodelElement sme) {
-		Preconditions.checkArgument(sme != null);
+		Preconditions.checkNotNullArgument(sme, "sme is null");
 
 		if ( sme instanceof SubmodelElementList sml ) {
 			if ( getIdShort() != null ) sml.setIdShort(getIdShort());

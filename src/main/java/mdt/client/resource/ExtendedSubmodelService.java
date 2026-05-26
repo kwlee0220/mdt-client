@@ -3,9 +3,9 @@ package mdt.client.resource;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
-import com.google.common.base.Preconditions;
-
 import lombok.experimental.Delegate;
+
+import utils.Preconditions;
 
 import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
@@ -33,7 +33,7 @@ public class ExtendedSubmodelService implements SubmodelService {
 	}
 
 	public void setPropertyValueByPath(String idShortPath, String value) {
-		Preconditions.checkArgument(idShortPath != null);
+		Preconditions.checkNotNullArgument(idShortPath != null, "idShortPath must not be null");
 		
 		SubmodelElement sme = getSubmodelElementByPath(idShortPath);
 		if ( sme instanceof Property ) {

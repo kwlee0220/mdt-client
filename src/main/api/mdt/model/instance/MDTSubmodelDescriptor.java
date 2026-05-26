@@ -1,11 +1,12 @@
 package mdt.model.instance;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Preconditions;
 
-import org.jetbrains.annotations.Nullable;
+import utils.Preconditions;
 
 /**
  *
@@ -22,8 +23,8 @@ public final class MDTSubmodelDescriptor {
 	public MDTSubmodelDescriptor(@JsonProperty("id") String id,
 								@JsonProperty("idShort") String idShort,
 								@Nullable @JsonProperty("semanticId") String semanticId) {
-		Preconditions.checkArgument(id != null, "null id");
-		Preconditions.checkArgument(idShort != null, "null idShort");
+		Preconditions.checkNotNullArgument(id, "null id");
+		Preconditions.checkNotNullArgument(idShort, "null idShort");
 		
 		m_id = id;
 		m_idShort = idShort;

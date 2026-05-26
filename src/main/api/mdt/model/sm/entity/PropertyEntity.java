@@ -5,7 +5,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 
-import com.google.common.base.Preconditions;
+import utils.Preconditions;
 
 
 /**
@@ -54,7 +54,7 @@ public class PropertyEntity implements SubmodelElementEntity {
 
 	@Override
 	public void updateFromAasModel(SubmodelElement sme) {
-		Preconditions.checkArgument(sme != null);
+		Preconditions.checkNotNullArgument(sme, "sme is null");
 		
 		if ( sme instanceof Property prop ) {
 			m_value = prop.getValue();
@@ -67,7 +67,7 @@ public class PropertyEntity implements SubmodelElementEntity {
 
 	@Override
 	public void updateAasModel(SubmodelElement sme) {
-		Preconditions.checkArgument(sme != null);
+		Preconditions.checkNotNullArgument(sme, "sme is null");
 
 		if ( sme instanceof Property prop ) {
 			prop.setValue(m_value);

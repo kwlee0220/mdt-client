@@ -4,7 +4,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Preconditions;
+
+import utils.Preconditions;
 
 
 /**
@@ -17,7 +18,7 @@ public class Option {
 	private final String m_value;
 
 	public Option(@JsonProperty("name") String name, @JsonProperty("value") String value) {
-		Preconditions.checkArgument(name != null, "name is null");
+		Preconditions.checkNotNullArgument(name, "name is null");
 		
 		m_name = name;
 		m_value = value;

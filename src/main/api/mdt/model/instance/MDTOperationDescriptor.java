@@ -4,8 +4,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Preconditions;
 
+import utils.Preconditions;
 import utils.stream.FStream;
 
 /**
@@ -23,10 +23,10 @@ public class MDTOperationDescriptor {
 									@JsonProperty("operationType") String type,
 									@JsonProperty("inputArguments") List<ArgumentDescriptor> inArgs,
 									@JsonProperty("outputArguments") List<ArgumentDescriptor> outArgs) {
-		Preconditions.checkArgument(id != null, "Submodel idShort is null");
-		Preconditions.checkArgument(type != null, "Operation type is null");
-		Preconditions.checkArgument(inArgs != null, "null inputArguments");
-		Preconditions.checkArgument(outArgs != null, "null outputArguments");
+		Preconditions.checkNotNullArgument(id, "Submodel idShort is null");
+		Preconditions.checkNotNullArgument(type, "Operation type is null");
+		Preconditions.checkNotNullArgument(inArgs, "null inputArguments");
+		Preconditions.checkNotNullArgument(outArgs, "null outputArguments");
 		
 		m_id = id;
 		m_operationType = type;

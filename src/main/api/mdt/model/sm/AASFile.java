@@ -1,8 +1,8 @@
 package mdt.model.sm;
 
-import com.google.common.base.Preconditions;
-
 import okhttp3.MediaType;
+
+import utils.Preconditions;
 
 import mdt.model.sm.value.FileValue;
 
@@ -34,7 +34,7 @@ public class AASFile {
 	}
 
 	public void setPath(String path) {
-		Preconditions.checkNotNull(path, "path should not be null");
+		Preconditions.checkNotNullArgument(path, "path should not be null");
 		
 		m_path = path;
 	}
@@ -44,7 +44,7 @@ public class AASFile {
 	}
 
 	public void setContentType(String contentType) {
-		Preconditions.checkNotNull(contentType, "contentType should not be null");
+		Preconditions.checkNotNullArgument(contentType, "contentType should not be null");
 		
 		m_contentType = contentType;
 	}

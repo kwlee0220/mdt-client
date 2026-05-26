@@ -6,9 +6,9 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
+import utils.Preconditions;
 import utils.stream.FStream;
 
 
@@ -40,7 +40,7 @@ public class SubmodelEntity extends AbstractSMEContainerEntity<Submodel> {
 
 	@Override
 	public void updateFromAasModel(Submodel model) {
-		Preconditions.checkArgument(model != null);
+		Preconditions.checkNotNullArgument(model != null, "model is null");
 		
 		setIdShort(model.getIdShort());
 		setId(model.getId());

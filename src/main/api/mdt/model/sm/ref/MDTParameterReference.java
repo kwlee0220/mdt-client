@@ -9,7 +9,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
+
+import utils.Preconditions;
 
 import mdt.model.ModelValidationException;
 import mdt.model.SubmodelService;
@@ -39,8 +40,8 @@ public class MDTParameterReference extends SubmodelBasedElementReference impleme
 	private volatile SubmodelElement m_proto = null;
 	
 	private MDTParameterReference(String instanceId, String parameterExpr) {
-		Preconditions.checkArgument(instanceId != null, "instanceId is null");
-		Preconditions.checkArgument(parameterExpr != null, "parameterExpr is null");
+		Preconditions.checkNotNullArgument(instanceId, "instanceId is null");
+		Preconditions.checkNotNullArgument(parameterExpr, "parameterExpr is null");
 		
 		m_instanceId = instanceId;
 		m_parameterExpr = parameterExpr;

@@ -24,12 +24,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import utils.InternalException;
 import utils.KeyValue;
+import utils.Preconditions;
 import utils.func.FOption;
 import utils.func.Funcs;
 import utils.func.Optionals;
@@ -91,7 +91,7 @@ public final class TaskDescriptor {
 	}
 	
 	public void setId(String id) {
-		Preconditions.checkArgument(id != null, "id must not be null");
+		Preconditions.checkNotNullArgument(id, "id must not be null");
 
 		m_id = id;
 	}
@@ -109,7 +109,7 @@ public final class TaskDescriptor {
 	}
 	
 	public void setType(String type) {
-		Preconditions.checkArgument(type != null, "type must not be null");
+		Preconditions.checkNotNullArgument(type, "type must not be null");
 
 		m_type = type;
 	}
@@ -145,13 +145,13 @@ public final class TaskDescriptor {
 	}
 	
 	public void addDependency(String... dependency) {
-		Preconditions.checkArgument(dependency != null, "dependency must not be null");
+		Preconditions.checkNotNullArgument(dependency, "dependency must not be null");
 
 		FStream.of(dependency).forEach(m_dependencies::add);
 	}
 	
 	public void setDependencies(Iterable<String> dependencies) {
-		Preconditions.checkArgument(dependencies != null, "dependencies must not be null");
+		Preconditions.checkNotNullArgument(dependencies, "dependencies must not be null");
 
 		m_dependencies = Sets.newHashSet(dependencies);
 	}
@@ -160,8 +160,8 @@ public final class TaskDescriptor {
 		return m_inputArgumentSpecs;
 	}
 	public void addInputArgumentSpec(String argId, ArgumentSpec spec) {
-		Preconditions.checkArgument(argId != null, "argId must not be null");
-		Preconditions.checkArgument(spec != null, "Input argument spec must not be null");
+		Preconditions.checkNotNullArgument(argId, "argId must not be null");
+		Preconditions.checkNotNullArgument(spec, "Input argument spec must not be null");
 		if ( m_inputArgumentSpecs.containsKey(argId) ) {
 			throw new IllegalArgumentException("Input argument spec already exists: " + argId);
 		}
@@ -186,8 +186,8 @@ public final class TaskDescriptor {
 		return m_outputArgumentSpecs;
 	}
 	public void addOutputArgumentSpec(String argId, ReferenceArgumentSpec spec) {
-		Preconditions.checkArgument(argId != null, "argId must not be null");
-		Preconditions.checkArgument(spec != null, "Output argument spec must not be null");
+		Preconditions.checkNotNullArgument(argId, "argId must not be null");
+		Preconditions.checkNotNullArgument(spec, "Output argument spec must not be null");
 		if ( m_outputArgumentSpecs.containsKey(argId) ) {
 			throw new IllegalArgumentException("Output argument spec already exists: " + argId);
 		}
@@ -233,7 +233,7 @@ public final class TaskDescriptor {
 	
 	@JsonProperty("options")
 	public void setOptionsForJackson(Collection<Option> options) {
-		Preconditions.checkArgument(options != null, "options must not be null");
+		Preconditions.checkNotNullArgument(options, "options must not be null");
 		
 		m_options = FStream.from(options)
 							.tagKey(Option::getName)
@@ -267,14 +267,14 @@ public final class TaskDescriptor {
 	}
 
 	public void addLabel(String name, String value) {
-		Preconditions.checkArgument(name != null, "label name must not be null");
-		Preconditions.checkArgument(value != null, "label value must not be null");
+		Preconditions.checkNotNullArgument(name, "label name must not be null");
+		Preconditions.checkNotNullArgument(value, "label value must not be null");
 
 		m_labels.add(NameValue.of(name, value));
 	}
 
 	public void setLabels(Iterable<NameValue> labels) {
-		Preconditions.checkArgument(labels != null, "labels must not be null");
+		Preconditions.checkNotNullArgument(labels, "labels must not be null");
 		
 		m_labels = Lists.newArrayList(labels);
 	}

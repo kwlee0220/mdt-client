@@ -15,21 +15,21 @@ import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import utils.InternalException;
+import utils.Preconditions;
 import utils.UnitUtils;
 import utils.async.Executions;
-import utils.thread.Guard;
 import utils.async.StartableExecution;
 import utils.func.CheckedRunnableX;
 import utils.func.Optionals;
 import utils.func.Try;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
+import utils.thread.Guard;
 
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
@@ -60,8 +60,8 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	@GuardedBy("m_guard") private final Map<String,MDTInstance> m_instanceMap = Maps.newHashMap();
 	
 	private StopMDTInstances(@Nonnull Builder builder) {
-		Preconditions.checkNotNull(builder != null, "Builder is not provided");
-		Preconditions.checkNotNull(builder.m_manager, "MDTInstanceManager is not set");
+		Preconditions.checkNotNullArgument(builder, "Builder is not provided");
+		Preconditions.checkNotNullArgument(builder.m_manager, "MDTInstanceManager is not set");
 		
 		m_manager = builder.m_manager;
         m_instanceIdList = builder.m_instanceIdList;

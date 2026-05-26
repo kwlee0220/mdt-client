@@ -5,15 +5,14 @@ import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
-
-import com.google.common.base.Preconditions;
+import org.jetbrains.annotations.Nullable;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
 
-import mdt.model.ReferenceUtils;
+import utils.Preconditions;
 
-import org.jetbrains.annotations.Nullable;
+import mdt.model.ReferenceUtils;
 
 /**
  *

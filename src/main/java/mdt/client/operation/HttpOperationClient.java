@@ -14,19 +14,19 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.common.base.Preconditions;
 
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 
+import utils.Preconditions;
 import utils.async.AbstractThreadedExecution;
 import utils.async.CancellableWork;
-import utils.thread.Guard;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
+import utils.thread.Guard;
 
 import mdt.model.MDTModelSerDe;
 
@@ -52,8 +52,8 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 	@GuardedBy("m_guard") private Thread m_workerThread = null;
 	
 	private HttpOperationClient(Builder builder) {
-		Preconditions.checkNotNull(builder.m_httpClient);
-		Preconditions.checkNotNull(builder.m_endpoint);
+		Preconditions.checkNotNullArgument(builder.m_httpClient, "'httpClient' is null");
+		Preconditions.checkNotNullArgument(builder.m_endpoint, "'endpoint' is null");
 		
 		m_httpClient = builder.m_httpClient;
 		m_endpoint = builder.m_endpoint;

@@ -46,7 +46,7 @@ ext {
 	jetbrains_version = '24.1.0'
 
 	commons_beanutils_version = '1.9.4'
-
+	commons_logging_version = '1.3.6'
 	jackson_version = '2.18.4'
 	okhttp_version = '4.12.0'
 	aas4j_version = '1.0.5'
@@ -75,17 +75,12 @@ dependencies {
 	// logback with SLF4j (from the project :utils)
 	implementation "ch.qos.logback:logback-classic:${logback_version}"
 	
-	// Spring Framework web (HTTP Interface, RestClient 등). 버전은 Spring Boot BOM으로 관리.
-	implementation platform("org.springframework.boot:spring-boot-dependencies:${spring_boot_version}")
-	implementation "org.springframework:spring-web"
-	
 	// AAS model
 	api "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
 	api "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"
 	
-	implementation ("commons-beanutils:commons-beanutils:${commons_beanutils_version}") {
-		exclude group: 'commons-logging', module: 'commons-logging'
-	}
+	implementation "commons-beanutils:commons-beanutils:${commons_beanutils_version}"
+	implementation "commons-logging:commons-logging:${commons_logging_version}" 
 		
 	// HTTP Client
 	implementation "com.squareup.okhttp3:okhttp:${okhttp_version}"
@@ -124,29 +119,29 @@ jar {
 	exclude 'logback-spring.xml'
 }
 
-eclipse {
-	classpath {
-		defaultOutputDir = file('build/classes/java/main')
-		file {
-			whenMerged { cp ->
-				cp.entries.each { entry ->
-					if (entry.kind == 'src' && entry.path == 'src/main/java') {
-						entry.output = 'build/classes/java/main'
-					}
-					if (entry.kind == 'src' && entry.path == 'src/main/api') {
-						entry.output = 'build/classes/java/main'
-					}
-					if (entry.kind == 'src' && entry.path == 'src/main/antlr') {
-						entry.output = 'build/classes/java/main'
-					}
-					if (entry.kind == 'src' && entry.path == 'src/main/resources') {
-						entry.output = 'build/classes/java/main'
-					}
-					if (entry.kind == 'src' && entry.path == 'src/test/java') {
-						entry.output = 'build/classes/java/test'
-					}
-				}
-			}
-		}
-	}
-}
+// eclipse {
+// 	classpath {
+// 		defaultOutputDir = file('build/classes/java/main')
+// 		file {
+// 			whenMerged { cp ->
+// 				cp.entries.each { entry ->
+// 					if (entry.kind == 'src' && entry.path == 'src/main/java') {
+// 						entry.output = 'build/classes/java/main'
+// 					}
+// 					if (entry.kind == 'src' && entry.path == 'src/main/api') {
+// 						entry.output = 'build/classes/java/main'
+// 					}
+// 					if (entry.kind == 'src' && entry.path == 'src/main/antlr') {
+// 						entry.output = 'build/classes/java/main'
+// 					}
+// 					if (entry.kind == 'src' && entry.path == 'src/main/resources') {
+// 						entry.output = 'build/classes/java/main'
+// 					}
+// 					if (entry.kind == 'src' && entry.path == 'src/test/java') {
+// 						entry.output = 'build/classes/java/test'
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }

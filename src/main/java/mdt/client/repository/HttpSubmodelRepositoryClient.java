@@ -5,9 +5,12 @@ import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
-import com.google.common.base.Preconditions;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 
 import utils.InternalException;
+import utils.Preconditions;
 import utils.stream.FStream;
 
 import mdt.aas.SubmodelRepository;
@@ -15,10 +18,6 @@ import mdt.client.Fa3stHttpClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
 import mdt.model.SubmodelService;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 /**
  *
@@ -41,7 +40,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	
 	@Override
 	public SubmodelService getSubmodelById(String submodelId) {
-		Preconditions.checkNotNull(submodelId);
+		Preconditions.checkNotNullArgument(submodelId, "submodelId must be not null");
 		
 		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodelId));
 		
@@ -52,7 +51,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	
 	@Override
 	public List<SubmodelService> getAllSubmodelsByIdShort(String idShort) {
-		Preconditions.checkNotNull(idShort);
+		Preconditions.checkNotNullArgument(idShort, "idShort must be not null");
 		String url = String.format("%s?idShort=%s", getEndpoint(), idShort);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -65,7 +64,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	
 	@Override
 	public List<SubmodelService> getAllSubmodelBySemanticId(String semanticId) {
-		Preconditions.checkNotNull(semanticId);
+		Preconditions.checkNotNullArgument(semanticId, "semanticId must be not null");
 		String url = String.format("%s?semanticId=%s", getEndpoint(), semanticId);
 		
 		Request req = new Request.Builder().url(url).get().build();
@@ -78,7 +77,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	
 	@Override
 	public HttpSubmodelServiceClient postSubmodel(Submodel submodel) {
-		Preconditions.checkNotNull(submodel);
+		Preconditions.checkNotNullArgument(submodel, "submodel must be not null");
 		
 		try {
 			RequestBody reqBody = createRequestBody(submodel);
@@ -94,7 +93,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	
 	@Override
 	public HttpSubmodelServiceClient putSubmodelById(Submodel submodel) {
-		Preconditions.checkNotNull(submodel);
+		Preconditions.checkNotNullArgument(submodel, "submodel must be not null");
 		
 		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodel.getId()));
 		try {
@@ -111,7 +110,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	
 	@Override
 	public void deleteSubmodelById(String submodelId) {
-		Preconditions.checkNotNull(submodelId);
+		Preconditions.checkNotNullArgument(submodelId, "submodelId must be not null");
 		
 		String url = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodelId));
 		
@@ -120,7 +119,7 @@ public class HttpSubmodelRepositoryClient extends Fa3stHttpClient implements Sub
 	}
 	
 	private HttpSubmodelServiceClient toService(Submodel submodel) {
-		Preconditions.checkNotNull(submodel);
+		Preconditions.checkNotNullArgument(submodel, "submodel must be not null");
 		
 		String urlPrefix = String.format("%s/%s", getEndpoint(), AASUtils.encodeBase64UrlSafe(submodel.getId()));
 		return new HttpSubmodelServiceClient(getHttpClient(), urlPrefix);

@@ -13,7 +13,6 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -25,6 +24,7 @@ import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 
+import utils.Preconditions;
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.io.ZipFile;
@@ -207,8 +207,8 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	
 	@Override
 	public HttpMDTInstanceClient addInstance(String id, int port, File instanceFile) throws MDTInstanceManagerException {
-		Preconditions.checkArgument(id != null, "MDTInstance id must not be null");
-		Preconditions.checkArgument(instanceFile != null, "MDTInstance file must not be null");
+		Preconditions.checkNotNullArgument(id, "MDTInstance id must not be null");
+		Preconditions.checkNotNullArgument(instanceFile, "MDTInstance file must not be null");
 		
 		MultipartBody.Builder builder = new MultipartBody.Builder()
 											.setType(MultipartBody.FORM)
@@ -252,9 +252,10 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	}
 	
 	public HttpMDTInstanceClient addZippedInstance(String id, int port, File zippedInstanceDir) {
-		Preconditions.checkNotNull(id);
-		Preconditions.checkNotNull(zippedInstanceDir);
-		Preconditions.checkArgument(Files.getFileExtension(zippedInstanceDir.getAbsolutePath()).equals("zip"));
+		Preconditions.checkNotNullArgument(id, "MDTInstance id must not be null");
+		Preconditions.checkNotNullArgument(zippedInstanceDir, "Zipped MDTInstance file must not be null");
+		Preconditions.checkArgument(Files.getFileExtension(zippedInstanceDir.getAbsolutePath()).equals("zip"),
+									"Zipped MDTInstance file must be a zip file: " + zippedInstanceDir);
 		
 		MultipartBody.Builder builder = new MultipartBody.Builder()
 											.setType(MultipartBody.FORM)
@@ -365,7 +366,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		
 		public HttpMDTInstanceManager build() {
 			Preconditions.checkState(m_endpoint != null, "MDTInstanceManager endpoint has not been set");
-			Preconditions.checkNotNull(m_httpClient);
+			Preconditions.checkState(m_httpClient != null, "HTTP client has not been set");
 			
 			return new HttpMDTInstanceManager(this);
 		}

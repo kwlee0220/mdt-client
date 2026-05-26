@@ -13,10 +13,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 
+import utils.Preconditions;
 import utils.Throwables;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
@@ -43,8 +43,8 @@ public final class Variables {
 	}
 	
 	public static void activate(Variable var, MDTInstanceManager manager) {
-		Preconditions.checkArgument(var != null, "Variable is null");
-		Preconditions.checkArgument(manager != null, "MDTInstanceManager is null");
+		Preconditions.checkNotNullArgument(var, "Variable is null");
+		Preconditions.checkNotNullArgument(manager, "MDTInstanceManager is null");
 
 		if ( var instanceof ReferenceVariable refVar ) {
 			refVar.activate(manager);

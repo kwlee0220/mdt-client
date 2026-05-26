@@ -2,9 +2,9 @@ package mdt.model.sm.data;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
-import com.google.common.base.Preconditions;
-
 import lombok.experimental.Delegate;
+
+import utils.Preconditions;
 
 import mdt.model.SubmodelService;
 

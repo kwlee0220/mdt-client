@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
 
+import utils.Preconditions;
 import utils.io.IOUtils;
 
 import mdt.model.MDTModelSerDe;
@@ -37,7 +37,7 @@ public final class FileStoreReference extends AbstractElementReference implement
 	private final File m_file;
 	
 	public FileStoreReference(File storeFile) {
-		Preconditions.checkNotNull(storeFile, "File is null");
+		Preconditions.checkNotNullArgument(storeFile, "File is null");
 		
 		m_file = storeFile;
 	}

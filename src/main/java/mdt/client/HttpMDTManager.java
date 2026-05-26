@@ -52,8 +52,8 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	private static final String RESTFUL_API_VERSION = "";
 	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
 	private static final String INSTANCE_MANAGER_SUFFIX = "/instance-manager";
-	private static final String SHELL_REGISTRY_SUFFIX = "/shell-registry";
-	public static final String SUBMODEL_REGISTRY_SUFFIX = "";
+	private static final String SHELL_REGISTRY_SUFFIX = "/aas_registry/shell-descriptors";
+	public static final String SUBMODEL_REGISTRY_SUFFIX = "/aas_registry/submodel-descriptors";
 	private static final String WORKFLOW_MANAGER_SUFFIX = "/workflow-manager";
 	
 	private final HttpServiceClientFactoryRegistry m_serviceFactoryRegistry;
@@ -236,10 +236,6 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	public HttpWorkflowManager getWorkflowManager() {
 //		return createClient(WorkflowModelManager.class);
 		return new HttpWorkflowManager(getHttpClient(), m_wfMgrEndpoint + WORKFLOW_MANAGER_SUFFIX);
-	}
-	
-	public <T> T createClient(Class<T> serviceClass) {
-		return m_serviceFactoryRegistry.createClient(serviceClass);
 	}
 	
 	public static void register(Object subscriber) {

@@ -15,10 +15,10 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 import utils.KeyValue;
+import utils.Preconditions;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
@@ -50,7 +50,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 	private volatile DefaultElementReference m_ref;
 	
 	private MDTParameterCollectionReference(String instanceId) {
-		Preconditions.checkArgument(instanceId != null, "instanceId is null");
+		Preconditions.checkNotNullArgument(instanceId, "instanceId is null");
 		
 		m_instanceId = instanceId;
 	}
@@ -223,7 +223,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 
 	@Override
 	public void updateValue(String valueJsonString) throws IOException {
-		Preconditions.checkArgument(valueJsonString != null, "valueJsonString is null");
+		Preconditions.checkNotNullArgument(valueJsonString, "valueJsonString is null");
 		assertActivated();
 		
 		SubmodelElement elm = read();

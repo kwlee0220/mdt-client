@@ -12,7 +12,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Preconditions;
+
+import utils.Preconditions;
 
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
@@ -38,8 +39,8 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	private final String m_elementPath;
 	
 	private DefaultElementReference(MDTSubmodelReference smRef, String path) {
-		Preconditions.checkNotNull(smRef != null);
-		Preconditions.checkNotNull(path != null);
+		Preconditions.checkNotNullArgument(smRef, "smRef must not be null");
+		Preconditions.checkNotNullArgument(path, "path must not be null");
 
 		m_smRef = smRef;
 		m_elementPath = path;

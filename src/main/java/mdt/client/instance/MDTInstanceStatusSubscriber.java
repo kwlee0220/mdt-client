@@ -9,7 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.google.common.base.Preconditions;
+
+import utils.Preconditions;
 
 import mdt.client.support.MqttService;
 import mdt.client.support.MqttService.Subscriber;
@@ -29,7 +30,8 @@ public class MDTInstanceStatusSubscriber extends MqttService implements Subscrib
 	
 	private MDTInstanceStatusSubscriber(Builder builder) {
 		super(builder.m_mqttServerUri);
-		Preconditions.checkArgument(builder.m_qos >= 0 && builder.m_qos <= 2);
+		Preconditions.checkArgument(builder.m_qos >= 0 && builder.m_qos <= 2,
+									"invalid QoS: %d", builder.m_qos);
 		
 		m_qos = builder.m_qos;
 		subscribe(TOPIC_PATTERN, m_qos, this);

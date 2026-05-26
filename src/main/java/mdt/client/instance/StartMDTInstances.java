@@ -14,21 +14,21 @@ import javax.annotation.concurrent.GuardedBy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import utils.Preconditions;
 import utils.StopWatch;
 import utils.Throwables;
 import utils.UnitUtils;
 import utils.async.Executions;
-import utils.thread.Guard;
 import utils.async.StartableExecution;
 import utils.func.CheckedRunnableX;
 import utils.func.FOption;
 import utils.func.Funcs;
 import utils.func.Optionals;
 import utils.stream.FStream;
+import utils.thread.Guard;
 
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.instance.MDTInstance;
@@ -84,8 +84,8 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	 * @param builder 설정값을 담은 빌더.
 	 */
 	private StartMDTInstances(@Nonnull Builder builder) {
-		Preconditions.checkNotNull(builder != null, "Builder is not provided");
-		Preconditions.checkNotNull(builder.m_manager, "MDTInstanceManager is not set");
+		Preconditions.checkNotNullArgument(builder, "Builder is not provided");
+		Preconditions.checkNotNullArgument(builder.m_manager, "MDTInstanceManager is not set");
 		
 		m_manager = builder.m_manager;
         m_instanceIdList = builder.m_instanceIdList;
@@ -308,7 +308,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		 * @return		빌더 자신
 		 */
 		public Builder mdtInstanceManager(MDTInstanceManager manager) {
-			Preconditions.checkArgument(manager != null, "MDTInstanceManager is null");
+			Preconditions.checkNotNullArgument(manager, "MDTInstanceManager is null");
 			
             m_manager = manager;
             return this;
@@ -321,7 +321,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		 * @return		빌더 자신
 		 */
 		public Builder instanceIdList(List<String> idList) {
-			Preconditions.checkArgument(idList != null, "MDTInstance id list is null or empty");
+			Preconditions.checkNotNullArgument(idList, "MDTInstance id list is null or empty");
 			
 			m_instanceIdList = idList;
 			return this;
@@ -333,7 +333,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		 * @return		빌더 자신
 		 */
 		public Builder instanceIds(String... ids) {
-			Preconditions.checkArgument(ids != null, "MDTInstance id list is null or empty");
+			Preconditions.checkNotNullArgument(ids, "MDTInstance id list is null or empty");
 			
 			m_instanceIdList = Lists.newArrayList(ids);
 			return this;

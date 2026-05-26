@@ -13,19 +13,23 @@ import mdt.model.sm.value.FileValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestPutFileByPath {
-	public static final void main(String... args) throws Exception {
-		String id = AASUtils.encodeBase64UrlSafe("http://www.lg.co.kr/refrigerator/Innercase/QualityInspector/Data");
-		String url = String.format("https://localhost:19009/api/v3.0/submodels/%s", id);
+	private static final String INSTANCE_URL = "https://192.168.0.2:19009/api/v3.0";
+	private static final String SUBMODEL_ID = "http://www.lg.co.kr/refrigerator/Innercase/QualityInspector/Data";
+	private static final String JPEG_FILE_PATH = "/home/kwlee/mdt/models/innercase/inspector/test_images/Innercase05-5.jpg";
+	
+	public static final void main(String... args) throws Exception {	
+		String id = AASUtils.encodeBase64UrlSafe(SUBMODEL_ID);
+		String url = String.format("%s/submodels/%s", INSTANCE_URL, id);
 		
 		String idShortPath = "DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue";
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
 		
 		SubmodelElement sme = svc.getSubmodelElementByPath(idShortPath);
 		
-		File file = new File("/home/kwlee/tmp/video0.mp4");
-		FileValue aasFile = new FileValue("video0.mp4", "video/mp4");
-		long length = svc.putAttachmentByPath(idShortPath, aasFile, file);
-		System.out.println(file + ", length=" + length);
+		File jpegFile = new File(JPEG_FILE_PATH);
+		FileValue aasFile = new FileValue(jpegFile.getName(), "image/jpg");
+		long length = svc.putAttachmentByPath(idShortPath, aasFile, jpegFile);
+		System.out.println(jpegFile + ", length=" + length);
 		
 //		svc.deleteAttachmentByPath(idShortPath);
 //		mdtFile = svc.getFileByPath(idShortPath);

@@ -1,7 +1,6 @@
 package mdt.model.sm.ref;
 
-import com.google.common.base.Preconditions;
-
+import utils.Preconditions;
 
 /**
  * MDT 연산에 사용되는 입/출력 인자의 종류를 정의하는 열거형이다.

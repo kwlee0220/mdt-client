@@ -1,102 +1,102 @@
 package mdt.client.registry;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
-import utils.InternalException;
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+
+import utils.Preconditions;
+import utils.http.HttpRESTfulClient;
+import utils.http.HttpRESTfulClient.ErrorEntityDeserializer;
+import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
+import utils.http.JacksonErrorEntityDeserializer;
 
 import mdt.aas.SubmodelRegistry;
+import mdt.client.HttpMDTServiceProxy;
 import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import mdt.model.MDTModelSerDe;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpSubmodelRegistryClient extends HttpRegistryClient implements SubmodelRegistry {
+public class HttpSubmodelRegistryClient implements SubmodelRegistry, HttpMDTServiceProxy {
 	private final String m_endpoint;
+	private final HttpRESTfulClient m_restfulClient;
 	
 	public HttpSubmodelRegistryClient(OkHttpClient client, String endpoint) {
-		super(client);
+		Preconditions.checkNotNullArgument(endpoint, "endpoint is null");
 		
 		m_endpoint = endpoint;
+		ErrorEntityDeserializer errorDeser = new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER);
+		m_restfulClient = HttpRESTfulClient.builder()
+											.httpClient(client)
+											.errorEntityDeserializer(errorDeser)
+											.build();
+	}
+
+	@Override
+	public String getEndpoint() {
+		return m_endpoint;
+	}
+
+	@Override
+	public OkHttpClient getHttpClient() {
+		return m_restfulClient.getHttpClient();
 	}
 
 	@Override
 	public List<SubmodelDescriptor> getAllSubmodelDescriptors() {
-		String url = String.format("%s/aas_registry/submodel-descriptors", m_endpoint);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return callList(req, SubmodelDescriptor.class);
+		String url = String.format("%s", m_endpoint);
+		return m_restfulClient.get(url, m_smDescListDeser);
 	}
 
 	@Override
 	public List<SubmodelDescriptor>
 	getAllSubmodelDescriptorsByIdShort(String idShort) {
-		String url = String.format("%s/aas_registry/submodel-descriptors?idShort=%s", m_endpoint, idShort);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return callList(req, SubmodelDescriptor.class);
+		String url = String.format("%s?idShort=%s", m_endpoint, idShort);
+		return m_restfulClient.get(url, m_smDescListDeser);
 	}
 
 	@Override
 	public List<SubmodelDescriptor> getAllSubmodelDescriptorsBySemanticId(String semanticId) {
-		String url = String.format("%s/aas_registry/submodel-descriptors?semanticId=%s", m_endpoint, semanticId);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return callList(req, SubmodelDescriptor.class);
+		String url = String.format("%s?semanticId=%s", m_endpoint, semanticId);
+		return m_restfulClient.get(url, m_smDescListDeser);
 	}
 
 	@Override
 	public SubmodelDescriptor getSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/aas_registry/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return call(req, SubmodelDescriptor.class);
+		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
+
+		return m_restfulClient.get(url, m_smDescDeser);
 	}
 
 	@Override
 	public SubmodelDescriptor postSubmodelDescriptor(SubmodelDescriptor desc) {
-		try {
-			String url = String.format("%s/aas_registry/submodel-descriptors", m_endpoint);
-			RequestBody reqBody = createRequestBody(desc);
-			
-			Request req = new Request.Builder().url(url).post(reqBody).build();
-			return call(req, SubmodelDescriptor.class);
-		}
-		catch ( SerializationException e ) {
-			throw new InternalException("" + e);
-		}
+		String url = String.format("%s", m_endpoint);
+		String reqBodyStr = MDTModelSerDe.toJsonString(desc);
+		return m_restfulClient.post(url, reqBodyStr, m_smDescDeser);
 	}
 
 	@Override
 	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor descriptor) {
-		String url = String.format("%s/aas_registry/submodel-descriptors", m_endpoint);
-		try {
-			RequestBody reqBody = createRequestBody(descriptor);
-			
-			Request req = new Request.Builder().url(url).put(reqBody).build();
-			return call(req, SubmodelDescriptor.class);
-		}
-		catch ( SerializationException e ) {
-			throw new InternalException("" + e);
-		}
+		String url = String.format("%s", m_endpoint);
+		String reqBodyStr = MDTModelSerDe.toJsonString(descriptor);
+		return m_restfulClient.put(url, reqBodyStr, m_smDescDeser);
 	}
 
 	@Override
 	public void deleteSubmodelDescriptorById(String submodelId) {
-		String url = String.format("%s/aas_registry/submodel-descriptors/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
+		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(submodelId));
 		
-		Request req = new Request.Builder().url(url).delete().build();
-		send(req);
+		m_restfulClient.delete(url);
 	}
 	
 	public void setSubmodelRepositoryEndpoint(List<String> submodelIdList, String endpoint) {
@@ -113,4 +113,18 @@ public class HttpSubmodelRegistryClient extends HttpRegistryClient implements Su
 	public String toString() {
 		return String.format("SubmodelRegistry: endpoint=%s", m_endpoint);
 	}
+
+	private ResponseBodyDeserializer<SubmodelDescriptor> m_smDescDeser = new ResponseBodyDeserializer<>() {
+		@Override
+		public SubmodelDescriptor deserialize(Headers headers, String respBody) throws IOException {
+			return MDTModelSerDe.readValue(respBody, SubmodelDescriptor.class);
+		}
+	};
+	private ResponseBodyDeserializer<List<SubmodelDescriptor>> m_smDescListDeser = new ResponseBodyDeserializer<>() {
+		@Override
+		public List<SubmodelDescriptor> deserialize(Headers headers, String respBody)
+			throws IOException {
+			return MDTModelSerDe.readValueList(respBody, SubmodelDescriptor.class);
+		}
+	};
 }

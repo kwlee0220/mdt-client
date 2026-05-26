@@ -3,8 +3,6 @@ package mdt.model.sm.value;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-import org.jetbrains.annotations.Nullable;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
@@ -13,6 +11,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
+import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -23,8 +22,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.common.base.Preconditions;
 
+import utils.Preconditions;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 

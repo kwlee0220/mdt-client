@@ -11,7 +11,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
+
+import utils.Preconditions;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
@@ -61,8 +62,8 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 	private final int m_ordinal;
 	
 	private OperationVariableReference(MDTElementReference opRef, Kind kind, int ordinal) {
-		Preconditions.checkArgument(opRef != null, "OperationReference is null");
-		Preconditions.checkArgument(kind != null, "OperationVariableKind is null");
+		Preconditions.checkNotNullArgument(opRef, "OperationReference is null");
+		Preconditions.checkNotNullArgument(kind, "OperationVariableKind is null");
 		Preconditions.checkArgument(ordinal >= 0, "OperationVariable ordinal is negative: %d", ordinal);
 		
 		m_opRef = opRef;
@@ -173,7 +174,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 
 	@Override
 	public void updateValue(ElementValue value) throws ResourceNotFoundException, IOException {
-		Preconditions.checkArgument(value != null);
+		Preconditions.checkNotNullArgument(value, "value is null");
 		Preconditions.checkState(m_opRef != null, "OperationVariableReference is not activated");
 		
 		SubmodelElement holder = m_opRef.read();
@@ -269,7 +270,8 @@ public class OperationVariableReference extends SubmodelBasedElementReference im
 			case OUTPUT -> op.getOutputVariables();
 			case INOUTPUT -> op.getInoutputVariables();
 		};
-		Preconditions.checkArgument(ordinal >= 0 && ordinal < opVarList.size());
+		Preconditions.checkArgument(ordinal >= 0 && ordinal < opVarList.size(), 
+									"OperationVariable's ordinal is out of range: %d (size: %d)", ordinal, opVarList.size());
 		return opVarList.get(ordinal);
 	}
 }

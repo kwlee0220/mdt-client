@@ -4,7 +4,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Preconditions;
+
+import utils.Preconditions;
 
 
 /**
@@ -25,10 +26,10 @@ public class MDTTwinCompositionDescriptor {
 												@JsonProperty("type") String type,
 												@JsonProperty("compositionItems") List<MDTCompositionItem> items,
 												@JsonProperty("compositionDependencies") List<MDTCompositionDependency> dependencies) {
-		Preconditions.checkArgument(id != null, "TwinComposition id is null");
-		Preconditions.checkArgument(type != null, "TwinComposition type is null");
-		Preconditions.checkArgument(items != null, "CompositionItems is null");
-		Preconditions.checkArgument(dependencies != null, "CompositionDependencies is null");
+		Preconditions.checkNotNullArgument(id, "TwinComposition id is null");
+		Preconditions.checkNotNullArgument(type, "TwinComposition type is null");
+		Preconditions.checkNotNullArgument(items, "CompositionItems is null");
+		Preconditions.checkNotNullArgument(dependencies, "CompositionDependencies is null");
 		
 		m_id = id;
 		m_type = type;

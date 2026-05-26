@@ -21,11 +21,11 @@ import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementList;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
 
 import utils.InternalException;
+import utils.Preconditions;
 import utils.ReflectionUtils;
 import utils.Throwables;
 import utils.stream.FStream;

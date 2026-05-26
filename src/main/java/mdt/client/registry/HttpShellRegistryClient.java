@@ -1,113 +1,109 @@
 package mdt.client.registry;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.model.AssetAdministrationShellDescriptor;
 import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 
-import utils.InternalException;
+import com.google.common.base.Preconditions;
+
+import okhttp3.Headers;
+import okhttp3.OkHttpClient;
+
+import utils.http.HttpRESTfulClient;
+import utils.http.HttpRESTfulClient.ErrorEntityDeserializer;
+import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
+import utils.http.JacksonErrorEntityDeserializer;
 
 import mdt.aas.ShellRegistry;
 import mdt.client.HttpMDTServiceProxy;
 import mdt.model.AASUtils;
 import mdt.model.DescriptorUtils;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import mdt.model.MDTModelSerDe;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class HttpShellRegistryClient extends HttpRegistryClient implements ShellRegistry, HttpMDTServiceProxy {
-	private final String m_registryEndpoint;
+public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServiceProxy {
+	private final String m_endpoint;
+	private final HttpRESTfulClient m_restfulClient;
 	
-	public HttpShellRegistryClient(OkHttpClient client, String registryEndpoint) {
-		super(client);
+	public HttpShellRegistryClient(OkHttpClient client, String endpoint) {
+		Preconditions.checkArgument(endpoint != null, getClass().getSimpleName() + ": endpoint is null");
 		
-		m_registryEndpoint = registryEndpoint;
+		m_endpoint = endpoint;
+		ErrorEntityDeserializer errorDeser = new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER);
+		m_restfulClient = HttpRESTfulClient.builder()
+											.httpClient(client)
+											.errorEntityDeserializer(errorDeser)
+											.build();
 	}
 
 	@Override
 	public String getEndpoint() {
-		return m_registryEndpoint;
+		return m_endpoint;
+	}
+
+	@Override
+	public OkHttpClient getHttpClient() {
+		return m_restfulClient.getHttpClient();
 	}
 
 	@Override
 	public AssetAdministrationShellDescriptor getAssetAdministrationShellDescriptorById(String shellId) {
-		String url = String.format("%s/shell-descriptors/%s", m_registryEndpoint, AASUtils.encodeBase64UrlSafe(shellId));
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return call(req, AssetAdministrationShellDescriptor.class);
+		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(shellId));
+		return m_restfulClient.get(url, m_shellDeser);
 	}
 
 	@Override
 	public List<AssetAdministrationShellDescriptor> getAllAssetAdministrationShellDescriptors() {
-		String url = String.format("%s/shell-descriptors", m_registryEndpoint);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return callList(req, AssetAdministrationShellDescriptor.class);
+		String url = String.format("%s", m_endpoint);
+		return m_restfulClient.get(url, m_shellListDeser);
 	}
 
 	@Override
 	public List<AssetAdministrationShellDescriptor>
 	getAllAssetAdministrationShellDescriptorsByIdShort(String idShort) {
-		String url = String.format("%s/shell-descriptors?idShort=%s", m_registryEndpoint, idShort);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return callList(req, AssetAdministrationShellDescriptor.class);
+		String url = String.format("%s?idShort=%s", m_endpoint, idShort);
+		return m_restfulClient.get(url, m_shellListDeser);
 	}
 
 	@Override
 	public List<AssetAdministrationShellDescriptor>
 	getAllAssetAdministrationShellDescriptorByAssetId(String assetId) {
 		String encoded = AASUtils.encodeBase64UrlSafe(assetId);
-		String url = String.format("%s/shell-descriptors/asset/%s", m_registryEndpoint, encoded);
-		
-		Request req = new Request.Builder().url(url).get().build();
-		return callList(req, AssetAdministrationShellDescriptor.class);
+		String url = String.format("%s/asset/%s", m_endpoint, encoded);
+
+		return m_restfulClient.get(url, m_shellListDeser);
 	}
 
 	@Override
 	public AssetAdministrationShellDescriptor
 	addAssetAdministrationShellDescriptor(AssetAdministrationShellDescriptor desc) {
-		try {
-			String url = String.format("%s/shell-descriptors", m_registryEndpoint);
-			RequestBody reqBody = createRequestBody(desc);
-			
-			Request req = new Request.Builder().url(url).post(reqBody).build();
-			return call(req, AssetAdministrationShellDescriptor.class);
-		}
-		catch ( SerializationException e ) {
-			throw new InternalException("" + e);
-		}
+		String url = String.format("%s", m_endpoint);
+		
+		String reqBodyStr = MDTModelSerDe.toJsonString(desc);
+		return m_restfulClient.post(url, reqBodyStr, m_shellDeser);
 	}
 
 	@Override
 	public AssetAdministrationShellDescriptor
 	updateAssetAdministrationShellDescriptor(AssetAdministrationShellDescriptor descriptor) {
-		try {
-			String url = String.format("%s/shell-descriptors", m_registryEndpoint);
-			RequestBody reqBody = createRequestBody(descriptor);
-			
-			Request req = new Request.Builder().url(url).put(reqBody).build();
-			return call(req, AssetAdministrationShellDescriptor.class);
-		}
-		catch ( SerializationException e ) {
-			throw new InternalException("" + e);
-		}
+		String url = String.format("%s", m_endpoint);
+
+		String reqBodyStr = MDTModelSerDe.toJsonString(descriptor);
+		return m_restfulClient.put(url, reqBodyStr, m_shellDeser);
 	}
 
 	@Override
 	public void removeAssetAdministrationShellDescriptorById(String aasId) {
-		String url = String.format("%s/shell-descriptors/%s", m_registryEndpoint, AASUtils.encodeBase64UrlSafe(aasId));
+		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(aasId));
 		
-		Request req = new Request.Builder().url(url).delete().build();
-		send(req);
+		m_restfulClient.delete(url);
 	}
 	
 	public void setAASRepositoryEndpoint(String aasId, String endpoint) {
@@ -121,6 +117,22 @@ public class HttpShellRegistryClient extends HttpRegistryClient implements Shell
 	
 	@Override
 	public String toString() {
-		return String.format("AssetAdministrationShellRegistry: endpoint=%s", m_registryEndpoint);
+		return String.format("AssetAdministrationShellRegistry: endpoint=%s", m_endpoint);
 	}
+
+	private ResponseBodyDeserializer<AssetAdministrationShellDescriptor> m_shellDeser
+																				= new ResponseBodyDeserializer<>() {
+		@Override
+		public AssetAdministrationShellDescriptor deserialize(Headers headers, String respBody) throws IOException {
+			return MDTModelSerDe.readValue(respBody, AssetAdministrationShellDescriptor.class);
+		}
+	};
+	private ResponseBodyDeserializer<List<AssetAdministrationShellDescriptor>> m_shellListDeser
+																				= new ResponseBodyDeserializer<>() {
+		@Override
+		public List<AssetAdministrationShellDescriptor> deserialize(Headers headers, String respBody)
+			throws IOException {
+			return MDTModelSerDe.readValueList(respBody, AssetAdministrationShellDescriptor.class);
+		}
+	};
 }

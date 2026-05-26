@@ -1,14 +1,15 @@
 package mdt.model.instance;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Preconditions;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-import org.jetbrains.annotations.Nullable;
+import utils.Preconditions;
 
 
 /**
@@ -35,8 +36,8 @@ public class MDTParameterDescriptor {
 	private @Nullable String m_endpoint;
 	
 	public MDTParameterDescriptor(String id, String name, String valueType, String reference) {
-		Preconditions.checkArgument(id != null, "Parameter id is null");
-		Preconditions.checkArgument(valueType != null, "null type");
+		Preconditions.checkNotNullArgument(id, "Parameter id is null");
+		Preconditions.checkNotNullArgument(valueType, "null type");
 		
 		m_id = id;
 		m_name = name;

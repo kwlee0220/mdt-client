@@ -5,8 +5,8 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.base.Preconditions;
 
+import utils.Preconditions;
 import utils.stream.FStream;
 
 import mdt.model.ResourceNotFoundException;
@@ -43,7 +43,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		private final String m_submodelId;
 		
 		private ByIdSubmodelReference(String submodelId) {
-			Preconditions.checkArgument(submodelId != null, "submodelId is null");
+			Preconditions.checkNotNullArgument(submodelId, "submodelId is null");
 			
 			m_submodelId = submodelId;
 		}
@@ -59,7 +59,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		
 		@Override
 		public void activate(MDTInstanceManager manager) throws ResourceNotFoundException {
-			Preconditions.checkArgument(manager != null);
+			Preconditions.checkNotNullArgument(manager, "manager is null");
 			
 			m_instance = manager.getInstanceBySubmodelId(m_submodelId);
 		}
@@ -112,8 +112,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		private final String m_submodelIdShort;
 		
 		private ByIdShortSubmodelReference(String instanceId, String submodelIdShort) {
-			Preconditions.checkArgument(instanceId != null, "instanceId is null");
-			Preconditions.checkArgument(submodelIdShort != null);
+			Preconditions.checkNotNullArgument(instanceId, "instanceId is null");
+			Preconditions.checkNotNullArgument(submodelIdShort, "submodelIdShort is null");
 			
 			m_instanceId = instanceId;
 			m_submodelIdShort = submodelIdShort;
@@ -138,7 +138,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		
 		@Override
 		public void activate(MDTInstanceManager manager) throws ResourceNotFoundException {
-			Preconditions.checkArgument(manager != null);
+			Preconditions.checkNotNullArgument(manager, "manager is null");
 			
 			m_instance = manager.getInstance(m_instanceId);
 		}

@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.common.base.Preconditions;
 
+import utils.Preconditions;
 import utils.SplitStream;
 import utils.func.Try;
 import utils.json.JacksonDeserializationException;
@@ -30,8 +30,8 @@ import mdt.model.instance.MDTInstanceManager;
  */
 public class ElementReferences {
 	public static void activate(ElementReference ref, MDTInstanceManager manager) {
-		Preconditions.checkArgument(ref != null, "ElementReference is null");
-		Preconditions.checkArgument(manager != null, "MDTInstanceManager is null");
+		Preconditions.checkNotNullArgument(ref, "ElementReference is null");
+		Preconditions.checkNotNullArgument(manager, "MDTInstanceManager is null");
 
 		if ( ref instanceof MDTElementReference mdtRef ) {
 			mdtRef.activate(manager);
@@ -74,7 +74,7 @@ public class ElementReferences {
 	}
 	
 	public static MDTElementReference parseExpr(String exprStr) {
-		Preconditions.checkArgument(exprStr != null, "ElementReference expression is null");
+		Preconditions.checkNotNullArgument(exprStr, "ElementReference expression is null");
 		
 		SplitStream tokens = SplitStream.of(exprStr, ':');
 		MDTElementReference ref = parseExpr(tokens);

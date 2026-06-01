@@ -6,31 +6,60 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
-import org.jetbrains.annotations.Nullable;
-
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
+import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
-import mdt.model.MDTModelSerDe;
 
 
 /**
+ * AAS {@link Property}의 타입별 값을 표현하는 {@link ElementValue}.
+ * <p>
+ * XSD 데이터 타입별로 구체 하위 클래스({@link StringPropertyValue}, {@link IntegerPropertyValue},
+ * {@link FloatPropertyValue}, {@link DoublePropertyValue}, {@link BooleanPropertyValue},
+ * {@link DateTimePropertyValue}, {@link DurationPropertyValue}, {@link LongPropertyValue},
+ * {@link ShortPropertyValue}, {@link DecimalPropertyValue})가 정의되어 있으며, 각 타입에 대응하는
+ * 정적 팩토리({@link #STRING(String)}, {@link #INTEGER(Integer)} 등)를 제공한다.
+ * 값과 문자열/JSON 사이의 변환은 {@link DataType}({@link #getDataType()})이 담당한다.
+ * <p>
+ * {@link Property}나 그 값으로부터 알맞은 하위 타입을 생성하려면 {@link #from(Property)},
+ * {@link #fromValueObject(Object, Property)}, {@link #parseValueJsonNode(JsonNode, Property)}를
+ * 사용한다.
+ *
+ * @param <T>	값의 Java 타입.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract class PropertyValue<T> extends AbstractElementValue implements DataElementValue {
 	protected final T m_value;
-	
+
+	/**
+	 * 이 값의 데이터 타입을 반환한다.
+	 *
+	 * @return 데이터 타입.
+	 */
 	abstract public DataType<T> getDataType();
-	
+
+	/**
+	 * 주어진 값으로 PropertyValue를 생성한다.
+	 *
+	 * @param value	값({@code null} 허용).
+	 */
 	protected PropertyValue(T value) {
 		m_value = value;
 	}
 
+	/**
+	 * 이 값을 주어진 {@link Property}에 값 문자열로 설정한다.
+	 * <p>
+	 * 값이 {@code null}이면 Property의 값도 {@code null}로 설정한다.
+	 *
+	 * @param prop	값을 설정할 Property.
+	 */
 	public void update(Property prop) {
 		prop.setValue((m_value != null) ? getDataType().toValueString(m_value) : null);
 	}
@@ -40,6 +69,14 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		return getDataType().toValueString(m_value);
 	}
 	
+	/**
+	 * Java 값 객체와 대상 {@link Property}의 데이터 타입으로부터 알맞은 {@code PropertyValue} 하위 타입을 생성한다.
+	 *
+	 * @param v		값 객체. Property의 valueType에 해당하는 Java 타입이어야 한다.
+	 * @param prop	데이터 타입 결정에 사용할 대상 Property.
+	 * @return 생성된 PropertyValue.
+	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
+	 */
 	public static PropertyValue<?> fromValueObject(Object v, Property prop) {
 		switch ( prop.getValueType() ) {
 			case STRING:
@@ -67,6 +104,14 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		}
 	}
 	
+	/**
+	 * JSON 노드와 대상 {@link Property}의 데이터 타입으로부터 알맞은 {@code PropertyValue} 하위 타입을 생성한다.
+	 *
+	 * @param vnode	값에 해당하는 JSON 노드.
+	 * @param prop	데이터 타입 결정에 사용할 대상 Property.
+	 * @return 생성된 PropertyValue.
+	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
+	 */
 	public static PropertyValue<?> parseValueJsonNode(JsonNode vnode, Property prop) {
 		switch ( prop.getValueType() ) {
 			case STRING:
@@ -95,11 +140,6 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	}
 
 	@Override
-	public String toJsonString() throws IOException {
-		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
-	}
-
-	@Override
 	public void serializeValue(JsonGenerator gen) throws IOException {
 		gen.writeObject(toValueObject());
 	}
@@ -123,6 +163,13 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 				&& Objects.equals(getDataType(), other.getDataType());
 	}
 	
+	/**
+	 * 주어진 {@link Property}의 값 문자열을 데이터 타입에 맞게 파싱하여 {@code PropertyValue}를 생성한다.
+	 *
+	 * @param prop	값과 데이터 타입을 가진 Property.
+	 * @return 생성된 PropertyValue.
+	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
+	 */
 	public static PropertyValue<?> from(Property prop) {
 		String value = prop.getValue();
 		switch ( prop.getValueType() ) {
@@ -334,6 +381,12 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	public static DurationPropertyValue DURATION(Duration value) {
 		return new DurationPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:duration} 타입 Property 값.
+	 * <p>
+	 * 다른 타입과 달리 값을 ISO-8601 duration 문자열로 직렬화한다
+	 * ({@link #toValueJsonString()}/{@link #serializeValue(JsonGenerator)} 재정의).
+	 */
 	public static class DurationPropertyValue extends PropertyValue<Duration> {
 		public static final String SERIALIZATION_TYPE = "mdt:value:duration";
 		

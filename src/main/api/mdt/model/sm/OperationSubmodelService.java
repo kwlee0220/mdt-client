@@ -123,7 +123,7 @@ public class OperationSubmodelService implements SubmodelService {
 		
 		public Map<String,ElementValue> getValue() {
 			ElementListValue elv = (ElementListValue)ElementValues.getValue(m_arguments);
-			return FStream.from(elv.getElementAll())
+			return FStream.from(elv.getElementValues())
 							.cast(ElementCollectionValue.class)
 							.mapToKeyValue(ecv -> {
 								StringPropertyValue id = (StringPropertyValue)ecv.getField(String.format("%sID", m_argKind));

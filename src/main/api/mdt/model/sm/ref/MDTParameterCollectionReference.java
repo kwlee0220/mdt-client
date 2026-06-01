@@ -150,7 +150,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		ElementValue smev = m_ref.readValue();
 		if ( smev instanceof ElementListValue smelv ) {
 			LinkedHashMap<String,ElementValue> paramValues = Maps.newLinkedHashMap();
-			for ( ElementValue member : smelv.getElementAll() ) {
+			for ( ElementValue member : smelv.getElementValues() ) {
 				KeyValue<String,ElementValue> kv = toMemberValue(member);
 				paramValues.put(kv.key(), kv.value());
 			}
@@ -196,7 +196,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 					String memberId = SubmodelUtils.getFieldById(paramValue, "ParameterID", Property.class).getValue();
 					SubmodelElement newValue = valueMap.get(memberId);
 					newValue.setIdShort("ParameterValue");
-					SubmodelUtils.replaceFieldbyId((SubmodelElementCollection)paramValue, "ParameterValue", newValue);
+					SubmodelUtils.replaceFieldById((SubmodelElementCollection)paramValue, "ParameterValue", newValue);
 				});
 		m_ref.write(paramValues);
 	}

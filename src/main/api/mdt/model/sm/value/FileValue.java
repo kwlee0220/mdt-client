@@ -13,8 +13,6 @@ import com.google.common.collect.Maps;
 
 import utils.json.JacksonUtils;
 
-import mdt.model.MDTModelSerDe;
-
 
 /**
  *
@@ -54,11 +52,6 @@ public final class FileValue extends AbstractElementValue implements DataElement
 		value.put(FIELD_CONTENT_TYPE, m_contentType);
 		value.put(FIELD_VALUE, m_value);
 		return value;
-	}
-
-	@Override
-	public String toJsonString() throws IOException {
-		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
 	
 	public static FileValue from(File aasFile) {

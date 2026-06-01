@@ -72,6 +72,51 @@ public final class DataTypes {
 		return _CLSSS_TO_TYPES.get(cls);
 	}
 	
+	public static DataType<?> fromJavaObject(Object jdbcObj) {
+		if ( jdbcObj == null ) {
+			return null;
+		}
+		else if ( jdbcObj instanceof String ) {
+			return DataTypes.STRING;
+		}
+		else if ( jdbcObj instanceof Integer ) {
+			return DataTypes.INT;
+		}
+		else if ( jdbcObj instanceof Float ) {
+			return DataTypes.FLOAT;
+		}
+		else if ( jdbcObj instanceof Double ) {
+			return DataTypes.DOUBLE;
+		}
+		else if ( jdbcObj instanceof Timestamp ) {
+			return DataTypes.DATE_TIME;
+		}
+		else if ( jdbcObj instanceof java.sql.Date ) {
+			return DataTypes.DATE;
+		}
+		else if ( jdbcObj instanceof java.sql.Time ) {
+			return DataTypes.TIME;
+		}
+		else if ( jdbcObj instanceof Duration ) {
+			return DataTypes.DURATION;
+		}
+		else if ( jdbcObj instanceof BigDecimal ) {
+			return DataTypes.DECIMAL;
+		}
+		else if ( jdbcObj instanceof Boolean ) {
+			return DataTypes.BOOLEAN;
+		}
+		else if ( jdbcObj instanceof Long ) {
+			return DataTypes.LONG;
+		}
+		else if ( jdbcObj instanceof Short ) {
+			return DataTypes.SHORT;
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported JDBC object: " + jdbcObj);
+		}
+	}
+	
 	private static final DataType<?>[] _TYPES = {
 		STRING, BOOLEAN, SHORT, INT, LONG, FLOAT, DOUBLE,
 		DATE_TIME, DATE, TIME, DURATION, DECIMAL,

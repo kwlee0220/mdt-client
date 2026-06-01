@@ -31,6 +31,7 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.expr.MDTExpressionParser;
 import mdt.model.sm.value.PropertyValue.BooleanPropertyValue;
 import mdt.model.sm.value.PropertyValue.DateTimePropertyValue;
+import mdt.model.sm.value.PropertyValue.DecimalPropertyValue;
 import mdt.model.sm.value.PropertyValue.DoublePropertyValue;
 import mdt.model.sm.value.PropertyValue.DurationPropertyValue;
 import mdt.model.sm.value.PropertyValue.FloatPropertyValue;
@@ -41,6 +42,20 @@ import mdt.model.sm.value.PropertyValue.StringPropertyValue;
 
 
 /**
+ * {@link SubmodelElement}와 {@link ElementValue} 사이의 변환, 그리고 {@link ElementValue}의 JSON
+ * 직렬화/역직렬화를 담당하는 정적 유틸리티.
+ * <p>
+ * 주요 기능:
+ * <ul>
+ *   <li>{@link SubmodelElement}에서 값 부분을 추출({@link #getValue(SubmodelElement)})하거나,
+ *       값 객체/JSON으로부터 {@link ElementValue}를 생성({@link #fromValueObject(Object, SubmodelElement)},
+ *       {@link #parseValueJsonNode(JsonNode, SubmodelElement)},
+ *       {@link #parseValueJsonString(String, SubmodelElement)}).</li>
+ *   <li>{@link ElementValue}를 {@link SubmodelElement}에 반영({@link #update(SubmodelElement, ElementValue)}).</li>
+ *   <li>{@code @type}/{@code value} 형태의 polymorphic JSON 직렬화({@link #serializeJson})·
+ *       역직렬화({@link #parseJsonNode(JsonNode)}/{@link #parseJsonString(String)}). Jackson 연동용
+ *       {@link Serializer}/{@link Deserializer}가 이를 사용한다.</li>
+ * </ul>
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -74,6 +89,9 @@ public class ElementValues {
 		}
 		else if ( element instanceof Range rg ) {
 			return RangeValue.from(rg);
+		}
+		else if ( element instanceof ReferenceElement ref ) {
+			return ReferenceElementValue.from(ref);
 		}
 		else {
 			String msg = String.format("Unsupported SubmodelElement(%s) for 'getValue(SubmodelElement)'",
@@ -221,8 +239,14 @@ public class ElementValues {
 																smev.getClass().getName());
 			((MultiLanguagePropertyValue)smev).update(mlprop);
 		}
+		else if ( sme instanceof ReferenceElement refElm ) {
+			Preconditions.checkArgument(smev instanceof ReferenceElementValue,
+										"Expecting %s, but %s", ReferenceElementValue.class.getName(),
+																smev.getClass().getName());
+			((ReferenceElementValue)smev).update(refElm);
+		}
 		else {
-			String msg = String.format("Unsupported SubmodelElement(%s) for 'update(SubmodelElement, JsonNode)",
+			String msg = String.format("Unsupported SubmodelElement(%s) for 'update(SubmodelElement, ElementValue)'",
 										sme.getClass());
 			throw new IllegalArgumentException(msg);
 		}
@@ -243,15 +267,32 @@ public class ElementValues {
 		return sme;
 	}
 	
+	/**
+	 * 주어진 JSON 문자열의 값으로 대상 {@link SubmodelElement}를 갱신한다.
+	 *
+	 * @param target			갱신할 SubmodelElement.
+	 * @param valueJsonString	값에 해당하는 JSON 문자열.
+	 * @throws IOException	JSON 파싱 또는 갱신이 실패한 경우.
+	 */
 	public static void updateWithValueJsonString(SubmodelElement target, String valueJsonString) throws IOException {
 		ElementValue smev = parseValueJsonString(valueJsonString, target);
 		update(target, smev);
 	}
-	
+
+	/**
+	 * MDT 값 표현식 문자열을 평가하여 {@link ElementValue}를 반환한다.
+	 *
+	 * @param expr	값 리터럴 표현식.
+	 * @return 평가 결과 ElementValue.
+	 */
 	public static ElementValue parseExpr(String expr) {
 		return MDTExpressionParser.parseValueLiteral(expr).evaluate();
 	}
 	
+	/**
+	 * {@link AbstractElementValue}를 {@code @type}/{@code value} 형태의 polymorphic JSON으로 직렬화하는
+	 * Jackson serializer. {@link ElementValues#serializeJson(AbstractElementValue, JsonGenerator)}에 위임한다.
+	 */
 	@SuppressWarnings("serial")
 	public static class Serializer extends StdSerializer<AbstractElementValue> {
 		private Serializer() {
@@ -268,6 +309,10 @@ public class ElementValues {
 		}
 	}
 
+	/**
+	 * {@code @type}/{@code value} 형태의 JSON을 {@link ElementValue}로 역직렬화하는 Jackson
+	 * deserializer. {@link ElementValues#parseJsonNode(JsonNode)}에 위임한다.
+	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends StdDeserializer<ElementValue> {
 		public Deserializer() {
@@ -287,6 +332,17 @@ public class ElementValues {
 
 	private static final String FIELD_TYPE = "@type";
 	private static final String FIELD_VALUE = "value";
+
+	/**
+	 * {@code @type}/{@code value} 형태의 polymorphic JSON 노드를 {@link ElementValue}로 역직렬화한다.
+	 * <p>
+	 * {@code @type} 필드의 직렬화 식별자로 구체 타입을 판별하여 해당 타입의 {@code deserializeValue}를 호출한다.
+	 *
+	 * @param jnode	{@code @type}과 {@code value} 필드를 가진 JSON 노드.
+	 * @return 역직렬화된 ElementValue.
+	 * @throws UncheckedIOException	{@code @type} 필드가 없는 경우.
+	 * @throws JacksonDeserializationException	등록되지 않은 타입인 경우.
+	 */
 	public static ElementValue parseJsonNode(JsonNode jnode) {
 		String type = JacksonUtils.getStringFieldOrNull(jnode, FIELD_TYPE);
 		if ( type == null ) {
@@ -300,6 +356,10 @@ public class ElementValues {
 				return StringPropertyValue.deserializeValue(valueNode);
 			case IntegerPropertyValue.SERIALIZATION_TYPE:
 				return IntegerPropertyValue.deserializeValue(valueNode);
+			case ElementListValue.SERIALIZATION_TYPE:
+				return ElementListValue.deserializeValue(valueNode);
+			case ElementCollectionValue.SERIALIZATION_TYPE:
+				return ElementCollectionValue.deserializeValue(valueNode);
 			case DoublePropertyValue.SERIALIZATION_TYPE:
 				return DoublePropertyValue.deserializeValue(valueNode);
 			case FloatPropertyValue.SERIALIZATION_TYPE:
@@ -322,20 +382,34 @@ public class ElementValues {
 				return MultiLanguagePropertyValue.deserializeValue(valueNode);
 			case OperationVariableValue.SERIALIZATION_TYPE:
 				return OperationVariableValue.deserializeValue(valueNode);
-			case ElementListValue.SERIALIZATION_TYPE:
-				return ElementListValue.deserializeValue(valueNode);
 			case ReferenceElementValue.SERIALIZATION_TYPE:
 				return ReferenceElementValue.deserializeValue(valueNode);
+			case DecimalPropertyValue.SERIALIZATION_TYPE:
+				return DecimalPropertyValue.deserializeValue(valueNode);
 			default:
 				throw new JacksonDeserializationException("Unregistered ElementValue type: " + type);
 		}
 	}
 	
+	/**
+	 * {@code @type}/{@code value} 형태의 polymorphic JSON 문자열을 {@link ElementValue}로 역직렬화한다.
+	 *
+	 * @param json	JSON 문자열.
+	 * @return 역직렬화된 ElementValue.
+	 * @throws IOException	JSON 파싱이 실패한 경우.
+	 */
 	public static ElementValue parseJsonString(String json) throws IOException {
 		JsonNode jnode = MDTModelSerDe.readJsonNode(json);
 		return parseJsonNode(jnode);
 	}
-	
+
+	/**
+	 * 주어진 {@link AbstractElementValue}를 {@code @type}/{@code value} 형태의 JSON으로 직렬화한다.
+	 *
+	 * @param value	직렬화할 값.
+	 * @param gen	직렬화에 사용할 JsonGenerator.
+	 * @throws IOException	직렬화가 실패한 경우.
+	 */
 	public static void serializeJson(AbstractElementValue value, JsonGenerator gen) throws IOException {
 		gen.writeStartObject();
 		gen.writeStringField(FIELD_TYPE, value.getSerializationType());
@@ -344,6 +418,14 @@ public class ElementValues {
 		gen.writeEndObject();
 	}
 	
+	/**
+	 * 문자열 양끝의 큰따옴표를 제거한다.
+	 * <p>
+	 * 앞뒤 공백을 제거한 뒤 큰따옴표로 둘러싸인 경우에만 내부 문자열을 반환하고, 그렇지 않으면 그대로 반환한다.
+	 *
+	 * @param str	대상 문자열({@code null} 허용).
+	 * @return 따옴표를 제거한 문자열. {@code null}이면 {@code null}.
+	 */
 	public static String unquote(String str) {
 		if (str == null) return null;
 		str = str.trim();
@@ -352,13 +434,4 @@ public class ElementValues {
 		}
 		return str;
 	}
-	
-//	private String quote(String value) {
-//		if ( value != null ) {
-//			return "\"" + value + "\"";
-//		}
-//		else {
-//			return "null";
-//		}
-//	}
 }

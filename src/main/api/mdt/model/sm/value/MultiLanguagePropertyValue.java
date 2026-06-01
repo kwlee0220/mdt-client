@@ -15,8 +15,6 @@ import utils.func.Funcs;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
-import mdt.model.MDTModelSerDe;
-
 
 /**
  *
@@ -48,11 +46,6 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 		return FStream.from(m_langTexts)
 						.map(langText -> Map.of(langText.getLanguage(), langText.getText()))
 						.toList();
-	}
-
-	@Override
-	public String toJsonString() throws IOException {
-		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
 	}
 	
 	public static MultiLanguagePropertyValue from(MultiLanguageProperty mlp) {

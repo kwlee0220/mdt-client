@@ -35,8 +35,8 @@ public class ElementListValueTest {
 		ElementValue value = ElementValues.parseJsonString(JSON);
 		Assertions.assertTrue(value instanceof ElementListValue);
 		ElementListValue listValue = (ElementListValue)value;
-		Assertions.assertEquals(2, listValue.getElementAll().size());
-		Assertions.assertEquals(pv1, listValue.getElementAll().get(0));
-		Assertions.assertEquals(pv2, listValue.getElementAll().get(1));
+		Assertions.assertEquals(2, listValue.getElementValues().size());
+		Assertions.assertEquals(pv1, listValue.getElementValues().get(0));
+		Assertions.assertEquals(pv2, listValue.getElementValues().get(1));
 	}
 }

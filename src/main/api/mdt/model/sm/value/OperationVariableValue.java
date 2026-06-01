@@ -10,8 +10,6 @@ import com.google.common.collect.Maps;
 
 import utils.json.JacksonUtils;
 
-import mdt.model.MDTModelSerDe;
-
 /**
  *
  * @author Kang-Woo Lee (ETRI)
@@ -49,11 +47,6 @@ public final class OperationVariableValue extends AbstractElementValue implement
 		return value;
 	}
 
-	@Override
-	public String toJsonString() throws IOException {
-		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
-	}
-
 	public static final String SERIALIZATION_TYPE = "mdt:value:opvars";
 	private static final String FIELD_INPUT_VARIABLES = "inputs";
 	private static final String FIELD_OUTPUT_VARIABLES = "outputs";
@@ -66,13 +59,13 @@ public final class OperationVariableValue extends AbstractElementValue implement
 	
 	public static OperationVariableValue deserializeValue(JsonNode vnode) {
 		JsonNode inVarsNode = JacksonUtils.getFieldOrNull(vnode, FIELD_INPUT_VARIABLES);
-		List<ElementValue> inVars = ((ElementListValue)ElementValues.parseJsonNode(inVarsNode)).getElementAll();
+		List<ElementValue> inVars = ((ElementListValue)ElementValues.parseJsonNode(inVarsNode)).getElementValues();
 		
 		JsonNode outVarsNode = JacksonUtils.getFieldOrNull(vnode, FIELD_OUTPUT_VARIABLES);
-		List<ElementValue> outVars = ((ElementListValue)ElementValues.parseJsonNode(outVarsNode)).getElementAll();
+		List<ElementValue> outVars = ((ElementListValue)ElementValues.parseJsonNode(outVarsNode)).getElementValues();
 		
 		JsonNode inoutVarsNode = JacksonUtils.getFieldOrNull(vnode, FIELD_INOUTPUT_VARIABLES);
-		List<ElementValue> inoutVars = ((ElementListValue)ElementValues.parseJsonNode(inoutVarsNode)).getElementAll();
+		List<ElementValue> inoutVars = ((ElementListValue)ElementValues.parseJsonNode(inoutVarsNode)).getElementValues();
 		
 		return new OperationVariableValue(inVars, outVars, inoutVars);
 	}

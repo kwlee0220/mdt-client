@@ -41,6 +41,7 @@ repositories {
 
 ext {
 	logback_version = '1.5.18'
+	log4j_version = '2.24.3'
 	lombok_version = '1.18.46'
 	findbugs_version = '3.0.2'
 	jetbrains_version = '24.1.0'
@@ -74,7 +75,11 @@ dependencies {
 
 	// logback with SLF4j (from the project :utils)
 	implementation "ch.qos.logback:logback-classic:${logback_version}"
-	
+
+	// Apache POI(aas4j-dataformat-aasx 경유)가 사용하는 Log4j2 API 로그를 SLF4J(→ Logback)로 라우팅한다.
+	// 이 브리지가 없으면 "Log4j API could not find a logging provider" 오류가 발생한다.
+	runtimeOnly "org.apache.logging.log4j:log4j-to-slf4j:${log4j_version}"
+
 	// AAS model
 	api "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-json:${aas4j_version}"
 	api "org.eclipse.digitaltwin.aas4j:aas4j-dataformat-aasx:${aas4j_version}"

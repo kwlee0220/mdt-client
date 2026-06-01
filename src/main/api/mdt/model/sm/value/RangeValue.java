@@ -14,7 +14,6 @@ import utils.json.JacksonUtils;
 
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
-import mdt.model.MDTModelSerDe;
 
 
 /**
@@ -60,11 +59,7 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 		return m_max;
 	}
 
-	@Override
-	public String toJsonString() throws IOException {
-		return MDTModelSerDe.getJsonMapper().writeValueAsString(this);
-	}
-
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static RangeValue<?> from(Range rg) {
 		DataType<?> vtype = DataTypes.fromAas4jDatatype(rg.getValueType());
 		Object min = vtype.parseValueString(rg.getMin());
@@ -73,6 +68,7 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 		return new RangeValue(vtype, min, max);
 	}
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static RangeValue<?> fromValueObject(Object value, Range range) throws IOException {
 		if ( value instanceof Map vmap ) {
 			DataType<?> vtype = DataTypes.fromAas4jDatatype(range.getValueType());
@@ -86,6 +82,7 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 		}
 	}
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static RangeValue<?> parseValueJsonNode(JsonNode vnode, Range range) throws IOException {
 		if ( !vnode.isObject() ) {
 			throw new IOException("RangeValue expects an 'Object' node: JsonNode=" + vnode);
@@ -114,8 +111,8 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 
 		@SuppressWarnings("rawtypes")
 		RangeValue other = (RangeValue) obj;
-		return m_min.equals(other.m_min)
-				&& m_max.equals(other.m_max);
+		return Objects.equals(m_min, other.m_min)
+				&& Objects.equals(m_max, other.m_max);
 	}
 	
 	@Override

@@ -34,6 +34,10 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		m_reference = reference;
 	}
 	
+	public static ReferenceElementValue from(ReferenceElement refElm) {
+		return new ReferenceElementValue(refElm.getValue());
+	}
+	
 	public Reference getReference() {
 		return m_reference;
 	}
@@ -57,6 +61,10 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		output.put("type", m_reference.getType().name());
 		output.put("keys", keyList);
 		return output;
+	}
+	
+	public void update(ReferenceElement refElm) {
+		refElm.setValue(m_reference);
 	}
 	
 	public static ReferenceElementValue fromValueObject(Object value, ReferenceElement refElm) throws IOException {

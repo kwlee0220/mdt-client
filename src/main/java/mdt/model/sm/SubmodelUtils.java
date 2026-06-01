@@ -20,6 +20,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultKey;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultReference;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodelElementList;
@@ -35,17 +36,18 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import utils.CSV;
 import utils.Indexed;
 import utils.InternalException;
+import utils.Preconditions;
 import utils.func.Funcs;
 import utils.func.Try;
 import utils.stream.FStream;
 
+import mdt.aas.DataType;
 import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
 import mdt.model.MDTSemanticIds;
@@ -61,6 +63,8 @@ import mdt.model.sm.info.InformationModel;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
 import mdt.model.timeseries.TimeSeries;
 
 /**
@@ -100,21 +104,24 @@ public final class SubmodelUtils {
 		return CSV.parseCsv(idShortPath, '.')
 					.flatMapIterable(seg -> parsePathSegment(seg));
 	}
-	private static final Pattern PATTERN = Pattern.compile("(\\w*)(\\[(d+)\\])?");
+	// idShort 이름 뒤에 0개 이상의 '[숫자]' 인덱스가 붙는 경로 세그먼트.
+	private static final Pattern SEGMENT_PATTERN = Pattern.compile("(\\w+)((?:\\[\\d+\\])*)");
+	private static final Pattern INDEX_PATTERN = Pattern.compile("\\[(\\d+)\\]");
 	private static List<String> parsePathSegment(String idShort) {
-		Matcher matcher = PATTERN.matcher(idShort);
-		List<String> matches = Lists.newArrayList();
-		while ( matcher.find() ) {
-			matches.add(matcher.group());
+		Matcher matcher = SEGMENT_PATTERN.matcher(idShort);
+		if ( !matcher.matches() ) {
+			throw new IllegalArgumentException("Invalid idShort path segment: " + idShort);
 		}
-		
-		return switch ( matches.size() ) {
-			case 0 -> matches;
-			case 2 -> List.of(matches.get(0));
-			case 4 -> List.of(matches.get(0));
-			case 5 -> List.of(matches.get(0), matches.get(2));
-			default -> throw new AssertionError();
-		};
+
+		List<String> result = Lists.newArrayList();
+		result.add(matcher.group(1));	// idShort 이름
+
+		Matcher idxMatcher = INDEX_PATTERN.matcher(matcher.group(2));
+		while ( idxMatcher.find() ) {
+			result.add(idxMatcher.group(1));	// SubmodelElementList 인덱스
+		}
+
+		return result;
 	}
 	
 	/**
@@ -209,20 +216,40 @@ public final class SubmodelUtils {
 	 * 				자손이 조상의 자손이 아닌 경우에는 {@code null}
 	 */
 	public static String toRelativeIdShortPath(String ancestor, String descendant) {
-		if ( descendant.equals(ancestor) ) {
-			return "";
-		}
-		if ( descendant.startsWith(ancestor) ) {
-			int prefixLen = ancestor.length();
-			char delim = descendant.charAt(prefixLen);
-			if ( delim == '.' ) {
-				++prefixLen;
-			}
-			return (descendant.length() > prefixLen) ? descendant.substring(prefixLen) : "";
-		}
-		else {
+		if ( !isIdShortPathPrefix(ancestor, descendant) ) {
 			return null;
 		}
+		if ( descendant.length() == ancestor.length() ) {
+			return "";
+		}
+		int prefixLen = ancestor.length();
+		// '.' 구분자는 상대 경로에서 제거하고, '[' (list 인덱스)는 유지한다.
+		if ( descendant.charAt(prefixLen) == '.' ) {
+			++prefixLen;
+		}
+		return descendant.substring(prefixLen);
+	}
+
+	/**
+	 * {@code prefix}가 {@code path}의 idShort 경로 접두어인지 여부를 반환한다.
+	 * <p>
+	 * 단순 문자열 접두어가 아니라 경로 세그먼트 경계({@code '.'} 또는 {@code '['})를 기준으로 판정한다.
+	 * 따라서 {@code "A.Value1"}은 {@code "A.Value10"}의 접두어가 아니다.
+	 * 두 경로가 동일한 경우에는 {@code true}를 반환한다.
+	 *
+	 * @param prefix	접두어 후보 idShort 경로.
+	 * @param path		대상 idShort 경로.
+	 * @return			{@code prefix}가 {@code path}의 경로 접두어이면 {@code true}.
+	 */
+	public static boolean isIdShortPathPrefix(String prefix, String path) {
+		if ( !path.startsWith(prefix) ) {
+			return false;
+		}
+		if ( path.length() == prefix.length() ) {
+			return true;
+		}
+		char next = path.charAt(prefix.length());
+		return next == '.' || next == '[';
 	}
 	
 	/**
@@ -288,8 +315,8 @@ public final class SubmodelUtils {
 	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
 	 */
 	public static SubmodelElement traverse(Submodel submodel, String idShortPath) throws ResourceNotFoundException {
-		Preconditions.checkNotNull(submodel, "Submodel was null");
-		Preconditions.checkNotNull(idShortPath, "idShortPath was null");
+		Preconditions.checkNotNullArgument(submodel, "Submodel was null");
+		Preconditions.checkNotNullArgument(idShortPath, "idShortPath was null");
 		
 		SubmodelElementCollection start = new DefaultSubmodelElementCollection.Builder()
 													.value(submodel.getSubmodelElements())
@@ -326,7 +353,7 @@ public final class SubmodelUtils {
 	/**
 	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 반환한다.
 	 * <p>
-	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는 Optional.empty()를 반환한다.
+	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는 {@code null}를 반환한다.
 	 *
 	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
 	 * @param fieldName 탐색할 idShort 이름.
@@ -345,13 +372,13 @@ public final class SubmodelUtils {
 	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 지정된 class 타입으로 반환한다.
 	 * <p>
 	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
-	 * Optional.empty()를 반환한다.
+	 * {@code null}를 반환한다.
 	 *
 	 * @param <T>         탐색 결과로 기대되는 SubmodelElement의 class 타입.
 	 * @param smc         탐색 대상 SubmodelElementCollection 객체.
 	 * @param fieldName   탐색할 idShort 이름.
 	 * @param outputClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
-	 * @return idShort가 fieldName인 하위 요소. 존재하지 않는 경우에는 Optional.empty()를 반환한다.
+	 * @return idShort가 fieldName인 하위 요소. 존재하지 않는 경우에는 {@code null}를 반환한다.
 	 */
 	public static <T extends SubmodelElement> T
 	findFieldById(SubmodelElement smc, String fieldName, Class<T> outputClass) {
@@ -433,8 +460,7 @@ public final class SubmodelUtils {
 	 *                                  탐색 결과가 존재하지 않는 경우.
 	 */
 	public static String getStringFieldById(SubmodelElementCollection smc, String fieldName) {
-		Preconditions.checkArgument(smc instanceof SubmodelElementCollection,
-									"Not a SubmodelElementCollection: " + smc.getClass());
+		Preconditions.checkNotNullArgument(smc, "SubmodelElementCollection is null");
 		return getFieldById(smc, fieldName, Property.class).getValue();
 	}
 
@@ -450,7 +476,7 @@ public final class SubmodelUtils {
 		smc.getValue().removeIf(field -> field.getIdShort().equals(idShort));
 	}
 
-	public static void replaceFieldbyId(SubmodelElementCollection smc, String idShort, SubmodelElement newField) {
+	public static void replaceFieldById(SubmodelElementCollection smc, String idShort, SubmodelElement newField) {
 		List<SubmodelElement> fieldList = smc.getValue();
 		for ( int i = 0; i < fieldList.size(); ++i ) {
 			SubmodelElement field = fieldList.get(i);
@@ -497,6 +523,18 @@ public final class SubmodelUtils {
 				});
 	}
 	
+	public static DefaultProperty newProperty(String idShort, String value, DataTypeDefXsd valueType) {
+		return new DefaultProperty.Builder()
+									.idShort(idShort)
+									.value(value)
+									.valueType(valueType)
+									.build();
+	}
+	public static DefaultProperty newProperty(String idShort, Object value) {
+		DataType<?> dtype = DataTypes.fromJavaObject(value);
+		return newProperty(idShort, dtype.toValueString(value), dtype.getTypeDefXsd());
+	}
+	
 	/**
 	 * 주어진 idShort과 SubmodelElement 리스트를 기반으로 새로운 SubmodelElementCollection 객체를 생성하여 반환한다.
 	 *
@@ -526,7 +564,7 @@ public final class SubmodelUtils {
 	public static DefaultSubmodelElementList newSubmodelElementList(String idShort, List<SubmodelElement> elements,
 			                                                        boolean orderRelevant,
 			                                                        AasSubmodelElements elementType) {
-		Preconditions.checkNotNull(elementType != AasSubmodelElements.PROPERTY, "elementType should not be PROPERTY");
+		Preconditions.checkArgument(elementType != AasSubmodelElements.PROPERTY, "elementType should not be PROPERTY");
 		
 		return new DefaultSubmodelElementList.Builder()
 												.idShort(idShort)
@@ -556,6 +594,31 @@ public final class SubmodelUtils {
 												.valueTypeListElement(xsdType)
 												.value(elms)
 												.build();
+	}
+	
+	public static void updateValue(SubmodelElement target, SubmodelElement source) {
+		if ( target.getClass() != source.getClass() ) {
+			throw new IllegalArgumentException("Incompatible SubmodelElement type: " + target.getClass()
+												+ " vs " + source.getClass());
+		}
+		
+		if ( target instanceof SubmodelElementList tarList ) {
+			SubmodelElementList srcList = (SubmodelElementList)source;
+			if ( tarList.getValue().size() > srcList.getValue().size() ) {
+				var reduced = tarList.getValue().subList(0, srcList.getValue().size());
+				tarList.setValue(reduced);
+			}
+			else if ( tarList.getValue().size() < srcList.getValue().size() ) {
+				var extended = srcList.getValue().subList(tarList.getValue().size(),
+															srcList.getValue().size());
+				tarList.getValue().addAll(extended);
+				if ( tarList.getValue().size() == extended.size() ) {
+					return;
+				}
+			}
+		}
+		ElementValue ev = ElementValues.getValue(source);
+		ElementValues.update(target, ev);
 	}
 
 	/**
@@ -673,19 +736,6 @@ public final class SubmodelUtils {
 		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
 		return Operation.SEMANTIC_ID.equals(semanticId);
 	}
-	
-//	public static String getParameterValuePrefix(Submodel dataSubmodel) {
-//		SubmodelElementCollection dataInfo = traverse(dataSubmodel, "DataInfo", SubmodelElementCollection.class);
-//		if ( containsFieldById(dataInfo, "Equipment") ) {
-//			return "DataInfo.Equipment.EquipmentParameterValues";
-//		}
-//		else if ( containsFieldById(dataInfo, "Operation") ) {
-//			return "DataInfo.Operation.OperationParameterValues";
-//		}
-//		else {
-//			throw new IllegalArgumentException("Invalid DataInfo: " + dataInfo.getIdShort());
-//		}
-//	}
 	
 	public static String resolveParameterValueElementPath(String paramPathPrefix, String paramExpr,
 															Function<String,Integer> resolveParameterIndex) {
@@ -844,50 +894,28 @@ public final class SubmodelUtils {
 		return null;
 	}
 
-	private static final Pattern REF_TYPE_PATTERN = Pattern.compile("\\w+(\\-(\\S+))?");
-	public static Reference parseReferenceSerizalization(String serialized) {
+	public static Reference parseReferenceSerialization(String serialized) {
 		serialized = serialized.trim();
-		
+		Preconditions.checkArgument(!serialized.isEmpty(), "empty reference serialization");
+
 		Reference semanticId = null;
 		ReferenceTypes refType = null;
-		if ( serialized.charAt(0) == '[' ) {
-			int idx = serialized.indexOf(']');
-			String refTypeStr = serialized.substring(1, idx).trim();
-			serialized = serialized.substring(idx+1);
-			
-			idx = refTypeStr.indexOf('-');
-			if ( idx >= 0 ) {
-				String semanticIdStr = null;
-				String realRefTypeStr = refTypeStr.substring(0, idx).trim();
-				switch ( realRefTypeStr ) {
-					case "ModelRef":
-						refType = ReferenceTypes.MODEL_REFERENCE;
-						semanticIdStr = refTypeStr.substring(idx+1, refTypeStr.lastIndexOf('-')).trim();
-						break;
-					case "ExternalRef":
-						refType = ReferenceTypes.EXTERNAL_REFERENCE;
-						semanticIdStr = refTypeStr.substring(idx+1, refTypeStr.lastIndexOf('-')).trim();
-						break;
-					default:
-						throw new IllegalArgumentException("invalid ReferenceTypes: " + refTypeStr);
-				}
-				if ( semanticIdStr != null ) {
-					semanticId = parseReferenceSerizalization(semanticIdStr);
-				}
-			}
-			
-			Matcher matcher = REF_TYPE_PATTERN.matcher(refTypeStr);
-			if ( !matcher.find() ) {
-				throw new IllegalArgumentException("Invalid ReferenceTypes: " + refTypeStr);
-			}
-			
-			switch ( matcher.group(0) ) {
-				case "ModelRef":
-					refType = ReferenceTypes.MODEL_REFERENCE;
-					break;
-				default:
-					refType = ReferenceTypes.EXTERNAL_REFERENCE;
-					break;
+		if ( serialized.startsWith("[") ) {
+			int end = serialized.indexOf(']');
+			String refTypeStr = serialized.substring(1, end).trim();
+			serialized = serialized.substring(end+1);
+
+			int dash = refTypeStr.indexOf('-');
+			String refTypeToken = (dash >= 0) ? refTypeStr.substring(0, dash).trim() : refTypeStr;
+			refType = switch ( refTypeToken ) {
+				case "ModelRef" -> ReferenceTypes.MODEL_REFERENCE;
+				case "ExternalRef" -> ReferenceTypes.EXTERNAL_REFERENCE;
+				default -> throw new IllegalArgumentException("invalid ReferenceTypes: " + refTypeStr);
+			};
+
+			if ( dash >= 0 ) {
+				String semanticIdStr = refTypeStr.substring(dash+1, refTypeStr.lastIndexOf('-')).trim();
+				semanticId = parseReferenceSerialization(semanticIdStr);
 			}
 		}
 		

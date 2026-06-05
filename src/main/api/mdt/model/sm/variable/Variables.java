@@ -31,6 +31,7 @@ import mdt.model.sm.ref.ElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.variable.AbstractVariable.ElementVariable;
 import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
+import mdt.model.sm.variable.AbstractVariable.TaskOutputVariable;
 import mdt.model.sm.variable.AbstractVariable.ValueVariable;
 
 /**
@@ -128,6 +129,7 @@ public final class Variables {
 		SERIALIZABLES.put(ReferenceVariable.SERIALIZATION_TYPE, ReferenceVariable.class);
 		SERIALIZABLES.put(ValueVariable.SERIALIZATION_TYPE, ValueVariable.class);
 		SERIALIZABLES.put(ElementVariable.SERIALIZATION_TYPE, ElementVariable.class);
+		SERIALIZABLES.put(TaskOutputVariable.SERIALIZATION_TYPE, TaskOutputVariable.class);
 	}
 	
 	@SuppressWarnings("serial")
@@ -180,6 +182,8 @@ public final class Variables {
 				return ValueVariable.deserializeFields(jnode);
 			case ElementVariable.SERIALIZATION_TYPE:
 				return ElementVariable.deserializeFields(jnode);
+			case TaskOutputVariable.SERIALIZATION_TYPE:
+				return TaskOutputVariable.deserializeFields(jnode);
 			default:
 				throw new JacksonDeserializationException("Unregistered Variable type: " + type);
 		}

@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
@@ -47,10 +48,12 @@ import mdt.model.sm.ref.SubmodelBasedElementReference;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 import mdt.model.sm.variable.AbstractVariable.ReferenceVariable;
+import mdt.model.sm.variable.AbstractVariable.TaskOutputVariable;
 import mdt.model.sm.variable.AbstractVariable.ValueVariable;
 import mdt.model.sm.variable.Variable;
 import mdt.workflow.model.ArgumentSpec.LiteralArgumentSpec;
 import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
+import mdt.workflow.model.ArgumentSpec.TaskOutputArgumentSpec;
 
 
 /**
@@ -214,6 +217,7 @@ public final class TaskDescriptor {
 		}
 	}
 	
+	@NotNull
 	public Map<String,Option> getOptions() {
 		return Collections.unmodifiableMap(m_options);
 	}
@@ -418,6 +422,11 @@ public final class TaskDescriptor {
 		else if ( argSpec instanceof LiteralArgumentSpec litArgSpec ) {
 			return new ValueVariable(argId, "", litArgSpec.readValue());
 		}
+		else if ( argSpec instanceof TaskOutputArgumentSpec toSpec ) {
+			String taskId = toSpec.getTaskId();
+			String argName = toSpec.getArgumentName();
+			return new TaskOutputVariable(argId, "", taskId, argName);
+		}
 		else {
 			throw new IllegalArgumentException("Unsupported argument spec type: " + argSpec);
 		}
@@ -429,6 +438,10 @@ public final class TaskDescriptor {
 		}
 		else if ( var instanceof ValueVariable valVar ) {
 			LiteralArgumentSpec argSpec = ArgumentSpec.literal(valVar.readValue());
+			return KeyValue.of(var.getName(), argSpec);
+		}
+		else if ( var instanceof TaskOutputVariable toVar ) {
+			TaskOutputArgumentSpec argSpec = ArgumentSpec.taskOutput(toVar.getTaskId(), toVar.getOutputArgumentName());
 			return KeyValue.of(var.getName(), argSpec);
 		}
 		else {

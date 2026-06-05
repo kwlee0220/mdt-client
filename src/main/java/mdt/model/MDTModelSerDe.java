@@ -124,10 +124,11 @@ public class MDTModelSerDe {
 	public static String toJsonString(Object modelObj) {
 		try {
 			return JSON_SERIALIZER.write(modelObj);
+//			return MAPPER.writeValueAsString(modelObj);
 		}
 		catch ( SerializationException e ) {
 			String msg = String.format("Failed to writeJson: %s, cause=%s", modelObj, e);
-			throw new InternalException(msg);
+			throw new InternalException(msg, e);
 		}
 	}
 

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import utils.Preconditions;
 import utils.json.JacksonUtils;
 
 import mdt.model.MDTModelSerDe;
@@ -248,6 +249,80 @@ public abstract class AbstractVariable implements Variable {
 			gen.writeStringField(FIELD_NAME, getName());
 			gen.writeStringField(FIELD_DESCRIPTION, getDescription());
 			gen.writeObjectField(FIELD_VALUE, m_value);
+		}
+	}
+	
+	public static final class TaskOutputVariable extends AbstractVariable {
+		public static final String SERIALIZATION_TYPE = "mdt:variable:task-output";
+		private static final String FIELD_TASK_ID = "taskId";
+		private static final String FIELD_OUTPUT_NAME = "outputArgumentName";
+		
+		private final String m_taskId;
+		private final String m_outputArgName;
+		
+		public TaskOutputVariable(String name, String description, String taskId, String outArgName) {
+			super(name, description);
+			
+			Preconditions.checkNotNullArgument(taskId, "taskId should not be null");
+			Preconditions.checkNotNullArgument(outArgName, "outputArgName should not be null");
+			
+			m_taskId = taskId;
+			m_outputArgName = outArgName;
+		}
+		
+		public String getTaskId() {
+			return m_taskId;
+		}
+		
+		public String getOutputArgumentName() {
+			return m_outputArgName;
+		}
+
+		@Override
+		public SubmodelElement read() throws IOException {
+			throw new UnsupportedOperationException("TaskOutputVariable cannot be read");
+		}
+
+		@Override
+		public ElementValue readValue() throws IOException {
+			throw new UnsupportedOperationException("TaskOutputVariable cannot be readValue");
+		}
+
+		@Override
+		public void update(SubmodelElement sme) throws IOException {
+			throw new UnsupportedOperationException("TaskOutputVariable cannot be update(SubmodelElement)");
+		}
+
+		@Override
+		public void updateValue(ElementValue value) throws IOException {
+			throw new UnsupportedOperationException("TaskOutputVariable cannot be updateValue(ElementValue)");
+		}
+
+		@Override
+		public void updateValue(String valueJsonString) throws IOException {
+			throw new UnsupportedOperationException("TaskOutputVariable cannot be updateWithValueJsonString(valueJsonString)");
+		}
+
+		@Override
+		public String getSerializationType() {
+			return SERIALIZATION_TYPE;
+		}
+		
+		public static TaskOutputVariable deserializeFields(JsonNode jnode) throws IOException {
+			String name = JacksonUtils.getStringField(jnode, FIELD_NAME);
+			String description = JacksonUtils.getStringFieldOrNull(jnode, FIELD_DESCRIPTION);
+			String taskId = JacksonUtils.getStringFieldOrNull(jnode, FIELD_TASK_ID);
+			String outputName = JacksonUtils.getStringFieldOrNull(jnode, FIELD_OUTPUT_NAME);
+			
+			return new TaskOutputVariable(name, description, taskId, outputName);
+		}
+
+		@Override
+		public void serializeFields(JsonGenerator gen) throws IOException {
+			gen.writeStringField(FIELD_NAME, getName());
+			gen.writeStringField(FIELD_DESCRIPTION, getDescription());
+			gen.writeStringField(FIELD_TASK_ID, m_taskId);
+			gen.writeStringField(FIELD_OUTPUT_NAME, m_outputArgName);
 		}
 	}
 }

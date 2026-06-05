@@ -27,8 +27,8 @@ public abstract class ArgumentSpec {
 	public static ReferenceArgumentSpec reference(String refString) {
 		return new ReferenceArgumentSpec(ElementReferences.parseExpr(refString));
 	}
-	public static TaskOutputArgumentSpec taskOutput(String argId, String taskId, String outVarId) {
-		return new TaskOutputArgumentSpec(argId, taskId, outVarId);
+	public static TaskOutputArgumentSpec taskOutput(String taskId, String argName) {
+		return new TaskOutputArgumentSpec(taskId, argName);
 	}
 	public static LiteralArgumentSpec literal(ElementValue value) {
 		return new LiteralArgumentSpec(value);
@@ -100,31 +100,31 @@ public abstract class ArgumentSpec {
 	
 	public static class TaskOutputArgumentSpec extends ArgumentSpec {
 		private final String m_taskId;
-		private final String m_outVarId;
+		private final String m_argName;
 
-		public TaskOutputArgumentSpec(String argId, String taskId, String outVarId) {
+		public TaskOutputArgumentSpec(String taskId, String argName) {
 			m_taskId = taskId;
-			m_outVarId = outVarId;
+			m_argName = argName;
 		}
 
 		public String getTaskId() {
 			return m_taskId;
 		}
 
-		public String getOutputVarName() {
-			return m_outVarId;
+		public String getArgumentName() {
+			return m_argName;
 		}
 
 		@Override
 		public ElementValue readValue() throws IOException {
 			throw new UnsupportedOperationException(
                     "Cannot get value of TaskOutputArgumentSpec directly: taskId=" + m_taskId
-                    + ", outVarId=" + m_outVarId);
+                    + ", outVarId=" + m_argName);
 		}
 		
 		@Override
 		public String toString() {
-			return String.format("task_output(%s,%s)", m_taskId, m_outVarId);
+			return String.format("task_output(%s:%s)", m_taskId, m_argName);
 		}
 	}
 	

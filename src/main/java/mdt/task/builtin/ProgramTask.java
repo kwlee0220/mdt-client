@@ -23,7 +23,6 @@ import utils.Throwables;
 import utils.UnitUtils;
 import utils.async.command.CommandExecution;
 import utils.async.command.CommandVariable;
-import utils.async.command.CommandVariable.FileVariable;
 import utils.io.FileUtils;
 import utils.io.IOUtils;
 import utils.stream.KeyValueFStream;
@@ -130,13 +129,13 @@ public class ProgramTask extends AbstractMDTTask {
 		
 		File workingDir = descriptor.findOptionValue("workingDirectory")
 									.map(File::new)
-									.orElseGet(FileUtils::getCurrentWorkingDirectory);
+									.getOrElse(FileUtils::getCurrentWorkingDirectory);
 		List<String> commandLine = descriptor.findOptionValue("commandLine")
 									.map(v -> Arrays.asList(v.split("\n")))
-									.orElseThrow(() -> new IllegalArgumentException("Option is not specified: commandLine"));
+									.getOrThrow(() -> new IllegalArgumentException("Option is not specified: commandLine"));
 		Duration timeout = descriptor.findOptionValue("timeout")
 									.map(UnitUtils::parseDuration)
-									.orElse(null);
+									.getOrNull();
 		
 		CommandExecution.Builder builder = CommandExecution.builder()
 															.addCommand(commandLine)
@@ -173,7 +172,7 @@ public class ProgramTask extends AbstractMDTTask {
 		return builder.build();
 	}
 	
-	private FileVariable newCommandVariable(File workingDir, String argId, ArgumentSpec arg) throws TaskException {
+	private CommandVariable newCommandVariable(File workingDir, String argId, ArgumentSpec arg) throws TaskException {
 		File file = null;
 		try {
 			ElementValue value = arg.readValue();
@@ -187,7 +186,7 @@ public class ProgramTask extends AbstractMDTTask {
 					file = new File(workingDir, fileName);
 					dref.readAttachment(file);
 					
-					return new FileVariable(argId, file);
+					return new CommandVariable(argId, file);
 				}
 				else {
 					throw new TaskException("Argument should be a FileValue: arg=" + argId);
@@ -197,7 +196,7 @@ public class ProgramTask extends AbstractMDTTask {
 				file = new File(workingDir, argId);
 				IOUtils.toFile(value.toValueJsonString(), StandardCharsets.UTF_8, file);
 				
-				return new FileVariable(argId, file);
+				return new CommandVariable(argId, file);
 			}
 		}
 		catch ( IOException e ) {

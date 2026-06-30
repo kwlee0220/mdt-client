@@ -10,13 +10,13 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -33,7 +33,6 @@ import utils.KeyValue;
 import utils.Preconditions;
 import utils.func.FOption;
 import utils.func.Funcs;
-import utils.func.Optionals;
 import utils.io.IOUtils;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
@@ -66,7 +65,7 @@ import mdt.workflow.model.ArgumentSpec.TaskOutputArgumentSpec;
 					"inputVariables", "outputVariables", "options", "labels" })
 @JsonInclude(Include.NON_NULL)
 public final class TaskDescriptor {
-	private static final Logger s_logger = org.slf4j.LoggerFactory.getLogger(TaskDescriptor.class);
+	private static final Logger s_logger = LoggerFactory.getLogger(TaskDescriptor.class);
 
 	private String m_id;
 	private @Nullable String m_name;
@@ -127,7 +126,7 @@ public final class TaskDescriptor {
 	
 	@JsonProperty("submodel")
 	public String getSubmodelRefString() {
-		return Optionals.map(m_submodelRef, DefaultSubmodelReference::toStringExpr);
+		return FOption.map(m_submodelRef, DefaultSubmodelReference::toStringExpr);
 	}
 
 	@JsonProperty("submodel")
@@ -222,8 +221,9 @@ public final class TaskDescriptor {
 		return Collections.unmodifiableMap(m_options);
 	}
 	
-	public Optional<String> findOptionValue(String optName) {
-		return Optional.ofNullable(m_options.get(optName)).map(Option::getValue);
+	public FOption<String> findOptionValue(String optName) {
+		return FOption.ofNullable(m_options.get(optName))
+						.map(Option::getValue);
 	}
 	
 	public void addOption(String name, String value) {
@@ -304,7 +304,7 @@ public final class TaskDescriptor {
 	
 	public String toJsonString() {
 		try {
-			return MDTModelSerDe.MAPPER
+			return MDTModelSerDe.getJsonMapper()
 								.writerFor(TaskDescriptor.class)
 								.writeValueAsString(this);
 		}
@@ -339,6 +339,7 @@ public final class TaskDescriptor {
 			return parseJsonString(jsonStr);
 		}
 		catch ( IOException e ) {
+			// IOException는 그대로 던진다.(InternalException로 wrapping하지 않도록 함)
 			throw e;
 		}
 		catch ( Exception e ) {

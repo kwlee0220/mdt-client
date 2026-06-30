@@ -5,8 +5,7 @@ import java.util.List;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 
-import com.google.common.base.Preconditions;
-
+import utils.Preconditions;
 import utils.stream.FStream;
 
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
@@ -34,7 +33,7 @@ public class DefaultRecords extends SubmodelElementCollectionEntity implements R
 	}
 	
 	public DefaultRecords(List<? extends DefaultRecord> recordList) {
-		Preconditions.checkArgument(recordList != null, "'recordList' should not be null");
+		Preconditions.checkNotNullArgument(recordList, "'recordList' should not be null");
 		
 		setIdShort("Records");
 		setSemanticId(Records.SEMANTIC_ID_REFERENCE);
@@ -43,8 +42,8 @@ public class DefaultRecords extends SubmodelElementCollectionEntity implements R
 	}
 	
 	public DefaultRecords(RecordMetadata metadata, List<? extends DefaultRecord> recordList) {
-		Preconditions.checkArgument(metadata != null, "RecordMetadata should not be null");
-		Preconditions.checkArgument(recordList != null, "'recordList' should not be null");
+		Preconditions.checkNotNullArgument(metadata, "RecordMetadata should not be null");
+		Preconditions.checkNotNullArgument(recordList, "'recordList' should not be null");
 		
 		setIdShort("Records");
 		setSemanticId(Records.SEMANTIC_ID_REFERENCE);
@@ -64,7 +63,7 @@ public class DefaultRecords extends SubmodelElementCollectionEntity implements R
 	}
 	
 	public void setRecordList(List<? extends DefaultRecord> recList) {
-		Preconditions.checkArgument(recList != null, "'recordList' should not be null");
+		Preconditions.checkNotNullArgument(recList, "'recordList' should not be null");
 
 		this.m_recordList = recList;
 	}

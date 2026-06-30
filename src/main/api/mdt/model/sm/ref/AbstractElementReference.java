@@ -1,12 +1,7 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Duration;
-import java.time.LocalDateTime;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
-import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,247 +14,69 @@ import mdt.model.MDTModelSerDe;
 
 
 /**
+ * {@link ElementReference} 구현체들이 공통으로 사용하는 기능을 제공하는 추상 기반 클래스이다.
+ * <p>
+ * 구체 구현체에 따라 달라지지 않는 갱신({@link #update(SubmodelElement)}), Json 직렬화
+ * ({@link #toJsonString()}, {@link #toJsonNode()}), 로거 관리({@link LoggerSettable})를
+ * 기본 구현으로 제공한다. 참조 대상에 실제로 접근하는 메소드({@code read}, {@code write} 등)는
+ * 하위 클래스에서 구현해야 한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract class AbstractElementReference implements ElementReference, LoggerSettable {
-	private static final Logger s_logger = LoggerFactory.getLogger(ElementReference.class);
+	private static final Logger s_logger = LoggerFactory.getLogger(AbstractElementReference.class);
 	private Logger m_logger = s_logger;
-	
+
+	/**
+	 * 참조가 가리키는 SubmodelElement의 값 부분을 주어진 SubmodelElement으로 갱신한다.
+	 * <p>
+	 * 기본 구현은 {@link #write(SubmodelElement)}에 위임하여 요소 전체를 갱신한다.
+	 *
+	 * @param sme	갱신할 값을 포함한 SubmodelElement 객체.
+	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public void update(SubmodelElement sme) throws IOException {
 		write(sme);
 	}
 
+	/**
+	 * 이 참조를 {@link MDTModelSerDe}를 이용하여 Json 문자열로 직렬화한다.
+	 *
+	 * @return	직렬화된 Json 문자열.
+	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public String toJsonString() throws IOException {
 		return MDTModelSerDe.toJsonString(this);
 	}
 
+	/**
+	 * 이 참조를 {@link MDTModelSerDe}를 이용하여 {@link JsonNode}로 직렬화한다.
+	 *
+	 * @return	직렬화된 {@link JsonNode} 객체.
+	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public JsonNode toJsonNode() throws IOException {
 		return MDTModelSerDe.toJsonNode(this);
 	}
-	
+
 	/**
-	 * Reads the SubmodelElement referred to by this reference and casts it to a Property.
-	 * <p>
-	 * If the referred element is not a Property, throws an IOException.
-	 * 
-	 * @return	Property referred to by this reference. Or null if the reference is null.
-	 * @throws	IOException If the referred element is not a Property
+	 * 이 객체에 설정된 로거를 반환한다.
+	 *
+	 * @return 현재 로거. 별도로 설정하지 않은 경우 기본 로거.
 	 */
-	public Property readAsProperty() throws IOException {
-		SubmodelElement sme = read();
-		if ( sme == null ) {
-			return null;
-		}
-		else if ( sme instanceof Property prop ) {
-			return prop;
-		}
-		else {
-			throw new IOException("not a Property: element=" + sme);
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as a string.
-	 * <p>
-	 * If the referred element is not a Property or its value is not a string, throws an IOException.
-	 * 
-	 * @return a string value of the Property referred to by this reference. Or null if the reference is null.
-	 * @throws IOException If the referred element is not a Property or its valueType is not
-	 * 						a {@link DataTypeDefXsd#STRING}
-	 */
-	public String readAsString() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.STRING ) {
-			return prop.getValue().toString();
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.STRING, json));
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as an integer.
-	 * <p>
-	 * If the referred element is not a Property or its value is not an integer, throws an IOException.
-	 * 
-	 * @return an integer value of the Property referred to by this reference. Or null if the reference is null.
-	 * @throws IOException If the referred element is not a Property or its valueType is not
-	 * 						a {@link DataTypeDefXsd#INT}
-     */
-	public Integer readAsInt() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.INT ) {
-			return Integer.parseInt(prop.getValue());
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.INT, json));
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as a {@link BigInteger}.
-	 * <p>
-	 * If the referred element is not a Property or its valueType is not an {@link DataTypeDefXsd#INTEGER},
-	 * throws an IOException.
-	 * 
-	 * @return a BigInteger value of the Property referred to by this reference. Or null if the reference is null
-	 * @throws IOException If the referred element is not a Property or its valueType is not
-	 * 			a {@link DataTypeDefXsd#INTEGER}
-	 */
-	public BigInteger readAsInteger() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.INTEGER ) {
-			return new BigInteger(prop.getValue());
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.INTEGER, json));
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as a long.
-	 * <p>
-	 * If the referred element is not a Property or its valueType is not a {@link DataTypeDefXsd#LONG},
-	 * throws an IOException.
-	 * 
-	 * @return a long value of the Property referred to by this reference. Or null if the reference is null
-	 * @throws IOException If the referred element is not a Property or its valueType is not
-	 * 			a {@link DataTypeDefXsd#LONG}
-	 */
-	public Long readAsLong() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.LONG ) {
-			return Long.parseLong(prop.getValue());
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.LONG, json));
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as a boolean.
-	 * <p>
-	 * If the referred element is not a Property or its valueType is not a {@link DataTypeDefXsd#BOOLEAN},
-	 * throws an IOException.
-	 * 
-	 * @return a boolean value of the Property referred to by this reference. Or null if the reference is null
-	 * @throws IOException If the referred element is not a Property or its valueType is not
-	 * 			a {@link DataTypeDefXsd#BOOLEAN}.
-	 */
-	public Boolean readAsBoolean() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.BOOLEAN ) {
-			return Boolean.parseBoolean(prop.getValue());
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.BOOLEAN, json));
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as a float.
-	 * <p>
-	 * If the referred element is not a Property or its valueType is not a {@link DataTypeDefXsd#FLOAT},
-	 * 
-	 * @return a float value of the Property referred to by this reference. Or null if the reference is null
-	 * @throws IOException If the referred element is not a Property or its valueType is not
-	 *             a {@link DataTypeDefXsd#FLOAT}.
-	 */
-	public Float readAsFloat() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.FLOAT ) {
-			return Float.parseFloat(prop.getValue());
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.FLOAT, json));
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as
-	 * a Duration.
-	 * <p>
-	 * If the referred element is not a Property or its valueType is not a
-	 * {@link DataTypeDefXsd#DURATION}, throws an IOException.
-	 * 
-	 * @return a double value of the Property referred to by this reference. Or null
-	 *         if the reference is null
-	 * @throws IOException If the referred element is not a Property or its
-	 *                     valueType is not a {@link DataTypeDefXsd#DURATION}.
-	 */
-	public Duration readAsDuration() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.DURATION ) {
-			return Duration.parse(prop.getValue());
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.DURATION, json));
-		}
-	}
-	
-	/**
-	 * Reads the SubmodelElement referred to by this reference and gets its value as
-	 * a LocalDateTime.
-	 * <p>
-	 * If the referred element is not a Property or its valueType is not a
-	 * {@link DataTypeDefXsd#DATE_TIME}, throws an IOException.
-	 * 
-	 * @return a double value of the Property referred to by this reference. Or null
-	 *        	if the reference is null
-	 * @throws IOException If the referred element is not a Property or its
-	 * 	               		valueType is not a {@link DataTypeDefXsd#DATE_TIME}.
-	 */
-	public LocalDateTime readAsDateTime() throws IOException {
-		Property prop = readAsProperty();
-		if ( prop == null ) {
-			return null;
-		}
-		else if ( prop.getValueType() == DataTypeDefXsd.DATE_TIME ) {
-			return LocalDateTime.parse(prop.getValue());
-		}
-		else {
-			String json = MDTModelSerDe.toJsonString(prop);
-			throw new IOException(String.format("not a %s Property: prop=%s", DataTypeDefXsd.DATE_TIME, json));
-		}
-	}
-	
 	@Override
 	public Logger getLogger() {
 		return m_logger;
 	}
-	
+
+	/**
+	 * 이 객체가 사용할 로거를 설정한다.
+	 *
+	 * @param logger 설정할 로거. {@code null}이면 기본 로거로 되돌린다.
+	 */
 	@Override
 	public void setLogger(Logger logger) {
 		m_logger = logger != null ? logger : s_logger;

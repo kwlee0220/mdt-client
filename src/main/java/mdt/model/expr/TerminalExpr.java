@@ -52,4 +52,17 @@ public abstract class TerminalExpr implements MDTExpression {
 			return m_value;
 		}
 	}
+
+	public static class BooleanExpr extends TerminalExpr implements MDTExpression {
+		private final Boolean m_value;
+
+		public BooleanExpr(Boolean value) {
+			m_value = value;
+		}
+
+		@Override
+		public Boolean evaluate() {
+			return m_value;
+		}
+	}
 }

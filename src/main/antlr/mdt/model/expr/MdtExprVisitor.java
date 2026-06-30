@@ -109,6 +109,48 @@ public interface MdtExprVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitOpVarSpec(MdtExprParser.OpVarSpecContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#timeseriesSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTimeseriesSpec(MdtExprParser.TimeseriesSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#tsRangeSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTsRangeSpec(MdtExprParser.TsRangeSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#tsRangeLastSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTsRangeLastSpec(MdtExprParser.TsRangeLastSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#tsRangeAnchor}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTsRangeAnchor(MdtExprParser.TsRangeAnchorContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#durationValue}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDurationValue(MdtExprParser.DurationValueContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#tsRangeAbsoluteSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTsRangeAbsoluteSpec(MdtExprParser.TsRangeAbsoluteSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#tsProjectionSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTsProjectionSpec(MdtExprParser.TsProjectionSpecContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MdtExprParser#valueLiteralSpec}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -139,9 +181,27 @@ public interface MdtExprVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitRangeValueLiteralSpec(MdtExprParser.RangeValueLiteralSpecContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#durationLiteralSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDurationLiteralSpec(MdtExprParser.DurationLiteralSpecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#iso8601DurationLiteralSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitIso8601DurationLiteralSpec(MdtExprParser.Iso8601DurationLiteralSpecContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MdtExprParser#idOrString}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitIdOrString(MdtExprParser.IdOrStringContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#keyword}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitKeyword(MdtExprParser.KeywordContext ctx);
 }

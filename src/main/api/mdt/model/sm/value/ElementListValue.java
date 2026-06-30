@@ -97,45 +97,47 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 	}
 	
 	/**
-	 * 값 객체(원소들의 {@link Iterable})와 대상 {@link SubmodelElementList}로부터 {@code ElementListValue}를 생성한다.
+	 * 값 객체(원소들의 {@link Iterable})와 템플릿 {@link ElementListValue}로부터
+	 * {@code ElementListValue}를 생성한다.
 	 * <p>
-	 * 입력 원소들은 SML의 원소와 순서대로 짝지어지며, 각 원소의 타입은 SML로부터 결정된다.
+	 * 입력 원소들은 ElementListValue의 원소와 순서대로 짝지어지며,
+	 * 각 원소의 타입은 SML로부터 결정된다.
 	 *
 	 * @param obj	원소 값들의 Iterable.
-	 * @param sml	각 원소의 타입 결정에 사용할 대상 SubmodelElementList.
+	 * @param sml	각 원소의 타입 결정에 사용할 대상 ElementListValue.
 	 * @return 생성된 ElementListValue.
 	 * @throws IOException	{@code obj}가 Iterable이 아니거나 변환이 실패한 경우.
 	 */
-	public static ElementListValue fromValueObject(Object obj, SubmodelElementList sml)
-		throws IOException {
-		if ( obj instanceof Iterable<?> iter ) {
+	public static ElementListValue fromValueObject(Object vobj, ElementListValue sml) throws IOException {
+		if ( vobj instanceof Iterable<?> iter ) {
 			List<ElementValue> members
-					= FStream.from(sml.getValue())
+					= FStream.from(sml.m_elementValues)
 							.zipWith(FStream.<Object>from(iter))
 							.mapOrThrow(pair -> ElementValues.fromValueObject(pair._2, pair._1))
 		                    .toList();
 			return new ElementListValue(members);
 		}
 		else {
-			throw new IOException("Invalid object for ElementListValue: " + obj);
+			throw new IOException("Invalid object for ElementListValue: " + vobj);
 		}
 	}
 	
 	/**
-	 * JSON 배열 노드와 대상 {@link SubmodelElementList}로부터 {@code ElementListValue}를 생성한다.
+	 * JSON 배열 노드와 대상 {@link ElementListValue}로부터 {@code ElementListValue}를 생성한다.
 	 * <p>
 	 * 배열의 각 원소는 SML의 원소와 순서대로 짝지어지며, 각 원소의 타입은 SML로부터 결정된다.
 	 *
 	 * @param vnode	원소들을 담은 JSON 배열 노드.
-	 * @param sml	각 원소의 타입 결정에 사용할 대상 SubmodelElementList.
+	 * @param sml	각 원소의 타입 결정에 사용할 대상 ElementListValue.
 	 * @return 생성된 ElementListValue.
 	 * @throws IOException	{@code vnode}가 배열이 아니거나 변환이 실패한 경우.
 	 */
-	public static ElementListValue parseValueJsonNode(JsonNode vnode, SubmodelElementList sml) throws IOException {
+	public static ElementListValue parseValueJsonNode(JsonNode vnode, ElementListValue sml)
+		throws IOException {
 		if ( !vnode.isArray() ) {
 			throw new IOException("ElementListValue expects an 'Array' node: JsonNode=" + vnode);
 		}
-		List<ElementValue> values = FStream.from(sml.getValue())
+		List<ElementValue> values = FStream.from(sml.m_elementValues)
 											.zipWith(FStream.from(vnode.elements()))
 											.mapOrThrow(pair -> ElementValues.parseValueJsonNode(pair._2, pair._1))
 											.toList();

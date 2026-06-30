@@ -7,8 +7,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import mdt.client.operation.AASOperationClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.sm.value.PropertyValue.FloatPropertyValue;
-import mdt.model.sm.value.PropertyValue.IntegerPropertyValue;
+import mdt.model.sm.PropertyUtils;
 
 /**
  *
@@ -22,8 +21,8 @@ public class TestOperationTest {
 		HttpSubmodelServiceClient svc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(url);
 		
 		AASOperationClient opClient = new AASOperationClient(svc, "Operation", Duration.ofSeconds(1));
-		opClient.setInoutputVariableValue("IncAmount", new IntegerPropertyValue(33));
-		opClient.setInoutputVariableValue("SleepTime", new FloatPropertyValue(2.3f));
+		opClient.setInoutputVariable("IncAmount", PropertyUtils.INT("IncAmount", 33));
+		opClient.setInoutputVariable("SleepTime", PropertyUtils.FLOAT("SleepTime", 2.3f));
 		
 		OperationResult result = opClient.run();
 		

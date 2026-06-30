@@ -41,10 +41,14 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	 *
 	 * @param elements	필드 idShort에서 값으로의 맵({@code null} 불가).
 	 */
-	public ElementCollectionValue(Map<String,? extends ElementValue> elements) {
+	public ElementCollectionValue(LinkedHashMap<String,? extends ElementValue> elements) {
 		Preconditions.checkNotNullArgument(elements, "elements must not be null");
 
 		m_fields = Maps.newLinkedHashMap(elements);
+	}
+	
+	public int size() {
+		return m_fields.size();
 	}
 
 	/**
@@ -56,7 +60,7 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	public Map<String,Object> toValueObject() {
 		return KeyValueFStream.from(m_fields)
 								.mapValue(elm -> elm != null ? elm.toValueObject() : null)
-								.toMap();
+								.toMap(new LinkedHashMap<>());
 	}
 
 	/**
@@ -113,6 +117,9 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	 * @param smc	갱신할 SubmodelElementCollection.
 	 */
 	public void update(SubmodelElementCollection smc) {
+		// Note: smc에 정의되지 않은 member submodel element를 어떻게 처리할 지 결정해야 함.
+		// 현재 구현에서는 smc에 정의되지 않은 member 값이 ElementCollectionValue에 존재하더라도
+		// 이를 무시한다. 즉, ElementCollectionValue에 정의되지 않은 필드 값은 갱신 대상이 아니다.
 		FStream.from(smc.getValue())
 				.tagKey(v -> v.getIdShort())
 				.match(m_fields)
@@ -128,67 +135,73 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	public static ElementCollectionValue from(SubmodelElementCollection smc) {
 		var members = FStream.from(smc.getValue())
 							.mapToKeyValue(member -> KeyValue.of(member.getIdShort(), ElementValues.getValue(member)))
-							.toMap();
+							.toMap(new LinkedHashMap<>());
 		return new ElementCollectionValue(members);
 	}
 	
 	/**
-	 * 값 객체(필드명에서 값으로의 {@link Map})와 대상 {@link SubmodelElementCollection}으로부터
+	 * 값 객체(필드명에서 값으로의 {@link Map})와 {@link ElementCollectionValue} 템플릿으로부터
 	 * {@code ElementCollectionValue}를 생성한다.
 	 * <p>
 	 * SMC의 각 원소에 대해 idShort로 입력 맵에서 값을 찾아 변환하며, 입력에 없는 필드는 {@code null}로 채운다.
-	 * 각 필드의 타입은 SMC로부터 결정된다.
+	 * 각 필드의 타입은 ElementCollectionValue로 부터 결정된다.
 	 *
 	 * @param obj	필드명에서 값으로의 Map.
-	 * @param smc	각 필드의 타입 결정에 사용할 대상 SubmodelElementCollection.
+	 * @param smev	각 필드의 타입 결정에 사용할 대상 ElementCollectionValue.
 	 * @return 생성된 ElementCollectionValue.
 	 * @throws IOException	{@code obj}가 Map이 아니거나 변환이 실패한 경우.
 	 */
-	public static ElementCollectionValue fromValueObject(Object obj, SubmodelElementCollection smc)
-		throws IOException {
-		if ( obj instanceof Map vmap ) {
-			Map<String,ElementValue> smevMap
-						= FStream.from(smc.getValue())
-								.mapToKeyValueOrThrow(member -> {
-									Object fieldValue = vmap.get(member.getIdShort());
-									ElementValue elmVal = (fieldValue != null)
-			                                                ? ElementValues.fromValueObject(fieldValue, member)
-			                                                : null;
-									return KeyValue.of(member.getIdShort(), elmVal);
-								})
-								.toMap();
-			return new ElementCollectionValue(smevMap);
+	public static ElementCollectionValue fromValueObject(Object vobj, ElementCollectionValue smev)
+			throws IOException {
+			if ( vobj instanceof Map vmap ) {
+				@SuppressWarnings("unchecked")
+				LinkedHashMap<String,ElementValue> fields
+							= KeyValueFStream.from(smev.m_fields)
+											.match((Map<String,Object>)vmap)
+											.mapToKeyValueOrThrow(kv -> {
+												ElementValue field = kv.value()._1;
+												Object value = kv.value()._2;
+												ElementValue newField = (value != null)
+																	? ElementValues.fromValueObject(value, field) : null;
+												return KeyValue.of(kv.key(), newField);
+											})
+											.toMap(new LinkedHashMap<>());
+				return new ElementCollectionValue(fields);
+			}
+			else {
+				throw new IOException("ElementCollectionValue value is not Map: obj=" + vobj);
+			}
 		}
-		else {
-			throw new IOException("ElementCollectionValue value is not Map: obj=" + obj);
-		}
-	}
 	
 	/**
-	 * JSON 객체 노드와 대상 {@link SubmodelElementCollection}으로부터 {@code ElementCollectionValue}를 생성한다.
+	 * JSON 객체 노드와 템플릿 {@link ElementCollectionValue}으로부터 {@code ElementCollectionValue}를
+	 * 생성한다.
 	 * <p>
 	 * SMC의 각 원소에 대해 idShort로 노드에서 필드를 찾아 변환하며, 노드에 없는 필드는 {@code null}로 채운다.
 	 * 각 필드의 타입은 SMC로부터 결정된다.
 	 *
 	 * @param vnode	필드들을 담은 JSON 객체 노드.
-	 * @param smc	각 필드의 타입 결정에 사용할 대상 SubmodelElementCollection.
+	 * @param smcv	각 필드의 타입 결정에 사용할 대상 ElementCollectionValue.
 	 * @return 생성된 ElementCollectionValue.
 	 * @throws IOException	{@code vnode}가 객체가 아니거나 변환이 실패한 경우.
 	 */
-	public static ElementCollectionValue parseValueJsonNode(JsonNode vnode, SubmodelElementCollection smc)
+	public static ElementCollectionValue parseValueJsonNode(JsonNode vnode, ElementCollectionValue smcv)
 		throws IOException {
 		if ( !vnode.isObject() ) {
 			throw new IOException("ElementCollectionValue expects an 'Object' node: JsonNode=" + vnode);
 		}
 		
 		var valueFields
-			= FStream.from(smc.getValue())
-					.mapToKeyValueOrThrow(member -> {
-						JsonNode field = JacksonUtils.getFieldOrNull(vnode, member.getIdShort());
-						ElementValue fieldVal = (field != null) ? ElementValues.parseValueJsonNode(field, member) : null;
-						return KeyValue.of(member.getIdShort(), fieldVal);
-					})
-					.toMap(new LinkedHashMap<>());
+			= KeyValueFStream.from(smcv.m_fields)
+							.mapToKeyValueOrThrow(kv -> {
+								String key = kv.key();
+								ElementValue fieldProto = kv.value();
+								JsonNode field = JacksonUtils.getFieldOrNull(vnode, key);
+								ElementValue fieldVal = (field != null)
+													? ElementValues.parseValueJsonNode(field, fieldProto) : null;
+								return KeyValue.of(key, fieldVal);
+							})
+							.toMap(new LinkedHashMap<>());
 		return new ElementCollectionValue(valueFields);
 	}
 	
@@ -244,9 +257,11 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	 */
 	public static ElementCollectionValue deserializeValue(JsonNode jnode) {
 		var fields = FStream.from(jnode.properties())
-							.mapToKeyValue(ent -> KeyValue.of(ent.getKey(), ent.getValue()))
-							.mapValue(ElementValues::parseJsonNode)
-							.toMap();
+							.mapToKeyValueOrThrow(ent -> {
+								ElementValue smev = ElementValues.parseJsonNode(ent.getValue());
+								return KeyValue.of(ent.getKey(), smev);
+							})
+							.toMap(new LinkedHashMap<>());
 		return new ElementCollectionValue(fields);
 	}
 }

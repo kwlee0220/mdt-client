@@ -81,7 +81,7 @@ public final class FileStoreReference extends AbstractElementReference implement
 
 	@Override
 	public void updateValue(String valueJsonString) throws IOException {
-		SubmodelElement proto = read();
+		ElementValue proto = readValue();
 		ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
 		updateValue(newVal);
 	}

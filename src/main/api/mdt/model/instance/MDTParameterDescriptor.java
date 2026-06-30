@@ -4,10 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 
 import utils.Preconditions;
 
@@ -20,8 +17,6 @@ import utils.Preconditions;
  * @author Kang-Woo Lee (ETRI)
  */
 @NoArgsConstructor
-@Accessors(prefix="m_")
-@Getter @Setter
 @JsonPropertyOrder({"id", "name", "valueType", "reference", "endpoint"})
 public class MDTParameterDescriptor {
 	/** 파라미터 식별자 */
@@ -43,5 +38,45 @@ public class MDTParameterDescriptor {
 		m_name = name;
 		m_valueType = valueType;
 		m_reference = reference;
+	}
+	
+	public String getId() {
+		return m_id;
+	}
+	
+	public void setId(String id) {
+		m_id = id;
+	}
+	
+	public String getName() {
+		return m_name;
+	}
+	
+	public void setName(String name) {
+		m_name = name;
+	}
+	
+	public String getValueType() {
+		return m_valueType;
+	}
+	
+	public void setValueType(String valueType) {
+		m_valueType = valueType;
+	}
+	
+	public String getReference() {
+		return m_reference;
+	}
+	
+	public void setReference(String reference) {
+		m_reference = reference;
+	}
+	
+	public @Nullable String getEndpoint() {
+		return m_endpoint;
+	}
+	
+	public void setEndpoint(@Nullable String endpoint) {
+		m_endpoint = endpoint;
 	}
 }

@@ -112,20 +112,19 @@ public class HttpTask extends AbstractMDTTask implements MDTTask, CancellableWor
 		OperationRequest reqBody = new OperationRequest();
 		
 		String endpoint = descriptor.findOptionValue(OPTION_SERVER_ENDPOINT)
-									.orElseThrow(() -> new IllegalArgumentException("serverEndpoint option is not provided"));
+									.getOrThrow(() -> new IllegalArgumentException("serverEndpoint option is not provided"));
 		String opId = descriptor.findOptionValue(OPTION_OPERATION)
-								.orElseThrow(() -> new IllegalArgumentException("operationId option is not provided"));
+								.getOrThrow(() -> new IllegalArgumentException("operationId option is not provided"));
 		reqBody.setOperation(opId);
 
 		Duration pollInterval = descriptor.findOptionValue(OPTION_POLL_INTERVAL)
 											.map(this::parseDuration)
-											.orElse(DEFAULT_POLL_INTERVAL);
+											.getOrElse(DEFAULT_POLL_INTERVAL);
 		Duration timeout = descriptor.findOptionValue(OPTION_TIMEOUT)
 									.map(this::parseDuration)
-									.orElse(null);
+									.getOrNull();
 		
 		reqBody.setInputArguments(inputs);
-		reqBody.setOutputArguments(outputs);
 		return HttpOperationClient.builder()
 									.setHttpClient(OkHttpClientUtils.newClient())
 									.setEndpoint(endpoint)

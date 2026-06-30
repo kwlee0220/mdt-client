@@ -40,6 +40,7 @@ public abstract class ArgumentSpec {
 		return literal(PropertyValue.STRING(value));
 	}
 	
+	abstract public SubmodelElement read() throws IOException;
 	abstract public ElementValue readValue() throws IOException;
 	
 	public static ArgumentSpec parseArgumentSpec(String argSpecExpr) {
@@ -74,7 +75,8 @@ public abstract class ArgumentSpec {
 		public void activate(MDTInstanceManager manager) {
 			m_ref.activate(manager);
 		}
-		
+
+		@Override
 		public SubmodelElement read() throws IOException {
 			return m_ref.read();
 		}
@@ -82,6 +84,10 @@ public abstract class ArgumentSpec {
 		@Override
 		public ElementValue readValue() throws IOException {
 			return m_ref.readValue();
+		}
+		
+		public void update(SubmodelElement sme) throws IOException {
+			m_ref.update(sme);
 		}
 		
 		public void updateValue(ElementValue value) throws IOException {
@@ -114,6 +120,13 @@ public abstract class ArgumentSpec {
 		public String getArgumentName() {
 			return m_argName;
 		}
+		
+		@Override
+		public SubmodelElement read() throws IOException {
+			throw new UnsupportedOperationException(
+					"Cannot get value of TaskOutputArgumentSpec directly: taskId=" + m_taskId
+					+ ", outVarId=" + m_argName);
+		}
 
 		@Override
 		public ElementValue readValue() throws IOException {
@@ -133,6 +146,12 @@ public abstract class ArgumentSpec {
 		
 		public LiteralArgumentSpec(ElementValue value) {
 			m_value = value;
+		}
+		
+		@Override
+		public SubmodelElement read() {
+			throw new UnsupportedOperationException(
+					"Cannot get SubmodelElement of LiteralArgumentSpec: value=" + m_value);
 		}
 		
 		@Override

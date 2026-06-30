@@ -170,6 +170,76 @@ public interface MdtExprListener extends ParseTreeListener {
 	 */
 	void exitOpVarSpec(MdtExprParser.OpVarSpecContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#timeseriesSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterTimeseriesSpec(MdtExprParser.TimeseriesSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#timeseriesSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitTimeseriesSpec(MdtExprParser.TimeseriesSpecContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#tsRangeSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterTsRangeSpec(MdtExprParser.TsRangeSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#tsRangeSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitTsRangeSpec(MdtExprParser.TsRangeSpecContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#tsRangeLastSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterTsRangeLastSpec(MdtExprParser.TsRangeLastSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#tsRangeLastSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitTsRangeLastSpec(MdtExprParser.TsRangeLastSpecContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#tsRangeAnchor}.
+	 * @param ctx the parse tree
+	 */
+	void enterTsRangeAnchor(MdtExprParser.TsRangeAnchorContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#tsRangeAnchor}.
+	 * @param ctx the parse tree
+	 */
+	void exitTsRangeAnchor(MdtExprParser.TsRangeAnchorContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#durationValue}.
+	 * @param ctx the parse tree
+	 */
+	void enterDurationValue(MdtExprParser.DurationValueContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#durationValue}.
+	 * @param ctx the parse tree
+	 */
+	void exitDurationValue(MdtExprParser.DurationValueContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#tsRangeAbsoluteSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterTsRangeAbsoluteSpec(MdtExprParser.TsRangeAbsoluteSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#tsRangeAbsoluteSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitTsRangeAbsoluteSpec(MdtExprParser.TsRangeAbsoluteSpecContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#tsProjectionSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterTsProjectionSpec(MdtExprParser.TsProjectionSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#tsProjectionSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitTsProjectionSpec(MdtExprParser.TsProjectionSpecContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MdtExprParser#valueLiteralSpec}.
 	 * @param ctx the parse tree
 	 */
@@ -220,6 +290,26 @@ public interface MdtExprListener extends ParseTreeListener {
 	 */
 	void exitRangeValueLiteralSpec(MdtExprParser.RangeValueLiteralSpecContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#durationLiteralSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterDurationLiteralSpec(MdtExprParser.DurationLiteralSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#durationLiteralSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitDurationLiteralSpec(MdtExprParser.DurationLiteralSpecContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#iso8601DurationLiteralSpec}.
+	 * @param ctx the parse tree
+	 */
+	void enterIso8601DurationLiteralSpec(MdtExprParser.Iso8601DurationLiteralSpecContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#iso8601DurationLiteralSpec}.
+	 * @param ctx the parse tree
+	 */
+	void exitIso8601DurationLiteralSpec(MdtExprParser.Iso8601DurationLiteralSpecContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link MdtExprParser#idOrString}.
 	 * @param ctx the parse tree
 	 */
@@ -229,4 +319,14 @@ public interface MdtExprListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitIdOrString(MdtExprParser.IdOrStringContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MdtExprParser#keyword}.
+	 * @param ctx the parse tree
+	 */
+	void enterKeyword(MdtExprParser.KeywordContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MdtExprParser#keyword}.
+	 * @param ctx the parse tree
+	 */
+	void exitKeyword(MdtExprParser.KeywordContext ctx);
 }

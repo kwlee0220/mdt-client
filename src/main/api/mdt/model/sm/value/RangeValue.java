@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.Range;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -69,9 +70,9 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static RangeValue<?> fromValueObject(Object value, Range range) throws IOException {
+	public static RangeValue<?> fromValueObject(Object value, DataTypeDefXsd vtypeXsd) throws IOException {
 		if ( value instanceof Map vmap ) {
-			DataType<?> vtype = DataTypes.fromAas4jDatatype(range.getValueType());
+			DataType<?> vtype = DataTypes.fromAas4jDatatype(vtypeXsd);
 			Object min = vtype.fromJdbcObject(vmap.get(FIELD_MIN));
 			Object max = vtype.fromJdbcObject(vmap.get(FIELD_MAX));
 
@@ -83,12 +84,13 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static RangeValue<?> parseValueJsonNode(JsonNode vnode, Range range) throws IOException {
+	public static RangeValue<?> parseValueJsonNode(JsonNode vnode, DataTypeDefXsd vtypeXsd)
+		throws IOException {
 		if ( !vnode.isObject() ) {
 			throw new IOException("RangeValue expects an 'Object' node: JsonNode=" + vnode);
 		}
-		
-		DataType<?> vtype = DataTypes.fromAas4jDatatype(range.getValueType());
+
+		DataType<?> vtype = DataTypes.fromAas4jDatatype(vtypeXsd);
 		Object min = vtype.fromJsonNode(JacksonUtils.getFieldOrNull(vnode, FIELD_MIN));
 		Object max = vtype.fromJsonNode(JacksonUtils.getFieldOrNull(vnode, FIELD_MAX));
 				

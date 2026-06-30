@@ -1,7 +1,6 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
@@ -60,279 +59,40 @@ import mdt.model.sm.value.PropertyValue.StringPropertyValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public class ElementValues {
+	private static final String FIELD_TYPE = "@type";
+	private static final String FIELD_VALUE = "value";
+
+	// ******************************************************
+	// 	SubmodelElement -> ElementValue
+	// ******************************************************
 	/**
 	 * 주어진 {@link SubmodelElement}에서 대한 value에 해당하는 부분만을 추출하여
 	 * {@link ElementValue} 형태로 반환한다.
 	 *
 	 * @param element 값을 추출할 {@link SubmodelElement} 객체.
-	 * @return 추출된 {@link ElementValue} 객체.
+	 * @return 추출된 {@link ElementValue} 객체. 인자 element가 {@code null}이면 {@code null} 반환.
 	 */
 	public static ElementValue getValue(@Nullable SubmodelElement element) {
 		if ( element == null ) {
 			return null;
 		}
 		
-		if ( element instanceof Property prop ) {
-			return PropertyValue.from(prop);
-		}
-		else if ( element instanceof SubmodelElementCollection smc ) {
-			return ElementCollectionValue.from(smc);
-		}
-		else if ( element instanceof SubmodelElementList sml ) {
-			return ElementListValue.from(sml);
-		}
-		else if ( element instanceof File aasFile ) {
-			return FileValue.from(aasFile);
-		}
-		else if ( element instanceof MultiLanguageProperty mlp ) {
-			return MultiLanguagePropertyValue.from(mlp);
-		}
-		else if ( element instanceof Range rg ) {
-			return RangeValue.from(rg);
-		}
-		else if ( element instanceof ReferenceElement ref ) {
-			return ReferenceElementValue.from(ref);
-		}
-		else {
-			String msg = String.format("Unsupported SubmodelElement(%s) for 'getValue(SubmodelElement)'",
-										element.getClass());
-			throw new IllegalArgumentException(msg);
-		}
+		return switch ( element ) {
+			case Property prop -> PropertyValue.from(prop);
+			case SubmodelElementCollection smc -> ElementCollectionValue.from(smc);
+			case SubmodelElementList sml -> ElementListValue.from(sml);
+			case File aasFile -> FileValue.from(aasFile);
+			case MultiLanguageProperty mlp -> MultiLanguagePropertyValue.from(mlp);
+			case Range rg -> RangeValue.from(rg);
+			case ReferenceElement ref -> ReferenceElementValue.from(ref);
+			default -> throw new IllegalArgumentException(String.format("Unsupported SubmodelElement(%s) for 'getValue(SubmodelElement)'",
+																	element.getClass()));
+		};
 	}
 	
-	/**
-	 * {@link SubmodelElement} proto를 참조하여 주어진 값 객체(vo)를 파싱하여 {@link ElementValue}
-	 * 객체로 반환한다.
-	 *
-	 * @param vo    파싱할 값 객체.
-	 * @param proto 참조할 {@link SubmodelElement} 객체.
-	 * @return 파싱된 {@link ElementValue} 객체.
-	 * @throws IOException 입력 값 객체가 참조 proto와 맞지 않는 경우 발생.
-	 */
-	public static ElementValue fromValueObject(Object vo, SubmodelElement proto) throws IOException {
-		if ( proto instanceof Property prop ) {
-			return PropertyValue.fromValueObject(vo, prop);
-		}
-		else if ( proto instanceof SubmodelElementCollection smc ) {
-			return ElementCollectionValue.fromValueObject(vo, smc);
-		}
-		else if ( proto instanceof SubmodelElementList sml ) {
-			return ElementListValue.fromValueObject(vo, sml);
-		}
-		else if ( proto instanceof File aasFile ) {
-			return FileValue.fromValueObject(vo, aasFile);
-		}
-		else if ( proto instanceof MultiLanguageProperty mlp ) {
-			return MultiLanguagePropertyValue.fromValueObject(vo, mlp);
-		}
-		else if ( proto instanceof Range rg ) {
-			return RangeValue.fromValueObject(vo, rg);
-		}
-		else if ( proto instanceof ReferenceElement ref ) {
-			return ReferenceElementValue.fromValueObject(vo, ref);
-		}
-        else {
-			String msg = String.format("Unsupported SubmodelElement(%s) for 'fromValueObject(Object, SubmodelElement)'",
-										proto.getClass());
-			throw new IllegalArgumentException(msg);
-        }
-	}
-	
-	/**
-	 * {@link SubmodelElement} proto를 참조하여 주어진 JSON 노드(vnode)를 파싱하여
-	 * {@link ElementValue} 객체로 반환한다.
-	 *
-	 * @param vnode	파싱할 JSON 노드.
-	 * @param proto	참조할 {@link SubmodelElement} 객체.
-	 * @return	파싱된 {@link ElementValue} 객체.
-	 * @throws IOException 입력 JSON 노드가 참조 proto와 맞지 않는 경우 발생.
-	 */
-	public static ElementValue parseValueJsonNode(JsonNode vnode, SubmodelElement proto) throws IOException {
-		if ( proto instanceof Property prop ) {
-			return PropertyValue.parseValueJsonNode(vnode, prop);
-		}
-		else if ( proto instanceof SubmodelElementCollection smc ) {
-			return ElementCollectionValue.parseValueJsonNode(vnode, smc);
-		}
-		else if ( proto instanceof SubmodelElementList sml ) {
-			return ElementListValue.parseValueJsonNode(vnode, sml);
-		}
-		else if ( proto instanceof File aasFile ) {
-			return FileValue.parseValueJsonNode(vnode, aasFile);
-		}
-		else if ( proto instanceof MultiLanguageProperty mlp ) {
-			return MultiLanguagePropertyValue.parseValueJsonNode(vnode, mlp);
-		}
-		else if ( proto instanceof Range rg ) {
-			return RangeValue.parseValueJsonNode(vnode, rg);
-		}
-		else if ( proto instanceof ReferenceElement ref ) {
-			return ReferenceElementValue.parseValueJsonNode(vnode, ref);
-		}
-        else {
-			String msg = String.format(
-					"Unsupported SubmodelElement(%s) for 'parseValueJsonNode(JsonNode, SubmodelElement)'",
-					proto.getClass());
-			throw new IllegalArgumentException(msg);
-        }
-	}
-	
-	/**
-	 * {@link SubmodelElement} proto를 참조하여 주어진 JSON 문자열(valueJsonString)을 파싱하여
-	 * {@link ElementValue} 객체로 반환한다.
-	 *
-	 * @param valueJsonString 파싱할 JSON 문자열.
-	 * @param proto           참조할 {@link SubmodelElement} 객체.
-	 * @return 파싱된 {@link ElementValue} 객체.
-	 * @throws IOException 입력 JSON 문자열이 참조 proto와 맞지 않는 경우 발생.
-	 */
-	public static ElementValue parseValueJsonString(String valueJsonString, SubmodelElement proto) throws IOException {
-		JsonNode jnode = MDTModelSerDe.getJsonMapper().readTree(valueJsonString);
-		return parseValueJsonNode(jnode, proto);
-	}
-	
-	/**
-	 * 주어진 {@link SubmodelElement} sme 객체에 대한 값을 smev로 갱신한다.
-	 * 
-	 * @param sme	갱신할 {@link SubmodelElement} 객체.
-	 * @param smev	갱신할 값.
-	 */
-	public static SubmodelElement update(SubmodelElement sme, ElementValue smev) {
-		if ( sme instanceof Property prop ) {
-			Preconditions.checkArgument(smev instanceof PropertyValue,
-										"Expecting %s, but %s", PropertyValue.class.getName(), smev.getClass().getName());
-			((PropertyValue)smev).update(prop);
-		}
-		else if ( sme instanceof SubmodelElementCollection smc ) {
-			if ( smev instanceof ElementCollectionValue smcv ) {
-				smcv.update(smc);
-			}
-			else {
-				String msg = String.format("Expecting %s, but %s",
-										ElementCollectionValue.class.getName(), smev.getClass().getName());
-				throw new IllegalArgumentException(msg);
-			}
-		}
-		else if ( sme instanceof SubmodelElementList sml ) {
-			if ( smev instanceof ElementListValue smlv ) {
-				smlv.update(sml);
-			}
-			else {
-				String msg = String.format("Expecting %s, but %s",
-											ElementListValue.class.getName(), smev.getClass().getName());
-				throw new IllegalArgumentException(msg);
-			}
-		}
-		else if ( sme instanceof File aasFile ) {
-			Preconditions.checkArgument(smev instanceof FileValue,
-										"Expecting %s, but %s", FileValue.class.getName(), smev.getClass().getName());
-			((FileValue)smev).update(aasFile);
-		}
-		else if ( sme instanceof Range rg ) {
-			Preconditions.checkArgument(smev instanceof RangeValue,
-										"Expecting %s, but %s", RangeValue.class.getName(), smev.getClass().getName());
-			((RangeValue)smev).update(rg);
-		}
-		else if ( sme instanceof MultiLanguageProperty mlprop ) {
-			Preconditions.checkArgument(smev instanceof MultiLanguagePropertyValue,
-										"Expecting %s, but %s", MultiLanguagePropertyValue.class.getName(),
-																smev.getClass().getName());
-			((MultiLanguagePropertyValue)smev).update(mlprop);
-		}
-		else if ( sme instanceof ReferenceElement refElm ) {
-			Preconditions.checkArgument(smev instanceof ReferenceElementValue,
-										"Expecting %s, but %s", ReferenceElementValue.class.getName(),
-																smev.getClass().getName());
-			((ReferenceElementValue)smev).update(refElm);
-		}
-		else {
-			String msg = String.format("Unsupported SubmodelElement(%s) for 'update(SubmodelElement, ElementValue)'",
-										sme.getClass());
-			throw new IllegalArgumentException(msg);
-		}
-		
-		return sme;
-	}
-	
-	/**
-	 * valueNode를 이용하여 주어진 {@link SubmodelElement} sme 객체에 대한 값을 갱신한다.
-	 * 
-	 * @param sme       갱신할 {@link SubmodelElement} 객체.
-	 * @param valueNode 갱신할 값이 포함된 JSON 노드.
-	 */
-	public static SubmodelElement update(SubmodelElement sme, JsonNode valueNode) throws IOException {
-		ElementValue value = parseValueJsonNode(valueNode, sme);
-		update(sme, value);
-		
-		return sme;
-	}
-	
-	/**
-	 * 주어진 JSON 문자열의 값으로 대상 {@link SubmodelElement}를 갱신한다.
-	 *
-	 * @param target			갱신할 SubmodelElement.
-	 * @param valueJsonString	값에 해당하는 JSON 문자열.
-	 * @throws IOException	JSON 파싱 또는 갱신이 실패한 경우.
-	 */
-	public static void updateWithValueJsonString(SubmodelElement target, String valueJsonString) throws IOException {
-		ElementValue smev = parseValueJsonString(valueJsonString, target);
-		update(target, smev);
-	}
-
-	/**
-	 * MDT 값 표현식 문자열을 평가하여 {@link ElementValue}를 반환한다.
-	 *
-	 * @param expr	값 리터럴 표현식.
-	 * @return 평가 결과 ElementValue.
-	 */
-	public static ElementValue parseExpr(String expr) {
-		return MDTExpressionParser.parseValueLiteral(expr).evaluate();
-	}
-	
-	/**
-	 * {@link AbstractElementValue}를 {@code @type}/{@code value} 형태의 polymorphic JSON으로 직렬화하는
-	 * Jackson serializer. {@link ElementValues#serializeJson(AbstractElementValue, JsonGenerator)}에 위임한다.
-	 */
-	@SuppressWarnings("serial")
-	public static class Serializer extends StdSerializer<AbstractElementValue> {
-		private Serializer() {
-			this(null);
-		}
-		private Serializer(Class<AbstractElementValue> cls) {
-			super(cls);
-		}
-		
-		@Override
-		public void serialize(AbstractElementValue value, JsonGenerator gen, SerializerProvider provider)
-			throws IOException, JsonProcessingException {
-			serializeJson(value, gen);
-		}
-	}
-
-	/**
-	 * {@code @type}/{@code value} 형태의 JSON을 {@link ElementValue}로 역직렬화하는 Jackson
-	 * deserializer. {@link ElementValues#parseJsonNode(JsonNode)}에 위임한다.
-	 */
-	@SuppressWarnings("serial")
-	public static class Deserializer extends StdDeserializer<ElementValue> {
-		public Deserializer() {
-			this(null);
-		}
-		public Deserializer(Class<?> vc) {
-			super(vc);
-		}
-	
-		@Override
-		public ElementValue deserialize(JsonParser parser, DeserializationContext ctxt)
-			throws IOException, JacksonException {
-			JsonNode jnode = parser.getCodec().readTree(parser);
-			return parseJsonNode(jnode);
-		}
-	}
-
-	private static final String FIELD_TYPE = "@type";
-	private static final String FIELD_VALUE = "value";
-
+	// ******************************************************
+	// 	JsonNode, Json -> ElementValue
+	// ******************************************************
 	/**
 	 * {@code @type}/{@code value} 형태의 polymorphic JSON 노드를 {@link ElementValue}로 역직렬화한다.
 	 * <p>
@@ -340,14 +100,13 @@ public class ElementValues {
 	 *
 	 * @param jnode	{@code @type}과 {@code value} 필드를 가진 JSON 노드.
 	 * @return 역직렬화된 ElementValue.
-	 * @throws UncheckedIOException	{@code @type} 필드가 없는 경우.
+	 * @throws IOException {@code @type} 필드가 없는 경우.
 	 * @throws JacksonDeserializationException	등록되지 않은 타입인 경우.
 	 */
-	public static ElementValue parseJsonNode(JsonNode jnode) {
+	public static ElementValue parseJsonNode(JsonNode jnode) throws IOException {
 		String type = JacksonUtils.getStringFieldOrNull(jnode, FIELD_TYPE);
 		if ( type == null ) {
-			throw new UncheckedIOException(null, new IOException(String.format("'%s' field is missing: json=%s",
-																	FIELD_TYPE, jnode)));
+			throw new IOException(String.format("'%s' field is missing: json=%s", FIELD_TYPE, jnode));
 		}
 		
 		JsonNode valueNode = JacksonUtils.getFieldOrNull(jnode, FIELD_VALUE);
@@ -399,8 +158,228 @@ public class ElementValues {
 	 * @throws IOException	JSON 파싱이 실패한 경우.
 	 */
 	public static ElementValue parseJsonString(String json) throws IOException {
-		JsonNode jnode = MDTModelSerDe.readJsonNode(json);
+		JsonNode jnode = MDTModelSerDe.getJsonMapper().readTree(json);
 		return parseJsonNode(jnode);
+	}
+	
+	
+	// ******************************************************
+	// 	value object (Java) -> ElementValue
+	// ******************************************************
+	/**
+	 * {@link ElementValue} proto를 참조하여 주어진 값 객체(vo)를 파싱하여 {@link ElementValue}
+	 * 객체로 반환한다.
+	 *
+	 * @param vo    파싱할 값 객체.
+	 * @param proto 참조할 {@link ElementValue} 객체.
+	 * @return 파싱된 {@link ElementValue} 객체.
+	 * @throws IOException 입력 값 객체가 참조 proto와 맞지 않는 경우 발생.
+	 */
+	public static ElementValue fromValueObject(Object vo, ElementValue proto) throws IOException {
+		return switch ( proto ) {
+			case PropertyValue<?> prop -> PropertyValue.fromValueObject(vo, prop.getDataType().getTypeDefXsd());
+			case ElementCollectionValue smcv -> ElementCollectionValue.fromValueObject(vo, smcv);
+			case ElementListValue sml -> ElementListValue.fromValueObject(vo, sml);
+			case FileValue aasFile -> FileValue.fromValueObject(vo);
+			case MultiLanguagePropertyValue mlp -> MultiLanguagePropertyValue.fromValueObject(vo);
+			case RangeValue<?> rg -> RangeValue.fromValueObject(vo, rg.getValueType().getTypeDefXsd());
+			case ReferenceElementValue ref -> ReferenceElementValue.fromValueObject(vo, ref.getReference().getType());
+			default -> throw new IllegalArgumentException(String.format("Unsupported ElementValue(%s) for 'fromValueObject(Object, SubmodelElement)'",
+																	proto.getClass()));
+		};
+	}
+	
+	
+	// ******************************************************
+	// 	value JsonNode/JSON -> ElementValue
+	// ******************************************************
+	/**
+	 * {@link ElementValue} proto를 참조하여 주어진 JSON 노드(vnode)를 파싱하여
+	 * {@link ElementValue} 객체로 반환한다.
+	 *
+	 * @param vnode	파싱할 JSON 노드.
+	 * @param proto	참조할 {@link ElementValue} 객체.
+	 * @return	파싱된 {@link ElementValue} 객체.
+	 * @throws IOException 입력 JSON 노드가 참조 proto와 맞지 않는 경우 발생.
+	 */
+	public static ElementValue parseValueJsonNode(JsonNode vnode, ElementValue proto) throws IOException {
+		return switch ( proto ) {
+			case PropertyValue<?> prop -> PropertyValue.parseValueJsonNode(vnode, prop);
+			case ElementCollectionValue smc -> ElementCollectionValue.parseValueJsonNode(vnode, smc);
+			case ElementListValue sml -> ElementListValue.parseValueJsonNode(vnode, sml);
+			case FileValue aasFile -> FileValue.parseValueJsonNode(vnode);
+			case MultiLanguagePropertyValue mlp -> MultiLanguagePropertyValue.parseValueJsonNode(vnode);
+			case RangeValue<?> rg -> RangeValue.parseValueJsonNode(vnode, rg.getValueType().getTypeDefXsd());
+			case ReferenceElementValue ref -> ReferenceElementValue.parseValueJsonNode(vnode, ref.getReference().getType());
+			default -> throw new IllegalArgumentException(String.format("Unsupported SubmodelElement(%s) for 'parseValueJsonNode(JsonNode, SubmodelElement)'",
+																	proto.getClass()));
+		};
+	}
+	
+	/**
+	 * {@link ElementValue} proto를 참조하여 주어진 JSON 문자열(valueJsonString)을 파싱하여
+	 * {@link ElementValue} 객체로 반환한다.
+	 *
+	 * @param valueJsonString 파싱할 JSON 문자열.
+	 * @param proto           참조할 {@link ElementValue} 객체.
+	 * @return 파싱된 {@link ElementValue} 객체.
+	 * @throws IOException 입력 JSON 문자열이 참조 proto와 맞지 않는 경우 발생.
+	 */
+	public static ElementValue parseValueJsonString(String valueJsonString, ElementValue proto)
+		throws IOException {
+		JsonNode jnode = MDTModelSerDe.getJsonMapper().readTree(valueJsonString);
+		return parseValueJsonNode(jnode, proto);
+	}
+	
+	
+	// ******************************************************
+	// 	value literal (string format) -> ElementValue
+	// ******************************************************
+	/**
+	 * MDT 값 표현식 문자열을 평가하여 {@link ElementValue}를 반환한다.
+	 *
+	 * @param expr	값 리터럴 표현식.
+	 * @return 평가 결과 ElementValue.
+	 */
+	public static ElementValue parseExpr(String expr) {
+		return MDTExpressionParser.parseValueLiteral(expr).evaluate();
+	}
+	
+	
+	// ******************************************************
+	// 	update SubmodelElement with ElementValue
+	// ******************************************************
+	/**
+	 * 주어진 {@link SubmodelElement} sme 객체에 대한 값을 smev로 갱신한다.
+	 * 
+	 * @param sme	갱신할 {@link SubmodelElement} 객체.
+	 * @param smev	갱신할 값.
+	 */
+	public static SubmodelElement update(SubmodelElement sme, ElementValue smev) {
+		if ( sme instanceof Property prop ) {
+			Preconditions.checkArgument(smev instanceof PropertyValue,
+										"Expecting %s, but %s", PropertyValue.class.getName(),
+										smev.getClass().getName());
+			((PropertyValue<?>)smev).update(prop);
+		}
+		else if ( sme instanceof SubmodelElementCollection smc ) {
+			if ( smev instanceof ElementCollectionValue smcv ) {
+				smcv.update(smc);
+			}
+			else {
+				String msg = String.format("Expecting %s, but %s",
+										ElementCollectionValue.class.getName(), smev.getClass().getName());
+				throw new IllegalArgumentException(msg);
+			}
+		}
+		else if ( sme instanceof SubmodelElementList sml ) {
+			if ( smev instanceof ElementListValue smlv ) {
+				smlv.update(sml);
+			}
+			else {
+				String msg = String.format("Expecting %s, but %s",
+											ElementListValue.class.getName(), smev.getClass().getName());
+				throw new IllegalArgumentException(msg);
+			}
+		}
+		else if ( sme instanceof File aasFile ) {
+			Preconditions.checkArgument(smev instanceof FileValue,
+										"Expecting %s, but %s", FileValue.class.getName(), smev.getClass().getName());
+			((FileValue)smev).update(aasFile);
+		}
+		else if ( sme instanceof Range rg ) {
+			Preconditions.checkArgument(smev instanceof RangeValue,
+										"Expecting %s, but %s", RangeValue.class.getName(), smev.getClass().getName());
+			((RangeValue<?>)smev).update(rg);
+		}
+		else if ( sme instanceof MultiLanguageProperty mlprop ) {
+			Preconditions.checkArgument(smev instanceof MultiLanguagePropertyValue,
+										"Expecting %s, but %s", MultiLanguagePropertyValue.class.getName(),
+																smev.getClass().getName());
+			((MultiLanguagePropertyValue)smev).update(mlprop);
+		}
+		else if ( sme instanceof ReferenceElement refElm ) {
+			Preconditions.checkArgument(smev instanceof ReferenceElementValue,
+										"Expecting %s, but %s", ReferenceElementValue.class.getName(),
+																smev.getClass().getName());
+			((ReferenceElementValue)smev).update(refElm);
+		}
+		else {
+			String msg = String.format("Unsupported SubmodelElement(%s) for 'update(SubmodelElement, ElementValue)'",
+										sme.getClass());
+			throw new IllegalArgumentException(msg);
+		}
+		
+		return sme;
+	}
+	
+	/**
+	 * valueNode를 이용하여 주어진 {@link SubmodelElement} sme 객체에 대한 값을 갱신한다.
+	 * 
+	 * @param sme       갱신할 {@link SubmodelElement} 객체.
+	 * @param valueNode 갱신할 값이 포함된 JSON 노드.
+	 */
+	public static SubmodelElement update(SubmodelElement sme, JsonNode valueNode) throws IOException {
+		ElementValue proto = getValue(sme);
+		ElementValue value = parseValueJsonNode(valueNode, proto);
+		update(sme, value);
+		
+		return sme;
+	}
+	
+	/**
+	 * 주어진 JSON 문자열의 값으로 대상 {@link SubmodelElement}를 갱신한다.
+	 *
+	 * @param target			갱신할 SubmodelElement.
+	 * @param valueJsonString	값에 해당하는 JSON 문자열.
+	 * @throws IOException	JSON 파싱 또는 갱신이 실패한 경우.
+	 */
+	public static void updateWithValueJsonString(SubmodelElement target, String valueJsonString)
+		throws IOException {
+		ElementValue proto = getValue(target);
+		ElementValue smev = parseValueJsonString(valueJsonString, proto);
+		update(target, smev);
+	}
+	
+	/**
+	 * {@link AbstractElementValue}를 {@code @type}/{@code value} 형태의 polymorphic JSON으로 직렬화하는
+	 * Jackson serializer. {@link ElementValues#serializeJson(AbstractElementValue, JsonGenerator)}에 위임한다.
+	 */
+	@SuppressWarnings("serial")
+	public static class Serializer extends StdSerializer<AbstractElementValue> {
+		private Serializer() {
+			this(null);
+		}
+		private Serializer(Class<AbstractElementValue> cls) {
+			super(cls);
+		}
+		
+		@Override
+		public void serialize(AbstractElementValue value, JsonGenerator gen, SerializerProvider provider)
+			throws IOException, JsonProcessingException {
+			serializeJson(value, gen);
+		}
+	}
+
+	/**
+	 * {@code @type}/{@code value} 형태의 JSON을 {@link ElementValue}로 역직렬화하는 Jackson
+	 * deserializer. {@link ElementValues#parseJsonNode(JsonNode)}에 위임한다.
+	 */
+	@SuppressWarnings("serial")
+	public static class Deserializer extends StdDeserializer<ElementValue> {
+		public Deserializer() {
+			this(null);
+		}
+		public Deserializer(Class<?> vc) {
+			super(vc);
+		}
+	
+		@Override
+		public ElementValue deserialize(JsonParser parser, DeserializationContext ctxt)
+			throws IOException, JacksonException {
+			JsonNode jnode = parser.getCodec().readTree(parser);
+			return parseJsonNode(jnode);
+		}
 	}
 
 	/**

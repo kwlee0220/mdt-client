@@ -2,10 +2,6 @@ package mdt.client.support;
 
 import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import utils.func.Optionals;
 
 
@@ -13,8 +9,6 @@ import utils.func.Optionals;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@Getter @Setter
-@Accessors(prefix="m_")
 @JsonIncludeProperties({ "brokerUrl", "connectionTimeout", "keepAliveInterval" })
 public class MqttBrokerConfig {
 	private static final String DEFAULT_BROKER_URL = "tcp://localhost:1883";
@@ -27,12 +21,24 @@ public class MqttBrokerConfig {
 		return Optionals.getOrElse(m_brokerUrl, DEFAULT_BROKER_URL);
 	}
 	
+	public void setBrokerUrl(String brokerUrl) {
+		m_brokerUrl = brokerUrl;
+	}
+	
 	public String getConnectionTimeout() {
 		return m_connectionTimeout;
 	}
 	
+	public void setConnectionTimeout(String connectionTimeout) {
+		m_connectionTimeout = connectionTimeout;
+	}
+	
 	public String getKeepAliveInterval() {
 		return m_keepAliveInterval;
+	}
+	
+	public void setKeepAliveInterval(String keepAliveInterval) {
+		m_keepAliveInterval = keepAliveInterval;
 	}
 	
 	@Override

@@ -16,10 +16,6 @@ import com.fasterxml.jackson.databind.DatabindException;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import utils.InternalException;
 import utils.Preconditions;
 
@@ -31,8 +27,6 @@ import mdt.workflow.model.TaskDescriptor;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@Getter @Setter
-@Accessors(prefix = "m_")
 @JsonInclude(Include.NON_NULL)
 @JsonPropertyOrder({"id", "name", "description", "taskDescriptors", "gui"})
 public class WorkflowModel {
@@ -51,6 +45,46 @@ public class WorkflowModel {
 		}
 		
 		m_taskDescriptors.add(taskDesc);
+	}
+	
+	public String getId() {
+		return m_id;
+	}
+	
+	public void setId(String id) {
+		m_id = id;
+	}
+	
+	public @Nullable String getName() {
+		return m_name;
+	}
+	
+	public void setName(@Nullable String name) {
+		m_name = name;
+	}
+	
+	public @Nullable String getDescription() {
+		return m_description;
+	}
+	
+	public void setDescription(@Nullable String description) {
+		m_description = description;
+	}
+	
+	public List<TaskDescriptor> getTaskDescriptors() {
+		return m_taskDescriptors;
+	}
+	
+	public void setTaskDescriptors(List<TaskDescriptor> taskDescs) {
+		m_taskDescriptors = taskDescs;
+	}
+	
+	public Map<String, Object> getGui() {
+		return m_gui;
+	}
+	
+	public void setGui(Map<String, Object> gui) {
+		m_gui = gui;
 	}
 	
 	public String toJsonString() {

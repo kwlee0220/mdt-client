@@ -15,20 +15,40 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import utils.Preconditions;
 import utils.SplitStream;
-import utils.func.Try;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
 import mdt.model.MDTModelSerDe;
+import mdt.model.expr.MDTElementReferenceExpr;
+import mdt.model.expr.MDTElementReferenceExpr.ArgumentReferenceExpr;
+import mdt.model.expr.MDTElementReferenceExpr.DefaultElementReferenceExpr;
+import mdt.model.expr.MDTElementReferenceExpr.OperationVariableReferenceExpr;
+import mdt.model.expr.MDTElementReferenceExpr.ParameterReferenceExpr;
+import mdt.model.expr.MDTElementReferenceExpr.TimeseriesReferenceExpr;
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.expr.MDTParserException;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ref.timeseries.ReadLastRecordsReference;
+import mdt.model.sm.ref.timeseries.TimeSeriesElementReference;
 
 
 /**
+ * {@link ElementReference}에 대한 정적 유틸리티 모음이다.
+ * <p>
+ * 참조 활성화({@link #activate(ElementReference, MDTInstanceManager)}), Json 직렬화/역직렬화
+ * ({@link #parseJsonString(String)}, {@link #parseJsonNode(JsonNode)}, {@link Serializer},
+ * {@link Deserializer}), 표현식 문자열 파싱({@link #parseExpr(String)})을 제공한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class ElementReferences {
+	/**
+	 * 주어진 {@link ElementReference}를 활성화한다.
+	 *
+	 * @param ref		활성화할 참조. {@link MDTElementReference}이어야 한다.
+	 * @param manager	활성화에 사용할 {@link MDTInstanceManager}.
+	 * @throws IllegalArgumentException	{@code ref}가 {@link MDTElementReference}가 아닌 경우.
+	 */
 	public static void activate(ElementReference ref, MDTInstanceManager manager) {
 		Preconditions.checkNotNullArgument(ref, "ElementReference is null");
 		Preconditions.checkNotNullArgument(manager, "MDTInstanceManager is null");
@@ -41,14 +61,37 @@ public class ElementReferences {
 		}
 	}
 	
+	/**
+	 * Json 문자열로부터 {@link ElementReference}를 복원한다.
+	 *
+	 * @param jsonStr	{@code @type} 필드를 포함한 Json 문자열.
+	 * @return 복원된 {@link ElementReference} 객체.
+	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
+	 */
 	public static ElementReference parseJsonString(String jsonStr) throws IOException {
         return MDTModelSerDe.readValue(jsonStr, ElementReference.class);
     }
-	
+
+	/**
+	 * Json 노드로부터 {@link ElementReference}를 복원한다.
+	 *
+	 * @param node	{@code @type} 필드를 포함한 Json 노드.
+	 * @return 복원된 {@link ElementReference} 객체.
+	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
+	 */
 	public static ElementReference parseJsonNode(JsonNode node) throws IOException {
         return MDTModelSerDe.readValue(node, ElementReference.class);
     }
 
+	/**
+	 * 표현식 문자열로부터 {@link DefaultSubmodelReference}를 파싱한다.
+	 * <p>
+	 * 형식: {@code <instanceId>:<submodelIdShort>} 또는 {@code submodel:<submodelId>}.
+	 *
+	 * @param exprStr	Submodel 참조 표현식.
+	 * @return 파싱된 {@link DefaultSubmodelReference} 객체.
+	 * @throws MDTParserException	표현식이 올바르지 않은 경우.
+	 */
 	public static DefaultSubmodelReference parseSubmodelReference(String exprStr) {
 		SplitStream tokens = SplitStream.of(exprStr, ':');
 		DefaultSubmodelReference ref = parseSubmodelReference(tokens);
@@ -73,86 +116,52 @@ public class ElementReferences {
 		}
 	}
 	
-	public static MDTElementReference parseExpr(String exprStr) {
-		Preconditions.checkNotNullArgument(exprStr, "ElementReference expression is null");
+	/**
+	 * 표현식 문자열로부터 {@link MDTElementReference}를 파싱한다.
+	 * <p>
+	 * 선두 라벨에 따라 참조 종류가 결정된다.
+	 * <ul>
+	 *   <li>{@code param:<instanceId>:<paramSpec>} → {@link MDTParameterReference}
+	 *       (단, {@code paramSpec}이 {@code "*"}이면 {@link MDTParameterCollectionReference})</li>
+	 *   <li>{@code oparg:<instanceId>:<submodelIdShort>:<kind>:<argSpec>} → {@link MDTArgumentReference}</li>
+	 *   <li>{@code opvar:<instanceId>:<submodelIdShort>:<kind>:<ordinal>} → {@link OperationVariableReference}</li>
+	 *   <li>{@code timeseries:<submodelSpec>:<idShortPath>[#<range>][|<columns>]} → {@link TimeSeriesElementReference}
+	 *       (range: {@code last=N}(마지막 N개) | {@code last=dur[@now|@latest]} | {@code from~to})</li>
+	 *   <li>그 외(라벨 없음) {@code <instanceId>:<submodelIdShort>:<elementPath>} → {@link DefaultElementReference}</li>
+	 * </ul>
+	 *
+	 * @param refStr	ElementReference 표현식.
+	 * @return 파싱된 {@link MDTElementReference} 객체.
+	 * @throws MDTParserException	표현식이 올바르지 않은 경우.
+	 */
+	public static MDTElementReference parseExpr(String refStr) {
+		Preconditions.checkNotNullArgument(refStr, "ElementReference expression is null");
 		
-		SplitStream tokens = SplitStream.of(exprStr, ':');
-		MDTElementReference ref = parseExpr(tokens);
-		if ( tokens.hasNext() ) {
-			throw new MDTParserException("Invalid ElementReference: expr=" + exprStr);
+		MDTElementReferenceExpr expr = MDTExpressionParser.parseElementReference(refStr);
+		if ( expr instanceof ParameterReferenceExpr paramExpr ) {
+			return paramExpr.evaluate();
 		}
-		
-		return ref;
-	}
-
-	private static MDTElementReference parseExpr(SplitStream tokens) {
-		String label = tokens.next();
-		switch ( label.toLowerCase() ) {
-			case "param":
-				return parseParameterReference(tokens);
-			case "oparg":
-				return parseArgumentReference(tokens);
-			case "opvar":
-				return parseOperationVariableReference(tokens);
-			default:
-				tokens.pushBack(label);
-				return parseDefaultElementReference(tokens);
-				
+		else if ( expr instanceof DefaultElementReferenceExpr defaultExpr ) {
+			return defaultExpr.evaluate();
 		}
-	}
-	private static DefaultElementReference parseDefaultElementReference(SplitStream tokens) {
-		String fullExpr = tokens.remaining();
-		Supplier<IllegalArgumentException> errorMsg
-						= () -> new IllegalArgumentException("Invalid DefaultElementReference: expr=" + fullExpr);
-						
-		DefaultSubmodelReference smRef = parseSubmodelReference(tokens);
-		String elementPath = tokens.nextToken().getOrThrow(errorMsg);
-		return DefaultElementReference.newInstance(smRef, elementPath);
-	}
-	private static SubmodelBasedElementReference parseParameterReference(SplitStream tokens) {
-		String fullExpr = tokens.remaining();
-		Supplier<IllegalArgumentException> errorMsg
-						= () -> new IllegalArgumentException("Invalid MDTParameterReference: expr=" + fullExpr);
-						
-		String instanceId = tokens.nextToken().getOrThrow(errorMsg);
-		String paramSpec = tokens.nextToken().getOrThrow(errorMsg);
-		if ( paramSpec.equals("*") ) {
-			return MDTParameterCollectionReference.newInstance(instanceId);
+		else if ( expr instanceof ArgumentReferenceExpr argExpr ) {
+			return argExpr.evaluate();
+		}
+		else if ( expr instanceof OperationVariableReferenceExpr opvExpr ) {
+			return opvExpr.evaluate();
+		}
+		else if ( expr instanceof TimeseriesReferenceExpr tsExpr ) {
+			return tsExpr.evaluate();
 		}
 		else {
-			return MDTParameterReference.newInstance(instanceId, paramSpec);
+			throw new MDTParserException("Unsupported MDTElementReference expression: expr=" + refStr);
 		}
-	}
-	private static MDTArgumentReference parseArgumentReference(SplitStream tokens) {
-		String fullExpr = tokens.remaining();
-		Supplier<IllegalArgumentException> errorMsg
-							= () -> new IllegalArgumentException("Invalid MDTArgumentReference: expr=" + fullExpr);
-							
-		DefaultSubmodelReference smRef = parseSubmodelReference(tokens);
-		MDTArgumentKind inout = MDTArgumentKind.fromString(tokens.nextToken().getOrThrow(errorMsg));
-		String spec = tokens.nextToken().getOrThrow(errorMsg);
-		return MDTArgumentReference.builder()
-									.submodelReference(smRef)
-									.kind(inout)
-									.argument(spec)
-									.build();
-	}
-	private static OperationVariableReference parseOperationVariableReference(SplitStream tokens) {
-		String fullExpr = tokens.remaining();
-		Supplier<IllegalArgumentException> errorMsg
-							= () -> new IllegalArgumentException("Invalid OperationVariableReference: expr=" + fullExpr);
-							
-		MDTElementReference opRef = parseExpr(tokens);
-		
-		OperationVariableReference.Kind kind = OperationVariableReference.Kind.fromString(
-																			tokens.nextToken().getOrThrow(errorMsg));
-		String ordinalStr = tokens.nextToken().getOrThrow(errorMsg);
-		int ordinal = Try.get(() -> Integer.parseInt(ordinalStr)).getOrThrow(errorMsg);
-		
-		return OperationVariableReference.newInstance(opRef, kind, ordinal);
 	}
 	
 	private static final String FIELD_TYPE = "@type";
+	/**
+	 * {@link ElementReference}를 {@code @type} 필드와 함께 Json으로 직렬화하는 Jackson serializer.
+	 */
 	@SuppressWarnings("serial")
 	public static class Serializer extends StdSerializer<ElementReference> {
 		private Serializer() {
@@ -172,6 +181,9 @@ public class ElementReferences {
 		}
 	}
 
+	/**
+	 * {@code @type} 필드를 보고 해당하는 {@link ElementReference} 구현체로 역직렬화하는 Jackson deserializer.
+	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends StdDeserializer<ElementReference> {
 		public Deserializer() {
@@ -189,6 +201,13 @@ public class ElementReferences {
 		}
 	}
 	
+	/**
+	 * {@code @type} 필드를 가진 Json 노드로부터 해당 타입의 {@link ElementReference}를 복원한다.
+	 *
+	 * @param jnode	{@code @type} 필드를 포함한 Json 노드.
+	 * @return 복원된 {@link ElementReference} 객체.
+	 * @throws IOException	{@code @type}이 없거나 미등록 타입이거나, 해석 과정에서 예외가 발생한 경우.
+	 */
 	public static ElementReference parseTypedJsonNode(JsonNode jnode) throws IOException {
 		String type = JacksonUtils.getStringFieldOrNull(jnode, FIELD_TYPE);
 		if ( type == null ) {
@@ -200,19 +219,22 @@ public class ElementReferences {
 			case DefaultElementReference.SERIALIZATION_TYPE:
 				return DefaultElementReference.deserializeFields(jnode);
 			case MDTParameterReference.SERIALIZATION_TYPE:
-				return MDTParameterReference.deserializeFields(jnode);
+				JsonNode paramExpr = SubmodelBasedElementReference.checkJsonField(jnode,
+																MDTParameterReference.FIELD_PARAMETER_EXPR);
+				if ( paramExpr.asText().equals("*") ) {
+					return MDTParameterCollectionReference.deserializeFields(jnode);
+				}
+				else {
+					return MDTParameterReference.deserializeFields(jnode);
+				}
 			case MDTArgumentReference.SERIALIZATION_TYPE:
 				return MDTArgumentReference.deserializeFields(jnode);
 			case OperationVariableReference.SERIALIZATION_TYPE:
 				return OperationVariableReference.deserializeFields(jnode);
 			case FileStoreReference.SERIALIZATION_TYPE:
 				return FileStoreReference.deserializeFields(jnode);
-//			case MDTSubmodelRefOption.SERIALIZATION_TYPE:
-//				return MDTSubmodelRefOption.deserializeFields(jnode);
-//			case MDTInstanceRefOption.SERIALIZATION_TYPE:
-//				return MDTInstanceRefOption.deserializeFields(jnode);
-//			case MultiLineOption.SERIALIZATION_TYPE:
-//				return MultiLineOption.deserializeFields(jnode);
+			case ReadLastRecordsReference.SERIALIZATION_TYPE:
+				return ReadLastRecordsReference.deserializeFields(jnode);
 			default:
 				throw new JacksonDeserializationException("Unregistered Option type: " + type);
 		}

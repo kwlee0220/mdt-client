@@ -157,7 +157,8 @@ public abstract class AbstractVariable implements Variable {
 
 		@Override
 		public void updateValue(String valueJsonString) throws IOException {
-			ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, m_element);
+			ElementValue proto = ElementValues.getValue(m_element);
+			ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
 			updateValue(newVal);
 		}
 		

@@ -3,14 +3,11 @@ package mdt.model.sm.value;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
-import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
-import utils.InternalException;
 
 import mdt.model.MDTModelSerDe;
 
@@ -47,7 +44,6 @@ public abstract class AbstractElementValue implements ElementValue {
 	 * @throws IOException	직렬화가 실패한 경우.
 	 */
 	abstract public void serializeValue(JsonGenerator gen) throws IOException;
-	// public static ElementValue deserializeValue(JsonNode vnode) throws IOException;	// ElementValues 클래스에서 정의됨.
 
 	@Override
 	public String toJsonString() {
@@ -57,6 +53,11 @@ public abstract class AbstractElementValue implements ElementValue {
 		catch ( JsonProcessingException e ) {
 			throw new UncheckedIOException("Failed to get JSON string of ElementValue: cause=" + e, e);
 		}
+	}
+	
+	@Override
+	public JsonNode toJsonNode() {
+		return MDTModelSerDe.getJsonMapper().valueToTree(this);
 	}
 
 	@Override
@@ -70,14 +71,14 @@ public abstract class AbstractElementValue implements ElementValue {
 	}
 
 	@Override
+	public JsonNode toValueJsonNode() {
+		return MDTModelSerDe.getJsonMapper().valueToTree(toValueObject());
+	}
+
+	@Override
 	public String toDisplayString() {
 		// PropertyValue인 경우는 재정의됨.
-		try {
-			return MDTModelSerDe.getJsonSerializer().write(toValueObject());
-		}
-		catch ( SerializationException e ) {
-			throw new InternalException("Failed to get displayString of ElementValue: cause=" + e, e);
-		}
+		return toValueJsonString();
 	}
 	
 	@Override

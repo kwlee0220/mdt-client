@@ -32,8 +32,8 @@ import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@JsonIncludeProperties({"commandLine", "workingDirectory", "operationSubmodel", "inputVariables", "outputVariables",
-						"concurrent", "timeout"})
+@JsonIncludeProperties({"commandLine", "workingDirectory", "operationSubmodel",
+						"inputVariables", "outputVariables", "concurrent", "timeout"})
 @JsonInclude(Include.NON_NULL)
 public final class ProgramOperationDescriptor {
 	private List<String> m_commandLine = Collections.emptyList();

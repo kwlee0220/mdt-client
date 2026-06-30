@@ -58,7 +58,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 		return new FileValue(aasFile.getValue(), aasFile.getContentType());
 	}
 	
-	public static FileValue fromValueObject(Object value, File aasFile) throws IOException {
+	public static FileValue fromValueObject(Object value) throws IOException {
 		if ( value instanceof Map vmap ) {
 			String contentType = (String) vmap.get(FIELD_CONTENT_TYPE);
 			String val = (String) vmap.get(FIELD_VALUE);
@@ -69,7 +69,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 		}
 	}
 	
-	public static FileValue parseValueJsonNode(JsonNode jnode, File aasFile) throws IOException {
+	public static FileValue parseValueJsonNode(JsonNode jnode) throws IOException {
 		if ( !jnode.isObject() ) {
 			throw new IOException("FileValue extends 'Object' node: JsonNode=" + jnode);
 		}

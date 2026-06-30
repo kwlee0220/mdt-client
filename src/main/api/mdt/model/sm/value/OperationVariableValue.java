@@ -57,7 +57,7 @@ public final class OperationVariableValue extends AbstractElementValue implement
 		return SERIALIZATION_TYPE;
 	}
 	
-	public static OperationVariableValue deserializeValue(JsonNode vnode) {
+	public static OperationVariableValue deserializeValue(JsonNode vnode) throws IOException {
 		JsonNode inVarsNode = JacksonUtils.getFieldOrNull(vnode, FIELD_INPUT_VARIABLES);
 		List<ElementValue> inVars = ((ElementListValue)ElementValues.parseJsonNode(inVarsNode)).getElementValues();
 		

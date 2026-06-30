@@ -3,6 +3,7 @@ package mdt.model.timeseries;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
@@ -56,6 +57,10 @@ public class RecordMetadata {
 	 */
 	public List<Field> getFieldAll() {
 		return Collections.unmodifiableList(m_fields);
+	}
+	
+	public LinkedHashMap<String,Field> getFieldMap() {
+		return m_fields.toMap();
 	}
 	
 	/**

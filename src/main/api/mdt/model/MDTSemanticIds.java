@@ -37,6 +37,10 @@ public final class MDTSemanticIds {
 	
 	public static final String SUBMODEL_SHAPE = MDT_PREFIX + "/Submodel/Shape" + VERSION;
 	
+	public static final String TIME_SERIES_READ_LAST_RECORDS = MDT_PREFIX + "/Submodel/TimeSeries/ReadLastRecords" + VERSION;
+	public static final String TIME_SERIES_RANGE = MDT_PREFIX + "/Submodel/TimeSeries/Range" + VERSION;
+	public static final String TIME_SERIES_COLUMNS = MDT_PREFIX + "/Submodel/TimeSeries/Columns" + VERSION;
+	
 	public static Reference toReference(String semanticId) {
 		return new DefaultReference.Builder()
 					.type(ReferenceTypes.EXTERNAL_REFERENCE)

@@ -7,7 +7,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
 import mdt.client.operation.AASOperationClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
-import mdt.model.sm.value.PropertyValue.StringPropertyValue;
+import mdt.model.sm.PropertyUtils;
 
 
 /**
@@ -22,14 +22,14 @@ public class TestOperationInspector {
 		HttpSubmodelServiceClient aiSvc = HttpSubmodelServiceClient.newTrustAllSubmodelServiceClient(aiUrl);
 		
 		AASOperationClient opClient = new AASOperationClient(aiSvc, "Operation", Duration.ofSeconds(1));
-		opClient.setInputVariableValue("Defect", new StringPropertyValue("0,1,0,0,1,0,1,0,0"));
-		opClient.setInputVariableValue("DefectList", new StringPropertyValue("0,0,1"));
+		opClient.setInputVariable("Defect", PropertyUtils.STRING("Defect", "0,1,0,0,1,0,1,0,0"));
+		opClient.setInputVariable("DefectList", PropertyUtils.STRING("DefectList", "0,0,1"));
 		OperationResult result = opClient.run();
 		System.out.printf("inoutputs=%s, outputs=%s%n", result.getInoutputArguments(), result.getOutputArguments());
 
 		opClient = new AASOperationClient(aiSvc, "Operation", Duration.ofSeconds(1));
-		opClient.setInputVariableValue("Defect", new StringPropertyValue("0,0,0,0,0,0,0,0,0"));
-		opClient.setInputVariableValue("DefectList", new StringPropertyValue("0,0,1,0,0,0,0,1,1,0"));
+		opClient.setInputVariable("Defect", PropertyUtils.STRING("Defect", "0,0,0,0,0,0,0,0,0"));
+		opClient.setInputVariable("DefectList", PropertyUtils.STRING("DefectList", "0,0,1,0,0,0,0,1,1,0"));
 		result = opClient.run();
 		System.out.printf("inoutputs=%s, outputs=%s%n", result.getInoutputArguments(), result.getOutputArguments());
 	}

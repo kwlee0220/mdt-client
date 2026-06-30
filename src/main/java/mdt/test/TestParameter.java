@@ -2,8 +2,6 @@ package mdt.test;
 
 import java.util.Map;
 
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
-
 import mdt.client.HttpMDTManager;
 import mdt.client.instance.HttpMDTInstanceManager;
 import mdt.model.sm.ref.ElementReferences;
@@ -24,8 +22,6 @@ public class TestParameter {
 		MDTElementReference production = ElementReferences.parseExpr("param:Welder:NozzleProduction");
 		production.activate(manager);
 		
-		SubmodelElementCollection smc = (SubmodelElementCollection)production.read();
-		
 		ElementCollectionValue smev = (ElementCollectionValue)production.readValue();
 		System.out.println(smev);
 		
@@ -33,7 +29,7 @@ public class TestParameter {
 		Object dv = vjo.get("DefectVolume");
 		vjo.put("DefectVolume", ((Integer)dv) + 5);
 		
-		ElementValue updated = ElementValues.fromValueObject(vjo, smc);
+		ElementValue updated = ElementValues.fromValueObject(vjo, smev);
 		production.updateValue(updated);
 	}
 }

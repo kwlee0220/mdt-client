@@ -70,13 +70,16 @@ public class OperationSubmodelService implements SubmodelService {
 		return new ArgumentCollection("Output");
 	}
 	
-	public Map<String,ElementValue> run(Map<String,ElementValue> inputValues, Duration timeout, Duration pollInterval)
+	public Map<String,ElementValue> run(Map<String,SubmodelElement> inputVariables, Duration timeout,
+										Duration pollInterval)
 		throws CancellationException, InterruptedException, TimeoutException, ExecutionException {
 		try {
 			AASOperationClient opClient = new AASOperationClient(this, "Operation", pollInterval);
 			opClient.setTimeout(timeout);
 			
-			opClient.setInputVariableValues(inputValues);
+			inputVariables.forEach((argId, argElm) -> {
+				opClient.setInputVariable(argId, argElm);
+			});
 			OperationResult result = opClient.run();
 			return FStream.from(result.getOutputArguments())
 					.mapToKeyValue(opVar -> {

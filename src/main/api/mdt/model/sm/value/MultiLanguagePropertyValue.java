@@ -52,8 +52,7 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 		return new MultiLanguagePropertyValue(mlp.getValue());
 	}
 	
-	public static MultiLanguagePropertyValue parseValueJsonNode(JsonNode vnode, MultiLanguageProperty mlprop)
-		throws IOException {
+	public static MultiLanguagePropertyValue parseValueJsonNode(JsonNode vnode) throws IOException {
 		if ( !vnode.isObject() ) {
 			throw new IOException("MultiLanguagePropertyValue expects an 'Object' node: JsonNode=" + vnode);
 		}
@@ -69,7 +68,7 @@ public final class MultiLanguagePropertyValue extends AbstractElementValue imple
 		return new MultiLanguagePropertyValue(textList);
 	}
 	
-	public static MultiLanguagePropertyValue fromValueObject(Object value, MultiLanguageProperty mlprop)
+	public static MultiLanguagePropertyValue fromValueObject(Object value)
 		throws IOException {
 		if ( value instanceof Map vmap ) {
 			@SuppressWarnings("unchecked")

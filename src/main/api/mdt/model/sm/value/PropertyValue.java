@@ -6,7 +6,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -63,6 +65,13 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	public void update(Property prop) {
 		prop.setValue((m_value != null) ? getDataType().toValueString(m_value) : null);
 	}
+	
+	public DefaultProperty.Builder toElementBuilder() {
+		DefaultProperty.Builder builder = new DefaultProperty.Builder();
+		builder.valueType(getDataType().getTypeDefXsd());
+		builder.value(getDataType().toValueString(m_value));
+		return builder;
+	}
 
 	@Override
 	public String toDisplayString() {
@@ -73,12 +82,12 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	 * Java 값 객체와 대상 {@link Property}의 데이터 타입으로부터 알맞은 {@code PropertyValue} 하위 타입을 생성한다.
 	 *
 	 * @param v		값 객체. Property의 valueType에 해당하는 Java 타입이어야 한다.
-	 * @param prop	데이터 타입 결정에 사용할 대상 Property.
+	 * @param xsdType	데이터 타입 결정에 사용할 대상 Property의 XSD 데이터 타입.
 	 * @return 생성된 PropertyValue.
 	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
 	 */
-	public static PropertyValue<?> fromValueObject(Object v, Property prop) {
-		switch ( prop.getValueType() ) {
+	public static PropertyValue<?> fromValueObject(Object v, DataTypeDefXsd xsdType) {
+		switch ( xsdType ) {
 			case STRING:
 				return new StringPropertyValue((String)v);
 			case INT:
@@ -100,7 +109,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 			case DECIMAL:
 				return new DecimalPropertyValue((BigDecimal)v);
 			default:
-				throw new IllegalArgumentException("unknown data type: " + prop.getValueType());
+				throw new IllegalArgumentException("unknown data type: " + xsdType);
 		}
 	}
 	
@@ -112,8 +121,11 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	 * @return 생성된 PropertyValue.
 	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
 	 */
-	public static PropertyValue<?> parseValueJsonNode(JsonNode vnode, Property prop) {
-		switch ( prop.getValueType() ) {
+	public static PropertyValue<?> parseValueJsonNode(JsonNode vnode, PropertyValue<?> prop) {
+		return parseValueJsonNode(vnode, prop.getDataType().getTypeDefXsd());
+	}
+	public static PropertyValue<?> parseValueJsonNode(JsonNode vnode, DataTypeDefXsd xsdType) {
+		switch ( xsdType ) {
 			case STRING:
 				return StringPropertyValue.deserializeValue(vnode);
 			case INT:
@@ -135,7 +147,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 			case DECIMAL:
 				return DecimalPropertyValue.deserializeValue(vnode);
 			default:
-				throw new IllegalArgumentException("unknown data type: " + prop.getValueType());
+				throw new IllegalArgumentException("unknown data type: " + xsdType);
 		}
 	}
 

@@ -136,7 +136,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		try {
 			JsonNode jnode = call(req, JsonNode.class);
 			JsonNode root = jnode.get(prototype.getIdShort());
-			return ElementValues.parseValueJsonNode(root, prototype);
+			return ElementValues.parseValueJsonNode(root, ElementValues.getValue(prototype));
 		}
 		catch ( RESTfulRemoteException e ) {
 			if ( !e.getMessage().contains("SerializationException") ) {
@@ -151,13 +151,6 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		catch ( IOException e ) {
 			throw new UncheckedIOException(e);
 		}
-		
-//		try {
-//			return ElementValues.parseValueJsonNode(root, prototype);
-//		}
-//		catch ( IOException e ) {
-//			throw new UncheckedIOException(e);
-//		}
 	}
 
 	@Override

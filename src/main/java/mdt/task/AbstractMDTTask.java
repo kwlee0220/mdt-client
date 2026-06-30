@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeoutException;
 
@@ -18,18 +17,20 @@ import com.google.common.collect.Maps;
 import utils.LoggerSettable;
 import utils.Throwables;
 import utils.UnitUtils;
+import utils.func.FOption;
 import utils.func.Optionals;
 import utils.stream.KeyValueFStream;
 
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.instance.MDTInstanceManagerAware;
 import mdt.model.sm.SubmodelUtils;
 import mdt.model.sm.SubmodelUtils.OperationSubmodelDescriptor;
 import mdt.model.sm.SubmodelUtils.SubmodelArgumentDescriptor;
 import mdt.model.sm.ref.DefaultSubmodelReference;
+import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 import mdt.task.builtin.TaskUtils;
 import mdt.workflow.model.ArgumentSpec;
+import mdt.workflow.model.ArgumentSpec.LiteralArgumentSpec;
 import mdt.workflow.model.ArgumentSpec.ReferenceArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
@@ -74,18 +75,15 @@ public abstract class AbstractMDTTask implements MDTTask, LoggerSettable {
 			Preconditions.checkState(smRef != null,
 									"SubmodelReference is not specified in TaskDescriptor: %s", m_descriptor.getId());
 			smRef.activate(manager);
-			OperationSubmodelDescriptor opSmDesc = SubmodelUtils.loadOperationSubmodelDescriptor(smRef.get().getSubmodel());
+			OperationSubmodelDescriptor opSmDesc
+								= SubmodelUtils.loadOperationSubmodelDescriptor(smRef.get().getSubmodel());
 			
 			LinkedHashMap<String,SubmodelElement> inputArguments = Maps.newLinkedHashMap();
 			for ( Map.Entry<String, SubmodelArgumentDescriptor> ent: opSmDesc.getInputs().entrySet() ) {
 				String argId = ent.getKey();
-				SubmodelElement arg = ent.getValue().getSubmodelElement();
+				SubmodelElement proto = ent.getValue().getSubmodelElement();
 				ArgumentSpec argSpec = m_descriptor.getInputArgumentSpecs().get(argId);
-				if ( argSpec != null ) {
-					argSpec = MDTInstanceManagerAware.activate(argSpec, manager);
-					ElementValues.update(arg, argSpec.readValue());
-				}
-				inputArguments.put(argId, arg);
+				inputArguments.put(argId, readArgument(proto, argSpec));
 			}
 
 			for ( Map.Entry<String, ReferenceArgumentSpec> ent: m_descriptor.getOutputArgumentSpecs().entrySet() ) {
@@ -117,12 +115,12 @@ public abstract class AbstractMDTTask implements MDTTask, LoggerSettable {
 		}
 	}
 	
-	public Optional<Duration> getTimeout() {
+	public FOption<Duration> getTimeout() {
 		return m_descriptor.findOptionValue(OPTION_TIMEOUT)
 							.map(UnitUtils::parseSecondDuration);
 	}
 	
-	public Optional<Duration> getPollInterval() {
+	public FOption<Duration> getPollInterval() {
 		return m_descriptor.findOptionValue(OPTION_POLL_INTERVAL)
 							.map(UnitUtils::parseSecondDuration);
 	}
@@ -140,5 +138,23 @@ public abstract class AbstractMDTTask implements MDTTask, LoggerSettable {
 	@Override
 	public void setLogger(Logger logger) {
 		m_logger = logger;
+	}
+	
+	private SubmodelElement readArgument(SubmodelElement proto, ArgumentSpec argSpec) throws Exception {
+		if ( argSpec instanceof ReferenceArgumentSpec refArgSpec ) {
+			// 'Value' 값만 읽어오는 경우 (특히 SMC/SML 의 경우), 읽어온 값을 모두 반영할 수 없기
+			// 때문에 SubmodelElement 전체를 읽어온다.
+			// 특히 Timeseries SMC의 경우에는 가변 길이의 값을 지원할 수 없게 됨.
+			refArgSpec.activate(m_manager);
+			return refArgSpec.read();
+		}
+		else if ( argSpec instanceof LiteralArgumentSpec litArgSpec ) {
+			ElementValue argv = litArgSpec.readValue();
+			ElementValues.update(proto, argv);
+			return proto;
+		}
+		else {
+			throw new IllegalArgumentException("Unsupported ArgumentSpec: " + argSpec.getClass().getName());
+		}
 	}
 }

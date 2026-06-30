@@ -1,7 +1,7 @@
 package mdt.model.sm.value;
 
 import java.time.Instant;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
@@ -16,7 +16,7 @@ import mdt.model.sm.value.PropertyValue.DateTimePropertyValue;
 public class ParameterValue extends ElementCollectionValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:parameter";
 
-	private ParameterValue(Map<String,ElementValue> elements) {
+	private ParameterValue(LinkedHashMap<String,ElementValue> elements) {
 		super(elements);
 	}
 
@@ -66,10 +66,10 @@ public class ParameterValue extends ElementCollectionValue {
 		return new Builder();
 	}
 	public static class Builder {
-		private final Map<String, ElementValue> m_fields;
+		private final LinkedHashMap<String, ElementValue> m_fields;
 
 		public Builder() {
-			m_fields = new java.util.LinkedHashMap<>();
+			m_fields = new LinkedHashMap<>();
 		}
 		
 		public Builder eventDateTime(Instant ts) {

@@ -81,69 +81,74 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 	}
 
 	@Override
+	protected void initializeThread() throws Exception {
+		m_guard.run(() -> m_workerThread = Thread.currentThread());
+	}
+
+	@Override
 	protected OperationResponse executeWork() throws InterruptedException, CancellationException,
 																			Exception {
-		m_guard.run(() -> m_workerThread = Thread.currentThread());
-		
-		Instant started = Instant.now();
-		OperationResponse resp = start(m_request);
-		if ( getLogger().isInfoEnabled() ) {
+		try {
+			Instant started = Instant.now();
+			OperationResponse resp = start(m_request);
 			getLogger().info("received from HTTPOperationServer: {}", resp);
-		}
-		
-		String sessionId = resp.getSessionId();
-		
-		boolean isFirst = true;
-		String statusUrl = String.format("%s/sessions/%s", m_endpoint, sessionId);
-		while ( resp.getStatus() == OperationStatus.RUNNING ) {
-			if ( isCancelRequested() ) {
-				resp = sendCancelRequest(sessionId);
-				break;
-			}
-			else {
-				try {
-					if ( !isFirst ) {
-						TimeUnit.MILLISECONDS.sleep(m_pollInterval.toMillis());
-					}
-					else {
-						isFirst = false;
-					}
-					
-					resp = m_restClient.get(statusUrl, m_opRespDeser);
-					if ( getLogger().isInfoEnabled() ) {
+
+			String sessionId = resp.getSessionId();
+
+			boolean isFirst = true;
+			String statusUrl = String.format("%s/sessions/%s", m_endpoint, sessionId);
+			while ( resp.getStatus() == OperationStatus.RUNNING ) {
+				if ( isCancelRequested() ) {
+					resp = sendCancelRequest(sessionId);
+					break;
+				}
+				else {
+					try {
+						if ( !isFirst ) {
+							TimeUnit.MILLISECONDS.sleep(m_pollInterval.toMillis());
+						}
+						else {
+							isFirst = false;
+						}
+
+						resp = m_restClient.get(statusUrl, m_opRespDeser);
 						getLogger().info("received from HTTPOperationServer: {}", resp);
 					}
+					catch ( InterruptedException e ) {
+						resp = sendCancelRequest(sessionId);
+					}
 				}
-				catch ( InterruptedException e ) {
-					resp = sendCancelRequest(sessionId);
-				}
-			}
-			
-			// timeout이 설정된 경우에는 소요시간을 체크하여 제한시간을 경과한 경우에는
-			// TimeoutException 예외를 발생시킨다.
-			if ( m_timeout != null && resp.getStatus() == OperationStatus.RUNNING ) {
-				if ( m_timeout.minus(Duration.between(started, Instant.now())).isNegative() ) {
-					resp = sendCancelRequest(sessionId);
-					if ( resp.getStatus() == OperationStatus.CANCELLED ) {
-						String msg = String.format("timeout=%s", m_timeout);
-						throw new TimeoutException(msg);
+
+				// timeout이 설정된 경우에는 소요시간을 체크하여 제한시간을 경과한 경우에는
+				// TimeoutException 예외를 발생시킨다.
+				if ( m_timeout != null && resp.getStatus() == OperationStatus.RUNNING ) {
+					if ( m_timeout.minus(Duration.between(started, Instant.now())).isNegative() ) {
+						resp = sendCancelRequest(sessionId);
+						if ( resp.getStatus() == OperationStatus.CANCELLED ) {
+							String msg = String.format("timeout=%s", m_timeout);
+							throw new TimeoutException(msg);
+						}
 					}
 				}
 			}
+
+			String msg;
+			switch ( resp.getStatus() ) {
+				case COMPLETED:
+					return resp;
+				case FAILED:
+					throw (Exception)resp.toJavaException();
+				case CANCELLED:
+					msg = String.format("cause=%s%n", resp.getMessage());
+					throw new CancellationException(msg);
+				default:
+					throw new AssertionError();
+			}
 		}
-		m_guard.run(() -> m_workerThread = null);
-		
-		String msg;
-		switch ( resp.getStatus() ) {
-			case COMPLETED:
-				return resp;
-			case FAILED:
-				throw (Exception)resp.toJavaException();
-			case CANCELLED:
-				msg = String.format("cause=%s%n", resp.getMessage());
-				throw new CancellationException(msg);
-			default:
-				throw new AssertionError();
+		finally {
+			// 정상/예외 종료에 관계없이 worker thread 참조를 정리하여,
+			// 이후 cancelWork()가 재사용된 다른 thread를 잘못 interrupt하지 않도록 한다.
+			m_guard.run(() -> m_workerThread = null);
 		}
 	}
 

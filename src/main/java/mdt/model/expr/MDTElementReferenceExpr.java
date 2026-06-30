@@ -1,5 +1,9 @@
 package mdt.model.expr;
 
+import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
+
 import mdt.model.expr.TerminalExpr.IntegerExpr;
 import mdt.model.expr.TerminalExpr.StringExpr;
 import mdt.model.sm.ref.DefaultElementReference;
@@ -13,6 +17,8 @@ import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.ref.OperationVariableReference;
 import mdt.model.sm.ref.OperationVariableReference.Kind;
 import mdt.model.sm.ref.SubmodelBasedElementReference;
+import mdt.model.sm.ref.timeseries.ReadLastRecordsReference;
+import mdt.model.sm.ref.timeseries.TimeSeriesRange;
 import mdt.model.sm.value.IdShortPath;
 
 /**
@@ -77,22 +83,50 @@ public abstract class MDTElementReferenceExpr implements MDTExpression {
 	}
 	
 	public static class OperationVariableReferenceExpr extends MDTElementReferenceExpr implements MDTExpression {
-		private final MDTElementReferenceExpr m_opVarRef;
+		private final DefaultElementReferenceExpr m_opElmExpr;
 		private final Kind m_kind;
 		private final IntegerExpr m_opVarIdx;
-		
-		public OperationVariableReferenceExpr(MDTElementReferenceExpr opVarRef, Kind kind,
+
+		public OperationVariableReferenceExpr(DefaultElementReferenceExpr opElmExpr, Kind kind,
 												IntegerExpr opVarIdx) {
-			m_opVarRef = opVarRef;
+			m_opElmExpr = opElmExpr;
 			m_kind = kind;
 			m_opVarIdx = opVarIdx;
 		}
 
 		@Override
 		public OperationVariableReference evaluate() {
-			MDTElementReference opRef = m_opVarRef.evaluate();
+			DefaultElementReference opRef = m_opElmExpr.evaluate();
 			int idx = m_opVarIdx.evaluate();
 			return OperationVariableReference.newInstance(opRef, m_kind, idx);
+		}
+	}
+
+	public static class TimeseriesReferenceExpr extends MDTElementReferenceExpr implements MDTExpression {
+		private final MDTSubmodelExpr m_smExpr;
+		@Nullable private final TimeSeriesRange m_range;
+		@Nullable private final List<String> m_columns;
+
+		public TimeseriesReferenceExpr(MDTSubmodelExpr smExpr, @Nullable TimeSeriesRange range,
+										@Nullable List<String> columns) {
+			m_smExpr = smExpr;
+			m_range = range;
+			m_columns = columns;
+		}
+
+		@Override
+		public ReadLastRecordsReference evaluate() {
+			DefaultSubmodelReference smRef = m_smExpr.evaluate();
+
+			ReadLastRecordsReference.Builder builder = ReadLastRecordsReference.builder()
+																					.submodelReference(smRef);
+			if ( m_range != null ) {
+				builder.range(m_range);
+			}
+			if ( m_columns != null ) {
+				builder.columns(m_columns);
+			}
+			return builder.build();
 		}
 	}
 }

@@ -11,10 +11,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import utils.func.FOption;
 import utils.http.RESTfulRemoteException;
 
@@ -24,8 +20,6 @@ import mdt.model.MessageTypeEnum;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@Getter @Setter
-@Accessors(prefix="m_")
 @JsonPropertyOrder({"messageType", "text", "code", "timestamp"})
 @JsonInclude(Include.NON_NULL)
 public class Fa3stMessage {
@@ -51,9 +45,37 @@ public class Fa3stMessage {
     	this.m_timestamp = timestamp;
     }
     
+    public MessageTypeEnum getMessageType() {
+		return m_messageType;
+	}
+    
+    public void setMessageType(MessageTypeEnum messageType) {
+		m_messageType = messageType;
+    }
+    
+    public String getText() {
+    	return m_text;
+    }
+    
+    public void setText(String text) {
+		m_text = text;
+	}
+    
     public String getCode() {
     	return m_code;
     }
+    
+    public void setCode(String code) {
+    	m_code = code;
+    }
+    
+    public String getTimestamp() {
+		return m_timestamp;
+	}
+    
+    public void setTimestamp(String timestamp) {
+		m_timestamp = timestamp;
+	}
 	
 	public RESTfulRemoteException toClientException() {
 		String msg = FOption.mapOrSupply(m_text,

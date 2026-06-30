@@ -20,13 +20,11 @@ import mdt.model.MDTModelSerDe;
  * @author Kang-Woo Lee (ETRI)
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIncludeProperties({ "operation", "inputArguments", "outputArguments", "async" })
+@JsonIncludeProperties({ "operation", "inputArguments", "async" })
 public class OperationRequest {
 	@JsonProperty("operation") private String m_opId;
 	@JsonProperty("inputArguments")
 	private Map<String,SubmodelElement> m_inputArguments = Maps.newHashMap();
-	@JsonProperty("outputArguments")
-	private Map<String,SubmodelElement> m_outputArguments = Maps.newHashMap();
 	@JsonProperty("async") private boolean m_async = true;
 	
 	public String getOperation() {
@@ -43,14 +41,6 @@ public class OperationRequest {
 	
 	public void setInputArguments(Map<String,SubmodelElement> arguments) {
 		m_inputArguments = Maps.newHashMap(arguments);
-	}
-	
-	public Map<String,SubmodelElement> getOutputArguments() {
-		return m_outputArguments;
-	}
-	
-	public void setOutputArguments(Map<String,SubmodelElement> arguments) {
-		m_outputArguments = Maps.newHashMap(arguments);
 	}
 	
 	public boolean isAsync() {
@@ -71,8 +61,7 @@ public class OperationRequest {
 	
 	public String toString() {
 		String inArgNames = FStream.from(m_inputArguments.keySet()).join(", ");
-		String outArgNames = FStream.from(m_outputArguments.keySet()).join(", ");
 
-		return String.format("(%s) -> (%s)", inArgNames, outArgNames);
+		return String.format("(%s)", inArgNames);
 	}
 }

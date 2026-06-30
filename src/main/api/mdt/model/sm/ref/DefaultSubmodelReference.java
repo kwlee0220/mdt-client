@@ -207,6 +207,9 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	}
 	
 	public static ByIdShortSubmodelReference ofIdShort(String instanceId, String submodelIdShort) {
+		Preconditions.checkNotNullArgument(instanceId, "instanceId is null");
+		Preconditions.checkNotNullArgument(submodelIdShort, "submodelIdShort is null");
+		
 		return new ByIdShortSubmodelReference(instanceId, submodelIdShort);
 	}
 	

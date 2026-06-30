@@ -67,10 +67,10 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		refElm.setValue(m_reference);
 	}
 	
-	public static ReferenceElementValue fromValueObject(Object value, ReferenceElement refElm) throws IOException {
+	public static ReferenceElementValue fromValueObject(Object value, ReferenceTypes refTypes) throws IOException {
 		if ( value instanceof List keyObjsList ) {
-			ReferenceTypes refTypes = refElm.getValue().getType();
 			DefaultReference.Builder builder = new DefaultReference.Builder().type(refTypes);
+			@SuppressWarnings("unchecked")
 			List<Key> keys = FStream.<Map<?, ?>>from(keyObjsList)
 									.map(keyObj -> {
 										Map<?, ?> keyMap = (Map<?, ?>) keyObj;
@@ -87,13 +87,12 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		}
 	}
 	
-	public static ReferenceElementValue parseValueJsonNode(JsonNode vnode, ReferenceElement refElm)
+	public static ReferenceElementValue parseValueJsonNode(JsonNode vnode, ReferenceTypes refTypes)
 		throws IOException {
 		if ( !vnode.isObject() ) {
 			throw new IOException("ReferenceElementValue expects an 'Object' node: JsonNode=" + vnode);
 		}
 		
-		ReferenceTypes refTypes = refElm.getValue().getType();
 		DefaultReference.Builder builder = new DefaultReference.Builder()
 												.type(refTypes);
 		FStream.from(vnode.get("keys").elements())

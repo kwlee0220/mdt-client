@@ -211,6 +211,90 @@ public class MdtExprBaseListener implements MdtExprListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterTimeseriesSpec(MdtExprParser.TimeseriesSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTimeseriesSpec(MdtExprParser.TimeseriesSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTsRangeSpec(MdtExprParser.TsRangeSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTsRangeSpec(MdtExprParser.TsRangeSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTsRangeLastSpec(MdtExprParser.TsRangeLastSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTsRangeLastSpec(MdtExprParser.TsRangeLastSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTsRangeAnchor(MdtExprParser.TsRangeAnchorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTsRangeAnchor(MdtExprParser.TsRangeAnchorContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterDurationValue(MdtExprParser.DurationValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDurationValue(MdtExprParser.DurationValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTsRangeAbsoluteSpec(MdtExprParser.TsRangeAbsoluteSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTsRangeAbsoluteSpec(MdtExprParser.TsRangeAbsoluteSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTsProjectionSpec(MdtExprParser.TsProjectionSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTsProjectionSpec(MdtExprParser.TsProjectionSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterValueLiteralSpec(MdtExprParser.ValueLiteralSpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -271,6 +355,30 @@ public class MdtExprBaseListener implements MdtExprListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterDurationLiteralSpec(MdtExprParser.DurationLiteralSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDurationLiteralSpec(MdtExprParser.DurationLiteralSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterIso8601DurationLiteralSpec(MdtExprParser.Iso8601DurationLiteralSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitIso8601DurationLiteralSpec(MdtExprParser.Iso8601DurationLiteralSpecContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterIdOrString(MdtExprParser.IdOrStringContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -278,6 +386,18 @@ public class MdtExprBaseListener implements MdtExprListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitIdOrString(MdtExprParser.IdOrStringContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterKeyword(MdtExprParser.KeywordContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitKeyword(MdtExprParser.KeywordContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

@@ -32,6 +32,10 @@ public interface MDTSubmodelReference extends SubmodelReference {
 	 */
 	public void activate(MDTInstanceManager manager);
 	
+	default public void activate(MDTInstance instance) {
+		activate(instance.getInstanceManager());
+	}
+	
 	/**
 	 * Submodel을 포함한 MDTInstance의 식별자를 반환한다.
 	 * 

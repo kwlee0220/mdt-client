@@ -2,9 +2,6 @@ package mdt.model.sm.ai;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import mdt.model.DefaultSubModelInfo;
 import mdt.model.SubModelInfo;
 import mdt.model.sm.entity.SMCollectionField;
@@ -15,7 +12,6 @@ import mdt.model.sm.entity.SubmodelEntity;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-@Getter @Setter
 public class DefaultAI extends SubmodelEntity implements AI {
 	@SMCollectionField(idShort="SubModelInfo", adaptorClass=DefaultSubModelInfo.class)
 	private SubModelInfo subModelInfo;
@@ -32,6 +28,22 @@ public class DefaultAI extends SubmodelEntity implements AI {
 
 	public DefaultAI() {
 		setSemanticId(SEMANTIC_ID_REFERENCE);
+	}
+	
+	public SubModelInfo getSubModelInfo() {
+		return this.subModelInfo;
+	}
+	
+	public void setSubModelInfo(SubModelInfo subModelInfo) {
+		this.subModelInfo = subModelInfo;
+	}
+	
+	public DefaultAIInfo getAIInfo() {
+		return this.AIInfo;
+	}
+	
+	public void setAIInfo(DefaultAIInfo AIInfo) {
+		this.AIInfo = AIInfo;
 	}
 	
 	@Override

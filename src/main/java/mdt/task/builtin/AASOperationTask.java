@@ -18,8 +18,6 @@ import mdt.model.AASUtils;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
-import mdt.model.sm.value.ElementValue;
-import mdt.model.sm.value.ElementValues;
 import mdt.task.AbstractMDTTask;
 import mdt.task.TaskException;
 import mdt.workflow.model.TaskDescriptor;
@@ -54,29 +52,28 @@ public class AASOperationTask extends AbstractMDTTask {
 			MDTElementReference opRef
 				= descriptor.findOptionValue(OPTION_OPERATION)
 							.map(ElementReferences::parseExpr)
-							.orElseThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
+							.getOrThrow(() -> new IllegalArgumentException("Option[operation] is not provided"));
 			opRef.activate(manager);
 			
-			Duration pollInterval = getPollInterval().orElse(DEFAULT_POLL_INTERVAL);
+			Duration pollInterval = getPollInterval().getOrElse(DEFAULT_POLL_INTERVAL);
 			m_opClient = new AASOperationClient(opRef, pollInterval);
 	
 			// TaskDescriptor에 기술된 input variable을 이용해서 입력 인자를 설정한다.
-			Map<String,ElementValue> inputValues = KeyValueFStream.from(inputArguments)
-																	.mapValue(ElementValues::getValue)
-																	.toMap();
-			m_opClient.setInputVariableValues(inputValues);
+			inputArguments.forEach((argId, argElm) -> {
+				m_opClient.setInputVariable(argId, argElm);
+			});
 			
 			// AASOperation을 실행하고 완료될 때까지 대기한다.
 			m_opClient.run();
 
 			// 출력 변수의 값을 수집된 출력 값으로 갱신한다.
-			Map<String,ElementValue> outputValues = m_opClient.getOutputVariableValues();
-			KeyValueFStream.from(outputValues)
-							.match(outputArguments)
+			KeyValueFStream.from(outputArguments)
+							.match(m_opClient.getOutputVariables())
 							.forEach((argId, match) -> {
-								ElementValues.update(match._2, match._1);
+								SubmodelElement outVal = match._2.getValue();
+								outputArguments.put(argId, outVal);
 							});
-			getLogger().info("AASOperation completed: ref={}, out={}", opRef, outputValues);
+			getLogger().info("AASOperation completed: ref={}, out={}", opRef, m_opClient.getOutputVariables());
 			
 			return outputArguments;
 		}

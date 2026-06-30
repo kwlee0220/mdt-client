@@ -2,7 +2,7 @@ package mdt.model.sm.ref;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
@@ -76,6 +76,8 @@ public interface MDTElementReference extends ElementReference {
 	
 	/**
 	 * 참조된 Element의 idShortPath 문자열을 반환한다.
+	 * <p>
+	 * 참조의 활성화 여부와 상관없이 호출 가능하다.
 	 *
 	 * @return	idShortPath 문자열.
 	 */
@@ -102,13 +104,12 @@ public interface MDTElementReference extends ElementReference {
 		}
 	}
 	
-	public default void updatePropertyValue(PropertyValue propValue) throws IOException {
+	public default void updatePropertyValue(PropertyValue<?> propValue) throws IOException {
 		SubmodelElement sme = read();
 		if ( SubmodelUtils.isParameterValue(sme) ) {
-			Map<String,ElementValue> paramValue = Map.of(
-				"ParameterValue", propValue,
-				"EventDateTime", PropertyValue.DATE_TIME(Instant.now())
-			);
+			LinkedHashMap<String,ElementValue> paramValue = new LinkedHashMap<>();
+			paramValue.put("ParameterValue", propValue);
+			paramValue.put("EventDateTime", PropertyValue.DATE_TIME(Instant.now()));
 			updateValue(new ElementCollectionValue(paramValue));
 		}
 		else {

@@ -31,18 +31,15 @@ import mdt.model.timeseries.TimeSeriesUtils;
 
 
 /**
- * MDT 연산에 사용되는 입/출력 인자의 reference를 정의하는 인터페이스이다.
+ * 시계열(TimeSeries) Submodel의 레코드를 조회하는 {@link ElementReference} 구현체이다.
  * <p>
- * 입/출력 연산 인자의 reference는 다음과 같이 구성된다.
- * <ul>
- *     <li>instanceId: 연산을 포함하는 인스턴스의 ID
- *     <li>submodelIdShort: 연산을 포함하는 서브모델의 ID
- *     <li>kind: 인자의 종류 (입력 또는 출력)
- *     <li>argSpec: 인자의 명세. 인자의 이름 또는 인덱스 번호이거나 '*' (모든 인자)이다.
- * </ul>
+ * 대상 시계열 Submodel에 대한 참조와 선택적 조회 범위({@link TimeSeriesRange}),
+ * 선택적 조회 컬럼 목록으로 구성되며, 읽기 시 대상 Submodel의 {@code ReadLastRecords}
+ * 연산을 호출하여 레코드를 얻는다. 레코드 갱신({@code write}/{@code updateValue})은
+ * 지원하지 않는다.
  * <p>
- * 인자의 값을 읽거나 쓰기 위해서는 {@link #activate(MDTInstanceManager)}를 호출하여
- * 인자의 reference를 활성화해야 한다.
+ * Json 직렬화 시 {@link #SERIALIZATION_TYPE}({@code "mdt:ref:timeseries"}) 타입으로 식별되며,
+ * 레코드를 읽기 위해서는 {@link #activate(MDTInstanceManager)}를 호출하여 참조를 활성화해야 한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -71,31 +68,67 @@ public class ReadLastRecordsReference extends SubmodelBasedElementReference {
 		}
 	}
 
+	/**
+	 * 지정된 범위/컬럼의 시계열 레코드들을 읽어 반환한다.
+	 * <p>
+	 * 대상 시계열 Submodel의 {@code ReadLastRecords} 연산을 호출하여 결과를 얻는다.
+	 *
+	 * @return 레코드들을 담은 {@link SubmodelElementCollection}.
+	 * @throws IOException 읽기 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public SubmodelElementCollection read() throws IOException {
 		return TimeSeriesUtils.readLastRecords(getSubmodelReference(), m_range, m_columns);
 	}
 
+	/**
+	 * 지정된 범위/컬럼의 시계열 레코드들의 값을 읽어 반환한다.
+	 *
+	 * @return 레코드들의 값을 담은 {@link ElementCollectionValue}.
+	 * @throws IOException 읽기 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public ElementCollectionValue readValue() throws IOException {
 		return ElementCollectionValue.from(read());
 	}
 
+	/**
+	 * 시계열 레코드 참조는 갱신을 지원하지 않는다.
+	 *
+	 * @throws UnsupportedOperationException 항상 발생한다.
+	 */
 	@Override
 	public void write(SubmodelElement newElm) throws IOException {
-		throw new UnsupportedOperationException("TimeSeriesElementReference does not support element update");
+		throw new UnsupportedOperationException("ReadLastRecordsReference does not support element update");
 	}
 
+	/**
+	 * 시계열 레코드 참조는 갱신을 지원하지 않는다.
+	 *
+	 * @throws UnsupportedOperationException 항상 발생한다.
+	 */
 	@Override
 	public void updateValue(ElementValue smev) throws IOException {
-		throw new UnsupportedOperationException("TimeSeriesElementReference does not support value update");
+		throw new UnsupportedOperationException("ReadLastRecordsReference does not support value update");
 	}
 
+	/**
+	 * 시계열 레코드 참조는 갱신을 지원하지 않는다.
+	 *
+	 * @throws UnsupportedOperationException 항상 발생한다.
+	 */
 	@Override
 	public void updateValue(String valueJsonString) throws IOException {
-		throw new UnsupportedOperationException("TimeSeriesElementReference does not support value update");
+		throw new UnsupportedOperationException("ReadLastRecordsReference does not support value update");
 	}
 
+	/**
+	 * 이 참조의 MdtExpr 표현식({@code timeseries:<submodelSpec>[#<range>][|<cols>]})을 반환한다.
+	 * <p>
+	 * 내부용 선두 {@code "Time"} 컬럼은 직렬화에서 제외된다.
+	 *
+	 * @return 표현식 문자열.
+	 */
 	@Override
 	public String toStringExpr() {
 		// MdtExpr 문법(timeseriesSpec)에 맞춰 직렬화한다:
@@ -128,7 +161,7 @@ public class ReadLastRecordsReference extends SubmodelBasedElementReference {
 		if ( this == obj ) {
 			return true;
 		}
-		if ( obj == null || !(obj instanceof ReadLastRecordsReference) ) {
+		if ( obj == null || obj.getClass() != getClass() ) {
 			return false;
 		}
 
@@ -177,6 +210,14 @@ public class ReadLastRecordsReference extends SubmodelBasedElementReference {
 			return this;
 		}
 		
+		/**
+		 * 읽어올 컬럼명 목록을 설정한다.
+		 * <p>
+		 * 설정하지 않으면 전체 컬럼을 읽는다.
+		 *
+		 * @param columns	읽어올 컬럼명 목록.
+		 * @return 이 빌더 객체.
+		 */
 		public Builder columns(List<String> columns) {
 			m_columns = columns;
 			return this;
@@ -216,6 +257,14 @@ public class ReadLastRecordsReference extends SubmodelBasedElementReference {
 			return this;
 		}
 		
+		/**
+		 * 레코드 조회 범위를 설정한다.
+		 * <p>
+		 * 설정하지 않으면 전체 레코드를 읽는다.
+		 *
+		 * @param range	조회 범위.
+		 * @return 이 빌더 객체.
+		 */
 		public Builder range(TimeSeriesRange range) {
 			m_range = range;
 			return this;
@@ -279,7 +328,8 @@ public class ReadLastRecordsReference extends SubmodelBasedElementReference {
 	 * Jackson 기반의 {@link ElementReferences.Deserializer}가 {@link ElementReference} 객체를
 	 * 역직렬화하는 과정에서 호출된다.
 	 *
-	 * @param jnode	{@code submodelReference}, {@code kind}, {@code argumentSpec} 필드를 담은 Json 노드.
+	 * @param jnode	{@code submodelReference} 필드와 선택적 {@code last}/{@code timeSpan}/{@code columns}
+	 * 				필드를 담은 Json 노드.
 	 * @return 복원된 {@link ReadLastRecordsReference} 객체.
 	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
 	 */
@@ -338,6 +388,11 @@ public class ReadLastRecordsReference extends SubmodelBasedElementReference {
 		return new ReadLastRecordsReference(smRef, range, columns);
 	}
 	
+	/**
+	 * 시계열 레코드가 위치한 고정 경로({@code "Segments.FullRange"})를 반환한다.
+	 *
+	 * @return 시계열 레코드의 idShort path.
+	 */
 	@Override
 	protected String buildIdShortPath() {
 		return "Segments.FullRange";

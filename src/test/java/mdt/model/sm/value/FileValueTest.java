@@ -37,6 +37,7 @@ public class FileValueTest {
 	@Test
 	public void testUpdateWithRawString() throws IOException {
 		DefaultFile aasFile = new DefaultFile();
+		aasFile.setContentType("application/octet-stream");
 		ElementValues.updateWithValueJsonString(aasFile, VALUE_JSON);
 		Assertions.assertEquals("/home/kwlee/image.jpg", aasFile.getValue());
 		Assertions.assertEquals("application/jpeg", aasFile.getContentType());

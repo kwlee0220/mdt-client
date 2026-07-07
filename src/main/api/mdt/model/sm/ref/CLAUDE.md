@@ -9,7 +9,7 @@ SubmodelElement에 대한 **참조(reference)**를 추상화한 패키지(`src/m
 | 역할 | 경로 |
 |------|------|
 | 참조 타입(도메인) | `src/main/api/mdt/model/sm/ref/*.java` |
-| 시계열 참조/판독기/범위 | `src/main/api/mdt/model/sm/ref/timeseries/*.java` |
+| 시계열 참조/범위 | `src/main/api/mdt/model/sm/ref/timeseries/*.java` |
 | JSON 직렬화 파사드 | `mdt/model/sm/ref/ElementReferences.java` |
 | MdtExpr 문법(소스) | `src/main/antlr/MdtExpr.g4` |
 | ANTLR jar / 재생성 스크립트 | `src/main/antlr/antlr-4.13.2-complete.jar`, `src/main/antlr/antlr4_script.sh` |
@@ -29,7 +29,8 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
 │     ├─ MDTParameterCollectionReference    — Data Submodel의 파라미터 전체 집합
 │     ├─ MDTArgumentReference               — MDT 연산(Simulation/AI)의 입/출력 인자
 │     ├─ OperationVariableReference         — Operation 요소의 입력/출력/입출력 변수
-│     └─ TimeSeriesElementReference         — (timeseries/) 시계열 Submodel 레코드
+│     └─ ReadLastRecordsReference           — (timeseries/) 시계열 Submodel 레코드
+│                                              (ReadLastRecords 연산 호출 기반)
 └─ MDTElementReference (interface)          — MDT 관리 요소 (instanceId/submodelIdShort/idShortPath)
 ```
 
@@ -37,14 +38,18 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
   첨부파일 입출력, JSON 직렬화(`toJsonString`/`serializeFields`/`getSerializationType`). `@JsonSerialize`/
   `@JsonDeserialize`로 `ElementReferences.Serializer`/`Deserializer`에 위임.
 - **`MDTElementReference`** — 세 좌표(instanceId, Submodel idShort, idShortPath) + 활성화 API.
-- **`SubmodelBasedElementReference`** — `getSubmodelReference()`/`getSubmodelService()`/
-  `getIdShortPathString()`/`getInstance()`를 하위 클래스가 채운다.
+- **`SubmodelBasedElementReference`** — 읽기/쓰기/첨부파일 접근과 `getSubmodelReference()`/
+  `getSubmodelService()`/`getIdShortPathString()`/`getInstance()` 등을 기본 구현으로 제공한다.
+  하위 클래스는 `buildIdShortPath()`(활성화 시 1회 호출)와 `toStringExpr()`를 구현하고,
+  필요 시 `loadPrototype()`을 재정의한다.
 
 ## 활성화(activation) 라이프사이클
 
 `MDTElementReference` 계열은 **생성/역직렬화 직후 비활성**이다. `activate(MDTInstanceManager)` 전에
-`getInstance()`/`getSubmodelService()`를 호출하면 `IllegalStateException`. `getIdShortPathString()`은
-활성화와 무관. `ElementReferences.activate(ref, manager)`는 `MDTElementReference`가 아니면 IAE.
+`getInstance()`/`getSubmodelService()`를 호출하면 `IllegalStateException`. `getIdShortPathString()`도
+경로가 활성화 시점에 결정되는 구현(`MDTParameterReference`, `MDTArgumentReference` 등)에서는 활성화
+전 호출 시 `IllegalStateException`이 발생한다(`DefaultElementReference`는 경로가 생성 시 고정되어
+활성화와 무관). `ElementReferences.activate(ref, manager)`는 `MDTElementReference`가 아니면 IAE.
 
 ## JSON 직렬화 — 타입 판별자
 
@@ -54,16 +59,22 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
 | `mdt:ref:param`      | `MDTParameterReference` / `MDTParameterCollectionReference` (분기: `parameterExpr=="*"`) |
 | `mdt:ref:oparg`      | `MDTArgumentReference` |
 | `mdt:ref:opvar`      | `OperationVariableReference` |
-| `mdt:ref:timeseries` | `TimeSeriesElementReference` |
+| `mdt:ref:timeseries` | `ReadLastRecordsReference` |
 | `mdt:ref:file`       | `FileStoreReference` |
 
 새 참조 타입 추가 시: (1) `SERIALIZATION_TYPE` 상수, (2) `serializeFields`/`deserializeFields`,
-(3) `ElementReferences.parseTypedJsonNode` 분기, (4) 표현식이 필요하면 문법·visitor·Expr까지 함께 갱신.
+(3) `ElementReferences`의 `DESERIALIZERS` 레지스트리에 등록, (4) 표현식이 필요하면
+문법·visitor·Expr까지 함께 갱신.
+
+`OperationVariableReference`는 대상 Operation 요소 참조(`m_opRef`)를 `aasOpVar` 필드에
+`@type` 포함 중첩 객체로 직렬화한다(임의의 `SubmodelBasedElementReference` opRef가 round-trip됨).
 
 ## 표현식 파싱 — MdtExpr 문법으로 일원화
 
-`ElementReferences.parseExpr(String)`는 **ANTLR `MDTExpressionParser`에 위임**한다(옛 손코딩 SplitStream
-파서는 폐기). 처리 흐름:
+`ElementReferences.parseExpr(String)`/`parseSubmodelReference(String)` 모두 **ANTLR
+`MDTExpressionParser`에 위임**한다(옛 손코딩 SplitStream 파서는 폐기). id 기반 Submodel 참조
+구문은 `submodel:id=<submodelId>`이며, 옛 `submodel:<id>` 형태는 instanceId가 `submodel`인
+instance 기반 참조로 해석되므로 주의한다. 처리 흐름:
 ```
 문자열 → MdtExprLexer → MdtExprParser(시작 규칙) → 파스 트리
        → MDTExpressionVisitor.visit() → *Expr 객체 → .evaluate() → 참조 객체
@@ -85,7 +96,7 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 - `param:<instanceId>:<idShortPath|INTEGER|*>` → `MDTParameterReference`(/`*`면 Collection)
 - `oparg:<submodelSpec>:(in|out):<idOrString|INTEGER|*>` → `MDTArgumentReference`
 - `opvar:<defaultElementSpec>:(in|out|inout):<INTEGER>` → `OperationVariableReference`
-- `timeseries:<submodelSpec>:<idShortPath>[#<range>][|<cols>]` → `TimeSeriesElementReference`
+- `timeseries:<submodelSpec>[#<range>][|<cols>]` → `ReadLastRecordsReference`
 
 `submodelSpec` = `inst:Data` | `inst:idShort=Data` | `submodel:id='...'`.
 
@@ -102,22 +113,22 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 
 ## timeseries/ 서브패키지
 
-`TimeSeriesElementReference` + 판독기(`SegmentRecordsReader`, `InternalSegmentRecordsReader`,
-`LinkedSegmentRecordsReader`) + 범위 `Range`(sealed). 문법 `tsRangeSpec` ↔ `Range` 매핑:
+`ReadLastRecordsReference`(시계열 Submodel의 `ReadLastRecords` 연산 호출 기반) + 범위
+`TimeSeriesRange`(sealed). 문법 `tsRangeSpec` ↔ `TimeSeriesRange` 매핑:
 
-| 문법 | `Range` |
-|------|---------|
-| `last=N`(접미사 없는 정수) | `Range.Count(N)` — 마지막 N개 레코드 |
-| `last=dur@latest`(기본) | `Range.Trailing(dur, LATEST)` — 마지막 레코드 시각 기준 |
-| `last=dur@now` | `Range.Trailing(dur, NOW)` — 현재 시각 기준 |
-| `from~to` | `Range.Absolute(from, to)` (한쪽 null = 개방) |
+| 문법 | `TimeSeriesRange` |
+|------|-------------------|
+| `last=N`(접미사 없는 정수) | `Count(N)` — 마지막 N개 레코드 |
+| `last=dur@latest`(기본) | `Trailing(dur, LATEST)` — 마지막 레코드 시각 기준 |
+| `last=dur@now` | `Trailing(dur, NOW)` — 현재 시각 기준 |
+| `from~to` | `Absolute(from, to)` (한쪽 null = 개방) |
 | `\|col,...` | `columns([...])`, 생략 시 전체 |
 
 - `TIMESTAMP`→`Instant` 정책(`MDTExpressionVisitor.parseTimestamp`): zone 명시 시 그대로, zone 없으면
   UTC, 날짜만이면 그 날 00:00:00 UTC.
-- `TimeSeriesElementReference`는 내부적으로 컬럼 맨 앞에 `"Time"`을 추가하지만, `toStringExpr`/
+- `ReadLastRecordsReference`는 내부적으로 컬럼 맨 앞에 `"Time"`을 추가하지만, `toStringExpr`/
   `serializeFields` 모두 직렬화 시 `"Time"`을 제외한다(역직렬화 시 생성자가 다시 prepend).
-- `equals`는 submodel+tsSpec만 비교(range/columns 제외).
+- `equals`는 submodel 참조만 비교(range/columns 제외).
 
 ## opvar 특이사항
 
@@ -130,12 +141,16 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 
 `src/test/java/mdt/model/sm/ref/`(및 `.../timeseries/`)에 클래스별 테스트가 있다. 모든 직렬화 대상
 참조는 **expr round-trip**(`parseExpr(toStringExpr())`)과 **JSON round-trip**
-(`parseJsonString(toJsonString())`)을 검증한다. `TimeSeriesElementReference`처럼 `equals`가 일부
+(`parseJsonString(toJsonString())`)을 검증한다. `ReadLastRecordsReference`처럼 `equals`가 일부
 필드를 무시하는 경우 round-trip 비교는 `toStringExpr()` 문자열로 한다.
 
 ## 규약
 
 - 인자 검증은 `utils.Preconditions.checkNotNullArgument`/`checkArgument`/`checkState`.
+  메시지 템플릿은 `Strings.lenientFormat` 기반이므로 플레이스홀더는 **`%s`만** 사용한다
+  (`%d`/`{}`는 치환되지 않음).
 - 비활성/활성 참조를 구분하고, `SubmodelService`가 필요한 메서드는 활성화 전제를 문서화.
-- 새 `SubmodelBasedElementReference` 하위 클래스는 4개 추상 메서드를 구현.
-- 새 참조 타입은 JSON 판별자·문법·visitor·Expr·`toStringExpr`를 일괄 갱신(round-trip 유지).
+- 새 `SubmodelBasedElementReference` 하위 클래스는 `buildIdShortPath()`/`toStringExpr()`를
+  구현한다(필요 시 `loadPrototype()` 재정의).
+- 새 참조 타입은 JSON 판별자·`DESERIALIZERS` 등록·문법·visitor·Expr·`toStringExpr`를 일괄
+  갱신(round-trip 유지).

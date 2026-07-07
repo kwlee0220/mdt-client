@@ -41,8 +41,9 @@ public class OperationVariableReferenceTest {
 
 	private static final String JSON_STRING
 		= "{\"@type\":\"mdt:ref:opvar\","
+				+ "\"aasOpVar\":{\"@type\":\"mdt:ref:element\","
 				+ "\"submodelReference\":{\"instanceId\":\"test\",\"submodelIdShort\":\"AddAndSleep\"},"
-				+ "\"elementPath\":\"Operation\","
+				+ "\"elementPath\":\"Operation\"},"
 				+ "\"kind\":\"inout\",\"ordinal\":0}";
 	private static final String EXPR = "opvar:test:AddAndSleep:Operation:out:1";
 	

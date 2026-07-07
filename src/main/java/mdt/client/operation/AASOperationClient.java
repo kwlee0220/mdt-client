@@ -259,6 +259,11 @@ public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> 
 			opVar.setValue(value);
 		}
 	}
+	
+	@Override
+	public String toString() {
+		return String.format("AASOperationClient[%s:%s]", m_submodelSvc, m_operationPath);
+	}
 
 	
 	/**

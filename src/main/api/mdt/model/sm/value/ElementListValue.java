@@ -1,6 +1,7 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -9,6 +10,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Lists;
 
 import utils.Preconditions;
 import utils.stream.FStream;
@@ -31,22 +33,24 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 
 	/**
 	 * 주어진 원소 값 리스트로 {@code ElementListValue}를 생성한다.
+	 * <p>
+	 * 전달된 리스트는 복사되어 보관된다.
 	 *
 	 * @param values	원소 값 리스트({@code null} 불가).
 	 */
 	public ElementListValue(List<ElementValue> values) {
 		Preconditions.checkNotNullArgument(values, "values is null");
 
-		m_elementValues = values;
+		m_elementValues = Lists.newArrayList(values);
 	}
 
 	/**
 	 * 리스트의 원소 값들을 반환한다.
 	 *
-	 * @return 원소 {@link ElementValue} 리스트.
+	 * @return 원소 {@link ElementValue} 리스트(수정 불가 뷰).
 	 */
 	public List<ElementValue> getElementValues() {
-		return m_elementValues;
+		return Collections.unmodifiableList(m_elementValues);
 	}
 
 	/**
@@ -70,8 +74,8 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 	public void update(SubmodelElementList sml) {
 		Preconditions.checkNotNullArgument(sml, "SubmodelElementList is null");
 		Preconditions.checkArgument(m_elementValues.size() == sml.getValue().size(),
-									"Element count mismatch: elementValues.size=%d, "
-									+ "submodelElementList.value.size=%d",
+									"Element count mismatch: elementValues.size=%s, "
+									+ "submodelElementList.value.size=%s",
 									m_elementValues.size(), sml.getValue().size());
 		
 		List<SubmodelElement> members = sml.getValue();
@@ -106,13 +110,20 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 	 * @param obj	원소 값들의 Iterable.
 	 * @param sml	각 원소의 타입 결정에 사용할 대상 ElementListValue.
 	 * @return 생성된 ElementListValue.
-	 * @throws IOException	{@code obj}가 Iterable이 아니거나 변환이 실패한 경우.
+	 * @throws IOException	{@code obj}가 Iterable이 아니거나 원소 개수가 일치하지 않거나
+	 * 						변환이 실패한 경우.
 	 */
 	public static ElementListValue fromValueObject(Object vobj, ElementListValue sml) throws IOException {
 		if ( vobj instanceof Iterable<?> iter ) {
+			List<Object> elmObjs = Lists.newArrayList(iter);
+			if ( elmObjs.size() != sml.m_elementValues.size() ) {
+				throw new IOException(String.format("Element count mismatch: expected=%d, actual=%d",
+													sml.m_elementValues.size(), elmObjs.size()));
+			}
+
 			List<ElementValue> members
 					= FStream.from(sml.m_elementValues)
-							.zipWith(FStream.<Object>from(iter))
+							.zipWith(FStream.from(elmObjs))
 							.mapOrThrow(pair -> ElementValues.fromValueObject(pair._2, pair._1))
 		                    .toList();
 			return new ElementListValue(members);
@@ -130,13 +141,19 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 	 * @param vnode	원소들을 담은 JSON 배열 노드.
 	 * @param sml	각 원소의 타입 결정에 사용할 대상 ElementListValue.
 	 * @return 생성된 ElementListValue.
-	 * @throws IOException	{@code vnode}가 배열이 아니거나 변환이 실패한 경우.
+	 * @throws IOException	{@code vnode}가 배열이 아니거나 원소 개수가 일치하지 않거나
+	 * 						변환이 실패한 경우.
 	 */
 	public static ElementListValue parseValueJsonNode(JsonNode vnode, ElementListValue sml)
 		throws IOException {
 		if ( !vnode.isArray() ) {
 			throw new IOException("ElementListValue expects an 'Array' node: JsonNode=" + vnode);
 		}
+		if ( vnode.size() != sml.m_elementValues.size() ) {
+			throw new IOException(String.format("Element count mismatch: expected=%d, actual=%d",
+												sml.m_elementValues.size(), vnode.size()));
+		}
+
 		List<ElementValue> values = FStream.from(sml.m_elementValues)
 											.zipWith(FStream.from(vnode.elements()))
 											.mapOrThrow(pair -> ElementValues.parseValueJsonNode(pair._2, pair._1))

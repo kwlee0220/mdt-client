@@ -1,7 +1,6 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +16,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 
+import utils.Preconditions;
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
@@ -31,6 +31,8 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 	private final Reference m_reference;
 	
 	public ReferenceElementValue(Reference reference) {
+		Preconditions.checkNotNullArgument(reference, "reference is null");
+
 		m_reference = reference;
 	}
 	
@@ -48,19 +50,15 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 	}
 
 	@Override
-	public Map<String,Object> toValueObject() {
-		List<Map<String,String>> keyList = FStream.from(m_reference.getKeys())
-													.map(key -> {
-														Map<String,String> kvMap = Maps.newLinkedHashMap();
-														kvMap.put("type", key.getType().name());
-														kvMap.put("value", key.getValue());
-														return kvMap;
-													})
-													.toList();
-		Map<String,Object> output = Maps.newLinkedHashMap();
-		output.put("type", m_reference.getType().name());
-		output.put("keys", keyList);
-		return output;
+	public List<Map<String,String>> toValueObject() {
+		return FStream.from(m_reference.getKeys())
+						.map(key -> {
+							Map<String,String> kvMap = Maps.newLinkedHashMap();
+							kvMap.put("type", key.getType().name());
+							kvMap.put("value", key.getValue());
+							return kvMap;
+						})
+						.toList();
 	}
 	
 	public void update(ReferenceElement refElm) {
@@ -76,7 +74,10 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 										Map<?, ?> keyMap = (Map<?, ?>) keyObj;
 										String keyType = (String) keyMap.get("type");
 										String keyValue = (String) keyMap.get("value");
-										return (Key) new DefaultKey.Builder().type(KeyTypes.valueOf(keyType)).value(keyValue).build();
+										return (Key) new DefaultKey.Builder()
+																	.type(KeyTypes.valueOf(keyType))
+																	.value(keyValue)
+																	.build();
 									})
 									.toList();
 			DefaultReference ref = builder.keys(keys).build();
@@ -89,23 +90,21 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 	
 	public static ReferenceElementValue parseValueJsonNode(JsonNode vnode, ReferenceTypes refTypes)
 		throws IOException {
-		if ( !vnode.isObject() ) {
-			throw new IOException("ReferenceElementValue expects an 'Object' node: JsonNode=" + vnode);
+		JsonNode keysNode;
+		if ( vnode.isArray() ) {
+			keysNode = vnode;
 		}
-		
-		DefaultReference.Builder builder = new DefaultReference.Builder()
-												.type(refTypes);
-		FStream.from(vnode.get("keys").elements())
-	            .map(keyNode -> {
-	                String keyType = JacksonUtils.getStringField(keyNode, "type");
-	                String keyValue = JacksonUtils.getStringField(keyNode, "value");
-	                return (Key)new DefaultKey.Builder()
-				                            .type(KeyTypes.valueOf(keyType))
-				                            .value(keyValue)
-				                            .build();
-	            })
-	            .forEach(key -> builder.keys(key));
-		Reference ref = builder.build();
+		else if ( vnode.isObject() && vnode.has("keys") ) {
+			keysNode = vnode.get("keys");
+		}
+		else {
+			throw new IOException("ReferenceElementValue expects a key 'Array' node: JsonNode=" + vnode);
+		}
+
+		Reference ref = new DefaultReference.Builder()
+								.type(refTypes)
+								.keys(parseKeysNode(keysNode))
+								.build();
 		return new ReferenceElementValue(ref);
 	}
 
@@ -124,25 +123,30 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		gen.writeEndObject();
 	}
 	
-	public static ReferenceElementValue deserializeValue(JsonNode vnode) {
+	public static ReferenceElementValue deserializeValue(JsonNode vnode) throws IOException {
 		String type = JacksonUtils.getStringField(vnode, "type");
-		if ( type == null ) {
-			throw new UncheckedIOException(null, new IOException("missing field: Reference type"));
+		JsonNode keysNode = JacksonUtils.getFieldOrNull(vnode, "keys");
+		if ( keysNode == null || !keysNode.isArray() ) {
+			throw new IOException("ReferenceElementValue expects a 'keys' Array field: JsonNode=" + vnode);
 		}
-		
-		DefaultReference.Builder builder = new DefaultReference.Builder()
-												.type(ReferenceTypes.valueOf(type));
-		FStream.from(vnode.get("keys").elements())
-	            .map(keyNode -> {
-	                String keyType = JacksonUtils.getStringField(keyNode, "type");
-	                String keyValue = JacksonUtils.getStringField(keyNode, "value");
-	                return (Key)new DefaultKey.Builder()
-				                            .type(KeyTypes.valueOf(keyType))
-				                            .value(keyValue)
-				                            .build();
-	            })
-	            .forEach(key -> builder.keys(key));
-		Reference ref = builder.build();
+
+		Reference ref = new DefaultReference.Builder()
+								.type(ReferenceTypes.valueOf(type))
+								.keys(parseKeysNode(keysNode))
+								.build();
 		return new ReferenceElementValue(ref);
+	}
+
+	private static List<Key> parseKeysNode(JsonNode keysNode) {
+		return FStream.from(keysNode.elements())
+						.mapOrThrow(keyNode -> {
+							String keyType = JacksonUtils.getStringField(keyNode, "type");
+							String keyValue = JacksonUtils.getStringField(keyNode, "value");
+							return (Key)new DefaultKey.Builder()
+														.type(KeyTypes.valueOf(keyType))
+														.value(keyValue)
+														.build();
+						})
+						.toList();
 	}
 }

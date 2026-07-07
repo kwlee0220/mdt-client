@@ -14,7 +14,7 @@ import utils.json.JacksonDeserializationException;
 
 import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.ref.timeseries.TimeSeriesElementReference;
+import mdt.model.sm.ref.timeseries.ReadLastRecordsReference;
 
 /**
  * {@link ElementReferences}의 표현식 파싱 / Json 직렬화 / 활성화 동작에 대한 단위 테스트.
@@ -70,11 +70,11 @@ public class ElementReferencesTest {
 	}
 
 	@Test
-	public void parseExpr_timeseries_returnsTimeSeriesElementReference() {
+	public void parseExpr_timeseries_returnsReadLastRecordsReference() {
 		ElementReference ref = ElementReferences.parseExpr("timeseries:inst:Data");
-		Assertions.assertTrue(ref instanceof TimeSeriesElementReference);
+		Assertions.assertTrue(ref instanceof ReadLastRecordsReference);
 		Assertions.assertEquals(DefaultSubmodelReference.ofIdShort("inst", "Data"),
-								((TimeSeriesElementReference)ref).getSubmodelReference());
+								((ReadLastRecordsReference)ref).getSubmodelReference());
 	}
 
 	@Test
@@ -92,38 +92,38 @@ public class ElementReferencesTest {
 
 	@Test
 	public void parseSubmodelReference_submodelId() {
-		DefaultSubmodelReference smRef = ElementReferences.parseSubmodelReference("submodel:mysm");
+		DefaultSubmodelReference smRef = ElementReferences.parseSubmodelReference("submodel:id=mysm");
 		Assertions.assertEquals(DefaultSubmodelReference.ofId("mysm"), smRef);
 	}
 
-	// --- parseTimeSeriesElementReference ---
+	// --- parseReadLastRecordsReference ---
 
 	@Test
 	public void parseTimeSeries_plain() {
-		TimeSeriesElementReference ref = (TimeSeriesElementReference)ElementReferences.parseExpr("timeseries:inst:Data");
+		ReadLastRecordsReference ref = (ReadLastRecordsReference)ElementReferences.parseExpr("timeseries:inst:Data");
 		Assertions.assertEquals(DefaultSubmodelReference.ofIdShort("inst", "Data"), ref.getSubmodelReference());
 	}
 
 	@Test
 	public void parseTimeSeries_length() throws IOException {
 		// 'last=N'(접미사 없는 정수) = 마지막 N개 레코드: JSON 'last' 필드는 숫자
-		TimeSeriesElementReference ref
-				= (TimeSeriesElementReference)ElementReferences.parseExpr("timeseries:inst:Data#last=7");
+		ReadLastRecordsReference ref
+				= (ReadLastRecordsReference)ElementReferences.parseExpr("timeseries:inst:Data#last=7");
 		Assertions.assertEquals(7, ref.toJsonNode().get("last").asInt());
 	}
 
 	@Test
 	public void parseTimeSeries_duration() throws IOException {
-		TimeSeriesElementReference ref
-				= (TimeSeriesElementReference)ElementReferences.parseExpr("timeseries:inst:Data#last=30s@now");
+		ReadLastRecordsReference ref
+				= (ReadLastRecordsReference)ElementReferences.parseExpr("timeseries:inst:Data#last=30s@now");
 		// Trailing 기간은 JSON 'last' 필드에 "<기간>@<anchor>" 문자열로 직렬화된다.
 		Assertions.assertEquals("PT30S@now", ref.toJsonNode().get("last").asText());
 	}
 
 	@Test
 	public void parseTimeSeries_columns() throws IOException {
-		TimeSeriesElementReference ref
-				= (TimeSeriesElementReference)ElementReferences.parseExpr("timeseries:inst:Data|current,power");
+		ReadLastRecordsReference ref
+				= (ReadLastRecordsReference)ElementReferences.parseExpr("timeseries:inst:Data|current,power");
 		JsonNode cols = ref.toJsonNode().get("columns");
 		Assertions.assertEquals(2, cols.size());
 		Assertions.assertEquals("current", cols.get(0).asText());
@@ -132,8 +132,8 @@ public class ElementReferencesTest {
 
 	@Test
 	public void parseTimeSeries_lengthAndColumns() throws IOException {
-		TimeSeriesElementReference ref
-				= (TimeSeriesElementReference)ElementReferences.parseExpr("timeseries:inst:Data#last=3|current");
+		ReadLastRecordsReference ref
+				= (ReadLastRecordsReference)ElementReferences.parseExpr("timeseries:inst:Data#last=3|current");
 		JsonNode node = ref.toJsonNode();
 		Assertions.assertEquals(3, node.get("last").asInt());
 		Assertions.assertEquals(1, node.get("columns").size());

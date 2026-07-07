@@ -104,7 +104,7 @@ public final class References {
 								"reference must be a ModelReference");
         
         List<Key> keys = reference.getKeys();
-        Preconditions.checkArgument(keys != null && keys.size() >= 1, "reference must contain at least two keys");
+        Preconditions.checkArgument(keys != null && keys.size() >= 1, "reference must contain at least one key");
         
         Key submodelKey = keys.get(0);
         Preconditions.checkArgument(submodelKey.getType() == KeyTypes.SUBMODEL, "the first key must be a submodel key");
@@ -124,7 +124,7 @@ public final class References {
         ByIdSubmodelReference smRef = DefaultSubmodelReference.ofId(submodelKey.getValue());
         
         IdShortPath.Builder builder = IdShortPath.builder();
-        List<Key> idShortKeys = keys.subList(1, keys.size()-1);
+        List<Key> idShortKeys = keys.subList(1, keys.size());
 		for ( Key key : idShortKeys ) {
 			KeySpec spec = KEY_TYPE_SPECS.get(key.getType());
 			Preconditions.checkArgument(spec != null, "unknown key type: " + key.getType());

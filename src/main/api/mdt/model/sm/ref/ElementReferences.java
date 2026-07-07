@@ -1,7 +1,7 @@
 package mdt.model.sm.ref;
 
 import java.io.IOException;
-import java.util.function.Supplier;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -12,9 +12,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.collect.Maps;
 
 import utils.Preconditions;
-import utils.SplitStream;
+import utils.func.CheckedFunctionX;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
@@ -29,7 +30,6 @@ import mdt.model.expr.MDTExpressionParser;
 import mdt.model.expr.MDTParserException;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.timeseries.ReadLastRecordsReference;
-import mdt.model.sm.ref.timeseries.TimeSeriesElementReference;
 
 
 /**
@@ -86,34 +86,15 @@ public class ElementReferences {
 	/**
 	 * 표현식 문자열로부터 {@link DefaultSubmodelReference}를 파싱한다.
 	 * <p>
-	 * 형식: {@code <instanceId>:<submodelIdShort>} 또는 {@code submodel:<submodelId>}.
+	 * MdtExpr 문법의 {@code submodelSpec} 규칙을 따른다:
+	 * {@code <instanceId>:[idShort=]<submodelIdShort>} 또는 {@code submodel:id=<submodelId>}.
 	 *
 	 * @param exprStr	Submodel 참조 표현식.
 	 * @return 파싱된 {@link DefaultSubmodelReference} 객체.
-	 * @throws MDTParserException	표현식이 올바르지 않은 경우.
+	 * @throws IllegalArgumentException	표현식이 올바르지 않은 경우.
 	 */
 	public static DefaultSubmodelReference parseSubmodelReference(String exprStr) {
-		SplitStream tokens = SplitStream.of(exprStr, ':');
-		DefaultSubmodelReference ref = parseSubmodelReference(tokens);
-		if ( tokens.hasNext() ) {
-			throw new MDTParserException("Invalid submodel reference: expr=" + exprStr);
-		}
-		
-		return ref;
-	}
-	private static DefaultSubmodelReference parseSubmodelReference(SplitStream tokens) {
-		String fullExpr = tokens.remaining();
-		Supplier<IllegalArgumentException> errorMsg
-							= () -> new IllegalArgumentException("Invalid DefaultSubmodelReference: expr=" + fullExpr);
-		
-		String first = tokens.nextToken().getOrThrow(errorMsg);
-		String second = tokens.nextToken().getOrThrow(errorMsg);
-		switch ( first ) {
-			case "submodel":
-				return DefaultSubmodelReference.ofId(second);
-			default:
-				return DefaultSubmodelReference.ofIdShort(first, second);
-		}
+		return DefaultSubmodelReference.parseStringExpr(exprStr);
 	}
 	
 	/**
@@ -123,12 +104,15 @@ public class ElementReferences {
 	 * <ul>
 	 *   <li>{@code param:<instanceId>:<paramSpec>} → {@link MDTParameterReference}
 	 *       (단, {@code paramSpec}이 {@code "*"}이면 {@link MDTParameterCollectionReference})</li>
-	 *   <li>{@code oparg:<instanceId>:<submodelIdShort>:<kind>:<argSpec>} → {@link MDTArgumentReference}</li>
-	 *   <li>{@code opvar:<instanceId>:<submodelIdShort>:<kind>:<ordinal>} → {@link OperationVariableReference}</li>
-	 *   <li>{@code timeseries:<submodelSpec>:<idShortPath>[#<range>][|<columns>]} → {@link TimeSeriesElementReference}
+	 *   <li>{@code oparg:<submodelSpec>:(in|out):<argSpec>} → {@link MDTArgumentReference}</li>
+	 *   <li>{@code opvar:<submodelSpec>:<idShortPath>:(in|out|inout):<ordinal>}
+	 *       → {@link OperationVariableReference}</li>
+	 *   <li>{@code timeseries:<submodelSpec>[#<range>][|<columns>]} → {@link ReadLastRecordsReference}
 	 *       (range: {@code last=N}(마지막 N개) | {@code last=dur[@now|@latest]} | {@code from~to})</li>
-	 *   <li>그 외(라벨 없음) {@code <instanceId>:<submodelIdShort>:<elementPath>} → {@link DefaultElementReference}</li>
+	 *   <li>그 외(라벨 없음) {@code <submodelSpec>:<elementPath>} → {@link DefaultElementReference}</li>
 	 * </ul>
+	 * {@code submodelSpec}은 {@code <instanceId>:[idShort=]<submodelIdShort>} 또는
+	 * {@code submodel:id=<submodelId>} 형식이다.
 	 *
 	 * @param refStr	ElementReference 표현식.
 	 * @return 파싱된 {@link MDTElementReference} 객체.
@@ -159,6 +143,31 @@ public class ElementReferences {
 	}
 	
 	private static final String FIELD_TYPE = "@type";
+
+	// ElementReference 타입별 deserializer 레지스트리.
+	// 새로운 ElementReference 타입을 추가하는 경우 반드시 여기에 등록해야
+	// polymorphic JSON 역직렬화(parseTypedJsonNode)가 가능하다.
+	private static final Map<String,CheckedFunctionX<JsonNode,ElementReference,IOException>> DESERIALIZERS
+		= Maps.newHashMap();
+	static {
+		DESERIALIZERS.put(DefaultElementReference.SERIALIZATION_TYPE, DefaultElementReference::deserializeFields);
+		DESERIALIZERS.put(MDTParameterReference.SERIALIZATION_TYPE, ElementReferences::deserializeParameterReference);
+		DESERIALIZERS.put(MDTArgumentReference.SERIALIZATION_TYPE, MDTArgumentReference::deserializeFields);
+		DESERIALIZERS.put(OperationVariableReference.SERIALIZATION_TYPE, OperationVariableReference::deserializeFields);
+		DESERIALIZERS.put(FileStoreReference.SERIALIZATION_TYPE, FileStoreReference::deserializeFields);
+		DESERIALIZERS.put(ReadLastRecordsReference.SERIALIZATION_TYPE, ReadLastRecordsReference::deserializeFields);
+	}
+
+	// 'mdt:ref:param' 타입은 parameterExpr 필드 값에 따라 개별 파라미터('*' 이외)와
+	// 파라미터 집합('*') 참조로 나뉜다.
+	private static ElementReference deserializeParameterReference(JsonNode jnode) throws IOException {
+		JsonNode paramExpr = SubmodelBasedElementReference.checkJsonField(jnode,
+															MDTParameterReference.FIELD_PARAMETER_EXPR);
+		return paramExpr.asText().equals("*")
+				? MDTParameterCollectionReference.deserializeFields(jnode)
+				: MDTParameterReference.deserializeFields(jnode);
+	}
+
 	/**
 	 * {@link ElementReference}를 {@code @type} 필드와 함께 Json으로 직렬화하는 Jackson serializer.
 	 */
@@ -215,28 +224,10 @@ public class ElementReferences {
 																	FIELD_TYPE, jnode));
 		}
 		
-		switch ( type ) {
-			case DefaultElementReference.SERIALIZATION_TYPE:
-				return DefaultElementReference.deserializeFields(jnode);
-			case MDTParameterReference.SERIALIZATION_TYPE:
-				JsonNode paramExpr = SubmodelBasedElementReference.checkJsonField(jnode,
-																MDTParameterReference.FIELD_PARAMETER_EXPR);
-				if ( paramExpr.asText().equals("*") ) {
-					return MDTParameterCollectionReference.deserializeFields(jnode);
-				}
-				else {
-					return MDTParameterReference.deserializeFields(jnode);
-				}
-			case MDTArgumentReference.SERIALIZATION_TYPE:
-				return MDTArgumentReference.deserializeFields(jnode);
-			case OperationVariableReference.SERIALIZATION_TYPE:
-				return OperationVariableReference.deserializeFields(jnode);
-			case FileStoreReference.SERIALIZATION_TYPE:
-				return FileStoreReference.deserializeFields(jnode);
-			case ReadLastRecordsReference.SERIALIZATION_TYPE:
-				return ReadLastRecordsReference.deserializeFields(jnode);
-			default:
-				throw new JacksonDeserializationException("Unregistered Option type: " + type);
+		CheckedFunctionX<JsonNode,ElementReference,IOException> deserializer = DESERIALIZERS.get(type);
+		if ( deserializer == null ) {
+			throw new JacksonDeserializationException("Unregistered ElementReference type: " + type);
 		}
+		return deserializer.apply(jnode);
 	}
 }

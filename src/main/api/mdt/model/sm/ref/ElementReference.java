@@ -8,10 +8,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.format.DateTimeParseException;
 
-import org.apache.tika.Tika;
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
@@ -27,6 +26,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import utils.func.FOption;
 
+import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.value.ElementCollectionValue;
 import mdt.model.sm.value.ElementListValue;
@@ -357,17 +357,20 @@ public interface ElementReference {
 	}
 	
 	/**
-	 * 참조가 가리키는 {@link Property}의 값을 {@link LocalDateTime} 값으로 읽어 반환한다.
+	 * 참조가 가리키는 {@link Property}의 값을 {@link Instant} 값으로 읽어 반환한다.
+	 * <p>
+	 * 값 문자열은 {@link DataTypes#DATE_TIME}의 파서로 해석되며, 시간대(zone/offset) 표기가
+	 * 있으면 이를 반영하고 없으면 로컬 표기로 간주한다.
 	 *
-	 * @return	{@link Property}의 {@link LocalDateTime} 값. 값이 설정되지 않은 경우 {@code null}.
+	 * @return	{@link Property}의 {@link Instant} 값. 값이 설정되지 않은 경우 {@code null}.
 	 * @throws	IOException	읽기 과정에서 예외가 발생하거나, 대상이 {@link DataTypeDefXsd#DATE_TIME}
 	 * 					타입 {@link Property}가 아닌 경우.
 	 */
-	@Nullable public default LocalDateTime readAsDateTime() throws IOException {
+	@Nullable public default Instant readAsDateTime() throws IOException {
 		Property prop = readAsProperty();
 		if ( prop.getValueType() == DataTypeDefXsd.DATE_TIME ) {
 			try {
-				return FOption.map(prop.getValue(), LocalDateTime::parse);
+				return DataTypes.DATE_TIME.parseValueString(prop.getValue());
 			}
 			catch ( DateTimeParseException e ) {
 				String json = MDTModelSerDe.toJsonString(prop);
@@ -476,11 +479,10 @@ public interface ElementReference {
 	public default FileValue updateAttachment(File contentFile) throws IOException {
 		ElementValue sme = readValue();
 		if ( sme == null || sme instanceof FileValue ) {
-			String contentType = new Tika().detect(contentFile);
+			FileValue fileVal = FileValue.of(contentFile);
 			try ( InputStream in = new FileInputStream(contentFile) ) {
-				FileValue fileVal = new FileValue(contentFile.getName(), contentType);
 				updateAttachment(fileVal, in);
-				
+
 				return fileVal;
 			}
 		}

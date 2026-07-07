@@ -39,8 +39,8 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	}
 	
 	public void update(Range rg) {
-		rg.setMin(m_vtype.toValueString(m_min));
-		rg.setMax(m_vtype.toValueString(m_max));
+		rg.setMin((m_min != null) ? m_vtype.toValueString(m_min) : null);
+		rg.setMax((m_max != null) ? m_vtype.toValueString(m_max) : null);
 	}
 	
 	@Override
@@ -113,13 +113,14 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 
 		@SuppressWarnings("rawtypes")
 		RangeValue other = (RangeValue) obj;
-		return Objects.equals(m_min, other.m_min)
+		return Objects.equals(m_vtype, other.m_vtype)
+				&& Objects.equals(m_min, other.m_min)
 				&& Objects.equals(m_max, other.m_max);
 	}
-	
+
 	@Override
 	public int hashCode() {
-		return Objects.hash(m_min, m_max);
+		return Objects.hash(m_vtype, m_min, m_max);
 	}
 
 	private static final String FIELD_VTYPE = "vtype";
@@ -141,7 +142,7 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	}
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static RangeValue<?> deserializeValue(JsonNode vnode) {
+	public static RangeValue<?> deserializeValue(JsonNode vnode) throws IOException {
 		DataType<?> vtype = DataTypes.fromDataTypeName(JacksonUtils.getStringField(vnode, FIELD_VTYPE));
 		Object min = vtype.fromJsonNode(JacksonUtils.getFieldOrNull(vnode, FIELD_MIN));
 		Object max = vtype.fromJsonNode(JacksonUtils.getFieldOrNull(vnode, FIELD_MAX));

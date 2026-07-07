@@ -153,6 +153,9 @@ public abstract class AbstractMDTTask implements MDTTask, LoggerSettable {
 			ElementValues.update(proto, argv);
 			return proto;
 		}
+		else if ( argSpec == null ) {
+			return proto;
+		}
 		else {
 			throw new IllegalArgumentException("Unsupported ArgumentSpec: " + argSpec.getClass().getName());
 		}

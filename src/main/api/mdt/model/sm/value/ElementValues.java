@@ -1,9 +1,11 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
 import org.eclipse.digitaltwin.aas4j.v3.model.MultiLanguageProperty;
+import org.eclipse.digitaltwin.aas4j.v3.model.Operation;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.Range;
 import org.eclipse.digitaltwin.aas4j.v3.model.ReferenceElement;
@@ -21,8 +23,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.google.common.collect.Maps;
 
 import utils.Preconditions;
+import utils.func.CheckedFunctionX;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
@@ -62,6 +66,31 @@ public class ElementValues {
 	private static final String FIELD_TYPE = "@type";
 	private static final String FIELD_VALUE = "value";
 
+	// ElementValue 타입별 value 부분 deserializer 레지스트리.
+	// 새로운 ElementValue 타입을 추가하는 경우 반드시 여기에 등록해야
+	// polymorphic JSON 역직렬화({@code parseJsonNode})가 가능하다.
+	private static final Map<String,CheckedFunctionX<JsonNode,ElementValue,IOException>> DESERIALIZERS
+		= Maps.newHashMap();
+	static {
+		DESERIALIZERS.put(StringPropertyValue.SERIALIZATION_TYPE, StringPropertyValue::deserializeValue);
+		DESERIALIZERS.put(IntegerPropertyValue.SERIALIZATION_TYPE, IntegerPropertyValue::deserializeValue);
+		DESERIALIZERS.put(FloatPropertyValue.SERIALIZATION_TYPE, FloatPropertyValue::deserializeValue);
+		DESERIALIZERS.put(DoublePropertyValue.SERIALIZATION_TYPE, DoublePropertyValue::deserializeValue);
+		DESERIALIZERS.put(BooleanPropertyValue.SERIALIZATION_TYPE, BooleanPropertyValue::deserializeValue);
+		DESERIALIZERS.put(DateTimePropertyValue.SERIALIZATION_TYPE, DateTimePropertyValue::deserializeValue);
+		DESERIALIZERS.put(DurationPropertyValue.SERIALIZATION_TYPE, DurationPropertyValue::deserializeValue);
+		DESERIALIZERS.put(LongPropertyValue.SERIALIZATION_TYPE, LongPropertyValue::deserializeValue);
+		DESERIALIZERS.put(ShortPropertyValue.SERIALIZATION_TYPE, ShortPropertyValue::deserializeValue);
+		DESERIALIZERS.put(DecimalPropertyValue.SERIALIZATION_TYPE, DecimalPropertyValue::deserializeValue);
+		DESERIALIZERS.put(ElementCollectionValue.SERIALIZATION_TYPE, ElementCollectionValue::deserializeValue);
+		DESERIALIZERS.put(ElementListValue.SERIALIZATION_TYPE, ElementListValue::deserializeValue);
+		DESERIALIZERS.put(FileValue.SERIALIZATION_TYPE, FileValue::deserializeValue);
+		DESERIALIZERS.put(MultiLanguagePropertyValue.SERIALIZATION_TYPE, MultiLanguagePropertyValue::deserializeValue);
+		DESERIALIZERS.put(RangeValue.SERIALIZATION_TYPE, RangeValue::deserializeValue);
+		DESERIALIZERS.put(ReferenceElementValue.SERIALIZATION_TYPE, ReferenceElementValue::deserializeValue);
+		DESERIALIZERS.put(OperationVariableValue.SERIALIZATION_TYPE, OperationVariableValue::deserializeValue);
+	}
+
 	// ******************************************************
 	// 	SubmodelElement -> ElementValue
 	// ******************************************************
@@ -85,6 +114,7 @@ public class ElementValues {
 			case MultiLanguageProperty mlp -> MultiLanguagePropertyValue.from(mlp);
 			case Range rg -> RangeValue.from(rg);
 			case ReferenceElement ref -> ReferenceElementValue.from(ref);
+			case Operation op -> OperationVariableValue.from(op);
 			default -> throw new IllegalArgumentException(String.format("Unsupported SubmodelElement(%s) for 'getValue(SubmodelElement)'",
 																	element.getClass()));
 		};
@@ -109,45 +139,15 @@ public class ElementValues {
 			throw new IOException(String.format("'%s' field is missing: json=%s", FIELD_TYPE, jnode));
 		}
 		
-		JsonNode valueNode = JacksonUtils.getFieldOrNull(jnode, FIELD_VALUE);
-		switch ( type ) {
-			case StringPropertyValue.SERIALIZATION_TYPE:
-				return StringPropertyValue.deserializeValue(valueNode);
-			case IntegerPropertyValue.SERIALIZATION_TYPE:
-				return IntegerPropertyValue.deserializeValue(valueNode);
-			case ElementListValue.SERIALIZATION_TYPE:
-				return ElementListValue.deserializeValue(valueNode);
-			case ElementCollectionValue.SERIALIZATION_TYPE:
-				return ElementCollectionValue.deserializeValue(valueNode);
-			case DoublePropertyValue.SERIALIZATION_TYPE:
-				return DoublePropertyValue.deserializeValue(valueNode);
-			case FloatPropertyValue.SERIALIZATION_TYPE:
-				return FloatPropertyValue.deserializeValue(valueNode);
-			case BooleanPropertyValue.SERIALIZATION_TYPE:
-				return BooleanPropertyValue.deserializeValue(valueNode);
-			case DateTimePropertyValue.SERIALIZATION_TYPE:
-				return DateTimePropertyValue.deserializeValue(valueNode);
-			case DurationPropertyValue.SERIALIZATION_TYPE:
-				return DurationPropertyValue.deserializeValue(valueNode);
-			case FileValue.SERIALIZATION_TYPE:
-				return FileValue.deserializeValue(valueNode);
-			case LongPropertyValue.SERIALIZATION_TYPE:
-				return LongPropertyValue.deserializeValue(valueNode);
-			case ShortPropertyValue.SERIALIZATION_TYPE:
-				return ShortPropertyValue.deserializeValue(valueNode);
-			case RangeValue.SERIALIZATION_TYPE:
-				return RangeValue.deserializeValue(valueNode);
-			case MultiLanguagePropertyValue.SERIALIZATION_TYPE:
-				return MultiLanguagePropertyValue.deserializeValue(valueNode);
-			case OperationVariableValue.SERIALIZATION_TYPE:
-				return OperationVariableValue.deserializeValue(valueNode);
-			case ReferenceElementValue.SERIALIZATION_TYPE:
-				return ReferenceElementValue.deserializeValue(valueNode);
-			case DecimalPropertyValue.SERIALIZATION_TYPE:
-				return DecimalPropertyValue.deserializeValue(valueNode);
-			default:
-				throw new JacksonDeserializationException("Unregistered ElementValue type: " + type);
+		if ( !jnode.has(FIELD_VALUE) ) {
+			throw new IOException(String.format("'%s' field is missing: json=%s", FIELD_VALUE, jnode));
 		}
+
+		CheckedFunctionX<JsonNode,ElementValue,IOException> deserializer = DESERIALIZERS.get(type);
+		if ( deserializer == null ) {
+			throw new JacksonDeserializationException("Unregistered ElementValue type: " + type);
+		}
+		return deserializer.apply(jnode.get(FIELD_VALUE));
 	}
 	
 	/**
@@ -184,6 +184,7 @@ public class ElementValues {
 			case MultiLanguagePropertyValue mlp -> MultiLanguagePropertyValue.fromValueObject(vo);
 			case RangeValue<?> rg -> RangeValue.fromValueObject(vo, rg.getValueType().getTypeDefXsd());
 			case ReferenceElementValue ref -> ReferenceElementValue.fromValueObject(vo, ref.getReference().getType());
+			case OperationVariableValue opv -> OperationVariableValue.fromValueObject(vo, opv);
 			default -> throw new IllegalArgumentException(String.format("Unsupported ElementValue(%s) for 'fromValueObject(Object, SubmodelElement)'",
 																	proto.getClass()));
 		};
@@ -211,6 +212,7 @@ public class ElementValues {
 			case MultiLanguagePropertyValue mlp -> MultiLanguagePropertyValue.parseValueJsonNode(vnode);
 			case RangeValue<?> rg -> RangeValue.parseValueJsonNode(vnode, rg.getValueType().getTypeDefXsd());
 			case ReferenceElementValue ref -> ReferenceElementValue.parseValueJsonNode(vnode, ref.getReference().getType());
+			case OperationVariableValue opv -> OperationVariableValue.parseValueJsonNode(vnode, opv);
 			default -> throw new IllegalArgumentException(String.format("Unsupported SubmodelElement(%s) for 'parseValueJsonNode(JsonNode, SubmodelElement)'",
 																	proto.getClass()));
 		};
@@ -303,6 +305,12 @@ public class ElementValues {
 										"Expecting %s, but %s", ReferenceElementValue.class.getName(),
 																smev.getClass().getName());
 			((ReferenceElementValue)smev).update(refElm);
+		}
+		else if ( sme instanceof Operation op ) {
+			Preconditions.checkArgument(smev instanceof OperationVariableValue,
+										"Expecting %s, but %s", OperationVariableValue.class.getName(),
+																smev.getClass().getName());
+			((OperationVariableValue)smev).update(op);
 		}
 		else {
 			String msg = String.format("Unsupported SubmodelElement(%s) for 'update(SubmodelElement, ElementValue)'",

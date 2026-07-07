@@ -55,7 +55,7 @@ public sealed interface TimeSeriesRange permits TimeSeriesRange.Count, TimeSerie
 	/** 마지막 {@code length}개 레코드. */
 	record Count(int length) implements TimeSeriesRange {
 		public Count {
-			Preconditions.checkArgument(length >= 0, "length must be non-negative: length=%d", length);
+			Preconditions.checkArgument(length >= 0, "length must be non-negative: length=%s", length);
 		}
 		
 		@Override

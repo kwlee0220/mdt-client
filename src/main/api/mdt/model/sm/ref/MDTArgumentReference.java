@@ -92,11 +92,12 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 	 */
 	@Override
 	public SubmodelElement read() throws IOException {
-		SubmodelElementList argSmel = super.readList();
+		SubmodelElement arg = super.read();
 		if ( !m_argSpec.equals(ALL_ARGS) ) {
-			return argSmel;
+			return arg;
 		}
 
+		SubmodelElementList argSmel = (SubmodelElementList)arg;
 		String argKindStr = switch ( m_kind ) {
 			case INPUT -> "Input";
 			case OUTPUT -> "Output";
@@ -130,7 +131,7 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 		if ( this == obj ) {
 			return true;
 		}
-		if ( obj == null || !(obj instanceof MDTArgumentReference) ) {
+		if ( obj == null || obj.getClass() != getClass() ) {
 			return false;
 		}
 

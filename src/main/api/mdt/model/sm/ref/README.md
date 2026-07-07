@@ -24,7 +24,7 @@ SubmodelElement에 대한 **참조(reference)**를 다루는 패키지다. 참�
 | `MDTParameterCollectionReference` | 인스턴스 `Data` Submodel의 파라미터 전체 집합 | `mdt:ref:param` |
 | `MDTArgumentReference` | MDT 연산(Simulation/AI)의 입력/출력 인자 | `mdt:ref:oparg` |
 | `OperationVariableReference` | `Operation` 요소의 입력/출력/입출력 변수 | `mdt:ref:opvar` |
-| `TimeSeriesElementReference` | 시계열 Submodel의 세그먼트 레코드 | `mdt:ref:timeseries` |
+| `ReadLastRecordsReference` | 시계열 Submodel의 레코드(`ReadLastRecords` 연산 호출 기반) | `mdt:ref:timeseries` |
 | `FileStoreReference` | 로컬 파일에 저장된 SubmodelElement | `mdt:ref:file` |
 
 ## MdtExpr 표현식
@@ -49,7 +49,7 @@ submodel:id='http://.../sm/Data'  # 서브모델 ID로 직접 지정(URL은 따�
 | `param:<instanceId>:*` | `MDTParameterCollectionReference` |
 | `oparg:<submodelSpec>:(in\|out):<name\|INTEGER\|*>` | `MDTArgumentReference` |
 | `opvar:<submodelSpec>:<idShortPath>:(in\|out\|inout):<INTEGER>` | `OperationVariableReference` |
-| `timeseries:<submodelSpec>:<idShortPath>[#<range>][\|<cols>]` | `TimeSeriesElementReference` |
+| `timeseries:<submodelSpec>[#<range>][\|<cols>]` | `ReadLastRecordsReference` |
 
 - `idShortPath`는 `.`로 하위 요소, `[n]`으로 배열 인덱스를 표현한다(인덱스는 음수 불가).
 - **opvar**는 연산 *요소*를 idShortPath로 가리킨다. 예: `opvar:inst:Data:Operation:out:1`.
@@ -69,10 +69,10 @@ duration 값은 단순형(`30s`,`500ms`,`2h`,`1d`) 또는 ISO8601(`PT2H30M`,`P1D
 
 예:
 ```
-timeseries:inst:Data:Tail
-timeseries:inst:Data:Tail#last=5
-timeseries:inst:Data:Records.Temp#last=PT2H30M@now
-timeseries:inst:Data:Tail#2024-01-01~2024-02-01|current,power
+timeseries:inst:Data
+timeseries:inst:Data#last=5
+timeseries:inst:Data#last=PT2H30M@now
+timeseries:inst:Data#2024-01-01~2024-02-01|current,power
 ```
 
 ### 값 리터럴 (parseValueLiteral)
@@ -100,7 +100,7 @@ ElementReference back = ElementReferences.parseExpr(expr);   // back.toStringExp
 String json = ref.toJsonString();
 ElementReference back2 = ElementReferences.parseJsonString(json);
 ```
-> `TimeSeriesElementReference.equals`는 submodel+tsSpec만 비교하고 range/columns는 제외한다.
+> `ReadLastRecordsReference.equals`는 submodel 참조만 비교하고 range/columns는 제외한다.
 > 따라서 range/columns 보존 검증은 `equals`가 아니라 `toStringExpr()`(이 둘을 인코딩)로 한다.
 
 ## 활성화 (activation)
@@ -113,8 +113,10 @@ MDTElementReference ref = ElementReferences.parseExpr("param:test-instance:Tempe
 ref.activate(manager);          // 또는 ElementReferences.activate(ref, manager);
 Property prop = ref.readAsProperty();
 ```
-활성화 전 `getSubmodelService()`/`getInstance()` 호출 시 `IllegalStateException`. `getIdShortPathString()`은
-활성화와 무관하게 호출 가능.
+활성화 전 `getSubmodelService()`/`getInstance()` 호출 시 `IllegalStateException`.
+`getIdShortPathString()`도 경로가 활성화 시점에 결정되는 참조(`param:`/`oparg:`/`timeseries:` 등)에서는
+활성화 전 호출 시 `IllegalStateException`이 발생한다(`DefaultElementReference`는 경로가 생성 시
+고정되어 활성화와 무관).
 
 ## 읽기 / 쓰기
 
@@ -145,3 +147,6 @@ MDTElementReference parsed = ElementReferences.parseJsonString(json);
 
 > `mdt:ref:param`은 `MDTParameterReference`와 `MDTParameterCollectionReference`가 공유한다.
 > 역직렬화 시 `parameterExpr`이 `*`이면 전체 집합 참조로, 아니면 개별 파라미터 참조로 복원된다.
+
+> `mdt:ref:opvar`는 대상 Operation 요소에 대한 참조를 `aasOpVar` 필드에 `@type` 판별자를 포함한
+> 중첩 객체로 직렬화한다.

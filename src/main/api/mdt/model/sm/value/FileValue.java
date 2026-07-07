@@ -6,11 +6,13 @@ import java.util.Objects;
 
 import org.apache.tika.Tika;
 import org.eclipse.digitaltwin.aas4j.v3.model.File;
+import org.jetbrains.annotations.NotNull;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 
+import utils.Preconditions;
 import utils.json.JacksonUtils;
 
 
@@ -21,19 +23,27 @@ import utils.json.JacksonUtils;
 public final class FileValue extends AbstractElementValue implements DataElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:file";
 	
-	private final String m_contentType;
+	@NotNull private final String m_contentType;
 	private final String m_value;
 	
-	public FileValue(String path, String contentType) {
+	public FileValue(String path, @NotNull String contentType) {
+		Preconditions.checkNotNullArgument(contentType, "contentType must not be null");
+		
 		m_contentType = contentType;
 		m_value = path;
 	}
 	
+	private static final Tika TIKA = new Tika();
+
 	public static FileValue of(java.io.File file) throws IOException {
-		return new FileValue(file.getName(), new Tika().detect(file));
+		return new FileValue(file.getName(), TIKA.detect(file));
 	}
 	
-	public String getMimeType() {
+	public static FileValue from(File aasFile) {
+		return new FileValue(aasFile.getValue(), aasFile.getContentType());
+	}
+	
+	@NotNull public String getMimeType() {
 		return m_contentType;
 	}
 	
@@ -54,13 +64,12 @@ public final class FileValue extends AbstractElementValue implements DataElement
 		return value;
 	}
 	
-	public static FileValue from(File aasFile) {
-		return new FileValue(aasFile.getValue(), aasFile.getContentType());
-	}
-	
 	public static FileValue fromValueObject(Object value) throws IOException {
 		if ( value instanceof Map vmap ) {
 			String contentType = (String) vmap.get(FIELD_CONTENT_TYPE);
+			if ( contentType == null ) {
+				throw new IOException("FileValue value has no contentType: value=" + value);
+			}
 			String val = (String) vmap.get(FIELD_VALUE);
 			return new FileValue(val, contentType);
 		}
@@ -71,7 +80,7 @@ public final class FileValue extends AbstractElementValue implements DataElement
 	
 	public static FileValue parseValueJsonNode(JsonNode jnode) throws IOException {
 		if ( !jnode.isObject() ) {
-			throw new IOException("FileValue extends 'Object' node: JsonNode=" + jnode);
+			throw new IOException("FileValue expects 'Object' node: JsonNode=" + jnode);
 		}
 		
 		String contentType = JacksonUtils.getStringField(jnode, FIELD_CONTENT_TYPE);
@@ -120,17 +129,9 @@ public final class FileValue extends AbstractElementValue implements DataElement
 		gen.writeEndObject();
 	}
 	
-	public static FileValue deserializeValue(JsonNode vnode) {
+	public static FileValue deserializeValue(JsonNode vnode) throws IOException {
 		String mimeType = JacksonUtils.getStringField(vnode, FIELD_CONTENT_TYPE);
-		String value = JacksonUtils.getStringField(vnode, FIELD_VALUE);
+		String value = JacksonUtils.getStringFieldOrNull(vnode, FIELD_VALUE);
 		return new FileValue(value, mimeType);
-	}
-	
-	public static final void main(String... args) throws Exception {
-		FileValue val = new FileValue(null, "text/plain");
-		String json = val.toJsonString();
-		json = val.toValueJsonString();
-		
-		System.out.println("json=" + json);
 	}
 }

@@ -77,18 +77,21 @@ public interface MDTElementReference extends ElementReference {
 	/**
 	 * 참조된 Element의 idShortPath 문자열을 반환한다.
 	 * <p>
-	 * 참조의 활성화 여부와 상관없이 호출 가능하다.
+	 * 경로가 활성화 시점에 결정되는 구현({@code MDTParameterReference},
+	 * {@code MDTArgumentReference} 등)은 활성화 전에 호출하면
+	 * {@link IllegalStateException}이 발생한다. {@code DefaultElementReference}처럼
+	 * 경로가 생성 시점에 고정되는 구현은 활성화 여부와 무관하게 호출 가능하다.
 	 *
 	 * @return	idShortPath 문자열.
+	 * @throws	IllegalStateException	경로가 확정되기 전(비활성 상태)에 호출된 경우.
 	 */
 	public String getIdShortPathString();
 	
 	/**
-	 * Returns the value of the SubmodelElement referred to by the ElementReference
-	 * and cast it to  as {@link AASFile}.
-	 * 
-	 * @return	AASFile object.
-	 * @throws	IOException If an exception occurs during the reading process
+	 * 참조가 가리키는 'File' {@link SubmodelElement}을 읽어 {@link AASFile}로 반환한다.
+	 *
+	 * @return	{@link AASFile} 객체. 대상 요소가 존재하지 않는 경우 {@code null}.
+	 * @throws	IOException	읽기 과정에서 예외가 발생하거나, 대상이 'File' SubmodelElement가 아닌 경우.
 	 */
 	public default AASFile readAsFile() throws IOException {
 		SubmodelElement sme = read();
@@ -104,6 +107,16 @@ public interface MDTElementReference extends ElementReference {
 		}
 	}
 	
+	/**
+	 * 참조가 가리키는 SubmodelElement의 값을 주어진 {@link PropertyValue}로 갱신한다.
+	 * <p>
+	 * 대상이 MDT 파라미터 값 구조({@code ParameterValue}/{@code EventDateTime} 필드를 가진
+	 * SubmodelElementCollection)인 경우에는 {@code ParameterValue} 필드를 주어진 값으로,
+	 * {@code EventDateTime} 필드를 현재 시각으로 설정하여 갱신하고, 그 외에는 값 자체를 갱신한다.
+	 *
+	 * @param propValue	갱신할 Property 값.
+	 * @throws IOException	갱신 과정에서 예외가 발생한 경우.
+	 */
 	public default void updatePropertyValue(PropertyValue<?> propValue) throws IOException {
 		SubmodelElement sme = read();
 		if ( SubmodelUtils.isParameterValue(sme) ) {

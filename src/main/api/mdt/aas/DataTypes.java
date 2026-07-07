@@ -188,7 +188,7 @@ public final class DataTypes {
 
 		@Override
 		public Boolean fromJdbcObject(Object jdbcObj) {
-			return (Boolean)jdbcObj;
+			return (jdbcObj != null) ? DataUtils.asBoolean(jdbcObj) : null;
 		}
 
 		@Override
@@ -293,8 +293,14 @@ public final class DataTypes {
 			if ( jdbcObj == null ) {
 				return null;
 			}
-			if ( jdbcObj instanceof Long longv ) {
+			if ( jdbcObj instanceof Duration dur ) {
+				return dur;
+			}
+			else if ( jdbcObj instanceof Long longv ) {
 				return Duration.ofMillis(longv);
+			}
+			else if ( jdbcObj instanceof Integer intv ) {
+				return Duration.ofMillis(intv.longValue());
 			}
 			else if ( jdbcObj instanceof Double dbv ) {
 				long millis = Math.round(dbv.doubleValue() * 1000);
@@ -303,6 +309,9 @@ public final class DataTypes {
 			else if ( jdbcObj instanceof Float fltv ) {
 				long millis = Math.round(fltv.floatValue() * 1000);
 				return Duration.ofMillis(millis);
+			}
+			else if ( jdbcObj instanceof String str ) {
+				return parseValueString(str);
 			}
 			else {
 				throw new IllegalArgumentException("Invalid Duration value: " + jdbcObj);
@@ -371,12 +380,7 @@ public final class DataTypes {
 
 		@Override
 		public Float fromJdbcObject(Object jdbcObj) {
-			return switch (jdbcObj) {
-				case null -> null;
-				case Double d -> d.floatValue();
-				case Float f -> f;
-				default -> throw new IllegalArgumentException("Invalid JDBC object type: " + jdbcObj.getClass());
-			};
+			return (jdbcObj != null) ? DataUtils.asFloat(jdbcObj) : null;
 		}
 
 		@Override
@@ -414,18 +418,7 @@ public final class DataTypes {
 
 		@Override
 		public Integer fromJdbcObject(Object jdbcObj) {
-			if ( jdbcObj == null ) {
-				return 0;
-			}
-			if ( jdbcObj instanceof Integer intv ) {
-				return intv;
-			}
-			else if ( jdbcObj instanceof Long longv ) {
-				return longv.intValue();
-			}
-			else {
-				return Integer.parseInt(jdbcObj.toString());
-			}
+			return (jdbcObj != null) ? DataUtils.asInt(jdbcObj) : null;
 		}
 
 		@Override
@@ -463,7 +456,7 @@ public final class DataTypes {
 
 		@Override
 		public Long fromJdbcObject(Object jdbcObj) {
-			return (Long)jdbcObj;
+			return (jdbcObj != null) ? DataUtils.asLong(jdbcObj) : null;
 		}
 
 		@Override
@@ -501,7 +494,7 @@ public final class DataTypes {
 
 		@Override
 		public Short fromJdbcObject(Object jdbcObj) {
-			return (Short)jdbcObj;
+			return (jdbcObj != null) ? DataUtils.asShort(jdbcObj) : null;
 		}
 
 		@Override
@@ -539,7 +532,7 @@ public final class DataTypes {
 
 		@Override
 		public Double fromJdbcObject(Object jdbcObj) {
-			return (Double)jdbcObj;
+			return (jdbcObj != null) ? DataUtils.asDouble(jdbcObj) : null;
 		}
 
 		@Override
@@ -576,7 +569,7 @@ public final class DataTypes {
 
 		@Override
 		public String fromJdbcObject(Object jdbcObj) {
-			return (String)jdbcObj;
+			return DataUtils.asString(jdbcObj);
 		}
 
 		@Override
@@ -658,7 +651,15 @@ public final class DataTypes {
 
 		@Override
 		public BigDecimal fromJdbcObject(Object jdbcObj) {
-			return (BigDecimal)jdbcObj;
+			if ( jdbcObj == null ) {
+				return null;
+			}
+			else if ( jdbcObj instanceof BigDecimal decimal ) {
+				return decimal;
+			}
+			else {
+				return BigDecimalParser.parse(jdbcObj.toString());
+			}
 		}
 	}
 }

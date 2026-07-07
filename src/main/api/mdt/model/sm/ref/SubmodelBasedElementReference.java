@@ -13,6 +13,7 @@ import utils.Preconditions;
 import utils.func.Lazy;
 import utils.http.RESTfulRemoteException;
 
+import mdt.model.AASUtils;
 import mdt.model.MDTModelSerDe;
 import mdt.model.SubmodelService;
 import mdt.model.SubmodelService.Modifier;
@@ -137,6 +138,13 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 		return sme;
 	}
 	
+	/**
+	 * 주어진 {@link Modifier}를 적용하여 참조가 가리키는 SubmodelElement을 읽어 반환한다.
+	 *
+	 * @param modifier	읽기에 적용할 {@link Modifier}.
+	 * @return	읽어온 SubmodelElement 객체.
+	 * @throws IOException	읽기 과정에서 예외가 발생한 경우.
+	 */
 	public SubmodelElement read(Modifier modifier) throws IOException {
 		return getSubmodelService().getSubmodelElementByPath(getIdShortPathString(), modifier);
 	}
@@ -202,6 +210,24 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 		getSubmodelService().deleteAttachmentByPath(getIdShortPathString());
 	}
 	
+	/**
+	 * 참조가 가리키는 SubmodelElement에 대한 REST endpoint URL을 반환한다.
+	 * <p>
+	 * 참조가 활성화되어 있어야 한다.
+	 *
+	 * @return	SubmodelElement의 REST endpoint URL 문자열.
+	 * @throws IllegalStateException	참조가 활성화되지 않은 경우.
+	 */
+	public String getServiceUrl() {
+		// 'getSubmodelId'를 호출하기 위해서는 smbeRef가 activated 되어 있어야 한다.
+		String smId = getSubmodelReference().getSubmodelId();
+		String idShortPath = getIdShortPathString();
+		String baseEp = getInstance().getInstanceDescriptor().getBaseEndpoint();
+		return String.format("%s/submodels/%s/submodel-elements/%s",
+								baseEp, AASUtils.encodeBase64UrlSafe(smId),
+								AASUtils.encodeIdShortPath(idShortPath));
+	}
+	
 	@Override
 	public String toString() {
 		String actStr = isActivated() ? "activated" : "deactivated";
@@ -229,7 +255,15 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 		return fieldNode;
 	}
 	
-	private SubmodelElement loadPrototype() {
+	/**
+	 * 참조 대상 SubmodelElement의 원형(prototype)을 적재한다.
+	 * <p>
+	 * 기본 구현은 대상 경로의 SubmodelElement를 읽어 반환한다. 원형의 대상이 경로와 다른
+	 * 하위 클래스({@code OperationVariableReference} 등)는 이 메소드를 재정의할 수 있다.
+	 *
+	 * @return	원형 SubmodelElement 객체.
+	 */
+	protected SubmodelElement loadPrototype() {
 		return getSubmodelService().getSubmodelElementByPath(getIdShortPathString());
 	}
 }

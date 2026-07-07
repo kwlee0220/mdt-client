@@ -1,6 +1,7 @@
 package mdt.model.sm.value;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -66,10 +67,10 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	/**
 	 * 필드 맵을 반환한다.
 	 *
-	 * @return 필드 idShort에서 {@link ElementValue}로의 맵.
+	 * @return 필드 idShort에서 {@link ElementValue}로의 맵(수정 불가 뷰).
 	 */
 	public Map<String,? extends ElementValue> getFieldMap() {
-		return m_fields;
+		return Collections.unmodifiableMap(m_fields);
 	}
 
 	/**
@@ -143,29 +144,29 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	 * 값 객체(필드명에서 값으로의 {@link Map})와 {@link ElementCollectionValue} 템플릿으로부터
 	 * {@code ElementCollectionValue}를 생성한다.
 	 * <p>
-	 * SMC의 각 원소에 대해 idShort로 입력 맵에서 값을 찾아 변환하며, 입력에 없는 필드는 {@code null}로 채운다.
-	 * 각 필드의 타입은 ElementCollectionValue로 부터 결정된다.
+	 * 템플릿의 각 필드에 대해 idShort로 입력 맵에서 값을 찾아 변환한다.
+	 * 입력 맵에 없거나 값이 {@code null}인 필드는 결과에 포함되지 않으며,
+	 * 템플릿에 없는 입력 맵의 항목도 무시된다.
+	 * 각 필드의 타입은 템플릿 ElementCollectionValue로부터 결정된다.
 	 *
-	 * @param obj	필드명에서 값으로의 Map.
+	 * @param vobj	필드명에서 값으로의 Map.
 	 * @param smev	각 필드의 타입 결정에 사용할 대상 ElementCollectionValue.
 	 * @return 생성된 ElementCollectionValue.
-	 * @throws IOException	{@code obj}가 Map이 아니거나 변환이 실패한 경우.
+	 * @throws IOException	{@code vobj}가 Map이 아니거나 변환이 실패한 경우.
 	 */
 	public static ElementCollectionValue fromValueObject(Object vobj, ElementCollectionValue smev)
 			throws IOException {
 			if ( vobj instanceof Map vmap ) {
 				@SuppressWarnings("unchecked")
 				LinkedHashMap<String,ElementValue> fields
-							= KeyValueFStream.from(smev.m_fields)
-											.match((Map<String,Object>)vmap)
-											.mapToKeyValueOrThrow(kv -> {
-												ElementValue field = kv.value()._1;
-												Object value = kv.value()._2;
-												ElementValue newField = (value != null)
-																	? ElementValues.fromValueObject(value, field) : null;
-												return KeyValue.of(kv.key(), newField);
-											})
-											.toMap(new LinkedHashMap<>());
+						= KeyValueFStream.from(smev.m_fields)
+										.match((Map<String,Object>)vmap)
+										.mapToKeyValueOrThrow(kv -> {
+											ElementValue field = kv.value()._1;
+											Object value = kv.value()._2;
+											return KeyValue.of(kv.key(), ElementValues.fromValueObject(value, field));
+										})
+										.toMap(new LinkedHashMap<>());
 				return new ElementCollectionValue(fields);
 			}
 			else {

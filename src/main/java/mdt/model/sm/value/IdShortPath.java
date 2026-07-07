@@ -78,6 +78,10 @@ public class IdShortPath {
 	}
 	
 	private String buildPath() {
+		if ( m_idShortList.isEmpty() ) {
+			return "";
+		}
+
 		StringBuilder sb = new StringBuilder();
 		for ( IdShort idShort : m_idShortList ) {
 			sb.append(idShort.toString());

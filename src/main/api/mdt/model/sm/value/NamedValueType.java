@@ -36,12 +36,12 @@ public final class NamedValueType {
 	
 	private static final Pattern NAME_TYPE_PATTERN = Pattern.compile("(.*?) \\((.*?)\\)");
 	public static NamedValueType parseString(String expr) {
-        Matcher matcher = NAME_TYPE_PATTERN.matcher(expr);
-        if (matcher.find()) {
+        Matcher matcher = NAME_TYPE_PATTERN.matcher(expr.trim());
+        if (matcher.matches()) {
         	return new NamedValueType(matcher.group(1).trim(), matcher.group(2).trim());
         }
         else {
-            throw new IllegalArgumentException("Invalid NamedElementType string: " + expr);
+            throw new IllegalArgumentException("Invalid NamedValueType string: " + expr);
         }
 	}
 }

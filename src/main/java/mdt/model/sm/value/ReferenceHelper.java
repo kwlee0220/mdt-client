@@ -60,7 +60,7 @@ public class ReferenceHelper {
 
 
     /**
-     * Converst a list of key to a reference. If possible, the key type is automatically determined or set to null if
+     * Converts a list of keys to a reference. If possible, the key type is automatically determined or set to null if
      * this not possible.
      *
      * @param keys which are converted to a reference
@@ -80,7 +80,7 @@ public class ReferenceHelper {
      * Creates a deep copy of a reference.
      *
      * @param reference the reference to clone
-     * @return the cloned reference or nulll if the reference is null
+     * @return the cloned reference or null if the reference is null
      */
     public static Reference clone(Reference reference) {
         if (Objects.isNull(reference)) {
@@ -98,7 +98,7 @@ public class ReferenceHelper {
 
     /**
      * Compares if two {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} are equal. This also works when keys
-     * have different but compatibale {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes}, e.g.
+     * have different but compatible {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes}, e.g.
      * {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes#SUBMODEL_ELEMENT} and
      * {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes#PROPERTY}.
      *
@@ -168,7 +168,7 @@ public class ReferenceHelper {
         Class<?> keyClass = keyTypeToClass(key.getType());
         Preconditions.checkNotNull(keyClass, String.format("unsupported key type '%s'", key.getType()));
         Preconditions.checkState(type.isAssignableFrom(keyClass),
-        						"key must be compatible to {} (found: {})", type, keyClass);
+        						"key must be compatible to %s (found: %s)", type, keyClass);
     }
 
 
@@ -200,14 +200,12 @@ public class ReferenceHelper {
      * @throws IllegalArgumentException if reference is null
      */
     public static Reference getParent(Reference reference) {
-    	Preconditions.checkNotNull(reference, "referenec must be non-null");
+    	Preconditions.checkNotNull(reference, "reference must be non-null");
         if (Objects.isNull(reference.getKeys()) || reference.getKeys().size() < 2) {
             return null;
         }
         Reference result = clone(reference);
-        if ( result != null ) {
-        	result.getKeys().remove(result.getKeys().size() - 1);
-        }
+        result.getKeys().remove(result.getKeys().size() - 1);
         return result;
     }
 

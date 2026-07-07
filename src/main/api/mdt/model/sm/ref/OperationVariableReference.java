@@ -3,6 +3,7 @@ package mdt.model.sm.ref;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,8 +15,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.Preconditions;
+import utils.json.JacksonUtils;
 
-import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
@@ -38,6 +39,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	public static final String SERIALIZATION_TYPE = "mdt:ref:opvar";
 //	private static final String FIELD_SUBMODEL_REF = "submodelReference";
 //	private static final String FIELD_ELEMENT_PATH = "elementPath";
+	private static final String FIELD_AAS_OP_VAR = "aasOpVar";
 	private static final String FIELD_KIND = "kind";
 	private static final String FIELD_ORDINAL = "ordinal";
 
@@ -66,7 +68,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 			try {
 				int ordinal = Integer.parseInt(kindStr);
 				Preconditions.checkArgument(ordinal >= 0 && ordinal < 3,
-											"OperationVariable's ordinal should be between 0, 1, or 2, but {}", kindStr);
+								"OperationVariable's ordinal should be between 0, 1, or 2, but %s", kindStr);
 				return Kind.values()[ordinal];
 			}
 			catch ( NumberFormatException expected ) {
@@ -91,7 +93,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		}
 	};
 
-	private final MDTElementReference m_opRef;
+	private final SubmodelBasedElementReference m_opRef;
 	private final Kind m_kind;
 	private final int m_ordinal;
 	
@@ -99,7 +101,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		super(opRef.getSubmodelReference());
 		
 		Preconditions.checkNotNullArgument(kind, "OperationVariableKind is null");
-		Preconditions.checkArgument(ordinal >= 0, "OperationVariable ordinal is negative: %d", ordinal);
+		Preconditions.checkArgument(ordinal >= 0, "OperationVariable ordinal is negative: %s", ordinal);
 		
 		m_opRef = opRef;
 		m_kind = kind;
@@ -165,7 +167,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
 
 		SubmodelElement holder = m_opRef.read();
-		Preconditions.checkState(holder instanceof Operation, "target reference is not Operation: {}", holder);
+		Preconditions.checkState(holder instanceof Operation, "target reference is not Operation: %s", holder);
 		Operation op = (Operation)holder;
 
 		OperationVariable opv = getVariable(op, m_kind, m_ordinal);
@@ -177,12 +179,32 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
 		
 		SubmodelElement holder = m_opRef.read();
-		Preconditions.checkState(holder instanceof Operation, "target reference is not Operation: {}", holder);
+		Preconditions.checkState(holder instanceof Operation, "target reference is not Operation: %s", holder);
 		Operation op = (Operation)holder;
 
 		OperationVariable opv = getVariable(op, m_kind, m_ordinal);
 		opv.setValue(newSme);
 		m_opRef.write(op);
+	}
+
+	@Override
+	public ElementValue readValue() throws IOException {
+		SubmodelElement sme = read();
+		return ElementValues.getValue(sme);
+	}
+
+	@Override
+	public void updateValue(ElementValue smev) throws IOException {
+		SubmodelElement sme = read();
+		ElementValues.update(sme, smev);
+		write(sme);
+	}
+
+	@Override
+	public void updateValue(String valueJsonString) throws IOException {
+		ElementValue proto = readValue();
+		ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
+		updateValue(newVal);
 	}
 
 	@Override
@@ -207,28 +229,6 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	}
 
 	@Override
-	public void updateValue(ElementValue value) throws ResourceNotFoundException, IOException {
-		Preconditions.checkNotNullArgument(value, "value is null");
-		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
-		
-		SubmodelElement holder = m_opRef.read();
-		Preconditions.checkState(holder instanceof Operation, "target reference is not Operation: {}", holder);
-		Operation op = (Operation)holder;
-		
-		OperationVariable opv = getVariable(op, m_kind, m_ordinal);
-		SubmodelElement opValue = opv.getValue();
-		ElementValues.update(opValue, value);
-		m_opRef.write(op);
-	}
-
-	@Override
-	public void updateValue(String valueJsonString) throws IOException {
-		ElementValue proto = readValue();
-		ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
-		updateValue(newVal);
-	}
-
-	@Override
 	public String toStringExpr() {
 		return String.format("opvar:%s:%s:%d", m_opRef.toStringExpr(), m_kind, m_ordinal);
 	}
@@ -238,13 +238,13 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		if ( this == obj ) {
 			return true;
 		}
-		if ( obj == null || !(obj instanceof OperationVariableReference) ) {
+		if ( obj == null || obj.getClass() != getClass() ) {
 			return false;
 		}
 
 		OperationVariableReference other = (OperationVariableReference) obj;
-		return getSubmodelReference().equals(other.getSubmodelReference())
-				&& m_kind.equals(other.m_kind)
+		return Objects.equals(m_opRef, other.m_opRef)
+				&& Objects.equals(m_kind, other.m_kind)
 				&& m_ordinal == other.m_ordinal;
 	}
 
@@ -254,11 +254,12 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	}
 	
 	/**
-	 * Operation을 포함한 Submodel 참조와 변수 종류, 순번으로 {@link OperationVariableReference}를 생성한다.
+	 * 대상 {@link Operation} 요소에 대한 참조와 변수 종류, 순번으로
+	 * {@link OperationVariableReference}를 생성한다.
 	 *
-	 * @param submodelRef	대상 Operation({@code "Operation"} idShort)을 포함한 Submodel에 대한 참조.
-	 * @param kind			변수의 종류(입력/출력/입출력).
-	 * @param ordinal		같은 종류 변수 목록 안에서의 순번(0부터 시작).
+	 * @param opRef		대상 Operation 요소를 가리키는 참조.
+	 * @param kind		변수의 종류(입력/출력/입출력).
+	 * @param ordinal	같은 종류 변수 목록 안에서의 순번(0부터 시작).
 	 * @return 생성된 {@link OperationVariableReference} 객체.
 	 */
 	public static OperationVariableReference newInstance(SubmodelBasedElementReference opRef, Kind kind, int ordinal) {
@@ -282,7 +283,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 */
 	@Override
 	public void serializeFields(JsonGenerator gen) throws IOException {
-		m_opRef.serializeFields(gen);
+		gen.writeObjectField(FIELD_AAS_OP_VAR, m_opRef);
 		gen.writeStringField(FIELD_KIND, m_kind.toString());
 		gen.writeNumberField(FIELD_ORDINAL, m_ordinal);
 	}
@@ -293,12 +294,18 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 * Jackson 기반의 {@link ElementReferences.Deserializer}가 {@link ElementReference} 객체를
 	 * 역직렬화하는 과정에서 호출된다.
 	 *
-	 * @param jnode	{@code operationReference}, {@code kind}, {@code ordinal} 필드를 담은 Json 노드.
+	 * @param jnode	{@code aasOpVar}({@code @type} 포함 중첩 참조), {@code kind}, {@code ordinal}
+	 * 				필드를 담은 Json 노드.
 	 * @return 복원된 {@link OperationVariableReference} 객체.
 	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
 	 */
 	public static OperationVariableReference deserializeFields(JsonNode jnode) throws IOException {
-		DefaultElementReference opRef = DefaultElementReference.deserializeFields(jnode);
+		JsonNode baseOpVar = JacksonUtils.getField(jnode, FIELD_AAS_OP_VAR);
+		ElementReference ref = ElementReferences.parseTypedJsonNode(baseOpVar);
+		if ( !(ref instanceof SubmodelBasedElementReference) ) {
+			throw new IOException("Invalid OperationVariableReference: " + jnode);
+		}
+		SubmodelBasedElementReference opRef = (SubmodelBasedElementReference)ref;
 		String kindStr = checkJsonField(jnode, FIELD_KIND).asText();
 		Kind kind = Kind.fromString(kindStr);
 
@@ -319,8 +326,8 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 			case OUTPUT -> op.getOutputVariables();
 			case INOUTPUT -> op.getInoutputVariables();
 		};
-		Preconditions.checkArgument(ordinal >= 0 && ordinal < opVarList.size(), 
-									"OperationVariable's ordinal is out of range: %d (size: %d)", ordinal, opVarList.size());
+		Preconditions.checkArgument(ordinal >= 0 && ordinal < opVarList.size(),
+									"OperationVariable's ordinal is out of range: %s (size: %s)", ordinal, opVarList.size());
 		return opVarList.get(ordinal);
 	}
 	
@@ -335,5 +342,15 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	@Override
 	protected String buildIdShortPath() {
 		return "Operation";
+	}
+	
+	@Override
+	protected SubmodelElement loadPrototype() {
+		try {
+			return read();
+		}
+		catch ( IOException e ) {
+			throw new UncheckedIOException("failed to read OperationVariableReference: " + this, e);
+		}
 	}
 }

@@ -13,6 +13,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+
+import utils.DataUtils;
 
 import mdt.aas.DataType;
 import mdt.aas.DataTypes;
@@ -69,7 +73,7 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	public DefaultProperty.Builder toElementBuilder() {
 		DefaultProperty.Builder builder = new DefaultProperty.Builder();
 		builder.valueType(getDataType().getTypeDefXsd());
-		builder.value(getDataType().toValueString(m_value));
+		builder.value((m_value != null) ? getDataType().toValueString(m_value) : null);
 		return builder;
 	}
 
@@ -80,36 +84,63 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	
 	/**
 	 * Java 값 객체와 대상 {@link Property}의 데이터 타입으로부터 알맞은 {@code PropertyValue} 하위 타입을 생성한다.
+	 * <p>
+	 * 값 객체의 타입이 데이터 타입에 정확히 일치하지 않아도 가능한 경우 관대하게 변환한다
+	 * (예: LONG 타입에 {@link Integer} 값, 숫자 타입에 숫자 문자열).
 	 *
-	 * @param v		값 객체. Property의 valueType에 해당하는 Java 타입이어야 한다.
+	 * @param v		값 객체({@code null} 허용).
 	 * @param xsdType	데이터 타입 결정에 사용할 대상 Property의 XSD 데이터 타입.
 	 * @return 생성된 PropertyValue.
-	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
+	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입이거나 값 객체를 변환할 수 없는 경우.
 	 */
 	public static PropertyValue<?> fromValueObject(Object v, DataTypeDefXsd xsdType) {
 		switch ( xsdType ) {
 			case STRING:
-				return new StringPropertyValue((String)v);
+				return STRING(DataUtils.asString(v));
 			case INT:
-				return new IntegerPropertyValue((Integer)v);
+				return INTEGER((v != null) ? DataUtils.asInt(v) : null);
 			case FLOAT:
-				return new FloatPropertyValue((Float)v);
+				return FLOAT((v != null) ? DataUtils.asFloat(v) : null);
 			case DOUBLE:
-				return new DoublePropertyValue((Double)v);
+				return DOUBLE((v != null) ? DataUtils.asDouble(v) : null);
 			case BOOLEAN:
-				return new BooleanPropertyValue((Boolean)v);
+				return BOOLEAN((v != null) ? DataUtils.asBoolean(v) : null);
 			case DATE_TIME:
-				return new DateTimePropertyValue((Instant)v);
+				return DATE_TIME((v != null) ? DataUtils.asInstant(v) : null);
 			case DURATION:
-				return new DurationPropertyValue((Duration)v);
+				return DURATION(asDuration(v));
 			case LONG:
-				return new LongPropertyValue((Long)v);
+				return LONG((v != null) ? DataUtils.asLong(v) : null);
 			case SHORT:
-				return new ShortPropertyValue((Short)v);
+				return SHORT((v != null) ? DataUtils.asShort(v) : null);
 			case DECIMAL:
-				return new DecimalPropertyValue((BigDecimal)v);
+				return DECIMAL(asDecimal(v));
 			default:
 				throw new IllegalArgumentException("unknown data type: " + xsdType);
+		}
+	}
+
+	private static Duration asDuration(Object v) {
+		if ( v == null ) {
+			return null;
+		}
+		else if ( v instanceof Duration dur ) {
+			return dur;
+		}
+		else {
+			return DataTypes.DURATION.parseValueString(v.toString());
+		}
+	}
+
+	private static BigDecimal asDecimal(Object v) {
+		if ( v == null ) {
+			return null;
+		}
+		else if ( v instanceof BigDecimal decimal ) {
+			return decimal;
+		}
+		else {
+			return DataTypes.DECIMAL.parseValueString(v.toString());
 		}
 	}
 	
@@ -419,6 +450,12 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 		@Override
 		public String toValueJsonString() {
 			return m_value != null ? "\"" + DataTypes.DURATION.toValueString(m_value) + "\"" : "null";
+		}
+
+		@Override
+		public JsonNode toValueJsonNode() {
+			return (m_value != null) ? TextNode.valueOf(DataTypes.DURATION.toValueString(m_value))
+										: NullNode.getInstance();
 		}
 
 		@Override

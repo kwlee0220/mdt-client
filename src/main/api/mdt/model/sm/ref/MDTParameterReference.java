@@ -103,7 +103,7 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 		if ( this == obj ) {
 			return true;
 		}
-		if ( obj == null || !(obj instanceof MDTParameterReference) ) {
+		if ( obj == null || obj.getClass() != getClass() ) {
 			return false;
 		}
 

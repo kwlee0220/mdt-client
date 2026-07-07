@@ -44,15 +44,20 @@ public abstract class ArgumentSpec {
 	abstract public ElementValue readValue() throws IOException;
 	
 	public static ArgumentSpec parseArgumentSpec(String argSpecExpr) {
-		MDTExpression expr = MDTExpressionParser.parseExpr(argSpecExpr);
-		if ( expr instanceof MDTElementReferenceExpr refExpr ) {
-			return ArgumentSpec.reference(refExpr.evaluate());	
+		try {
+			MDTExpression expr = MDTExpressionParser.parseExpr(argSpecExpr);
+			if ( expr instanceof MDTElementReferenceExpr refExpr ) {
+				return ArgumentSpec.reference(refExpr.evaluate());	
+			}
+			else if ( expr instanceof LiteralExpr lit ) {
+				return ArgumentSpec.literal(lit.evaluate());
+			}
+			else {
+				throw new IllegalArgumentException("Unexpected variable expression: expr=" + argSpecExpr);
+			}
 		}
-		else if ( expr instanceof LiteralExpr lit ) {
-			return ArgumentSpec.literal(lit.evaluate());
-		}
-		else {
-			throw new IllegalArgumentException("Unexpected variable expression: expr=" + argSpecExpr);
+		catch ( IllegalArgumentException e ) {
+			return ArgumentSpec.literal(argSpecExpr);
 		}
 	}
 	

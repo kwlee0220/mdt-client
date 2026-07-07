@@ -20,9 +20,8 @@ public class ReferenceElementValueTest {
 				+ "\"keys\":[{\"type\":\"SUBMODEL\",\"value\":\"http://customer.com/demo/aas/1/1/1234859590\"},"
 				+ "{\"type\":\"PROPERTY\",\"value\":\"MaxRotationSpeed\"}]}}";
 	private static final String VALUE_JSON
-		= "{\"type\":\"MODEL_REFERENCE\",\"keys\":["
-				+ "{\"type\":\"SUBMODEL\",\"value\":\"http://customer.com/demo/aas/1/1/1234859590\"},"
-				+ "{\"type\":\"PROPERTY\",\"value\":\"MaxRotationSpeed\"}]}";
+		= "[{\"type\":\"SUBMODEL\",\"value\":\"http://customer.com/demo/aas/1/1/1234859590\"},"
+				+ "{\"type\":\"PROPERTY\",\"value\":\"MaxRotationSpeed\"}]";
 	private static final Reference REFFERENCE = new DefaultReference.Builder()
 														.type(ReferenceTypes.MODEL_REFERENCE)
 														.keys(new DefaultKey.Builder()

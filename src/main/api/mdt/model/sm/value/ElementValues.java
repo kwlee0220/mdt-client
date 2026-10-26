@@ -27,6 +27,7 @@ import com.google.common.collect.Maps;
 
 import utils.Preconditions;
 import utils.func.CheckedFunctionX;
+import utils.func.CheckedSupplierX;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
@@ -64,6 +65,8 @@ import mdt.model.sm.value.PropertyValue.StringPropertyValue;
  */
 public class ElementValues {
 	private static final String FIELD_TYPE = "@type";
+	// 모든 ElementValue 타입 식별자의 공통 접두어.
+	private static final String VALUE_TYPE_PREFIX = "mdt:value:";
 	private static final String FIELD_VALUE = "value";
 
 	// ElementValue 타입별 value 부분 deserializer 레지스트리.
@@ -190,6 +193,52 @@ public class ElementValues {
 		};
 	}
 	
+	/**
+	 * {@code @type} 필드의 존재 여부에 따라 주어진 JSON 노드를 {@link ElementValue}로 파싱한다.
+	 * <p>
+	 * {@code @type} 필드가 있는 경우는 그 타입 식별자로 값의 타입이 결정되고({@link #parseJsonNode(JsonNode)}),
+	 * 없는 경우는 {@code proto}의 타입을 따른다({@link #parseValueJsonNode(JsonNode, ElementValue)}).
+	 *
+	 * @param jnode	파싱할 JSON 노드.
+	 * @param proto	{@code @type} 필드가 없는 경우 참조할 {@link ElementValue} 객체.
+	 * @return	파싱된 {@link ElementValue} 객체.
+	 * @throws IOException				JSON 해석 과정에서 오류가 발생한 경우.
+	 * @throws IllegalArgumentException	{@code @type}이 지원하지 않는 타입 식별자인 경우.
+	 */
+	public static ElementValue parseGeneralJsonNode(JsonNode jnode, ElementValue proto) throws IOException {
+		return parseGeneralJsonNode(jnode, () -> proto);
+	}
+
+	/**
+	 * {@code @type} 필드의 존재 여부에 따라 주어진 JSON 노드를 {@link ElementValue}로 파싱한다.
+	 * <p>
+	 * {@link #parseGeneralJsonNode(JsonNode, ElementValue)}와 동일하지만, {@code proto}를 얻는 작업이
+	 * 원격 접근 등으로 비용이 큰 경우를 위해 실제로 필요한 경우(= {@code @type} 필드가 없는 경우)에만
+	 * {@code protoSupplier}를 호출한다.
+	 *
+	 * @param jnode			파싱할 JSON 노드.
+	 * @param protoSupplier	{@code @type} 필드가 없는 경우 참조할 {@link ElementValue} 공급자.
+	 * @return	파싱된 {@link ElementValue} 객체.
+	 * @throws IOException				JSON 해석 또는 {@code proto} 획득 과정에서 오류가 발생한 경우.
+	 * @throws IllegalArgumentException	{@code @type}이 지원하지 않는 타입 식별자인 경우.
+	 */
+	public static ElementValue parseGeneralJsonNode(JsonNode jnode,
+													CheckedSupplierX<ElementValue,IOException> protoSupplier)
+		throws IOException {
+		JsonNode typeNode = jnode.get(FIELD_TYPE);
+		String typeStr = ( typeNode != null && !typeNode.isNull() ) ? typeNode.asText() : null;
+
+		if ( typeStr == null || typeStr.isEmpty() ) {
+			// '@type' 필드가 없는 경우는 proto의 타입을 그대로 사용한다.
+			return parseValueJsonNode(jnode, protoSupplier.get());
+		}
+		else if ( typeStr.startsWith(VALUE_TYPE_PREFIX) ) {
+			return parseJsonNode(jnode);
+		}
+		else {
+			throw new IllegalArgumentException("Unexpected ElementValue type: " + typeStr);
+		}
+	}
 	
 	// ******************************************************
 	// 	value JsonNode/JSON -> ElementValue
@@ -332,6 +381,23 @@ public class ElementValues {
 		ElementValue value = parseValueJsonNode(valueNode, proto);
 		update(sme, value);
 		
+		return sme;
+	}
+	
+	public static SubmodelElement update(SubmodelElement sme, String value) throws IOException {
+		update(sme, PropertyValue.STRING(value));
+		return sme;
+	}
+	public static SubmodelElement update(SubmodelElement sme, Integer value) throws IOException {
+		update(sme, PropertyValue.INTEGER(value));
+		return sme;
+	}
+	public static SubmodelElement update(SubmodelElement sme, Float value) throws IOException {
+		update(sme, PropertyValue.FLOAT(value));
+		return sme;
+	}
+	public static SubmodelElement update(SubmodelElement sme, Double value) throws IOException {
+		update(sme, PropertyValue.DOUBLE(value));
 		return sme;
 	}
 	

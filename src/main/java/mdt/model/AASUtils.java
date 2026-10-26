@@ -44,6 +44,7 @@ import utils.http.OkHttpClientUtils;
 import utils.io.FileUtils;
 import utils.stream.FStream;
 
+import mdt.client.MDTRESTfulClients;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.instance.MDTInstanceManagerException;
 
@@ -94,7 +95,7 @@ public final class AASUtils {
 
 	public static AssetAdministrationShell getAssetAdministrationShell(OkHttpClient httpClient, String faastUrl) {
 		JsonMapper mapper = MDTModelSerDe.getJsonMapper();
-		HttpRESTfulClient client = HttpRESTfulClient.builder()
+		HttpRESTfulClient client = MDTRESTfulClients.builder()
 												.httpClient(httpClient)
 												.jsonMapper(mapper)
 												.errorEntityDeserializer(new JacksonErrorEntityDeserializer(mapper))

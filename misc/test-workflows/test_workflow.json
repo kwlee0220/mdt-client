@@ -1,0 +1,107 @@
+{
+  "id": "test_workflow",
+  "name": "테스트 시뮬레이션",
+  "description": "본 워크플로우는 시뮬레이션 연동을 확인하기 위한 테스트 목적으로 작성됨.",
+  "taskDescriptors": [
+    {
+      "id": "get_heater_cycle_time",
+      "type": "mdt.task.SetTask",
+      "dependencies": [],
+      "inputArguments": [
+        {
+          "@type": "mdt:task_arg:reference",
+          "id": "source",
+          "reference": "param:heater:CycleTime"
+        }
+      ],
+      "outputArguments": [],
+      "options": [
+        {
+          "name": "timeout",
+          "value": "1m"
+        },
+        {
+          "name": "loglevel",
+          "value": "info"
+        }
+      ],
+      "labels": []
+    },
+    {
+      "id": "dec_by_5",
+      "type": "mdt.task.PythonScriptTask",
+      "dependencies": [
+        "get_heater_cycle_time"
+      ],
+      "inputArguments": [
+        {
+          "@type": "mdt:task_arg:task-output",
+          "id": "value",
+          "taskId": "get_heater_cycle_time",
+          "argumentName": "target"
+        }
+      ],
+      "outputArguments": [],
+      "options": [
+        {
+          "name": "script",
+          "value": "value = inputs['value'].to_raw_object()\noutputs['result'] = value - 5"
+        }
+      ],
+      "labels": []
+    },
+    {
+      "id": "add_and_sleep",
+      "type": "mdt.task.AASOperationTask",
+      "dependencies": [
+        "dec_by_5"
+      ],
+      "inputArguments": [
+        {
+          "@type": "mdt:task_arg:task-output",
+          "id": "Data",
+          "taskId": "dec_by_5",
+          "argumentName": "result"
+        },
+        {
+          "@type": "mdt:task_arg:literal",
+          "id": "IncAmount",
+          "value": {
+            "@type": "mdt:value:integer",
+            "value": 11
+          }
+        },
+        {
+          "@type": "mdt:task_arg:literal",
+          "id": "SleepTime",
+          "value": {
+            "@type": "mdt:value:float",
+            "value": 1.5
+          }
+        }
+      ],
+      "outputArguments": [
+        {
+          "@type": "mdt:task_arg:reference",
+          "id": "Output",
+          "reference": "param:test:Data"
+        }
+      ],
+      "options": [
+        {
+          "name": "operation",
+          "value": "test:AddAndSleep:Operation"
+        },
+        {
+          "name": "timeout",
+          "value": "1m"
+        },
+        {
+          "name": "loglevel",
+          "value": "info"
+        }
+      ],
+      "labels": []
+    }
+  ]
+}

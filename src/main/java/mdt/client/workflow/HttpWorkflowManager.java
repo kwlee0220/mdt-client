@@ -16,6 +16,7 @@ import utils.http.HttpRESTfulClient.ErrorEntityDeserializer;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 
+import mdt.client.MDTRESTfulClients;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceAlreadyExistsException;
 import mdt.model.ResourceNotFoundException;
@@ -38,7 +39,7 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		
 		m_endpoint = endpoint;
 		ErrorEntityDeserializer errorDeser = new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER);
-		m_restfulClient = HttpRESTfulClient.builder()
+		m_restfulClient = MDTRESTfulClients.builder()
 											.httpClient(client)
 											.errorEntityDeserializer(errorDeser)
 											.build();
@@ -94,32 +95,32 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		Preconditions.checkArgument(wfModelId != null, "WorkflowModel id is null");
 		
 		String url = String.format("%s/models/%s/start", m_endpoint, wfModelId);
-		
-		RequestBody reqBody = RequestBody.create("", HttpRESTfulClient.MEDIA_TYPE_JSON);
+
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody("");
 		return m_restfulClient.post(url, reqBody, m_wfDeser);
 	}
 
 	@Override
 	public void stopWorkflow(String wfName) throws ResourceNotFoundException {
 		String url = String.format("%s/workflows/%s/stop", m_endpoint, wfName);
-		
-		RequestBody reqBody = RequestBody.create("", HttpRESTfulClient.MEDIA_TYPE_JSON);
+
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody("");
 		m_restfulClient.put(url, reqBody);
 	}
 
 	@Override
 	public Workflow suspendWorkflow(String wfName) throws ResourceNotFoundException {
 		String url = String.format("%s/workflows/%s/suspend", m_endpoint, wfName);
-		
-		RequestBody reqBody = RequestBody.create("", HttpRESTfulClient.MEDIA_TYPE_JSON);
+
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody("");
 		return m_restfulClient.put(url, reqBody, m_wfDeser);
 	}
 
 	@Override
 	public Workflow resumeWorkflow(String wfName) throws ResourceNotFoundException {
 		String url = String.format("%s/workflows/%s/resume", m_endpoint, wfName);
-		
-		RequestBody reqBody = RequestBody.create("", HttpRESTfulClient.MEDIA_TYPE_JSON);
+
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody("");
 		return m_restfulClient.put(url, reqBody, m_wfDeser);
 	}
 
@@ -152,7 +153,7 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		String url = String.format("%s/models", m_endpoint);
 		
 		String requestJson = MDTModelSerDe.toJsonString(desc);
-		RequestBody reqBody = RequestBody.create(requestJson, HttpRESTfulClient.MEDIA_TYPE_JSON);
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(requestJson);
 		return m_restfulClient.post(url, reqBody, m_wfModelDeser);
 	}
 
@@ -161,7 +162,7 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		String url = String.format("%s/models?updateIfExists=true", m_endpoint);
 		
 		String requestJson = MDTModelSerDe.toJsonString(desc);
-		RequestBody reqBody = RequestBody.create(requestJson, HttpRESTfulClient.MEDIA_TYPE_JSON);
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(requestJson);
 		return m_restfulClient.post(url, reqBody, m_wfModelDeser);
 	}
 

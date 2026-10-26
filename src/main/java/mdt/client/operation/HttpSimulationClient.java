@@ -19,6 +19,7 @@ import utils.LoggerSettable;
 import utils.func.FOption;
 import utils.func.Optionals;
 import utils.http.HttpClientProxy;
+import utils.http.HttpRESTfulClient;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 
@@ -54,7 +55,7 @@ public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 	}
 	
 	public OperationStatusResponse<Void> startSimulation(String paramtersJson) {
-		RequestBody body = RequestBody.create(paramtersJson, JSON);
+		RequestBody body = HttpRESTfulClient.newJsonRequestBody(paramtersJson);
 		Request req = new Request.Builder().url(getEndpoint()).post(body).build();
 		if ( s_logger.isDebugEnabled() ) {
 			s_logger.debug("sending Simulation start request: url={}, method={}, body={}",

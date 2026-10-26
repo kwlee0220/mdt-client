@@ -28,13 +28,18 @@ import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.thread.Guard;
 
+import mdt.client.MDTRESTfulClients;
 import mdt.model.MDTModelSerDe;
 
 
 /**
  *
  * @author Kang-Woo Lee (ETRI)
+ * @deprecated	{@code mdt-operation-http}의 {@code RpcServerDispatcher}와 URL 및 메시지 형식이 맞지 않아
+ * 			사용할 수 없다. 대신 {@link utils.rpc.restful.RESTfulAsyncRpcClient}를 사용한다.
  */
+@Deprecated(forRemoval = true)
+@SuppressWarnings("removal")
 public class HttpOperationClient extends AbstractThreadedExecution<OperationResponse>
 									implements HttpClientProxy, CancellableWork {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpOperationClient.class);
@@ -61,7 +66,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 		m_pollInterval = builder.m_pollInterval;
 		m_timeout = builder.m_timeout;
 		
-		m_restClient = HttpRESTfulClient.builder()
+		m_restClient = MDTRESTfulClients.builder()
 										.httpClient(builder.m_httpClient)
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MAPPER))
 										.jsonMapper(MAPPER)
@@ -168,7 +173,7 @@ public class HttpOperationClient extends AbstractThreadedExecution<OperationResp
 		Preconditions.checkState(request.getOperation() != null, "'operation' is null");
 		
 		String requestJson = MDTModelSerDe.toJsonString(request);
-		RequestBody reqBody = RequestBody.create(requestJson, HttpRESTfulClient.MEDIA_TYPE_JSON);
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(requestJson); 
 		return m_restClient.post(m_endpoint + "/operations", reqBody, m_opRespDeser);
 	}
 	

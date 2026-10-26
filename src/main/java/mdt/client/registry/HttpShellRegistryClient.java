@@ -11,12 +11,14 @@ import com.google.common.base.Preconditions;
 
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 import utils.http.HttpRESTfulClient;
 import utils.http.HttpRESTfulClient.ErrorEntityDeserializer;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 
+import mdt.client.MDTRESTfulClients;
 import mdt.aas.ShellRegistry;
 import mdt.client.HttpMDTServiceProxy;
 import mdt.model.AASUtils;
@@ -37,7 +39,7 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 		
 		m_endpoint = endpoint;
 		ErrorEntityDeserializer errorDeser = new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER);
-		m_restfulClient = HttpRESTfulClient.builder()
+		m_restfulClient = MDTRESTfulClients.builder()
 											.httpClient(client)
 											.errorEntityDeserializer(errorDeser)
 											.build();
@@ -87,7 +89,8 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 		String url = String.format("%s", m_endpoint);
 		
 		String reqBodyStr = MDTModelSerDe.toJsonString(desc);
-		return m_restfulClient.post(url, reqBodyStr, m_shellDeser);
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(reqBodyStr);
+		return m_restfulClient.post(url, reqBody, m_shellDeser);
 	}
 
 	@Override
@@ -96,7 +99,8 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 		String url = String.format("%s", m_endpoint);
 
 		String reqBodyStr = MDTModelSerDe.toJsonString(descriptor);
-		return m_restfulClient.put(url, reqBodyStr, m_shellDeser);
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(reqBodyStr);
+		return m_restfulClient.put(url, reqBody, m_shellDeser);
 	}
 
 	@Override

@@ -37,7 +37,7 @@ public final class MDTSemanticIds {
 	
 	public static final String SUBMODEL_SHAPE = MDT_PREFIX + "/Submodel/Shape" + VERSION;
 	
-	public static final String TIME_SERIES_READ_LAST_RECORDS = MDT_PREFIX + "/Submodel/TimeSeries/ReadLastRecords" + VERSION;
+	public static final String TIME_SERIES_READ_RECORDS_BY_RANGE = MDT_PREFIX + "/Submodel/TimeSeries/ReadRecordsByRange" + VERSION;
 	public static final String TIME_SERIES_RANGE = MDT_PREFIX + "/Submodel/TimeSeries/Range" + VERSION;
 	public static final String TIME_SERIES_COLUMNS = MDT_PREFIX + "/Submodel/TimeSeries/Columns" + VERSION;
 	

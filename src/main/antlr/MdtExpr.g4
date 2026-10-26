@@ -51,7 +51,7 @@ opVarSpec: defaultElementSpec ':' ('in' | 'out' | 'inout') ':' (INTEGER);
 // range는 '#', projection은 '|'로 구분해 콜론 과부하/모호성을 제거한다.
 // 예: timeseries:inst:sm:elem#last=5|colA,colB
 timeseriesSpec: submodelSpec ('#' tsRangeSpec)? ('|' tsProjectionSpec)?;
-tsRangeSpec: tsRangeLastSpec | tsRangeAbsoluteSpec;
+tsRangeSpec: tsRangeLastSpec | tsRangeAbsoluteSpec | tsRangeSinceSpec;
 // 'last=N'(접미사 없는 정수)은 마지막 N개 레코드를, 'last=dur'은 마지막 기간 구간을 의미한다.
 // 기간의 기준점(anchor)은 '@latest'(기본, 가장 최신 데이터 시각) 또는 '@now'(현재 시각)으로 명시한다.
 //   예: last=10 (마지막 10개), last=10s (마지막 10초), last=1h@now
@@ -64,6 +64,11 @@ durationValue: durationLiteralSpec | iso8601DurationLiteralSpec;
 tsRangeAbsoluteSpec: TIMESTAMP '~' TIMESTAMP
                    | TIMESTAMP '~'
                    | '~' TIMESTAMP;
+// 시작 시각부터 개수로 지정하는 범위: '+'를 개수 연산자로 사용한다.
+//   from+N: 'from' 시각(포함)부터 시간 오름차순으로 N개 레코드
+// 예: elem#2024-01-01T09:00:00Z+100
+// (TIMESTAMP의 타임존 오프셋 '+hh:mm'은 렉서에서 통째로 매칭되므로 '+N'과 충돌하지 않는다)
+tsRangeSinceSpec: TIMESTAMP '+' INTEGER;
 // projection('|' 절)을 생략하면 전체 컬럼을 선택한 것으로 해석한다.
 // (visitTimeseriesSpec 구현 시 projection 컨텍스트가 없으면 전체 선택으로 처리할 것)
 tsProjectionSpec: idOrString (',' idOrString)*;

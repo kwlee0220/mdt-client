@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import utils.async.AbstractPeriodicPoller;
+import utils.async.IntervalMode;
 import utils.func.FOption;
 
 import ch.qos.logback.classic.LoggerContext;
@@ -44,7 +45,7 @@ public class MqttBrokerReconnect extends AbstractPeriodicPoller<MqttClient> {
 	}
 	
 	public MqttBrokerReconnect(MqttClient client, MqttConnectOptions opts, Duration reconnectInterval) {
-		super(reconnectInterval, true);
+		super(reconnectInterval, IntervalMode.FIXED_RATE);
 		Preconditions.checkArgument(client != null, "MqttClient is null");
 		Preconditions.checkNotNull(opts);
 		

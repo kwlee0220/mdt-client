@@ -29,8 +29,8 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
 │     ├─ MDTParameterCollectionReference    — Data Submodel의 파라미터 전체 집합
 │     ├─ MDTArgumentReference               — MDT 연산(Simulation/AI)의 입/출력 인자
 │     ├─ OperationVariableReference         — Operation 요소의 입력/출력/입출력 변수
-│     └─ ReadLastRecordsReference           — (timeseries/) 시계열 Submodel 레코드
-│                                              (ReadLastRecords 연산 호출 기반)
+│     └─ TimeSeriesRecordsReference           — (timeseries/) 시계열 Submodel 레코드
+│                                              (ReadRecordsByRange 연산 호출 기반)
 └─ MDTElementReference (interface)          — MDT 관리 요소 (instanceId/submodelIdShort/idShortPath)
 ```
 
@@ -59,7 +59,7 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
 | `mdt:ref:param`      | `MDTParameterReference` / `MDTParameterCollectionReference` (분기: `parameterExpr=="*"`) |
 | `mdt:ref:oparg`      | `MDTArgumentReference` |
 | `mdt:ref:opvar`      | `OperationVariableReference` |
-| `mdt:ref:timeseries` | `ReadLastRecordsReference` |
+| `mdt:ref:timeseries` | `TimeSeriesRecordsReference` |
 | `mdt:ref:file`       | `FileStoreReference` |
 
 새 참조 타입 추가 시: (1) `SERIALIZATION_TYPE` 상수, (2) `serializeFields`/`deserializeFields`,
@@ -96,7 +96,7 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 - `param:<instanceId>:<idShortPath|INTEGER|*>` → `MDTParameterReference`(/`*`면 Collection)
 - `oparg:<submodelSpec>:(in|out):<idOrString|INTEGER|*>` → `MDTArgumentReference`
 - `opvar:<defaultElementSpec>:(in|out|inout):<INTEGER>` → `OperationVariableReference`
-- `timeseries:<submodelSpec>[#<range>][|<cols>]` → `ReadLastRecordsReference`
+- `timeseries:<submodelSpec>[#<range>][|<cols>]` → `TimeSeriesRecordsReference`
 
 `submodelSpec` = `inst:Data` | `inst:idShort=Data` | `submodel:id='...'`.
 
@@ -113,7 +113,7 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 
 ## timeseries/ 서브패키지
 
-`ReadLastRecordsReference`(시계열 Submodel의 `ReadLastRecords` 연산 호출 기반) + 범위
+`TimeSeriesRecordsReference`(시계열 Submodel의 `ReadRecordsByRange` 연산 호출 기반) + 범위
 `TimeSeriesRange`(sealed). 문법 `tsRangeSpec` ↔ `TimeSeriesRange` 매핑:
 
 | 문법 | `TimeSeriesRange` |
@@ -122,11 +122,12 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 | `last=dur@latest`(기본) | `Trailing(dur, LATEST)` — 마지막 레코드 시각 기준 |
 | `last=dur@now` | `Trailing(dur, NOW)` — 현재 시각 기준 |
 | `from~to` | `Absolute(from, to)` (한쪽 null = 개방) |
+| `from+N` | `Since(from, N)` — `from`(포함)부터 시간 오름차순 N개 |
 | `\|col,...` | `columns([...])`, 생략 시 전체 |
 
 - `TIMESTAMP`→`Instant` 정책(`MDTExpressionVisitor.parseTimestamp`): zone 명시 시 그대로, zone 없으면
   UTC, 날짜만이면 그 날 00:00:00 UTC.
-- `ReadLastRecordsReference`는 내부적으로 컬럼 맨 앞에 `"Time"`을 추가하지만, `toStringExpr`/
+- `TimeSeriesRecordsReference`는 내부적으로 컬럼 맨 앞에 `"Time"`을 추가하지만, `toStringExpr`/
   `serializeFields` 모두 직렬화 시 `"Time"`을 제외한다(역직렬화 시 생성자가 다시 prepend).
 - `equals`는 submodel 참조만 비교(range/columns 제외).
 
@@ -141,7 +142,7 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 
 `src/test/java/mdt/model/sm/ref/`(및 `.../timeseries/`)에 클래스별 테스트가 있다. 모든 직렬화 대상
 참조는 **expr round-trip**(`parseExpr(toStringExpr())`)과 **JSON round-trip**
-(`parseJsonString(toJsonString())`)을 검증한다. `ReadLastRecordsReference`처럼 `equals`가 일부
+(`parseJsonString(toJsonString())`)을 검증한다. `TimeSeriesRecordsReference`처럼 `equals`가 일부
 필드를 무시하는 경우 round-trip 비교는 `toStringExpr()` 문자열로 한다.
 
 ## 규약

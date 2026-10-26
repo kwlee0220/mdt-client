@@ -42,6 +42,7 @@ import mdt.model.expr.MdtExprParser.SubmodelSpecContext;
 import mdt.model.expr.MdtExprParser.TimeseriesSpecContext;
 import mdt.model.expr.MdtExprParser.TsProjectionSpecContext;
 import mdt.model.expr.MdtExprParser.TsRangeAbsoluteSpecContext;
+import mdt.model.expr.MdtExprParser.TsRangeSinceSpecContext;
 import mdt.model.expr.MdtExprParser.TsRangeSpecContext;
 import mdt.model.expr.TerminalExpr.BooleanExpr;
 import mdt.model.expr.TerminalExpr.DoubleExpr;
@@ -50,6 +51,7 @@ import mdt.model.expr.TerminalExpr.StringExpr;
 import mdt.model.expr.TerminalExpr.SymbolExpr;
 import mdt.model.expr.TimeSeriesRangeExpr.AbsoluteExpr;
 import mdt.model.expr.TimeSeriesRangeExpr.LengthExpr;
+import mdt.model.expr.TimeSeriesRangeExpr.SinceExpr;
 import mdt.model.expr.TimeSeriesRangeExpr.TrailingExpr;
 import mdt.model.sm.ref.MDTArgumentKind;
 import mdt.model.sm.ref.MDTSubmodelReference;
@@ -344,6 +346,24 @@ public class MDTExpressionVisitor extends MdtExprBaseVisitor<MDTExpression> {
 		}
 		else {
 			throw new IllegalArgumentException("Invalid absolute range spec: " + ctx.getText());
+		}
+	}
+
+	@Override
+	public TimeSeriesRangeExpr visitTsRangeSinceSpec(TsRangeSinceSpecContext ctx) {
+		// tsRangeSinceSpec: TIMESTAMP '+' INTEGER
+		// 'from' 시각부터 시간 오름차순으로 N개 레코드.
+		if ( ctx.getChildCount() == 3
+			&& ctx.getChild(0) instanceof TerminalNode tsNode
+			&& tsNode.getSymbol().getType() == MdtExprParser.TIMESTAMP
+			&& ctx.getChild(2) instanceof TerminalNode cntNode
+			&& cntNode.getSymbol().getType() == MdtExprParser.INTEGER ) {
+			TerminalExpr fromExpr = (TerminalExpr)tsNode.accept(this);
+			int length = Integer.parseInt(cntNode.getText());
+			return new SinceExpr(fromExpr, length);
+		}
+		else {
+			throw new IllegalArgumentException("Invalid since range spec: " + ctx.getText());
 		}
 	}
 

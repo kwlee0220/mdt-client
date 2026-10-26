@@ -24,7 +24,7 @@ SubmodelElement에 대한 **참조(reference)**를 다루는 패키지다. 참�
 | `MDTParameterCollectionReference` | 인스턴스 `Data` Submodel의 파라미터 전체 집합 | `mdt:ref:param` |
 | `MDTArgumentReference` | MDT 연산(Simulation/AI)의 입력/출력 인자 | `mdt:ref:oparg` |
 | `OperationVariableReference` | `Operation` 요소의 입력/출력/입출력 변수 | `mdt:ref:opvar` |
-| `ReadLastRecordsReference` | 시계열 Submodel의 레코드(`ReadLastRecords` 연산 호출 기반) | `mdt:ref:timeseries` |
+| `TimeSeriesRecordsReference` | 시계열 Submodel의 레코드(`ReadRecordsByRange` 연산 호출 기반) | `mdt:ref:timeseries` |
 | `FileStoreReference` | 로컬 파일에 저장된 SubmodelElement | `mdt:ref:file` |
 
 ## MdtExpr 표현식
@@ -49,7 +49,7 @@ submodel:id='http://.../sm/Data'  # 서브모델 ID로 직접 지정(URL은 따�
 | `param:<instanceId>:*` | `MDTParameterCollectionReference` |
 | `oparg:<submodelSpec>:(in\|out):<name\|INTEGER\|*>` | `MDTArgumentReference` |
 | `opvar:<submodelSpec>:<idShortPath>:(in\|out\|inout):<INTEGER>` | `OperationVariableReference` |
-| `timeseries:<submodelSpec>[#<range>][\|<cols>]` | `ReadLastRecordsReference` |
+| `timeseries:<submodelSpec>[#<range>][\|<cols>]` | `TimeSeriesRecordsReference` |
 
 - `idShortPath`는 `.`로 하위 요소, `[n]`으로 배열 인덱스를 표현한다(인덱스는 음수 불가).
 - **opvar**는 연산 *요소*를 idShortPath로 가리킨다. 예: `opvar:inst:Data:Operation:out:1`.
@@ -64,8 +64,11 @@ range는 `#`, projection은 `|`로 구분한다. **projection을 생략하면 �
 | `#last=1h@now` | 현재 시각 기준 이전 1시간 |
 | `#2024-01-01~2024-02-01` | 절대 구간 [from, to] |
 | `#2024-01-01T09:00:00Z~` / `#~2024-02-01` | 한쪽 개방 구간 |
+| `#2024-01-01T09:00:00Z+100` | `from`(포함)부터 시간 오름차순 100개 |
 
 duration 값은 단순형(`30s`,`500ms`,`2h`,`1d`) 또는 ISO8601(`PT2H30M`,`P1D`,`P1DT2H30M`,`PT0.5S`).
+
+레코드는 range 종류와 무관하게 항상 시각 오름차순으로 반환된다.
 
 예:
 ```
@@ -73,6 +76,7 @@ timeseries:inst:Data
 timeseries:inst:Data#last=5
 timeseries:inst:Data#last=PT2H30M@now
 timeseries:inst:Data#2024-01-01~2024-02-01|current,power
+timeseries:inst:Data#2024-01-01T09:00:00Z+100|current
 ```
 
 ### 값 리터럴 (parseValueLiteral)
@@ -100,7 +104,7 @@ ElementReference back = ElementReferences.parseExpr(expr);   // back.toStringExp
 String json = ref.toJsonString();
 ElementReference back2 = ElementReferences.parseJsonString(json);
 ```
-> `ReadLastRecordsReference.equals`는 submodel 참조만 비교하고 range/columns는 제외한다.
+> `TimeSeriesRecordsReference.equals`는 submodel 참조만 비교하고 range/columns는 제외한다.
 > 따라서 range/columns 보존 검증은 `equals`가 아니라 `toStringExpr()`(이 둘을 인코딩)로 한다.
 
 ## 활성화 (activation)

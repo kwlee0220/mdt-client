@@ -145,6 +145,12 @@ public interface MdtExprVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitTsRangeAbsoluteSpec(MdtExprParser.TsRangeAbsoluteSpecContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MdtExprParser#tsRangeSinceSpec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTsRangeSinceSpec(MdtExprParser.TsRangeSinceSpecContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MdtExprParser#tsProjectionSpec}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

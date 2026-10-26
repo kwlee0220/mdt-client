@@ -12,6 +12,7 @@ import utils.func.FOption;
 
 import mdt.model.expr.TimeSeriesRangeExpr.AbsoluteExpr;
 import mdt.model.expr.TimeSeriesRangeExpr.LengthExpr;
+import mdt.model.expr.TimeSeriesRangeExpr.SinceExpr;
 import mdt.model.expr.TimeSeriesRangeExpr.TrailingExpr;
 import mdt.model.sm.ref.timeseries.TimeSeriesRange;
 import mdt.model.sm.ref.timeseries.TimeSeriesRange.Anchor;
@@ -21,7 +22,7 @@ import mdt.model.sm.ref.timeseries.TimeSeriesRange.Anchor;
  * @author Kang-Woo Lee (ETRI)
  */
 public sealed interface TimeSeriesRangeExpr extends MDTExpression
-											permits LengthExpr, TrailingExpr, AbsoluteExpr {
+											permits LengthExpr, TrailingExpr, AbsoluteExpr, SinceExpr {
 	public abstract TimeSeriesRange evaluate();
 	
 	public static final class LengthExpr implements TimeSeriesRangeExpr {
@@ -82,6 +83,30 @@ public sealed interface TimeSeriesRangeExpr extends MDTExpression
 			Instant startTs = FOption.map(start, Instants::fromString);  // validate startStr
 			Instant endTs = FOption.map(end, Instants::fromString);  // validate endStr
 			return TimeSeriesRange.between(startTs, endTs);
+		}
+	}
+
+	public static final class SinceExpr implements TimeSeriesRangeExpr {
+		private final TerminalExpr m_fromExpr;
+		private final int m_length;
+
+		public SinceExpr(TerminalExpr fromExpr, int length) {
+			Preconditions.checkNotNullArgument(fromExpr, "fromExpr is null");
+			Preconditions.checkArgument(length >= 0, "length must be non-negative: length=%s", length);
+
+			m_fromExpr = fromExpr;
+			m_length = length;
+		}
+
+		@Override
+		public TimeSeriesRange evaluate() {
+			Object from = m_fromExpr.evaluate();
+			if ( !(from instanceof String fromStr) ) {
+				throw new IllegalArgumentException("'from' must be a String expression: " + from);
+			}
+
+			Instant fromTs = Instants.fromString(fromStr);  // validate fromStr
+			return TimeSeriesRange.since(fromTs, m_length);
 		}
 	}
 }

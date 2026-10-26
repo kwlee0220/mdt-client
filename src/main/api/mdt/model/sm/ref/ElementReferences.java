@@ -29,7 +29,7 @@ import mdt.model.expr.MDTElementReferenceExpr.TimeseriesReferenceExpr;
 import mdt.model.expr.MDTExpressionParser;
 import mdt.model.expr.MDTParserException;
 import mdt.model.instance.MDTInstanceManager;
-import mdt.model.sm.ref.timeseries.ReadLastRecordsReference;
+import mdt.model.sm.ref.timeseries.TimeSeriesRecordsReference;
 
 
 /**
@@ -107,7 +107,7 @@ public class ElementReferences {
 	 *   <li>{@code oparg:<submodelSpec>:(in|out):<argSpec>} → {@link MDTArgumentReference}</li>
 	 *   <li>{@code opvar:<submodelSpec>:<idShortPath>:(in|out|inout):<ordinal>}
 	 *       → {@link OperationVariableReference}</li>
-	 *   <li>{@code timeseries:<submodelSpec>[#<range>][|<columns>]} → {@link ReadLastRecordsReference}
+	 *   <li>{@code timeseries:<submodelSpec>[#<range>][|<columns>]} → {@link TimeSeriesRecordsReference}
 	 *       (range: {@code last=N}(마지막 N개) | {@code last=dur[@now|@latest]} | {@code from~to})</li>
 	 *   <li>그 외(라벨 없음) {@code <submodelSpec>:<elementPath>} → {@link DefaultElementReference}</li>
 	 * </ul>
@@ -155,7 +155,7 @@ public class ElementReferences {
 		DESERIALIZERS.put(MDTArgumentReference.SERIALIZATION_TYPE, MDTArgumentReference::deserializeFields);
 		DESERIALIZERS.put(OperationVariableReference.SERIALIZATION_TYPE, OperationVariableReference::deserializeFields);
 		DESERIALIZERS.put(FileStoreReference.SERIALIZATION_TYPE, FileStoreReference::deserializeFields);
-		DESERIALIZERS.put(ReadLastRecordsReference.SERIALIZATION_TYPE, ReadLastRecordsReference::deserializeFields);
+		DESERIALIZERS.put(TimeSeriesRecordsReference.SERIALIZATION_TYPE, TimeSeriesRecordsReference::deserializeFields);
 	}
 
 	// 'mdt:ref:param' 타입은 parameterExpr 필드 값에 따라 개별 파라미터('*' 이외)와

@@ -127,6 +127,11 @@ public class TimeSeriesOperationReference implements MDTElementReference {
 	}
 
 	@Override
+	public void updateValue(JsonNode valueNode) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public void updateValue(String valueJsonString) throws IOException {
 		throw new UnsupportedOperationException();
 	}

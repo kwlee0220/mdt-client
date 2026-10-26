@@ -2,6 +2,7 @@ package mdt.workflow.model;
 
 import java.time.Duration;
 
+import utils.async.IntervalMode;
 import utils.async.PeriodicLoopExecution;
 import utils.func.FOption;
 import utils.func.Unchecked;
@@ -24,7 +25,7 @@ public class WorkflowStatusMonitor extends PeriodicLoopExecution<Void> {
     
 	public WorkflowStatusMonitor(WorkflowManager wfManager, String wfName, WorkflowListener listener,
 								Duration interval, boolean cumulativeInterval) {
-		super(interval, cumulativeInterval);
+		super(interval, IntervalMode.fromCumulative(cumulativeInterval));
 		
 		m_wfManager = wfManager;
 		m_wfName = wfName;

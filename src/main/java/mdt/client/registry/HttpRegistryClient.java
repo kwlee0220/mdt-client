@@ -11,16 +11,17 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
-import utils.http.RESTfulIOException;
-import utils.http.RESTfulRemoteException;
-
-import mdt.client.Fa3stMessage;
-
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import utils.http.HttpRESTfulClient;
+import utils.http.RESTfulIOException;
+import utils.http.RESTfulRemoteException;
+
+import mdt.client.Fa3stMessage;
 
 /**
  *
@@ -45,7 +46,7 @@ class HttpRegistryClient {
 	
 	protected RequestBody createRequestBody(Object desc) throws SerializationException {
 		String reqBodyStr = m_ser.write(desc);
-		return RequestBody.create(reqBodyStr, JSON);
+		return HttpRESTfulClient.newJsonRequestBody(reqBodyStr);
 	}
 
 	protected <T> T call(Request req, Class<T> resultCls) {

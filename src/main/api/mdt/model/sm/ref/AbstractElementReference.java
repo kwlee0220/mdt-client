@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import utils.LoggerSettable;
 
 import mdt.model.MDTModelSerDe;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
 
 
 /**
@@ -38,6 +40,13 @@ public abstract class AbstractElementReference implements ElementReference, Logg
 	@Override
 	public void update(SubmodelElement sme) throws IOException {
 		write(sme);
+	}
+
+	@Override
+	public void updateValue(JsonNode valueNode) throws IOException {
+		ElementValue proto = readValue();
+		ElementValue newVal = ElementValues.parseGeneralJsonNode(valueNode, proto);
+		updateValue(newVal);
 	}
 
 	/**

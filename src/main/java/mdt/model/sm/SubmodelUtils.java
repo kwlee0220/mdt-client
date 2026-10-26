@@ -463,6 +463,12 @@ public final class SubmodelUtils {
 		Preconditions.checkNotNullArgument(smc, "SubmodelElementCollection is null");
 		return getFieldById(smc, fieldName, Property.class).getValue();
 	}
+	public static Double getDoubleFieldById(SubmodelElementCollection smc, String fieldName) {
+		Preconditions.checkNotNullArgument(smc, "SubmodelElementCollection is null");
+		
+		String val = getFieldById(smc, fieldName, Property.class).getValue();
+		return (val != null) ? Double.parseDouble(val) : null;
+	}
 
 	/**
 	 * 주어진 SubmodelElementCollection에서 idShort가 fieldName인 하위 요소를 탐색하여 삭제한다.

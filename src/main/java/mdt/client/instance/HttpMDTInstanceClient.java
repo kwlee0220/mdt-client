@@ -33,6 +33,7 @@ import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.stream.FStream;
 
+import mdt.client.MDTRESTfulClients;
 import mdt.client.resource.HttpAASServiceClient;
 import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
@@ -102,7 +103,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 
 		m_id = desc.getId();
 		m_registryEndpoint = String.format("%s/instances/%s", manager.getEndpoint(), desc.getId());
-		m_restfulClient = HttpRESTfulClient.builder()
+		m_restfulClient = MDTRESTfulClients.builder()
 										.httpClient(manager.getHttpClient())
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER))
 										.build();
@@ -376,7 +377,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	 * 제한 시각 {@code due}까지 종료 조건이 충족되지 않으면 {@link TimeoutException}이 발생한다.
 	 *
 	 * @param waitCond     대기 조건. {@code true}인 동안 polling이 계속된다.
-	 * @param pollInterval Polling 간격.
+	 * @param pollInterval Polling 간격. 이전 조회가 끝난 시점부터 대기하는 시간이다(fixed-delay).
 	 * @param due          제한 시각. {@code null}이면 무한 대기.
 	 * @return 대기 종료 시점의 상태.
 	 * @throws TimeoutException     {@code due} 시각까지 대기 조건이 해제되지 않은 경우.
@@ -387,7 +388,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 												Instant due)
 		throws TimeoutException, InterruptedException, ExecutionException {
 		return PeriodicPoller.poll(() -> pollTargetState(waitCond.negate()))
-							.interval(pollInterval)
+							.fixedDelay(pollInterval)
 							.due(due)
 							.build()
 							.run();
@@ -399,7 +400,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	 * 위 오버로드와 동일하지만 제한 시각 대신 제한 기간을 받는다.
 	 *
 	 * @param waitCond     대기 조건.
-	 * @param pollInterval Polling 간격.
+	 * @param pollInterval Polling 간격. 이전 조회가 끝난 시점부터 대기하는 시간이다(fixed-delay).
 	 * @param timeout      제한 기간. {@code null}이면 무한 대기.
 	 * @return 대기 종료 시점의 상태.
 	 * @throws TimeoutException     {@code timeout} 경과 시까지 대기 조건이 해제되지 않은 경우.
@@ -410,7 +411,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 											Duration timeout)
 		throws TimeoutException, InterruptedException, ExecutionException {
 		return PeriodicPoller.poll(() -> pollTargetState(waitCond.negate()))
-							.interval(pollInterval)
+							.fixedDelay(pollInterval)
 							.timeout(timeout)
 							.build()
 							.run();
@@ -424,7 +425,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	 *
 	 * @param instances    대기 대상 인스턴스 목록.
 	 * @param pred         대기 조건. {@code true}인 인스턴스는 계속 polling 된다.
-	 * @param pollInterval Polling 간격.
+	 * @param pollInterval Polling 간격. 이전 조회가 끝난 시점부터 대기하는 시간이다(fixed-delay).
 	 * @param timeout      제한 기간. {@code null}이면 무한 대기.
 	 * @throws TimeoutException     {@code timeout} 경과 시까지 대기 조건이 해제되지 않은 경우.
 	 * @throws InterruptedException 대기 중 쓰레드가 인터럽트된 경우.
@@ -442,7 +443,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 							// 반환된 값 자체는 사용되지 않는다.
 							return !copiedInstances.isEmpty() ? null : Boolean.TRUE;
 						})
-						.interval(pollInterval)
+						.fixedDelay(pollInterval)
 						.timeout(timeout)
 						.build()
 						.run();

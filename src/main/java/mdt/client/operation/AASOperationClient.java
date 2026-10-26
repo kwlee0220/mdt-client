@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import utils.async.AbstractPeriodicPoller;
+import utils.async.IntervalMode;
 import utils.func.FOption;
 import utils.stream.FStream;
 
@@ -37,11 +38,12 @@ import mdt.model.sm.ref.MDTElementReference;
  * 		<li>{@link #tryPoll()}: 획득한 handle로 연산 실행 상태를 주기적으로 조회한다.
  * 			{@code COMPLETED}이면 결과를 반환하여 polling을 종료하고, {@code FAILED}/{@code CANCELED}/{@code TIMEOUT}이면
  * 			예외를 발생시키며, 그 외 진행 중 상태이면 다음 polling을 계속한다.</li>
- * 		<li>{@link #finalizePoller(OperationResult)}: 정상 완료된 경우 결과의 출력/입출력 변수를 내부 상태에 반영한다.</li>
+ * 		<li>{@link #onTargetReached(OperationResult)}: 연산이 정상 완료되면 결과의 출력/입출력 변수를 내부 상태에
+ * 			반영한다. 반영에 실패하면 연산 호출은 {@code FAILED}로 끝난다.</li>
  * </ol>
  * Polling 주기는 생성자의 {@code pollInterval}로, 전체 시간 제한은 부모 클래스의
- * {@link #setTimeout(Duration)}/{@code setDue}로 설정한다. 시간 제한이 설정되지 않은 경우
- * 연산 호출의 timeout으로 충분히 긴 값({@code P7D})을 사용한다.
+ * {@link #setTimeout(Duration)}/{@code setDue}로 설정한다. 시간 제한이 설정된 경우에는 남은 제한 시간을,
+ * 설정되지 않은 경우에는 충분히 긴 값({@code P7D})을 연산 호출의 timeout으로 사용한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -68,7 +70,7 @@ public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> 
 	 * @throws IOException	연산 element를 읽어들이는 과정에서 입출력 오류가 발생한 경우.
 	 */
 	public AASOperationClient(SubmodelService svc, String operationPath, Duration pollInterval) throws IOException {
-		super(pollInterval, true);
+		super(pollInterval, IntervalMode.FIXED_RATE);
 		
 		setLogger(s_logger);
 		m_submodelSvc = svc;
@@ -88,26 +90,12 @@ public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> 
 	 * @throws IOException	연산 element를 읽어들이는 과정에서 입출력 오류가 발생한 경우.
 	 */
 	public AASOperationClient(MDTElementReference opRef, Duration pollInterval) throws IOException {
-		super(pollInterval, true);
+		super(pollInterval, IntervalMode.FIXED_RATE);
 		
 		setLogger(s_logger);
 		m_submodelSvc = opRef.getSubmodelService();
 		m_operationPath = opRef.getIdShortPathString();
 		loadOperation();
-	}
-	
-	/**
-	 * 대상 {@link Operation} element를 Submodel로부터 다시 읽어들이고,
-	 * 입력/출력/입출력 변수 맵을 갱신한다.
-	 *
-	 * @throws IOException	연산 element를 읽어들이는 과정에서 입출력 오류가 발생한 경우.
-	 */
-	public void loadOperation() throws IOException {
-		m_operationElm = (Operation)m_submodelSvc.getSubmodelElementByPath(m_operationPath);
-		
-		m_inputs = toMap(m_operationElm.getInputVariables());
-		m_outputs = toMap(m_operationElm.getOutputVariables());
-		m_inoutputs = toMap(m_operationElm.getInoutputVariables());
 	}
 	
 	/**
@@ -127,16 +115,16 @@ public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> 
 	/**
 	 * Polling 시작 시 1회 호출되어 연산을 비동기로 호출하고 {@link OperationHandle}을 획득한다.
 	 * <p>
-	 * 부모 클래스에 설정된 timeout이 있으면 그 값을, 없으면 {@code LONG_ENOUGH}({@code P7D})를
-	 * 연산 호출의 timeout으로 사용한다.
+	 * 부모 클래스에 제한 시간({@code setTimeout}/{@code setDue})이 설정되어 있으면 남은 제한 시간을,
+	 * 없으면 {@code LONG_ENOUGH}({@code P7D})를 연산 호출의 timeout으로 사용한다.
 	 */
 	@Override
 	protected void initializePoller() throws Exception {
 		List<OperationVariable> inputs = m_inputs.values().stream().toList();
 		List<OperationVariable> inoutputs = m_inoutputs.values().stream().toList();
-		javax.xml.datatype.Duration jtimeout = (getTimeout() != null)
-											? AASUtils.DATATYPE_FACTORY.newDuration(getTimeout().toMillis())
-											: LONG_ENOUGH;
+		javax.xml.datatype.Duration jtimeout = getRemainingTime()
+											.map(remains -> AASUtils.DATATYPE_FACTORY.newDuration(remains.toMillis()))
+											.getOrElse(LONG_ENOUGH);
 		
 		m_opHandle = m_submodelSvc.invokeOperationAsync(m_operationPath, inputs, inoutputs, jtimeout);
 		getLogger().info("invoked operation async, handle={}", m_opHandle.getHandleId());
@@ -169,16 +157,18 @@ public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> 
 	}
 	
 	/**
-	 * Polling 종료 시 호출되어, 연산이 정상 완료된 경우 결과의 출력/입출력 변수를 내부 상태에 반영한다.
+	 * 연산이 정상 완료되었을 때 1회 호출되어, 결과의 출력/입출력 변수를 내부 상태에 반영한다.
+	 * <p>
+	 * 반영 도중 예외가 발생하면 연산 호출은 {@code FAILED}로 끝난다.
 	 *
-	 * @param result	정상 완료 시 연산 결과, 취소/timeout/예외 등 비정상 종료 시 {@code null}.
+	 * @param result	정상 완료된 연산 결과.
+	 * @return	전달받은 연산 결과.
 	 */
 	@Override
-	protected void finalizePoller(OperationResult result) {
-		if ( result != null ) {
-			m_outputs = toMap(result.getOutputArguments()); 
-			m_inoutputs = toMap(result.getInoutputArguments());
-		}
+	protected OperationResult onTargetReached(OperationResult result) {
+		m_outputs = toMap(result.getOutputArguments());
+		m_inoutputs = toMap(result.getInoutputArguments());
+		return result;
 	}
 	
 	/**
@@ -263,6 +253,20 @@ public class AASOperationClient extends AbstractPeriodicPoller<OperationResult> 
 	@Override
 	public String toString() {
 		return String.format("AASOperationClient[%s:%s]", m_submodelSvc, m_operationPath);
+	}
+	
+	/**
+	 * 대상 {@link Operation} element를 Submodel로부터 다시 읽어들이고,
+	 * 입력/출력/입출력 변수 맵을 갱신한다.
+	 *
+	 * @throws IOException	연산 element를 읽어들이는 과정에서 입출력 오류가 발생한 경우.
+	 */
+	private void loadOperation() throws IOException {
+		m_operationElm = (Operation)m_submodelSvc.getSubmodelElementByPath(m_operationPath);
+		
+		m_inputs = toMap(m_operationElm.getInputVariables());
+		m_outputs = toMap(m_operationElm.getOutputVariables());
+		m_inoutputs = toMap(m_operationElm.getInoutputVariables());
 	}
 
 	

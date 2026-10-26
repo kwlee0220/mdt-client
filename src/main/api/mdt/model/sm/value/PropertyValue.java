@@ -215,10 +215,13 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 	 */
 	public static PropertyValue<?> from(Property prop) {
 		String value = prop.getValue();
+		
 		switch ( prop.getValueType() ) {
 			case STRING:
 				return STRING(value);
 			case INT:
+				return INTEGER(DataTypes.INT.parseValueString(value));
+			case INTEGER:
 				return INTEGER(DataTypes.INT.parseValueString(value));
 			case FLOAT:
 				return FLOAT(DataTypes.FLOAT.parseValueString(value));

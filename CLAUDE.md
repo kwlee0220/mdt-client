@@ -37,6 +37,8 @@ Submodel, 레지스트리, MDTInstance, 워크플로우/태스크를 조작한�
 - `mdt.model.MDTManager` (api) — 시스템 최상위 인터페이스. `getInstanceManager()`, `getSubmodelRegistry()`, `getWorkflowManager()` 제공.
 - `mdt.client.HttpMDTManager` (java) — `MDTManager`의 HTTP 구현. Builder 패턴으로 생성. MQTT 구독 지원.
 - `mdt.client.MDTClientConfig` — `mdt_client_config.yaml` 로딩 (YAML, 환경변수 보간 지원).
+- `mdt.task.*` — 워크플로 task 유형. 새 유형을 추가할 때는 `TaskDescriptors.CLASS_TO_SHORT_ID_MAP` 등록과 Airflow DAG
+  생성기 연결까지 함께 필요하다. 절차는 `../mdt-workflow/docs/adding-operator.md`를 따른다.
 
 ## 의존성 메모
 

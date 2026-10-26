@@ -19,11 +19,13 @@ import mdt.model.expr.MDTExpressionParser;
  *   <li>{@link Trailing} &mdash; {@code last=dur@anchor} : trailing 기간 구간.
  *       {@link Anchor#LATEST}는 마지막 레코드 시각 기준, {@link Anchor#NOW}는 현재 시각 기준.
  *   <li>{@link Absolute} &mdash; {@code from~to} : 절대 시간 범위(한쪽 개방 가능).
+ *   <li>{@link Since} &mdash; {@code from+N} : {@code from} 시각부터 시간 오름차순으로 N개 레코드.
  * </ul>
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public sealed interface TimeSeriesRange permits TimeSeriesRange.Count, TimeSeriesRange.Trailing, TimeSeriesRange.Absolute {
+public sealed interface TimeSeriesRange permits TimeSeriesRange.Count, TimeSeriesRange.Trailing,
+												TimeSeriesRange.Absolute, TimeSeriesRange.Since {
 	/** trailing 구간의 기준점. */
 	enum Anchor { LATEST, NOW }
 
@@ -44,6 +46,10 @@ public sealed interface TimeSeriesRange permits TimeSeriesRange.Count, TimeSerie
 	/** 절대 시간 범위 {@code [from, to]}를 생성한다. 한쪽이 {@code null}이면 개방 구간이다. */
 	static TimeSeriesRange between(@Nullable Instant from, @Nullable Instant to) {
 		return new Absolute(from, to);
+	}
+	/** {@code from} 시각부터 시간 오름차순으로 {@code length}개 레코드 범위를 생성한다(MdtExpr {@code from+N}). */
+	static TimeSeriesRange since(Instant from, int length) {
+		return new Since(from, length);
 	}
 	
 	public static TimeSeriesRange parse(String str) {
@@ -97,6 +103,19 @@ public sealed interface TimeSeriesRange permits TimeSeriesRange.Count, TimeSerie
 			else /* if ( to != null ) */ {
 				return String.format("~%s", to);
 			}
+		}
+	}
+
+	/** {@code from} 시각(포함)부터 시간 오름차순으로 {@code length}개 레코드. */
+	record Since(Instant from, int length) implements TimeSeriesRange {
+		public Since {
+			Preconditions.checkNotNullArgument(from, "'from' is null");
+			Preconditions.checkArgument(length >= 0, "length must be non-negative: length=%s", length);
+		}
+
+		@Override
+		public String toString() {
+			return String.format("%s+%d", from, length);
 		}
 	}
 }

@@ -66,7 +66,7 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	private HttpMDTManager(Builder builder) {
 		m_endpoint = builder.m_endpoint;
 		m_wfMgrEndpoint = builder.m_wfMgrEndpoint;
-		m_restfulClient = HttpRESTfulClient.builder()
+		m_restfulClient = MDTRESTfulClients.builder()
 										.httpClient(builder.m_httpClient)
 										.jsonMapper(MDTModelSerDe.getJsonMapper())
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(builder.m_mapper))

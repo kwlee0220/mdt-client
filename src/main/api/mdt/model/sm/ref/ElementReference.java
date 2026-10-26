@@ -428,6 +428,8 @@ public interface ElementReference {
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
 	public void updateValue(ElementValue smev) throws IOException;
+	
+	public void updateValue(JsonNode valueNode) throws IOException;
 
 	/**
 	 * 주어진 Json 문자열을 이용하여 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.

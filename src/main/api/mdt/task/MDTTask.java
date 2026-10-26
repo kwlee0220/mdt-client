@@ -41,11 +41,10 @@ public interface MDTTask extends Cancellable {
 	 * {@link TimeoutException}가 발생되는 것을 요구한다.
 	 * 
 	 * @param manager		MDT인스턴스 관리자 객체.
-	 * @throws TimeoutException	태스크 수행 중 제한 시간을 초과하여 작업을 멈춘 경우.
 	 * @throws InterruptedException	태스크 수행 중 인터럽트가 발생된 경우.
 	 * @throws CancellationException	태스크 수행 중 사용자 요청으로 중단된 경우.
 	 * @throws TaskException		태스크 수행 오류 발생으로 실패한 경우.
 	 */
 	public Map<String,SubmodelElement> run(MDTInstanceManager manager)
-		throws TimeoutException, InterruptedException, CancellationException, TaskException;
+		throws InterruptedException, CancellationException, TaskException;
 }

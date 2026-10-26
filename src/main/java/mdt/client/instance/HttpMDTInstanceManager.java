@@ -27,10 +27,13 @@ import okhttp3.RequestBody;
 import utils.Preconditions;
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
+import utils.http.RESTfulErrorEntity;
+import utils.http.RESTfulRemoteException;
 import utils.io.ZipFile;
 import utils.stream.FStream;
 import utils.thread.Guard;
 
+import mdt.client.MDTRESTfulClients;
 import mdt.client.HttpMDTManager;
 import mdt.client.HttpMDTServiceProxy;
 import mdt.client.MDTManagerMqttMessage;
@@ -66,7 +69,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	
 	private HttpMDTInstanceManager(Builder builder) {
 		m_endpoint = builder.m_endpoint;
-		m_restfulClient = HttpRESTfulClient.builder()
+		m_restfulClient = MDTRESTfulClients.builder()
 										.httpClient(builder.m_httpClient)
 										.jsonMapper(MDTModelSerDe.getJsonMapper())
 										.errorEntityDeserializer(new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER))
@@ -161,18 +164,16 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return getInstanceAllByFilter(filter);
 	}
 
-    // @GetMapping({"/instances?aggregate=count"})
 	@Override
 	public long countInstances() {
 		String url = String.format("%s/instances?aggregate=count", getEndpoint());
-		String countStr = m_restfulClient.get(url, HttpRESTfulClient.STRING_DESER);
-		return Long.parseLong(countStr);
+		String respBody = m_restfulClient.get(url);
+		return Long.parseLong(respBody);
 	}
 	
 	private static final MediaType OCTET_TYPE = MediaType.parse("application/octet-stream");
 	private static final MediaType JSON_TYPE = MediaType.parse("text/json");
 	private static final MediaType ZIP_TYPE = MediaType.parse("application/zip");
-    // @PostMapping({"/instances"})
 	public HttpMDTInstanceClient addInstance(String id, File jarFile, File modelFile, File confFile)
 		throws MDTInstanceManagerException {
 		MultipartBody.Builder builder = new MultipartBody.Builder()
@@ -241,6 +242,11 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 			InstanceDescriptor desc = m_restfulClient.post(url, reqBody, MDTModelSerDes.INSTANCE_DESC_RESP);
 			
 			return createInstance(desc);
+		}
+		catch ( RESTfulRemoteException e ) {
+			RESTfulErrorEntity errorEntity = e.getRemoteErrorEntity();
+			
+			throw new MDTInstanceManagerException("Failed to add an instance: id=" + id, e);
 		}
 		finally {
 			if ( zippedFile != instanceFile ) {

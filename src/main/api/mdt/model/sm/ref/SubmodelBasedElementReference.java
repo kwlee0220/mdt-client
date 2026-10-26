@@ -127,15 +127,7 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	
 	@Override
 	public SubmodelElement read() throws IOException {
-		SubmodelElement sme = getSubmodelService().getSubmodelElementByPath(getIdShortPathString());
-		
-		// (불필요한 prototype 로딩을 방지하기 위해) prototype이 아직 로드되지 않은 상태라면,
-		// 읽어온 SubmodelElement를 prototype으로 설정한다.
-		if ( !m_prototype.isLoaded() ) {
-			m_prototype.set(sme);
-		}
-		
-		return sme;
+		return getSubmodelService().getSubmodelElementByPath(getIdShortPathString());
 	}
 	
 	/**

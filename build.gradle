@@ -40,6 +40,7 @@ repositories {
 }
 
 ext {
+	slf4j_version = '2.0.17'
 	logback_version = '1.5.18'
 	log4j_version = '2.24.3'
 	lombok_version = '1.18.46'
@@ -72,6 +73,9 @@ dependencies {
 	// Lombok (from the project :utils)
 	compileOnly "org.projectlombok:lombok:${lombok_version}"
 	annotationProcessor "org.projectlombok:lombok:${lombok_version}"
+	
+	// Logback
+	api "org.slf4j:slf4j-api:${slf4j_version}"
 
 	// logback with SLF4j (from the project :utils)
 	implementation "ch.qos.logback:logback-classic:${logback_version}"

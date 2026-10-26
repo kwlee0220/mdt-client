@@ -10,7 +10,7 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 
-import com.google.common.base.Preconditions;
+import utils.Preconditions;
 
 import mdt.model.expr.MdtExprParser.ExprContext;
 import mdt.model.expr.MdtExprParser.FullElementSpecContext;
@@ -78,7 +78,7 @@ public class MDTExpressionParser {
 	 */
 	private static <T extends ParserRuleContext> T parse(String exprStr,
 														Function<MdtExprParser, T> rule) {
-		Preconditions.checkArgument(exprStr != null, "expression is null");
+		Preconditions.checkNotNullArgument(exprStr, "expression is null");
 
 		MdtExprLexer lexer = new MdtExprLexer(CharStreams.fromString(exprStr));
 		lexer.removeErrorListeners();
@@ -106,7 +106,7 @@ public class MDTExpressionParser {
 		@Override
 		public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
 								int charPositionInLine, String msg, RecognitionException e) {
-			throw new IllegalArgumentException(
+			throw new MDTParserException(
 					String.format("Parse error at %d:%d - %s", line, charPositionInLine, msg));
 		}
 	}

@@ -9,6 +9,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelDescriptor;
 
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 import utils.Preconditions;
 import utils.http.HttpRESTfulClient;
@@ -16,6 +17,7 @@ import utils.http.HttpRESTfulClient.ErrorEntityDeserializer;
 import utils.http.HttpRESTfulClient.ResponseBodyDeserializer;
 import utils.http.JacksonErrorEntityDeserializer;
 
+import mdt.client.MDTRESTfulClients;
 import mdt.aas.SubmodelRegistry;
 import mdt.client.HttpMDTServiceProxy;
 import mdt.model.AASUtils;
@@ -36,7 +38,7 @@ public class HttpSubmodelRegistryClient implements SubmodelRegistry, HttpMDTServ
 		
 		m_endpoint = endpoint;
 		ErrorEntityDeserializer errorDeser = new JacksonErrorEntityDeserializer(MDTModelSerDe.MAPPER);
-		m_restfulClient = HttpRESTfulClient.builder()
+		m_restfulClient = MDTRESTfulClients.builder()
 											.httpClient(client)
 											.errorEntityDeserializer(errorDeser)
 											.build();
@@ -82,14 +84,16 @@ public class HttpSubmodelRegistryClient implements SubmodelRegistry, HttpMDTServ
 	public SubmodelDescriptor postSubmodelDescriptor(SubmodelDescriptor desc) {
 		String url = String.format("%s", m_endpoint);
 		String reqBodyStr = MDTModelSerDe.toJsonString(desc);
-		return m_restfulClient.post(url, reqBodyStr, m_smDescDeser);
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(reqBodyStr);
+		return m_restfulClient.post(url, reqBody, m_smDescDeser);
 	}
 
 	@Override
 	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor descriptor) {
 		String url = String.format("%s", m_endpoint);
 		String reqBodyStr = MDTModelSerDe.toJsonString(descriptor);
-		return m_restfulClient.put(url, reqBodyStr, m_smDescDeser);
+		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(reqBodyStr);
+		return m_restfulClient.put(url, reqBody, m_smDescDeser);
 	}
 
 	@Override

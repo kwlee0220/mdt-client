@@ -68,7 +68,7 @@ public class SKKUSimulationTask implements MDTTask {
 
 	@Override
 	public Map<String, SubmodelElement> run(MDTInstanceManager manager)
-		throws TimeoutException, InterruptedException, CancellationException, TaskException {
+		throws InterruptedException, CancellationException, TaskException {
 		HttpSubmodelServiceClient svc = (HttpSubmodelServiceClient)m_simRef.get();
 		
 		Submodel simulation = svc.getSubmodel();
@@ -119,7 +119,7 @@ public class SKKUSimulationTask implements MDTTask {
 					client.cancelSimulation(location);
 					m_guard.run(() -> m_status = AsyncState.FAILED);
 					
-					throw new TimeoutException("Timeout expired: " + m_timeout);
+					throw new TaskException(new TimeoutException("Timeout expired: " + m_timeout));
 				}
 			}
 		}

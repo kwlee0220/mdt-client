@@ -174,11 +174,12 @@ public interface MDTInstanceManager {
 	/**
 	 * 주어진 filter 조건을 만족하는 {@link MDTInstance} 객체를 반환한다.
 	 * <p>
-	 * Filter 조건에서 사용할 수 있는 속성 정보는 다음과 같다.
+	 * Filter 조건에서 사용할 수 있는 속성 정보는 다음과 같다. MDTInstance 속성은
+	 * {@code instance.<속성>}, 서브모델 속성은 {@code submodel.<속성>} 형식으로 지정한다.
 	 * <table border="1">
 	 * 	<caption>사용 가능한 MDTInstance 속성 정보</caption>
 	 * 	<tr>
-	 * 		<td>id</td>
+	 * 		<td>instanceId</td>
 	 * 		<td>MDTInstance 고유 식별자</td>
 	 * 	</tr>
 	 * 	<tr>
@@ -223,6 +224,7 @@ public interface MDTInstanceManager {
 	 * {@code =} 와 {@code !=} 비교 연산자를 지원한다. 문자열 리터럴은 작은따옴표(')로 감싼다.
 	 * <p>예시:
 	 * <pre>{@code
+	 * "instance.instanceId = 'line01'"
 	 * "instance.aasId = 'urn:example:aas:001'"
 	 * "instance.status = 'RUNNING'"
 	 * "instance.status != 'RUNNING'"

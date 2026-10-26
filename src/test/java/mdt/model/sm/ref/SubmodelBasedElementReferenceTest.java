@@ -145,20 +145,56 @@ public class SubmodelBasedElementReferenceTest {
 	// --- 읽기/prototype ---
 
 	/**
-	 * {@code read()}는 서비스에서 SubmodelElement를 읽어 반환하고, 아직 로드되지 않은 prototype을
-	 * 그 결과로 채워 추가 서버 조회를 막아야 한다.
+	 * {@code read()}는 호출될 때마다 서비스에서 SubmodelElement를 새로 읽어 반환해야 한다.
 	 */
 	@Test
-	public void read_returnsElementAndCachesPrototype() throws IOException {
+	public void read_alwaysReadsFromService() throws IOException {
 		SubmodelElement sme = mock(SubmodelElement.class);
 		when(m_svc.getSubmodelElementByPath(PATH)).thenReturn(sme);
 
 		TestElementReference ref = activated();
 		Assertions.assertSame(sme, ref.read());
+		Assertions.assertSame(sme, ref.read());
 
-		// read()가 prototype을 채웠으므로 getPrototype()은 추가 조회 없이 같은 객체를 돌려준다.
-		Assertions.assertSame(sme, ref.getPrototype());
-		verify(m_svc, times(1)).getSubmodelElementByPath(PATH);
+		verify(m_svc, times(2)).getSubmodelElementByPath(PATH);
+	}
+
+	/**
+	 * {@code read()}는 prototype을 채우지 않기 때문에, 이후 {@code getPrototype()}은 별도로 lazy 로딩한다.
+	 */
+	@Test
+	public void read_doesNotCachePrototype() throws IOException {
+		SubmodelElement sme = mock(SubmodelElement.class);
+		when(m_svc.getSubmodelElementByPath(PATH)).thenReturn(sme);
+
+		TestElementReference ref = activated();
+		ref.read();
+		ref.getPrototype();
+
+		verify(m_svc, times(2)).getSubmodelElementByPath(PATH);
+	}
+
+	/**
+	 * {@code read()}가 반환한 SubmodelElement는 호출자 소유이므로, 호출자가 이를 변경하더라도
+	 * {@code readValue()}가 사용하는 prototype이 오염되어서는 안된다.
+	 * <p>
+	 * prototype의 idShort는 값 조회 응답의 필드 이름으로 사용되기 때문에, 오염될 경우 값을 읽지 못하게 된다.
+	 */
+	@Test
+	public void read_resultMutationDoesNotCorruptPrototype() throws IOException {
+		// 실제 서비스처럼 호출될 때마다 별개의 SubmodelElement를 반환하도록 한다.
+		when(m_svc.getSubmodelElementByPath(PATH))
+				.thenAnswer(invocation -> new DefaultProperty.Builder()
+													.idShort("EquipmentID")
+													.valueType(DataTypeDefXsd.STRING)
+													.build());
+
+		TestElementReference ref = activated();
+
+		SubmodelElement read = ref.read();
+		read.setIdShort("OperationVariableName");
+
+		Assertions.assertEquals("EquipmentID", ref.getPrototype().getIdShort());
 	}
 
 	/**

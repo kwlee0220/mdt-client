@@ -17,7 +17,7 @@ import mdt.model.sm.ref.MDTSubmodelReference;
 import mdt.model.sm.ref.OperationVariableReference;
 import mdt.model.sm.ref.OperationVariableReference.Kind;
 import mdt.model.sm.ref.SubmodelBasedElementReference;
-import mdt.model.sm.ref.timeseries.ReadLastRecordsReference;
+import mdt.model.sm.ref.timeseries.TimeSeriesRecordsReference;
 import mdt.model.sm.ref.timeseries.TimeSeriesRange;
 import mdt.model.sm.value.IdShortPath;
 
@@ -115,10 +115,10 @@ public abstract class MDTElementReferenceExpr implements MDTExpression {
 		}
 
 		@Override
-		public ReadLastRecordsReference evaluate() {
+		public TimeSeriesRecordsReference evaluate() {
 			DefaultSubmodelReference smRef = m_smExpr.evaluate();
 
-			ReadLastRecordsReference.Builder builder = ReadLastRecordsReference.builder()
+			TimeSeriesRecordsReference.Builder builder = TimeSeriesRecordsReference.builder()
 																					.submodelReference(smRef);
 			if ( m_range != null ) {
 				builder.range(m_range);

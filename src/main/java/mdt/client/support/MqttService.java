@@ -2,6 +2,7 @@ package mdt.client.support;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -21,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.AbstractService;
 
 import utils.InternalException;
@@ -41,7 +44,8 @@ import ch.qos.logback.classic.LoggerContext;
  */
 public class MqttService extends AbstractService implements LoggerSettable {
 	private static final Logger s_logger = LoggerFactory.getLogger(MqttService.class);
-	
+	private static final int DEFAULT_SUBSCRIBE_QOS = 1;
+
 	public interface Subscriber {
 		public void onMessage(String topic, MqttMessage msg);
 	}
@@ -54,6 +58,8 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	
 	private final Guard m_guard = Guard.create();
 	@GuardedBy("m_guard") private final ListMultimap<String, Subscriber> m_subscribers = ArrayListMultimap.create();
+	// topic별 broker 구독 QoS. 재연결 시 같은 QoS로 다시 구독하기 위해 보관한다.
+	@GuardedBy("m_guard") private final Map<String,Integer> m_topicQos = Maps.newHashMap();
 	
 	/**
 	 * MQTT Service를 생성한다.
@@ -136,54 +142,77 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		publish(topic, new MqttMessage(payload.getBytes(StandardCharsets.UTF_8)));
 	}
 	
+	/**
+	 * 주어진 topic(패턴)을 구독한다.
+	 * <p>
+	 * 같은 topic을 여러 구독자가 구독할 수 있으며, broker에는 topic별로 한 번만 구독된다.
+	 * 이때 broker 구독의 QoS는 지금까지 요청된 QoS 중 가장 큰 값이다.
+	 * broker와 연결되어 있지 않거나 broker 구독이 실패하더라도 구독자는 등록된 상태로 유지되며,
+	 * 이후 broker와 (재)연결될 때 다시 구독된다.
+	 *
+	 * @param topic			구독할 topic. MQTT 와일드카드({@code +}, {@code #})를 사용할 수 있다.
+	 * @param qos			요청 QoS (0, 1, 2).
+	 * @param subscriber	메시지를 전달받을 구독자.
+	 */
 	public void subscribe(String topic, int qos, Subscriber subscriber) {
 		Preconditions.checkArgument(topic != null, "topic is null");
-		
-		m_guard.runChecked(() -> {
+		Preconditions.checkArgument(qos >= 0 && qos <= 2, "invalid QoS: " + qos);
+		Preconditions.checkArgument(subscriber != null, "subscriber is null");
+
+		m_guard.run(() -> {
 			m_subscribers.put(topic, subscriber);
-			
+			int effectiveQos = Math.max(qos, m_topicQos.getOrDefault(topic, 0));
+			m_topicQos.put(topic, effectiveQos);
+
 			if ( isConnectedInGuard() ) {
 				try {
-					m_client.subscribe(topic, qos);
+					m_client.subscribe(topic, effectiveQos);
 				}
 				catch ( MqttException e ) {
-					m_subscribers.remove(topic, subscriber);
-					getLogger().error("Failed to subscribe to topic[{}]: {}", topic, e.getMessage(), e);
+					getLogger().error("Failed to subscribe to topic[{}], retry on reconnection: {}",
+										topic, e.getMessage(), e);
 				}
 			}
 		});
 	}
+
+	/**
+	 * 주어진 topic(패턴)을 QoS 1로 구독한다.
+	 *
+	 * @param topic			구독할 topic.
+	 * @param subscriber	메시지를 전달받을 구독자.
+	 * @see #subscribe(String, int, Subscriber)
+	 */
 	public void subscribe(String topic, Subscriber subscriber) {
-		Preconditions.checkArgument(topic != null, "topic is null");
-		
-		m_guard.runChecked(() -> {
-			m_subscribers.put(topic, subscriber);
-			
-			if ( isConnectedInGuard() ) {
-				try {
-					m_client.subscribe(topic);
-				}
-				catch ( MqttException e ) {
-					getLogger().error("Failed to subscribe to topic[{}]: {}", topic, e.getMessage(), e);
-				}
-			}
-		});
+		subscribe(topic, DEFAULT_SUBSCRIBE_QOS, subscriber);
 	}
-	
+
+	/**
+	 * 주어진 구독자의 topic 구독을 해제한다.
+	 * <p>
+	 * 같은 topic을 구독하는 다른 구독자가 남아 있으면 broker 구독은 유지된다.
+	 *
+	 * @param topic			구독 해제할 topic.
+	 * @param subscriber	구독 해제할 구독자.
+	 */
 	public void unsubscribe(String topic, Subscriber subscriber) {
 		Preconditions.checkArgument(topic != null, "topic is null");
-		
-		m_guard.runChecked(() -> {
-			if ( m_subscribers.remove(topic, subscriber) ) {
-	            if ( isConnectedInGuard() ) {
-	                try {
-	                    m_client.unsubscribe(topic);
-	                }
-	                catch ( MqttException e ) {
-	                	getLogger().error("Failed to unsubscribe from topic[{}]: {}", topic, e.getMessage(), e);
-	                }
-	            }
+
+		m_guard.run(() -> {
+			if ( !m_subscribers.remove(topic, subscriber) || m_subscribers.containsKey(topic) ) {
+				return;
 			}
+
+			// 해당 topic의 마지막 구독자가 해제된 경우에만 broker 구독을 해제한다.
+			m_topicQos.remove(topic);
+            if ( isConnectedInGuard() ) {
+                try {
+                    m_client.unsubscribe(topic);
+                }
+                catch ( MqttException e ) {
+                	getLogger().error("Failed to unsubscribe from topic[{}]: {}", topic, e.getMessage(), e);
+                }
+            }
 		});
 	}
 	
@@ -221,10 +250,12 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	protected void doStop() {
 		getLogger().info("Stopping {}", this);
 		
-		// 첫 connection도 완료되지 않은 상태라면 여기서 종료한다.
+		// 첫 connection도 완료되지 않은 상태라면 연결 시도를 중단시키고, 중단될 때까지 기다린다.
 		m_initConnector.cancel(true);
-		
-		m_guard.runChecked(() -> {
+		Unchecked.runOrIgnore(m_initConnector::waitForFinished);
+
+		// 중지된 서비스는 다시 시작할 수 없으므로, 연결을 끊은 뒤 MqttClient의 자원도 반납한다.
+		m_guard.run(() -> {
 			if ( m_client.isConnected() ) {
 				try {
 					m_client.disconnect();
@@ -233,8 +264,13 @@ public class MqttService extends AbstractService implements LoggerSettable {
 					getLogger().error("Failed to disconnect {}", this, e);
 				}
 			}
+			try {
+				m_client.close();
+			}
+			catch ( MqttException e ) {
+				getLogger().warn("Failed to close MqttClient: {}, cause={}", this, ""+e);
+			}
 		});
-		Unchecked.runOrIgnore(m_initConnector::waitForFinished);
 
 		notifyStopped();
 	}
@@ -248,12 +284,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		@Override
 		public void messageArrived(String topic, MqttMessage msg) throws Exception {
 			getLogger().debug("Message arrived on topic[{}]: {}", topic, msg);
-
-			for ( Map.Entry<String,Subscriber> ent : m_subscribers.entries() ) {
-				if ( matchTopic(ent.getKey(), topic) ) {
-					Unchecked.runOrIgnore(() -> ent.getValue().onMessage(topic, msg));
-				}
-			}
+			dispatch(topic, msg);
 		}
 
 		@Override
@@ -266,6 +297,37 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		}
 	};
 	
+	/**
+	 * 수신한 메시지를 topic이 일치하는 모든 구독자에게 전달한다.
+	 * <p>
+	 * 구독 목록은 다른 thread에서 변경될 수 있으므로 lock 안에서 전달 대상을 복사하고,
+	 * 구독자 호출은 lock 밖에서 수행한다 (구독자 처리가 다른 구독·발행을 막지 않도록).
+	 * 한 구독자의 처리가 실패해도 나머지 구독자에게는 계속 전달한다.
+	 *
+	 * @param topic	메시지의 topic.
+	 * @param msg	수신한 메시지.
+	 */
+	void dispatch(String topic, MqttMessage msg) {
+		List<Subscriber> targets = Lists.newArrayList();
+		m_guard.run(() -> {
+			for ( Map.Entry<String,Subscriber> ent : m_subscribers.entries() ) {
+				if ( matchTopic(ent.getKey(), topic) ) {
+					targets.add(ent.getValue());
+				}
+			}
+		});
+
+		for ( Subscriber subscriber: targets ) {
+			try {
+				subscriber.onMessage(topic, msg);
+			}
+			catch ( Throwable e ) {
+				getLogger().warn("Subscriber failed to handle a message: topic={}, cause={}",
+									topic, "" + Throwables.unwrapThrowable(e));
+			}
+		}
+	}
+
 	/**
 	 * MQTT 토픽 패턴과 실제 토픽의 일치 여부를 확인한다.
 	 * MQTT 토픽 패턴 규칙:
@@ -314,13 +376,14 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	private void onConnected(MqttClient client) {
 		m_guard.lock();
 		try {
-			// connection이 생성될 때마나 모든 subscription을 다시 수행한다.
-			for ( String topic : m_subscribers.keySet() ) {
+			// connection이 생성될 때마다 모든 subscription을 요청된 QoS로 다시 수행한다.
+			// 일부 topic의 구독이 실패하더라도 나머지 topic의 구독은 계속 시도한다.
+			for ( Map.Entry<String,Integer> ent : m_topicQos.entrySet() ) {
 				try {
-					client.subscribe(topic);
+					client.subscribe(ent.getKey(), ent.getValue());
 				}
 				catch ( MqttException e ) {
-					break;
+					getLogger().error("Failed to resubscribe to topic[{}]: {}", ent.getKey(), e.getMessage());
 				}
 			}
 		}

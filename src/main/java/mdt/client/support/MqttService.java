@@ -98,6 +98,10 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	 */
 	public MqttService(MqttBrokerConfig config) {
 		this(config.getBrokerUrl(), toOptions(config));
+		
+		if ( config.getReconnectInterval() != null ) {
+			setReconnectInterval(UnitUtils.parseDuration(config.getReconnectInterval()));
+		}
 	}
 	
 	public MqttConnectOptions getConnectOptions() {
@@ -441,6 +445,12 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		if ( config.getKeepAliveInterval() != null ) {
 			int keepAlive = (int)UnitUtils.parseDuration(config.getKeepAliveInterval()).toSeconds();
 			opts.setKeepAliveInterval(keepAlive);
+		}
+		
+		if ( config.getReconnectInterval() != null ) {
+			// 연결된 뒤 끊어졌을 때의 Paho 자동 재연결 간격 상한. 첫 연결 재시도 간격은 생성자에서 설정한다.
+			Duration interval = UnitUtils.parseDuration(config.getReconnectInterval());
+			opts.setMaxReconnectDelay((int)Math.min(interval.toMillis(), Integer.MAX_VALUE));
 		}
 		
 		return opts;

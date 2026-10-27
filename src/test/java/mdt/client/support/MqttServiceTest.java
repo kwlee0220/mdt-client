@@ -8,6 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -122,6 +123,16 @@ public class MqttServiceTest {
 		Assertions.assertFalse(mqtt.isConnected());
 	}
 
+	@Test
+	public void testPublishWithTimeoutWhenNotConnected() {
+		MqttService mqtt = new MqttService(UNREACHABLE_BROKER);
+		MqttException e = Assertions.assertThrows(MqttException.class,
+										() -> mqtt.publish("t", message("v"), Duration.ofSeconds(1)));
+		Assertions.assertEquals(MqttException.REASON_CODE_CLIENT_NOT_CONNECTED, e.getReasonCode());
+		Assertions.assertThrows(IllegalArgumentException.class,
+								() -> mqtt.publish("t", message("v"), Duration.ZERO));
+	}
+	
 	private static MqttMessage message(String payload) {
 		return new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
 	}

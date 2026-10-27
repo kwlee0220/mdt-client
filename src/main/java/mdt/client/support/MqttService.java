@@ -12,6 +12,7 @@ import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
@@ -128,7 +129,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	public void publish(String topic, MqttMessage message) throws MqttException {
 		Preconditions.checkArgument(topic != null, "topic is null");
 		Preconditions.checkArgument(message != null, "message is null");
-		
+
 		m_guard.lock();
 		try {
 			m_client.publish(topic, message);
@@ -136,6 +137,32 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		finally {
 			m_guard.unlock();
 		}
+	}
+
+	/**
+	 * 메시지를 발행하고, broker의 전달 확인을 최대 {@code timeout}까지 기다린다.
+	 * <p>
+	 * QoS 1, 2 메시지는 broker의 확인(PUBACK, PUBCOMP)을 기다리고, QoS 0 메시지는 전송 즉시 반환한다.
+	 * 확인을 기다리는 동안에는 lock을 잡지 않으므로, 이 서비스를 공유하는 다른 발행·구독을 막지 않는다.
+	 * <p>
+	 * {@link MqttClient}의 동기 발행은 클라이언트 전체에 설정된 대기 시간 하나만 사용할 수 있으므로,
+	 * 서비스를 여러 사용자가 공유하는 경우에는 이 메소드로 발행마다 대기 시간을 지정한다.
+	 *
+	 * @param topic		발행할 topic.
+	 * @param message	발행할 메시지.
+	 * @param timeout	전달 확인 최대 대기 시간.
+	 * @throws MqttException	발행이 실패한 경우. 제한 시간 안에 확인을 받지 못하면 reason code가
+	 * 						{@link MqttException#REASON_CODE_CLIENT_TIMEOUT}이다. 이 경우 메시지는
+	 * 						broker에 전달되었을 수도 있다.
+	 */
+	public void publish(String topic, MqttMessage message, Duration timeout) throws MqttException {
+		Preconditions.checkArgument(topic != null, "topic is null");
+		Preconditions.checkArgument(message != null, "message is null");
+		Preconditions.checkArgument(timeout != null && !timeout.isNegative() && !timeout.isZero(),
+									"invalid timeout: " + timeout);
+
+		MqttDeliveryToken token = m_guard.getChecked(() -> m_client.getTopic(topic).publish(message));
+		token.waitForCompletion(timeout.toMillis());
 	}
 	
 	public void publish(String topic, String payload) throws MqttException {

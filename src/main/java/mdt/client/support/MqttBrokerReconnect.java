@@ -32,7 +32,8 @@ public class MqttBrokerReconnect extends AbstractPeriodicPoller<MqttClient> {
 	
 	private final MqttClient m_client;
 	private final MqttConnectOptions m_connectOptions;
-	
+	private volatile int m_failureCount = 0;	// tryPoll()을 수행하는 thread에서만 변경한다.
+
 	public MqttBrokerReconnect(MqttClient client, MqttConnectOptions opts) {
 		super(DEFAULT_RECONNECT_INTERVAL);
 		Preconditions.checkNotNull(client);
@@ -68,14 +69,37 @@ public class MqttBrokerReconnect extends AbstractPeriodicPoller<MqttClient> {
 		try {
 			// MQTT Broker에 연결을 시도한다.
 			m_client.connect(m_connectOptions);
-			getLogger().info("connected to {}", m_client.getServerURI());
+			if ( m_failureCount > 0 ) {
+				getLogger().info("connected to {} after {} failed attempts", m_client.getServerURI(), m_failureCount);
+			}
+			else {
+				getLogger().info("connected to {}", m_client.getServerURI());
+			}
 
 			// MQTT Broker에 연결된 경우 {@link MqttClient} 객체를 반환하고 loop를 종료시킨다
 			return FOption.of(m_client);
 		}
 		catch ( MqttException e ) {
+			// 연결되지 않는 동안 시도마다 경고가 쌓이지 않도록, 첫 실패만 경고하고 이후는 debug로 남긴다.
+			if ( ++m_failureCount == 1 ) {
+				getLogger().warn("failed to connect to {}, keep retrying every {}: cause={}",
+								m_client.getServerURI(), getLoopInterval(), "" + e);
+			}
+			else {
+				getLogger().debug("failed to connect to {} (attempts={}): cause={}",
+								m_client.getServerURI(), m_failureCount, "" + e);
+			}
 			return FOption.empty();
 		}
+	}
+
+	/**
+	 * 지금까지 실패한 연결 시도 횟수를 반환한다.
+	 *
+	 * @return	실패한 연결 시도 횟수.
+	 */
+	public int getFailureCount() {
+		return m_failureCount;
 	}
 	
 	public static final void main(String... args) throws Exception {

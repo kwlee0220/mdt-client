@@ -220,7 +220,6 @@ public abstract class PropertyValue<T> extends AbstractElementValue implements D
 			case STRING:
 				return STRING(value);
 			case INT:
-				return INTEGER(DataTypes.INT.parseValueString(value));
 			case INTEGER:
 				return INTEGER(DataTypes.INT.parseValueString(value));
 			case FLOAT:

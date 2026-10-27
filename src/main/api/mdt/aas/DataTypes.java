@@ -370,7 +370,11 @@ public final class DataTypes {
 	
 		@Override
 		public Float parseValueString(String str) {
-			return (str != null) ? Float.parseFloat(str) : null;
+			return switch (str) {
+				case null -> null;
+				case "" -> null;
+				default -> Float.parseFloat(str);
+			};
 		}
 
 		@Override
@@ -408,7 +412,11 @@ public final class DataTypes {
 	
 		@Override
 		public Integer parseValueString(String str) {
-			return (str != null) ? Integer.parseInt(str) : null;
+			return switch (str) {
+				case null -> null;
+				case "" -> null;
+				default -> Integer.parseInt(str);
+			};
 		}
 
 		@Override
@@ -446,7 +454,11 @@ public final class DataTypes {
 	
 		@Override
 		public Long parseValueString(String str) {
-			return (str != null) ? Long.parseLong(str) : null;
+			return switch (str) {
+				case null -> null;
+				case "" -> null;
+				default -> Long.parseLong(str);
+			};
 		}
 
 		@Override
@@ -484,7 +496,11 @@ public final class DataTypes {
 	
 		@Override
 		public Short parseValueString(String str) {
-			return (str != null) ? Short.parseShort(str) : null;
+			return switch (str) {
+				case null -> null;
+				case "" -> null;
+				default -> Short.parseShort(str);
+			};
 		}
 
 		@Override
@@ -522,7 +538,11 @@ public final class DataTypes {
 	
 		@Override
 		public Double parseValueString(String str) {
-			return (str != null) ? Double.parseDouble(str) : null;
+			return switch (str) {
+				case null -> null;
+				case "" -> null;
+				default -> Double.parseDouble(str);
+			};
 		}
 
 		@Override

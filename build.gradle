@@ -63,7 +63,7 @@ ext {
 }
 
 dependencies {
-	implementation project(":utils")
+	api project(":utils")
 	
 	// @Nullable
 	compileOnly "org.jetbrains:annotations:${jetbrains_version}"

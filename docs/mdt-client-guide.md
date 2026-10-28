@@ -576,6 +576,11 @@ AI·Simulation 모델의 입력 정의에서 보충하는 변형이다.
 초기 연결 반복 시도, Paho 자동 재연결, 연결 후 재구독, `+`·`#` 토픽 분배 기능을 제공한다.
 이 서비스의 재연결 구현을 `HttpMDTManager` MQTT 경로의 기능으로 혼동하지 않는다.
 서비스의 RUNNING 전환은 실제 브로커 연결 완료를 의미하지 않으므로 `isConnected()`를 구분해서 사용한다.
+`subscribe()`는 구독 핸들(`MqttService.Subscription`)을 돌려주며, `close()`/`unsubscribe()`로 그 구독만 해제한다(여러 번 불러도 한 번만 해제).
+잘못된 토픽 필터는 구독 목록에 넣기 전에 `IllegalArgumentException`으로 거부한다(`validateTopicFilter()`).
+구독 목록은 내부 잠금으로 보호하지만 broker 통신(구독·해제·발행)은 잠금 밖에서 하므로, 수신이 밀려도 메시지 분배와 교착되지 않는다.
+broker 구독·해제 응답은 작업 제한 시간(`setOperationTimeout()`, 기본 10초)까지만 기다리고, 재연결 후 재구독은 별도 쓰레드에서 한다.
+수신 DEBUG 로그에는 payload 대신 토픽·바이트 수·QoS·retained 여부만 남긴다.
 
 ### 10.2 ROS2 값 변환
 

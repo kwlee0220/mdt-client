@@ -133,6 +133,97 @@ public class MqttServiceTest {
 								() -> mqtt.publish("t", message("v"), Duration.ZERO));
 	}
 	
+	@Test
+	public void testMatchTopic() {
+		// 빈 레벨은 하나의 레벨로 본다.
+		Assertions.assertTrue(MqttService.matchTopic("a/+", "a/"));
+		Assertions.assertFalse(MqttService.matchTopic("a", "a/"));
+		Assertions.assertTrue(MqttService.matchTopic("a/+/b", "a//b"));
+		Assertions.assertTrue(MqttService.matchTopic("+/+", "/"));
+		Assertions.assertFalse(MqttService.matchTopic("+", "/"));
+		// '#'는 상위 레벨 자체와도 일치한다.
+		Assertions.assertTrue(MqttService.matchTopic("a/#", "a"));
+		Assertions.assertTrue(MqttService.matchTopic("a/#", "a/b/c"));
+		Assertions.assertTrue(MqttService.matchTopic("#", "/"));
+		Assertions.assertFalse(MqttService.matchTopic("a/#", "b"));
+		// 일반 비교
+		Assertions.assertTrue(MqttService.matchTopic("a/b", "a/b"));
+		Assertions.assertFalse(MqttService.matchTopic("a/b", "a/b/c"));
+		Assertions.assertFalse(MqttService.matchTopic("a/+", "a/b/c"));
+		// '$'로 시작하는 topic은 첫 레벨 와일드카드와 일치하지 않는다.
+		Assertions.assertFalse(MqttService.matchTopic("#", "$SYS/broker"));
+		Assertions.assertFalse(MqttService.matchTopic("+/broker", "$SYS/broker"));
+		Assertions.assertTrue(MqttService.matchTopic("$SYS/#", "$SYS/broker"));
+	}
+
+	@Test
+	public void testDispatchDoesNotDeliverToWrongEmptyLevel() {
+		MqttService mqtt = new MqttService(UNREACHABLE_BROKER);
+		List<String> received = new CopyOnWriteArrayList<>();
+		mqtt.subscribe("a", (t, m) -> received.add("a"));
+		mqtt.subscribe("a/+", (t, m) -> received.add("a/+"));
+
+		mqtt.dispatch("a/", message("v"));
+		Assertions.assertEquals(List.of("a/+"), received);
+	}
+
+	@Test
+	public void testInvalidTopicIsRejectedWithoutStateChange() {
+		MqttService mqtt = new MqttService(UNREACHABLE_BROKER);
+		for ( String topic: new String[] { "", "a/#/b", "a+", "a#" } ) {
+			IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
+														() -> mqtt.subscribe(topic, 1, (t, m) -> { }), topic);
+			Assertions.assertTrue(e.getMessage().contains("invalid MQTT topic filter"), e.getMessage());
+			Assertions.assertEquals(0, mqtt.getSubscriberCount(topic));
+		}
+		Assertions.assertTrue(mqtt.getTopicQos().isEmpty());
+	}
+
+	@Test
+	public void testSubscriptionHandle() {
+		MqttService mqtt = new MqttService(UNREACHABLE_BROKER);
+		List<String> received = new CopyOnWriteArrayList<>();
+		MqttService.Subscription first = mqtt.subscribe("t", 0, (t, m) -> received.add("first"));
+		MqttService.Subscription second = mqtt.subscribe("t", 2, (t, m) -> received.add("second"));
+		Assertions.assertEquals(2, mqtt.getTopicQos().get("t"));		// 요청된 QoS 중 최댓값
+
+		first.close();
+		first.close();		// 두 번째 호출은 아무것도 하지 않는다.
+		Assertions.assertTrue(first.isClosed());
+		Assertions.assertEquals(1, mqtt.getSubscriberCount("t"));
+		
+		mqtt.dispatch("t", message("v"));
+		Assertions.assertEquals(List.of("second"), received);
+		
+		Assertions.assertTrue(second.unsubscribe());
+		Assertions.assertEquals(0, mqtt.getSubscriberCount("t"));
+		Assertions.assertTrue(mqtt.getTopicQos().isEmpty());
+	}
+
+	@Test
+	public void testMessageArrivedLogHasNoPayload() throws Exception {
+		ch.qos.logback.classic.Logger logger
+						= (ch.qos.logback.classic.Logger)org.slf4j.LoggerFactory.getLogger(MqttService.class);
+		ch.qos.logback.classic.Level level = logger.getLevel();
+		ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender
+																= new ch.qos.logback.core.read.ListAppender<>();
+		appender.start();
+		logger.addAppender(appender);
+		logger.setLevel(ch.qos.logback.classic.Level.DEBUG);
+		try {
+			MqttService mqtt = new MqttService(UNREACHABLE_BROKER);
+			mqtt.getCallback().messageArrived("t", message("SENSITIVE_MQTT_PROBE"));
+			
+			List<String> logs = appender.list.stream().map(ev -> ev.getFormattedMessage()).toList();
+			Assertions.assertTrue(logs.stream().anyMatch(msg -> msg.contains("bytes=20")), logs.toString());
+			Assertions.assertTrue(logs.stream().noneMatch(msg -> msg.contains("SENSITIVE_MQTT_PROBE")), logs.toString());
+		}
+		finally {
+			logger.detachAppender(appender);
+			logger.setLevel(level);
+		}
+	}
+	
 	private static MqttMessage message(String payload) {
 		return new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
 	}

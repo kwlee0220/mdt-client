@@ -172,8 +172,8 @@ public final class DataTypes {
 	
 		@Override
 		public String toValueString(Object value) {
-			Boolean flag = DataUtils.asBoolean(value);
-			return (flag != null) ? ""+flag : null;
+			// DataUtils.asBoolean()는 null을 false로 바꾸므로 null은 따로 처리한다.
+			return (value != null) ? "" + DataUtils.asBoolean(value) : null;
 		}
 	
 		@Override
@@ -331,8 +331,8 @@ public final class DataTypes {
 
 		@Override
 		public String toValueString(Object obj) {
-			Date value = DataUtils.asDate(obj);
-			return (value != null) ? DATE_FORMATTER.get().format(value) : null;
+			java.sql.Date date = DataUtils.asDate(obj);
+			return (date != null) ? DATE_FORMATTER.get().format(date) : null;
 		}
 
 		@Override
@@ -352,7 +352,16 @@ public final class DataTypes {
 
 		@Override
 		public Date fromJdbcObject(Object jdbcObj) {
-			return new Date(((java.sql.Date)jdbcObj).getTime());
+			if ( jdbcObj == null ) {
+				return null;
+			}
+			else if ( jdbcObj instanceof String str ) {
+				return parseValueString(str);
+			}
+			else {
+				// java.sql.Date 외에 LocalDate, Timestamp 등 java.util.Date도 받는다.
+				return new Date(DataUtils.asDate(jdbcObj).getTime());
+			}
 		}
 	}
 
@@ -364,8 +373,8 @@ public final class DataTypes {
 	
 		@Override
 		public String toValueString(Object obj) {
-			Float value = DataUtils.asFloat(obj);
-			return (value != null) ? ""+value : null;
+			// DataUtils.asFloat()는 null을 0으로 바꾸므로 null은 따로 처리한다.
+			return (obj != null) ? "" + DataUtils.asFloat(obj) : null;
 		}
 	
 		@Override
@@ -406,8 +415,8 @@ public final class DataTypes {
 	
 		@Override
 		public String toValueString(Object obj) {
-			Integer value = DataUtils.asInt(obj);
-			return (value != null) ? ""+value : null;
+			// DataUtils.asInt()는 null을 0으로 바꾸므로 null은 따로 처리한다.
+			return (obj != null) ? "" + DataUtils.asInt(obj) : null;
 		}
 	
 		@Override
@@ -448,8 +457,8 @@ public final class DataTypes {
 	
 		@Override
 		public String toValueString(Object obj) {
-			Long value = DataUtils.asLong(obj);
-			return (value != null) ? ""+value : null;
+			// DataUtils.asLong()는 null을 0으로 바꾸므로 null은 따로 처리한다.
+			return (obj != null) ? "" + DataUtils.asLong(obj) : null;
 		}
 	
 		@Override
@@ -490,8 +499,8 @@ public final class DataTypes {
 	
 		@Override
 		public String toValueString(Object obj) {
-			Short value = DataUtils.asShort(obj);
-			return (value != null) ? ""+value : null;
+			// DataUtils.asShort()는 null을 0으로 바꾸므로 null은 따로 처리한다.
+			return (obj != null) ? "" + DataUtils.asShort(obj) : null;
 		}
 	
 		@Override
@@ -532,8 +541,8 @@ public final class DataTypes {
 	
 		@Override
 		public String toValueString(Object obj) {
-			Double value = DataUtils.asDouble(obj);
-			return (value != null) ? ""+value : null;
+			// DataUtils.asDouble()는 null을 0으로 바꾸므로 null은 따로 처리한다.
+			return (obj != null) ? "" + DataUtils.asDouble(obj) : null;
 		}
 	
 		@Override
@@ -608,27 +617,34 @@ public final class DataTypes {
 		}
 	}
 
-	/** {@code xs:time} ↔ {@link LocalTime} 데이터 타입. */
+	/**
+	 * {@code xs:time} ↔ {@link LocalTime} 데이터 타입.
+	 * <p>
+	 * 값 문자열은 24시간제의 {@code HH:mm:ss} 형식이며, 초 이하가 있으면 {@code HH:mm:ss.SSS}처럼 소수로 붙는다
+	 * ({@link DateTimeFormatter#ISO_LOCAL_TIME}). 시간대 오프셋({@code Z}, {@code +09:00} 등)이 붙은 문자열은
+	 * {@link LocalTime}으로 나타낼 수 없으므로 받지 않는다.
+	 */
 	public static class TimeType extends AbstractDataType<LocalTime> implements DataType<LocalTime> {
-		private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("hh-mm-ss");
-		
 		private TimeType() {
 			super("xs:time", DataTypeDefXsd.TIME, LocalTime.class);
 		}
 	
 		@Override
 		public String toValueString(Object obj) {
-			LocalTime value = (LocalTime)obj;
-			return (value != null) ? TIME_FORMATTER.format(value) : null;
+			LocalTime time = DataUtils.asTime(obj);
+			return (time != null) ? DateTimeFormatter.ISO_LOCAL_TIME.format(time) : null;
 		}
 	
 		@Override
 		public LocalTime parseValueString(String str) {
+			if ( str == null || str.isBlank() ) {
+				return null;
+			}
 			try {
-				return (str != null) ? LocalTime.parse(str, TIME_FORMATTER) : null;
+				return LocalTime.parse(str.trim(), DateTimeFormatter.ISO_LOCAL_TIME);
 			}
 			catch ( DateTimeParseException e ) {
-				throw new IllegalArgumentException("Invalid string (not xs:time string): " + str);
+				throw new IllegalArgumentException("Invalid string (not xs:time string): " + str, e);
 			}
 		}
 
@@ -639,7 +655,7 @@ public final class DataTypes {
 
 		@Override
 		public LocalTime fromJdbcObject(Object jdbcObj) {
-			return ((java.sql.Time)jdbcObj).toLocalTime();
+			return DataUtils.asTime(jdbcObj);
 		}
 	}
 

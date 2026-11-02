@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.Preconditions;
+import utils.json.JacksonUtils;
 
 import mdt.model.ModelValidationException;
 import mdt.model.instance.MDTInstance;
@@ -87,8 +88,8 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 	 * @throws IOException	필수 필드가 없거나 Json 해석 과정에서 예외가 발생한 경우.
 	 */
 	public static MDTParameterReference deserializeFields(JsonNode jnode) throws IOException {
-		String instanceId = checkJsonField(jnode, FIELD_INSTANCE_ID).asText();
-		String parameterExpr = checkJsonField(jnode, FIELD_PARAMETER_EXPR).asText();
+		String instanceId = JacksonUtils.getTextField(jnode, FIELD_INSTANCE_ID);
+		String parameterExpr = JacksonUtils.getTextField(jnode, FIELD_PARAMETER_EXPR);
 
 		return new MDTParameterReference(instanceId, parameterExpr);
 	}
@@ -172,20 +173,15 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 			// path로 구성될 수도 있기 때문에 parameter expr에 '.' 또는 '['가 포함되는지를 확인한다.
 			// 만일 path인 경우에는 가장 첫번째 path segment를 'ParameterValue'로 치환시켜서
 			// parameter의 idShortPath를 구성한다.
-			int idx = m_parameterExpr.indexOf('.');
+			// '.'과 '[' 중 먼저 나오는 곳에서 자른다(idShort에는 둘 다 쓸 수 없다). 2026-11-01 이전에는 '.'을 먼저
+			// 찾아 "Samples[0].value"의 parameter id를 "Samples[0]"으로 잘랐다.
+			int idx = firstSeparator(m_parameterExpr);
 			if ( idx >= 0 ) {
 				paramId = m_parameterExpr.substring(0, idx);
 				subPath = m_parameterExpr.substring(idx);
 			}
 			else {
-				idx = m_parameterExpr.indexOf('[');
-				if ( idx >= 0 ) {
-					paramId = m_parameterExpr.substring(0, idx);
-					subPath = m_parameterExpr.substring(idx);
-				}
-				else {
-					paramId = m_parameterExpr;
-				}
+				paramId = m_parameterExpr;
 			}
 			
 			// Parameter id가 숫자가 아닌 경우에는 parameter 식별자로 간주하고
@@ -195,5 +191,15 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 		}
 		
 		return String.format("%s[%d].ParameterValue%s", paramCollPathPrefix, paramIdx, subPath);
+	}
+
+	// parameter expr에서 첫 path 구분자('.' 또는 '[')의 위치. 없으면 -1.
+	private static int firstSeparator(String expr) {
+		int dot = expr.indexOf('.');
+		int bracket = expr.indexOf('[');
+		if ( dot < 0 ) {
+			return bracket;
+		}
+		return (bracket < 0) ? dot : Math.min(dot, bracket);
 	}
 }

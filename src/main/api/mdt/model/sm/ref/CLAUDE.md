@@ -49,7 +49,19 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
 `getInstance()`/`getSubmodelService()`를 호출하면 `IllegalStateException`. `getIdShortPathString()`도
 경로가 활성화 시점에 결정되는 구현(`MDTParameterReference`, `MDTArgumentReference` 등)에서는 활성화
 전 호출 시 `IllegalStateException`이 발생한다(`DefaultElementReference`는 경로가 생성 시 고정되어
-활성화와 무관). `ElementReferences.activate(ref, manager)`는 `MDTElementReference`가 아니면 IAE.
+활성화와 무관). 활성화는 `ref.activate(manager)`로 한다(`ElementReferences.activate`는 2026-11-01에 삭제).
+다시 활성화할 수 있다: `SubmodelBasedElementReference.activate`는 시작할 때 이전 경로와 원형 캐시(`getPrototype()`)를
+버리고, 실패하면 비활성 상태로 남는다(2026-11-01 이전에는 캐시가 남고, 실패 시 이전 경로로 활성 상태처럼 보였다).
+`DefaultSubmodelReference.activate`도 조회 전에 `m_instance`를 비워, 실패하면 이전 인스턴스를 남기지 않는다.
+실제 접근은 모두 `SubmodelBasedElementReference.getSubmodelService()`를 거치며 여기서 `isActivated()`를 확인한다
+(경로 조회 `getIdShortPathString()`은 `DefaultElementReference`처럼 활성화 전에도 허용될 수 있으므로 접근 차단에 쓰지
+않는다). `OperationVariableReference.isActivated()`는 자신과 대상 Operation 참조(`m_opRef`)가 모두 활성일 때만
+`true`이고, 접근 메소드는 이것을 확인한다.
+값 갱신은 `updateValue(ElementValue)`와 `updateFromValueJson(String|JsonNode)`(옛 이름 `updateValue(String|JsonNode)`)이다.
+`SubmodelBasedElementReference.updateValue(ElementValue)`는 오버라이드 가능한 `updateFromValueJson`을 거치지 않는다
+(파라미터 집합처럼 입력 형식을 바꾼 하위 클래스로 재진입하지 않도록). `MDTParameterCollectionReference`는 둘 다
+`readValue()`와 같은 `{ParameterID: 값}` 형태로 ID별 부분 갱신한다. `MDTParameterReference`의 parameterExpr는 `.`과 `[` 중
+먼저 나오는 곳에서 parameter id와 하위 경로로 나눈다(`Samples[0].value` → `Samples` + `[0].value`).
 
 ## JSON 직렬화 — 타입 판별자
 
@@ -62,8 +74,9 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
 | `mdt:ref:timeseries` | `TimeSeriesRecordsReference` |
 | `mdt:ref:file`       | `FileStoreReference` |
 
-새 참조 타입 추가 시: (1) `SERIALIZATION_TYPE` 상수, (2) `serializeFields`/`deserializeFields`,
-(3) `ElementReferences`의 `DESERIALIZERS` 레지스트리에 등록, (4) 표현식이 필요하면
+새 참조 타입 추가 시: (1) `SERIALIZATION_TYPE` 상수, (2) `serializeFields`/`deserializeFields`
+(필드는 `JacksonUtils.getTextField`/`getField`/`getIntField`로 읽는다. 옛 `checkJsonField`는 2026-11-01에 삭제),
+(3) `ElementReferences`의 `DESERIALIZER` 레지스트리에 등록, (4) 표현식이 필요하면
 문법·visitor·Expr까지 함께 갱신.
 
 `OperationVariableReference`는 대상 Operation 요소 참조(`m_opRef`)를 `aasOpVar` 필드에
@@ -71,7 +84,7 @@ ElementReference (interface)                — 읽기/쓰기/값/첨부파일/J
 
 ## 표현식 파싱 — MdtExpr 문법으로 일원화
 
-`ElementReferences.parseExpr(String)`/`parseSubmodelReference(String)` 모두 **ANTLR
+`ElementReferences.parseExpr(String)`/`parseSubmodelExpr(String)`(옛 이름 `parseSubmodelReference`) 모두 **ANTLR
 `MDTExpressionParser`에 위임**한다(옛 손코딩 SplitStream 파서는 폐기). id 기반 Submodel 참조
 구문은 `submodel:id=<submodelId>`이며, 옛 `submodel:<id>` 형태는 instanceId가 `submodel`인
 instance 기반 참조로 해석되므로 주의한다. 처리 흐름:
@@ -80,7 +93,7 @@ instance 기반 참조로 해석되므로 주의한다. 처리 흐름:
        → MDTExpressionVisitor.visit() → *Expr 객체 → .evaluate() → 참조 객체
 ```
 - `MDTExpressionParser`의 각 정적 메서드는 시작 규칙 하나에 대응하며 **EOF를 강제**(후행 토큰/구문
-  오류 시 `ThrowingErrorListener`가 `IllegalArgumentException`).
+  오류 시 `ThrowingErrorListener`가 `MDTParserException`, 2026-11-01 이전에는 `IllegalArgumentException`).
 - 새 문법 규칙을 추가하면 대응 `visitXxx`를 `MDTExpressionVisitor`에 구현해야 한다(미구현 시 기본
   visitor가 자식 결과를 흘려보내 캐스팅 오류).
 
@@ -129,7 +142,7 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
   UTC, 날짜만이면 그 날 00:00:00 UTC.
 - `TimeSeriesRecordsReference`는 내부적으로 컬럼 맨 앞에 `"Time"`을 추가하지만, `toStringExpr`/
   `serializeFields` 모두 직렬화 시 `"Time"`을 제외한다(역직렬화 시 생성자가 다시 prepend).
-- `equals`는 submodel 참조만 비교(range/columns 제외).
+- `equals`/`hashCode`는 submodel 참조·range·columns를 모두 비교한다(2026-11-01 이전에는 submodel 참조만).
 
 ## opvar 특이사항
 
@@ -142,8 +155,8 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 
 `src/test/java/mdt/model/sm/ref/`(및 `.../timeseries/`)에 클래스별 테스트가 있다. 모든 직렬화 대상
 참조는 **expr round-trip**(`parseExpr(toStringExpr())`)과 **JSON round-trip**
-(`parseJsonString(toJsonString())`)을 검증한다. `TimeSeriesRecordsReference`처럼 `equals`가 일부
-필드를 무시하는 경우 round-trip 비교는 `toStringExpr()` 문자열로 한다.
+(`parseJsonString(toJsonString())`)을 검증한다. `TimeSeriesRecordsReference`의 `equals`는 2026-11-01부터
+range/columns도 비교한다(이전에는 Submodel만 비교해서 round-trip을 `toStringExpr()` 문자열로 확인했다).
 
 ## 규약
 
@@ -153,5 +166,5 @@ cd src/main/antlr && ./antlr4_script.sh && cd ../../..
 - 비활성/활성 참조를 구분하고, `SubmodelService`가 필요한 메서드는 활성화 전제를 문서화.
 - 새 `SubmodelBasedElementReference` 하위 클래스는 `buildIdShortPath()`/`toStringExpr()`를
   구현한다(필요 시 `loadPrototype()` 재정의).
-- 새 참조 타입은 JSON 판별자·`DESERIALIZERS` 등록·문법·visitor·Expr·`toStringExpr`를 일괄
+- 새 참조 타입은 JSON 판별자·`DESERIALIZER` 등록·문법·visitor·Expr·`toStringExpr`를 일괄
   갱신(round-trip 유지).

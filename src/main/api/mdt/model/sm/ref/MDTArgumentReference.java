@@ -13,9 +13,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.Preconditions;
+import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
-import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.instance.MDTSubmodelDescriptor;
@@ -261,11 +261,11 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
 	 */
 	public static MDTArgumentReference deserializeFields(JsonNode jnode) throws IOException {
-		JsonNode smRefNode = checkJsonField(jnode, FIELD_SUBMODEL_REF);
-		DefaultSubmodelReference smRef = MDTModelSerDe.readValue(smRefNode, DefaultSubmodelReference.class);
+		JsonNode smRefNode = JacksonUtils.getField(jnode, FIELD_SUBMODEL_REF);
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.parseJson(smRefNode);
 		
-		String kindStr = checkJsonField(jnode, FIELD_KIND).asText();
-		String argSpec = checkJsonField(jnode, FIELD_ARG_SPEC).asText();
+		String kindStr = JacksonUtils.getTextField(jnode, FIELD_KIND);
+		String argSpec = JacksonUtils.getTextField(jnode, FIELD_ARG_SPEC);
 		
 		return MDTArgumentReference.newInstance(smRef, MDTArgumentKind.fromString(kindStr), argSpec);
 	}

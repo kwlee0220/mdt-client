@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.Preconditions;
+import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
@@ -38,7 +39,9 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	private static final String FIELD_SUBMODEL_ID = "submodelId";
 	private static final String FIELD_SUBMODEL_ID_SHORT = "submodelIdShort";
 	
-	protected volatile MDTInstance m_instance;	// 활성화 여부를 결정
+	// 활성화 여부를 결정한다. 재활성화가 실패하면 null이 된다(2026-11-01 이전에는 이전 인스턴스가 남아
+	// 활성 상태로 보였다).
+	protected volatile MDTInstance m_instance;
 
 	@Override
 	public boolean isActivated() {
@@ -62,6 +65,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 
 		private ByIdSubmodelReference(String submodelId) {
 			Preconditions.checkNotNullArgument(submodelId, "submodelId is null");
+			Preconditions.checkArgument(!submodelId.isBlank(), "submodelId is blank");
 
 			m_submodelId = submodelId;
 		}
@@ -86,6 +90,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		public void activate(MDTInstanceManager manager) throws ResourceNotFoundException {
 			Preconditions.checkNotNullArgument(manager, "manager is null");
 			
+			// 실패하면 이전 인스턴스를 남기지 않고 비활성 상태가 된다.
+			m_instance = null;
 			m_instance = manager.getInstanceBySubmodelId(m_submodelId);
 		}
 		
@@ -143,6 +149,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		private ByIdShortSubmodelReference(String instanceId, String submodelIdShort) {
 			Preconditions.checkNotNullArgument(instanceId, "instanceId is null");
 			Preconditions.checkNotNullArgument(submodelIdShort, "submodelIdShort is null");
+			Preconditions.checkArgument(!instanceId.isBlank(), "instanceId is blank");
+			Preconditions.checkArgument(!submodelIdShort.isBlank(), "submodelIdShort is blank");
 			
 			m_instanceId = instanceId;
 			m_submodelIdShort = submodelIdShort;
@@ -184,6 +192,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 		public void activate(MDTInstanceManager manager) throws ResourceNotFoundException {
 			Preconditions.checkNotNullArgument(manager, "manager is null");
 			
+			// 실패하면 이전 인스턴스를 남기지 않고 비활성 상태가 된다.
+			m_instance = null;
 			m_instance = manager.getInstance(m_instanceId);
 		}
 		
@@ -235,30 +245,40 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	/**
 	 * Json 노드로부터 {@link DefaultSubmodelReference}를 복원한다.
 	 * <p>
-	 * {@code submodelId} 필드가 있으면 {@link ByIdSubmodelReference}로, 그렇지 않고
-	 * {@code instanceId}/{@code submodelIdShort} 필드가 있으면
-	 * {@link ByIdShortSubmodelReference}로 복원한다.
+	 * {@code submodelId} 필드가 있으면 {@link ByIdSubmodelReference}로, 그렇지 않으면
+	 * {@code instanceId}/{@code submodelIdShort} 필드로 {@link ByIdShortSubmodelReference}를 복원한다.
+	 * 식별자 필드는 비어 있지 않은 JSON 문자열이어야 한다(생성자와 같은 규칙). 2026-11-01 이전에는 숫자·불리언도
+	 * 문자열로 받았고({@code true:42:x} 같은 참조가 만들어졌다), 오류 메시지에 노드 전체를 넣은 일반
+	 * {@link IOException}을 던졌다.
 	 *
-	 * @param jnode	Submodel 참조 정보를 담은 Json 노드.
+	 * @param jnode	Submodel 참조 정보를 담은 Json 객체 노드.
 	 * @return 복원된 {@link DefaultSubmodelReference} 객체.
-	 * @throws IOException	필수 필드가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	{@code jnode}가 {@code null}인 경우.
+	 * @throws JacksonDeserializationException	객체가 아니거나, 필수 필드가 없거나, 식별자가 JSON 문자열이 아니거나
+	 * 											빈 문자열인 경우. 메시지에는 필드 이름만 들어간다.
 	 */
 	public static DefaultSubmodelReference parseJson(JsonNode jnode) throws IOException {
-		String smId = JacksonUtils.getStringFieldOrNull(jnode, FIELD_SUBMODEL_ID);
+		Preconditions.checkNotNullArgument(jnode, "jnode is null");
+		if ( !jnode.isObject() ) {
+			throw new JacksonDeserializationException(String.format("invalid submodel reference: object expected, but %s",
+																	jnode.getNodeType().name().toLowerCase()));
+		}
+
+		String smId = JacksonUtils.getTextFieldOrNull(jnode, FIELD_SUBMODEL_ID);
 		if ( smId != null ) {
-			return ofId(smId);
+			return ofId(requireNonBlank(smId, FIELD_SUBMODEL_ID));
 		}
-		
-		String smIdShort = JacksonUtils.getStringFieldOrNull(jnode, FIELD_SUBMODEL_ID_SHORT);
-		if ( smIdShort == null ) {
-			throw new IOException(String.format("Invalid SubmodelReference: %s", jnode.toString()));
-		}
-		
-		String instId = JacksonUtils.getStringFieldOrNull(jnode, FIELD_INSTANCE_ID);
-		if ( instId == null ) {
-			throw new IOException(String.format("Invalid SubmodelReference: %s", jnode.toString()));
-		}
+		String smIdShort = requireNonBlank(JacksonUtils.getTextField(jnode, FIELD_SUBMODEL_ID_SHORT),
+											FIELD_SUBMODEL_ID_SHORT);
+		String instId = requireNonBlank(JacksonUtils.getTextField(jnode, FIELD_INSTANCE_ID), FIELD_INSTANCE_ID);
 		return ofIdShort(instId, smIdShort);
+	}
+
+	private static String requireNonBlank(String value, String fieldName) throws JacksonDeserializationException {
+		if ( value.isBlank() ) {
+			throw new JacksonDeserializationException(String.format("invalid field '%s': blank", fieldName));
+		}
+		return value;
 	}
 	
 	/**
@@ -292,7 +312,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	 *
 	 * @param refExpr	Submodel 참조 표현식.
 	 * @return 파싱된 {@link DefaultSubmodelReference} 객체.
-	 * @throws IllegalArgumentException	표현식이 올바르지 않은 경우.
+	 * @throws IllegalArgumentException	{@code refExpr}이 {@code null}인 경우.
+	 * @throws mdt.model.expr.MDTParserException	표현식의 문법이 틀렸거나 뒤에 남는 입력이 있는 경우.
 	 */
 	public static DefaultSubmodelReference parseStringExpr(String refExpr) {
 		Preconditions.checkArgument(refExpr != null, "Submodel reference is null");

@@ -78,7 +78,6 @@ public class InstanceStatusMonitor extends AbstractScheduledService {
 	/**
 	 * 새 상태 감시기를 생성한다.
 	 *
-	 * @param manager           인스턴스 디스크립터 조회에 사용할 매니저.
 	 * @param interval          polling 주기.
 	 * @param statusListener	상태 변경 감지 시 호출될 콜백. 변경된 인스턴스와 새 상태를
 	 * 							인자로 받는다. {@code null}이면 통지가 비활성화되며 변경된

@@ -43,9 +43,9 @@ public abstract class AbstractElementReference implements ElementReference, Logg
 	}
 
 	@Override
-	public void updateValue(JsonNode valueNode) throws IOException {
+	public void updateFromValueJson(JsonNode valueNode) throws IOException {
 		ElementValue proto = readValue();
-		ElementValue newVal = ElementValues.parseGeneralJsonNode(valueNode, proto);
+		ElementValue newVal = ElementValues.parseJsonNode(valueNode, proto);
 		updateValue(newVal);
 	}
 

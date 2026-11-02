@@ -15,7 +15,7 @@ import com.google.common.collect.Maps;
 
 import utils.KeyValue;
 import utils.Preconditions;
-import utils.json.JacksonUtils;
+import utils.json.JacksonDeserializationException;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
@@ -24,13 +24,14 @@ import utils.stream.KeyValueFStream;
  * {@link SubmodelElementCollection}의 값을 표현하는 {@link ElementValue}.
  * <p>
  * 컬렉션의 각 필드(idShort)를 {@link ElementValue}로, 삽입 순서를 유지하며 보관한다
- * ({@link LinkedHashMap} 기반). {@link SubmodelElementCollection}이나 그 값으로부터 생성하려면
- * {@link #from(SubmodelElementCollection)}, {@link #fromValueObject(Object, SubmodelElementCollection)},
- * {@link #parseValueJsonNode(JsonNode, SubmodelElementCollection)}를 사용한다.
+ * ({@link LinkedHashMap} 기반). {@link SubmodelElementCollection}으로부터 생성하려면
+ * {@link #from(SubmodelElementCollection)}을, 값 객체·값 JSON으로부터 생성하려면 필드 타입을 정하는 템플릿을 받는
+ * {@link #fromValueObject(Object, ElementCollectionValue)},
+ * {@link #parseValueJsonNode(JsonNode, ElementCollectionValue)}를 사용한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public class ElementCollectionValue extends AbstractElementValue implements ElementValue {
+public final class ElementCollectionValue extends AbstractElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:collection";
 
 	private final LinkedHashMap<String,? extends ElementValue> m_fields;
@@ -113,18 +114,28 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	/**
 	 * 이 컬렉션의 각 필드 값을 주어진 {@link SubmodelElementCollection}의 동일 idShort 원소에 반영한다.
 	 * <p>
-	 * idShort로 매칭되며, 양쪽에 모두 존재하는 필드만 갱신된다.
+	 * idShort로 매칭되며, 양쪽에 모두 존재하는 필드만 갱신된다. 이 값에 없는 필드는 그대로 둔다(부분 갱신).
+	 * <p>
+	 * 갱신할 필드 값이 {@code null}인지는 반영 전에 모두 확인하므로 이때는 아무 필드도 바뀌지 않는다.
+	 * 값을 지우려면 {@code null}이 아니라 값이 {@code null}인 {@link PropertyValue}를 넣는다
+	 * (값 JSON에서는 필드를 JSON null로 준다). 필드 하나의 반영이 실패하면(타입 불일치 등) 앞선 필드들은
+	 * 이미 바뀐 상태로 남는다(원자적이지 않음).
 	 *
 	 * @param smc	갱신할 SubmodelElementCollection.
+	 * @throws IllegalArgumentException	갱신할 필드 값이 {@code null}이거나 필드 반영이 실패한 경우.
 	 */
 	public void update(SubmodelElementCollection smc) {
-		// Note: smc에 정의되지 않은 member submodel element를 어떻게 처리할 지 결정해야 함.
-		// 현재 구현에서는 smc에 정의되지 않은 member 값이 ElementCollectionValue에 존재하더라도
-		// 이를 무시한다. 즉, ElementCollectionValue에 정의되지 않은 필드 값은 갱신 대상이 아니다.
-		FStream.from(smc.getValue())
-				.tagKey(v -> v.getIdShort())
-				.match(m_fields)
-				.forEach(match -> ElementValues.update(match.value()._1, match.value()._2));
+		Preconditions.checkNotNullArgument(smc, "SubmodelElementCollection is null");
+
+		// smc에 없는 필드 값은 무시한다. 즉, smc에 정의되지 않은 필드는 갱신 대상이 아니다.
+		var matches = FStream.from(smc.getValue())
+								.tagKey(v -> v.getIdShort())
+								.match(m_fields)
+								.toList();
+		for ( var match: matches ) {
+			Preconditions.checkArgument(match.value()._2 != null, "field value is null: idShort=%s", match.key());
+		}
+		matches.forEach(match -> ElementValues.update(match.value()._1, match.value()._2));
 	}
 	
 	/**
@@ -145,8 +156,9 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	 * {@code ElementCollectionValue}를 생성한다.
 	 * <p>
 	 * 템플릿의 각 필드에 대해 idShort로 입력 맵에서 값을 찾아 변환한다.
-	 * 입력 맵에 없거나 값이 {@code null}인 필드는 결과에 포함되지 않으며,
-	 * 템플릿에 없는 입력 맵의 항목도 무시된다.
+	 * 입력 맵에 없는 필드는 결과에 포함되지 않으며(부분 갱신), 템플릿에 없는 입력 맵의 항목도 무시된다.
+	 * 값이 {@code null}인 필드는 그 필드 타입의 {@code null} 값으로 변환한다: Property는 값이 {@code null}인
+	 * {@link PropertyValue}(값 지우기)가 되고, 그 밖의 타입은 {@code IOException}으로 거부된다.
 	 * 각 필드의 타입은 템플릿 ElementCollectionValue로부터 결정된다.
 	 *
 	 * @param vobj	필드명에서 값으로의 Map.
@@ -178,8 +190,12 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	 * JSON 객체 노드와 템플릿 {@link ElementCollectionValue}으로부터 {@code ElementCollectionValue}를
 	 * 생성한다.
 	 * <p>
-	 * SMC의 각 원소에 대해 idShort로 노드에서 필드를 찾아 변환하며, 노드에 없는 필드는 {@code null}로 채운다.
-	 * 각 필드의 타입은 SMC로부터 결정된다.
+	 * 템플릿의 각 필드에 대해 idShort로 노드에서 필드를 찾아 변환한다. 노드에 없는 필드는 결과에 포함되지
+	 * 않으며(부분 갱신), JSON null인 필드는 그 필드 타입의 null 값으로 변환한다: Property는 값이 {@code null}인
+	 * {@link PropertyValue}(값 지우기)가 되고, 그 밖의 타입은 {@code IOException}으로 거부된다.
+	 * 각 필드의 타입은 템플릿으로부터 결정된다.
+	 * <p>
+	 * 2026-11-01 이전에는 없는 필드와 JSON null 필드를 모두 Java {@code null}로 채워 둘을 구분할 수 없었다.
 	 *
 	 * @param vnode	필드들을 담은 JSON 객체 노드.
 	 * @param smcv	각 필드의 타입 결정에 사용할 대상 ElementCollectionValue.
@@ -192,15 +208,13 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 			throw new IOException("ElementCollectionValue expects an 'Object' node: JsonNode=" + vnode);
 		}
 		
+		// JSON null 필드는 NullNode 그대로 넘긴다(getFieldOrNull은 없는 필드와 JSON null을 구분하지 않는다).
 		var valueFields
 			= KeyValueFStream.from(smcv.m_fields)
+							.filterKey(vnode::has)
 							.mapToKeyValueOrThrow(kv -> {
-								String key = kv.key();
-								ElementValue fieldProto = kv.value();
-								JsonNode field = JacksonUtils.getFieldOrNull(vnode, key);
-								ElementValue fieldVal = (field != null)
-													? ElementValues.parseValueJsonNode(field, fieldProto) : null;
-								return KeyValue.of(key, fieldVal);
+								ElementValue fieldVal = ElementValues.parseValueJsonNode(vnode.get(kv.key()), kv.value());
+								return KeyValue.of(kv.key(), fieldVal);
 							})
 							.toMap(new LinkedHashMap<>());
 		return new ElementCollectionValue(valueFields);
@@ -255,8 +269,14 @@ public class ElementCollectionValue extends AbstractElementValue implements Elem
 	 *
 	 * @param jnode	JSON 객체 노드.
 	 * @return 역직렬화된 ElementCollectionValue.
+	 * @throws IOException	{@code jnode}가 객체가 아니거나({@code null}·JSON null 포함) 필드 파싱이 실패한 경우.
 	 */
-	public static ElementCollectionValue deserializeValue(JsonNode jnode) {
+	public static ElementCollectionValue deserializeValue(JsonNode jnode) throws IOException {
+		if ( jnode == null || !jnode.isObject() ) {
+			throw new JacksonDeserializationException(String.format("invalid %s value: object expected, but %s",
+																	SERIALIZATION_TYPE,
+																	ElementListValue.describeNode(jnode)));
+		}
 		var fields = FStream.from(jnode.properties())
 							.mapToKeyValueOrThrow(ent -> {
 								ElementValue smev = ElementValues.parseJsonNode(ent.getValue());

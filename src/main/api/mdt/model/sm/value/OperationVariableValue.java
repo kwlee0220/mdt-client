@@ -20,7 +20,7 @@ import utils.stream.FStream;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class OperationVariableValue extends AbstractElementValue implements ElementValue {
+public final class OperationVariableValue extends AbstractElementValue {
     private final List<ElementValue> m_inputValues;
     private final List<ElementValue> m_outputValues;
     private final List<ElementValue> m_inoutputValues;
@@ -61,15 +61,25 @@ public final class OperationVariableValue extends AbstractElementValue implement
 	 * 이 값의 각 변수 값을 주어진 {@link Operation}의 대응 변수(input/output/inoutput)의
 	 * value 원소에 순서대로 반영한다.
 	 *
+	 * <p>
+	 * 세 종류 변수의 개수와 {@code null} 값은 반영 전에 모두 확인하므로 이때는 아무 변수도 바뀌지 않는다
+	 * (2026-11-01 이전에는 종류별로 확인해, output 개수가 틀려도 input은 이미 바뀌었다).
+	 * 그러나 변수 하나의 반영이 실패하면(타입 불일치 등) 앞선 변수들은 이미 바뀐 상태로 남는다(원자적이지 않음).
+	 *
 	 * @param op	갱신할 Operation.
-	 * @throws IllegalArgumentException	변수 개수가 일치하지 않는 경우.
+	 * @throws IllegalArgumentException	변수 개수가 일치하지 않거나, {@code null} 값이 있거나,
+	 * 									변수 반영이 실패한 경우.
 	 */
 	public void update(Operation op) {
 		Preconditions.checkNotNullArgument(op, "Operation is null");
 
-		updateVariables(op.getInputVariables(), m_inputValues, "input");
-		updateVariables(op.getOutputVariables(), m_outputValues, "output");
-		updateVariables(op.getInoutputVariables(), m_inoutputValues, "inoutput");
+		ElementListValue.checkUpdatable(m_inputValues, op.getInputVariables().size(), "input variable");
+		ElementListValue.checkUpdatable(m_outputValues, op.getOutputVariables().size(), "output variable");
+		ElementListValue.checkUpdatable(m_inoutputValues, op.getInoutputVariables().size(), "inoutput variable");
+
+		updateVariables(op.getInputVariables(), m_inputValues);
+		updateVariables(op.getOutputVariables(), m_outputValues);
+		updateVariables(op.getInoutputVariables(), m_inoutputValues);
 	}
 
 	/**
@@ -195,10 +205,7 @@ public final class OperationVariableValue extends AbstractElementValue implement
 						.toList();
 	}
 
-	private static void updateVariables(List<OperationVariable> vars, List<ElementValue> values, String kind) {
-		Preconditions.checkArgument(vars.size() == values.size(),
-									"Operation %s variable count mismatch: variables.size=%s, values.size=%s",
-									kind, vars.size(), values.size());
+	private static void updateVariables(List<OperationVariable> vars, List<ElementValue> values) {
 		FStream.zip(vars, values)
 				.forEach(zip -> ElementValues.update(zip._1.getValue(), zip._2));
 	}

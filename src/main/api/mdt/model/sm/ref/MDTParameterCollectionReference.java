@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
@@ -14,12 +16,15 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementList;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import utils.KeyValue;
 import utils.Preconditions;
+import utils.json.JacksonDeserializationException;
+import utils.json.JacksonUtils;
 import utils.stream.FStream;
-import utils.stream.KeyValueFStream;
 
+import mdt.model.MDTModelSerDe;
 import mdt.model.ModelValidationException;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
@@ -179,36 +184,93 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		super.write(paramValues);
 	}
 
+	/**
+	 * 파라미터 값들을 ID별로 갱신한다.
+	 * <p>
+	 * 값은 {@link #readValue()}가 돌려주는 것과 같은 {@code ParameterID -> 값} 형태의
+	 * {@link ElementCollectionValue}이다. 주어진 ID의 파라미터만 갱신하고 나머지는 그대로 둔다(부분 갱신).
+	 * 모르는 ID가 있거나 값의 타입이 파라미터와 맞지 않으면 아무것도 기록하지 않는다.
+	 * <p>
+	 * 2026-11-01 이전에는 값을 {@code ParameterID}/{@code ParameterValue} 목록으로 펼친 뒤 부모의 문자열 갱신을
+	 * 거쳐 이 클래스의 {@link #updateFromValueJson(String)}로 다시 들어왔고, 그 목록을 파라미터 값 목록으로
+	 * 해석해 문자열 파라미터에 {@code {"ParameterID":…,"ParameterValue":…}} 텍스트를 기록했다.
+	 *
+	 * @param smev	{@code ParameterID -> 값} 형태의 {@link ElementCollectionValue}.
+	 * @throws IllegalArgumentException	{@code smev}가 {@code null}이거나 {@link ElementCollectionValue}가 아니거나,
+	 * 									모르는 ID나 {@code null} 값이 있거나, 값의 타입이 맞지 않는 경우.
+	 * @throws IOException	읽기·쓰기 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public void updateValue(ElementValue smev) throws IOException {
 		Preconditions.checkNotNullArgument(smev, "smev is null");
 		Preconditions.checkArgument(smev instanceof ElementCollectionValue,
-									"smev should be a ElementCollectionValue: %s", smev);
+									"smev should be a ElementCollectionValue: %s", smev.getClass().getSimpleName());
 
-		ElementCollectionValue smecv = (ElementCollectionValue)smev;
-		List<ElementValue> paramValues
-							= KeyValueFStream.from(smecv.getFieldMap())
-											.map(kv -> {
-												String paramId = kv.key();
-												ElementValue paramValue = kv.value();
-												
-												LinkedHashMap<String,ElementValue> v = Maps.newLinkedHashMap();
-												v.put("ParameterID", PropertyValue.STRING(paramId));
-												v.put("ParameterValue", paramValue);
-												return (ElementValue)new ElementCollectionValue(v);
-											})
-											.toList();
-		ElementListValue expandedValue = new ElementListValue(paramValues);
-		super.updateValue(expandedValue);
+		Map<String,? extends ElementValue> newValues = ((ElementCollectionValue)smev).getFieldMap();
+		SubmodelElementList params = readParameters();
+		Map<String,SubmodelElement> members = toMemberMap(params, newValues.keySet());
+		for ( Map.Entry<String,? extends ElementValue> ent: newValues.entrySet() ) {
+			Preconditions.checkArgument(ent.getValue() != null, "parameter value is null: ParameterID=%s", ent.getKey());
+			ElementValues.update(members.get(ent.getKey()), ent.getValue());
+		}
+		write(params);
 	}
 
+	/**
+	 * 값 JSON 객체({@code {"<ParameterID>": <값 JSON>, …}})로 파라미터 값들을 ID별로 갱신한다.
+	 * <p>
+	 * {@link #readValue()}의 값 JSON과 같은 형태이다. 주어진 ID의 파라미터만 갱신한다(부분 갱신).
+	 * 2026-11-01 이전에는 파라미터 순서대로 값을 나열한 JSON 배열을 받았다.
+	 *
+	 * @param valueJsonString	값 JSON 객체 문자열.
+	 * @throws JacksonDeserializationException	JSON 객체가 아니거나 값이 파라미터 타입과 맞지 않는 경우.
+	 * @throws IllegalArgumentException	모르는 ID가 있는 경우.
+	 * @throws IOException	JSON 문법 오류이거나 읽기·쓰기 과정에서 예외가 발생한 경우.
+	 */
 	@Override
-	public void updateValue(String valueJsonString) throws IOException {
+	public void updateFromValueJson(String valueJsonString) throws IOException {
 		Preconditions.checkNotNullArgument(valueJsonString, "valueJsonString is null");
-		
-		SubmodelElement elm = read();
-		ElementValues.updateWithValueJsonString(elm, valueJsonString);
-		write(elm);
+		updateFromValueJson(MDTModelSerDe.readSingleJsonNode(valueJsonString));
+	}
+
+	/**
+	 * 값 JSON 객체 노드로 파라미터 값들을 ID별로 갱신한다. {@link #updateFromValueJson(String)}와 같다.
+	 *
+	 * @param valueNode	값 JSON 객체 노드.
+	 * @throws IOException	{@link #updateFromValueJson(String)}와 같다.
+	 */
+	@Override
+	public void updateFromValueJson(JsonNode valueNode) throws IOException {
+		Preconditions.checkNotNullArgument(valueNode, "valueNode is null");
+		if ( !valueNode.isObject() ) {
+			throw new JacksonDeserializationException(String.format("invalid parameter collection value: object expected, but %s",
+																	valueNode.getNodeType().name().toLowerCase()));
+		}
+
+		SubmodelElementList params = readParameters();
+		Map<String,SubmodelElement> members = toMemberMap(params, Sets.newLinkedHashSet(valueNode::fieldNames));
+		for ( Map.Entry<String,JsonNode> ent: valueNode.properties() ) {
+			ElementValues.updateFromValueJson(members.get(ent.getKey()), ent.getValue());
+		}
+		write(params);
+	}
+
+	// read() 결과(멤버 idShort = ParameterID)를 읽는다.
+	private SubmodelElementList readParameters() throws IOException {
+		// read()는 SubmodelElementList가 아니면 IOException을 던진다.
+		return (SubmodelElementList)read();
+	}
+
+	// 갱신할 ID가 모두 있는지 먼저 확인하고, ID -> 파라미터 값 요소 맵을 만든다.
+	private Map<String,SubmodelElement> toMemberMap(SubmodelElementList params, Set<String> ids) {
+		Map<String,SubmodelElement> members = Maps.newLinkedHashMap();
+		for ( SubmodelElement member: params.getValue() ) {
+			members.put(member.getIdShort(), member);
+		}
+		for ( String id: ids ) {
+			Preconditions.checkArgument(members.containsKey(id), "unknown ParameterID: %s", id);
+		}
+		return members;
 	}
 
 	/**
@@ -273,8 +335,8 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 	 * @throws IllegalArgumentException	{@code parameterExpr}이 {@code "*"}가 아닌 경우.
 	 */
 	public static MDTParameterCollectionReference deserializeFields(JsonNode jnode) throws IOException {
-		String instanceId = checkJsonField(jnode, FIELD_INSTANCE_ID).asText();
-		String parameterExpr = checkJsonField(jnode, FIELD_PARAMETER_EXPR).asText();
+		String instanceId = JacksonUtils.getTextField(jnode, FIELD_INSTANCE_ID);
+		String parameterExpr = JacksonUtils.getTextField(jnode, FIELD_PARAMETER_EXPR);
 
 		Preconditions.checkArgument(parameterExpr.equals("*"),
 									"invalid parameterExpr=%s for MDTParameterCollectionReference",

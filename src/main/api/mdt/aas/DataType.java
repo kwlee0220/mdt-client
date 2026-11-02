@@ -4,6 +4,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import utils.json.JacksonDeserializationException;
+
 
 /**
  * AAS({@code xs:*}) 데이터 타입을 나타내며, 해당 타입 값의 표현(representation) 간 상호 변환을 담당하는 인터페이스이다.
@@ -79,11 +81,18 @@ public interface DataType<T> {
 
 	/**
 	 * Json 노드를 이 데이터 타입의 Java 값으로 변환한다.
+	 * <p>
+	 * 값을 조용히 바꾸지 않는다. 숫자 타입은 범위 안의 JSON 숫자(정수 타입은 소수부가 0인 실수 포함)와 숫자 문자열
+	 * (예: {@code "42"})을 받고, 숫자가 아닌 문자열·소수(정수 타입)·범위 초과·{@code NaN}/무한대를 거부한다.
+	 * {@code xs:boolean}은 JSON 불리언과 문자열 {@code "true"}/{@code "false"}(대소문자 무관)/{@code "1"}/{@code "0"}만
+	 * 받는다. 2026-11-01 이전에는 Jackson의 {@code asInt()} 등으로 {@code "abc"}→0, 3.9→3, 범위 초과 값의 넘침,
+	 * {@code "yes"}→false처럼 오류 없이 바꿨다.
 	 *
 	 * @param jnode	변환할 Json 노드. {@code null}이거나 Json {@code null}이면 {@code null}을 반환한다.
 	 * @return 변환된 값, 또는 {@code null}.
+	 * @throws JacksonDeserializationException	노드를 이 데이터 타입의 값으로 변환할 수 없는 경우.
 	 */
-	public T fromJsonNode(JsonNode jnode);
+	public T fromJsonNode(JsonNode jnode) throws JacksonDeserializationException;
 
 	/**
 	 * 값을 JDBC 저장에 적합한 객체로 변환한다.

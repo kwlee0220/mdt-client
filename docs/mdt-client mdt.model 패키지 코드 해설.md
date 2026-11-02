@@ -183,9 +183,9 @@ FAILED에서도 `start()`로 다시 시작할 수 있고, REMOVED는 더 이상 
 | 요소 → 값 | `getValue(SubmodelElement)` (Blob, Entity 등 미지원 타입은 `IllegalArgumentException`) |
 | 전체 JSON → 값 | `parseJsonString`, `parseJsonNode` |
 | 값 전용 JSON·Java 객체 → 값 | `parseValueJsonString(json, proto)`, `parseValueJsonNode(node, proto)`, `fromValueObject(obj, proto)` |
-| 형식 자동 판별 | `parseGeneralJsonNode(node, proto)` — `@type`이 없으면 값 전용, `mdt:value:`로 시작하면 전체 JSON. `Supplier` 오버로드는 값 전용일 때만 프로토타입을 가져와 원격 조회를 아낀다 |
+| 형식 자동 판별 | `parseJsonNode(node, proto)` (2026-11-01 이전 이름 `parseGeneralJsonNode`) — `@type`이 있으면(문자열이어야 함) 그 타입의 전체 JSON, 없으면 proto 기준 값 전용. `Supplier` overload는 proto가 필요할 때만 얻는다 |
 | 표현식 리터럴 → 값 | `parseExpr("25.3")`, `parseExpr("'안녕'@ko")` 등 |
-| 요소 갱신 | `update(sme, ElementValue \| JsonNode \| String \| Integer \| Float \| Double)`, `updateWithValueJsonString(sme, json)` |
+| 요소 갱신 | `update(sme, ElementValue)`, `updateFromValueJson(sme, JsonNode \| String)`(value-only JSON), `updateFromValueString(sme, String)`(AAS 값 문자열), `updateValue(sme, Number)`(Java 숫자). 2026-11-01 이전에는 `update(sme, JsonNode \| String \| Integer \| Float \| Double)`, `updateWithValueJsonString`이었다 |
 
 `NamedValueType`은 `(name, valueType)` 쌍과 `"name (type)"` 문자열 형식을 다루는 독립 POJO로, `ElementValue` 계층에 속하지 않는다.
 
@@ -196,7 +196,7 @@ FAILED에서도 `start()`로 다시 시작할 수 있고, REMOVED는 더 이상 
 #### ElementReference 메서드
 
 - **읽기**: `getPrototype()`(대상의 구조), `read()` → `SubmodelElement`, `readValue()` → `ElementValue`. 기본 메서드로 `readAsProperty`, `readAsString`, `readCollection`, `readList`, `readCollectionValue`, `readListValue`, `readAASFileValue`와 타입별 `readAsInt`, `readAsInteger`(`BigInteger`), `readAsLong`, `readAsBoolean`, `readAsFloat`, `readAsDuration`, `readAsDateTime`이 있다. 타입별 메서드는 XSD 타입이 정확히 맞아야 하며, 아니면 `IOException`이다.
-- **쓰기**: `write(sme)`(요소 교체), `update(sme)`, `updateValue(ElementValue | JsonNode | String)`.
+- **쓰기**: `write(sme)`(요소 교체), `update(sme)`, `updateValue(ElementValue)`, `updateFromValueJson(JsonNode | String)`(값 JSON, 2026-11-01 이전 이름 `updateValue`). 파라미터 집합은 `{ParameterID: 값}` 형태로 ID별 부분 갱신한다.
 - **첨부파일**: `readAttachment(OutputStream | File)`, `updateAttachment(FileValue, InputStream)`, `updateAttachment(InputStream | File)`, `removeAttachment()`.
 - **직렬화**: `toStringExpr()`, `getSerializationType()`, `toJsonString()`, `toJsonNode()`.
 
@@ -229,13 +229,13 @@ FAILED에서도 `start()`로 다시 시작할 수 있고, REMOVED는 더 이상 
 
 - 파싱과 역직렬화는 네트워크를 쓰지 않는다. `activate`가 서브모델 참조를 활성화하고 idShortPath를 확정하며, 이때 원격 조회가 일어날 수 있다.
 - 활성화 전에 `read`/`write` 등을 부르면 `IllegalStateException`이다. `toString()`은 동작하며 `(deactivated)`를 붙인다.
-- `ElementReferences.activate(ref, manager)`는 `MDTElementReference`가 아닌 참조에 `IllegalArgumentException`을 던진다.
+- 활성화는 `ref.activate(manager)`로 한다. `ElementReferences.activate(ref, manager)`는 2026-11-01에 지웠다(짝이 되는 PDF는 고치지 않았다).
 
 #### ElementReferences 정적 메서드
 
-- `parseExpr(String)` → `MDTElementReference`, `parseSubmodelReference(String)` → `DefaultSubmodelReference`.
-- `parseJsonString`/`parseJsonNode` → `ElementReference`. JSON은 `{"@type": "mdt:ref:…", 필드…}` 형태이며 Jackson `Serializer`/`Deserializer`가 처리한다.
-- `activate(ref, manager)`.
+- `parseExpr(String)` → `MDTElementReference`, `parseSubmodelExpr(String)` → `DefaultSubmodelReference`(2026-11-01 이전 이름 `parseSubmodelReference`). 문법 오류는 `MDTParserException`, `null`은 `IllegalArgumentException`.
+- `parseJsonString`/`parseJsonNode` → `ElementReference`(`FileStoreReference`는 `MDTElementReference`가 아니므로). JSON은 `{"@type": "mdt:ref:…", 필드…}` 형태이며 Jackson `Serializer`/`Deserializer`가 처리한다. 오류는 `JacksonDeserializationException`이고 메시지에 필드 이름만 들어간다.
+- (`activate(ref, manager)`는 2026-11-01에 지웠다. 짝이 되는 PDF는 고치지 않았다.)
 
 #### timeseries 하위 패키지
 

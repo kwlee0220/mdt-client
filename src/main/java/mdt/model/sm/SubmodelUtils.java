@@ -34,7 +34,6 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -296,7 +295,7 @@ public final class SubmodelUtils {
 	 * 주어진 idShort 경로를 따라 SubmodelElement를 탐색하여 반환한다.
 	 *
 	 * @param <T>         탐색 결과로 기대되는 SubmodelElement의 class 타입.
-	 * @param root        탐색을 시작할 SubmodelElement 객체.
+	 * @param start       탐색을 시작할 SubmodelElement 객체.
 	 * @param idShortPath 탐색 idShort 경로명.
 	 * @param targetClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
 	 * @return	탐색 결과 SubmodelElement 객체.
@@ -997,11 +996,8 @@ public final class SubmodelUtils {
 		public MDTSubmodelReference deserialize(JsonParser parser, DeserializationContext ctxt)
 			throws IOException, JacksonException {
 			JsonNode node = parser.getCodec().readTree(parser);
-			
-			Preconditions.checkState(node instanceof ObjectNode);
-			ObjectNode root = (ObjectNode)node;
-			
-			return DefaultSubmodelReference.parseJson(root);
+			// 객체가 아니면 parseJson이 JacksonDeserializationException으로 거부한다(이전에는 IllegalStateException).
+			return DefaultSubmodelReference.parseJson(node);
 		}
 	}
 

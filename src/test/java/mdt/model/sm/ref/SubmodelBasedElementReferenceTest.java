@@ -22,17 +22,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import utils.http.RESTfulRemoteException;
 
+import mdt.model.ResourceNotFoundException;
 import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.FileValue;
+import mdt.model.sm.value.PropertyValue;
 
 /**
  * {@link SubmodelBasedElementReference}의 기본 동작 단위 테스트.
@@ -139,7 +138,15 @@ public class SubmodelBasedElementReferenceTest {
 
 	@Test
 	public void getSubmodelService_delegatesToSubmodelRef() {
-		Assertions.assertSame(m_svc, newRef(PATH).getSubmodelService());
+		Assertions.assertSame(m_svc, activated().getSubmodelService());
+	}
+
+	/**
+	 * 활성화 전에는 서비스 접근을 막는다(2026-11-01 이전에는 막지 않았다).
+	 */
+	@Test
+	public void getSubmodelService_notActivated_throws() {
+		Assertions.assertThrows(IllegalStateException.class, () -> newRef(PATH).getSubmodelService());
 	}
 
 	// --- 읽기/prototype ---
@@ -216,7 +223,8 @@ public class SubmodelBasedElementReferenceTest {
 	@Test
 	public void readValue_delegatesWithPrototype() throws IOException {
 		SubmodelElement proto = mock(SubmodelElement.class);
-		ElementValue value = mock(ElementValue.class);
+		// ElementValue는 봉인(sealed)되어 mock할 수 없으므로 실제 값 객체를 쓴다.
+		ElementValue value = PropertyValue.INTEGER(1);
 		when(m_svc.getSubmodelElementByPath(PATH)).thenReturn(proto);
 		when(m_svc.getSubmodelElementValueByPath(eq(PATH), any())).thenReturn(value);
 
@@ -241,18 +249,18 @@ public class SubmodelBasedElementReferenceTest {
 	 */
 	@Test
 	public void updateValue_elementValue_delegatesViaJsonString() throws IOException {
-		ElementValue value = mock(ElementValue.class);
-		when(value.toValueJsonString()).thenReturn("{\"v\":1}");
+		// ElementValue는 봉인(sealed)되어 mock할 수 없으므로 실제 값 객체를 쓴다. 값 JSON은 "1"이다.
+		ElementValue value = PropertyValue.INTEGER(1);
 
 		TestElementReference ref = activated();
 		ref.updateValue(value);
-		verify(m_svc).updateSubmodelElementValueByPath(PATH, "{\"v\":1}");
+		verify(m_svc).updateSubmodelElementValueByPath(PATH, "1");
 	}
 
 	@Test
-	public void updateValue_string_delegatesToService() throws IOException {
+	public void updateFromValueJson_delegatesToService() throws IOException {
 		TestElementReference ref = activated();
-		ref.updateValue("{\"v\":1}");
+		ref.updateFromValueJson("{\"v\":1}");
 		verify(m_svc).updateSubmodelElementValueByPath(PATH, "{\"v\":1}");
 	}
 
@@ -261,13 +269,13 @@ public class SubmodelBasedElementReferenceTest {
 	 * (write)을 시도해서는 안 된다.
 	 */
 	@Test
-	public void updateValue_string_rethrowsUnrelatedRemoteException() {
+	public void updateFromValueJson_rethrowsUnrelatedRemoteException() {
 		String json = "{\"v\":1}";
 		doThrow(new RESTfulRemoteException("some other server error"))
 				.when(m_svc).updateSubmodelElementValueByPath(PATH, json);
 
 		TestElementReference ref = activated();
-		Assertions.assertThrows(RESTfulRemoteException.class, () -> ref.updateValue(json));
+		Assertions.assertThrows(RESTfulRemoteException.class, () -> ref.updateFromValueJson(json));
 		verify(m_svc, never()).setSubmodelElementByPath(any(), any());
 	}
 
@@ -276,7 +284,7 @@ public class SubmodelBasedElementReferenceTest {
 	 * SubmodelElement를 읽어 값을 갱신한 뒤 다시 쓰는 로컬 갱신으로 폴백해야 한다.
 	 */
 	@Test
-	public void updateValue_string_fallsBackToLocalUpdateOnTypeInfoError() throws IOException {
+	public void updateFromValueJson_fallsBackToLocalUpdateOnTypeInfoError() throws IOException {
 		Property proto = new DefaultProperty.Builder()
 								.idShort("EquipmentID")
 								.valueType(DataTypeDefXsd.STRING)
@@ -288,7 +296,7 @@ public class SubmodelBasedElementReferenceTest {
 		when(m_svc.getSubmodelElementByPath(PATH)).thenReturn(proto);
 
 		TestElementReference ref = activated();
-		Assertions.assertDoesNotThrow(() -> ref.updateValue(json));
+		Assertions.assertDoesNotThrow(() -> ref.updateFromValueJson(json));
 
 		// 폴백 경로에서 전체 요소를 읽어(read) 갱신한 뒤 다시 기록(write)해야 한다.
 		verify(m_svc).getSubmodelElementByPath(PATH);
@@ -324,22 +332,103 @@ public class SubmodelBasedElementReferenceTest {
 		verify(m_svc).deleteAttachmentByPath(PATH);
 	}
 
-	// --- checkJsonField 헬퍼 ---
+	// --- 재활성화 ---
 
+	/**
+	 * 다시 활성화하면 원형 캐시를 버리고 새로 적재해야 한다. 이전에는 이전 대상의 원형을 계속 반환했다.
+	 */
 	@Test
-	public void checkJsonField_returnsExistingField() throws IOException {
-		ObjectNode node = new ObjectMapper().createObjectNode();
-		node.put("name", "value");
+	public void reactivate_reloadsPrototype() {
+		Property first = new DefaultProperty.Builder().idShort("first").valueType(DataTypeDefXsd.STRING).build();
+		Property second = new DefaultProperty.Builder().idShort("second").valueType(DataTypeDefXsd.STRING).build();
+		when(m_svc.getSubmodelElementByPath(PATH)).thenReturn(first, second);
 
-		JsonNode field = SubmodelBasedElementReference.checkJsonField(node, "name");
-		Assertions.assertEquals("value", field.asText());
+		TestElementReference ref = activated();
+		Assertions.assertSame(first, ref.getPrototype());
+
+		ref.activate(mock(MDTInstanceManager.class));
+		Assertions.assertSame(second, ref.getPrototype());
 	}
 
+	/**
+	 * 재활성화가 실패하면 비활성 상태로 남아야 한다. 이전에는 이전 경로가 남아 활성 상태로 보였다.
+	 */
 	@Test
-	public void checkJsonField_throwsWhenFieldMissing() {
-		ObjectNode node = new ObjectMapper().createObjectNode();
-		Assertions.assertThrows(IOException.class,
-								() -> SubmodelBasedElementReference.checkJsonField(node, "missing"));
+	public void reactivate_failure_leavesDeactivated() {
+		TestElementReference ref = activated();
+		MDTInstanceManager other = mock(MDTInstanceManager.class);
+		doThrow(new IllegalStateException("no such instance")).when(m_smRef).activate(other);
+
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.activate(other));
+		Assertions.assertFalse(ref.isActivated());
+		Assertions.assertThrows(IllegalStateException.class, ref::getIdShortPathString);
+	}
+
+	/**
+	 * 재활성화가 실패하면 이전 서비스에 접근하지 않아야 한다(읽기·쓰기·첨부파일 모두).
+	 */
+	@Test
+	public void reactivate_failure_blocksAccessToPreviousService() throws IOException {
+		TestElementReference ref = activated();
+		MDTInstanceManager other = mock(MDTInstanceManager.class);
+		doThrow(new IllegalStateException("no such instance")).when(m_smRef).activate(other);
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.activate(other));
+
+		Assertions.assertThrows(IllegalStateException.class, ref::read);
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.write(mock(SubmodelElement.class)));
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.readAttachment(mock(OutputStream.class)));
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.updateFromValueJson("1"));
+		org.mockito.Mockito.verifyNoInteractions(m_svc);
+	}
+
+	/**
+	 * 실제 {@link DefaultElementReference}: 인스턴스 조회가 실패하면 Submodel 참조도 비활성이 되고,
+	 * {@link DefaultElementReference}가 경로를 활성화와 무관하게 돌려주더라도 이전 서비스에 접근하지 않는다.
+	 */
+	@Test
+	public void reactivate_instanceLookupFailure_defaultElementReference() throws IOException {
+		DefaultElementReference ref = DefaultElementReference.newInstance("inst", "Data", "x");
+		ref.activate(managerWith(m_svc));
+
+		MDTInstanceManager failing = mock(MDTInstanceManager.class);
+		when(failing.getInstance("inst")).thenThrow(ResourceNotFoundException.ofId("MDTInstance", "inst"));
+		Assertions.assertThrows(ResourceNotFoundException.class, () -> ref.activate(failing));
+
+		Assertions.assertFalse(ref.isActivated());
+		Assertions.assertFalse(ref.getSubmodelReference().isActivated());
+		Assertions.assertEquals("x", ref.getIdShortPathString());		// 경로 조회는 허용
+		Assertions.assertThrows(IllegalStateException.class, ref::read);
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.write(mock(SubmodelElement.class)));
+		org.mockito.Mockito.verifyNoInteractions(m_svc);
+	}
+
+	/**
+	 * {@link OperationVariableReference}: 재활성화가 실패하면 대상 Operation 참조가 이전 상태로 남더라도
+	 * 접근하지 않는다(2026-11-01 이전에는 대상 참조의 활성 상태만 확인했다).
+	 */
+	@Test
+	public void reactivate_failure_operationVariableReference() throws IOException {
+		ElementReference parsed = ElementReferences.parseExpr("opvar:inst:Data:Op:out:0");
+		OperationVariableReference ref = (OperationVariableReference)parsed;
+		ref.activate(managerWith(m_svc));
+		Assertions.assertTrue(ref.isActivated());
+
+		MDTInstanceManager failing = mock(MDTInstanceManager.class);
+		when(failing.getInstance("inst")).thenThrow(ResourceNotFoundException.ofId("MDTInstance", "inst"));
+		Assertions.assertThrows(ResourceNotFoundException.class, () -> ref.activate(failing));
+
+		Assertions.assertFalse(ref.isActivated());
+		Assertions.assertThrows(IllegalStateException.class, ref::read);
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.readAttachment(mock(OutputStream.class)));
+		org.mockito.Mockito.verifyNoInteractions(m_svc);
+	}
+
+	private static MDTInstanceManager managerWith(SubmodelService svc) {
+		MDTInstance instance = mock(MDTInstance.class);
+		when(instance.getSubmodelServiceByIdShort("Data")).thenReturn(utils.func.FOption.of(svc));
+		MDTInstanceManager manager = mock(MDTInstanceManager.class);
+		when(manager.getInstance("inst")).thenReturn(instance);
+		return manager;
 	}
 
 	// --- 헬퍼 / 테스트용 구현 ---

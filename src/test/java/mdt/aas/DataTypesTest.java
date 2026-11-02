@@ -127,4 +127,81 @@ public class DataTypesTest {
 		assertEquals(expected, DataTypes.DATE_TIME.toValueString(java.sql.Timestamp.from(ts)));
 		assertEquals(ts, DataTypes.DATE_TIME.fromJdbcObject(ts.atOffset(java.time.ZoneOffset.UTC)));
 	}
+
+	// --- fromJsonNode: 값을 조용히 바꾸지 않는다 ---
+
+	private static com.fasterxml.jackson.databind.JsonNode json(String text) throws java.io.IOException {
+		return mdt.model.MDTModelSerDe.getJsonMapper().readTree(text);
+	}
+
+	private static void assertRejected(DataType<?> type, String jsonText) {
+		utils.json.JacksonDeserializationException e = assertThrows(utils.json.JacksonDeserializationException.class,
+														() -> type.fromJsonNode(json(jsonText)), type.getId() + " " + jsonText);
+		org.junit.jupiter.api.Assertions.assertTrue(e.getMessage().startsWith("invalid " + type.getId() + " value: "),
+													e.getMessage());
+	}
+
+	@Test
+	public void fromJsonNode_integralTypes() throws java.io.IOException {
+		assertEquals(42, DataTypes.INT.fromJsonNode(json("42")));
+		assertEquals(42, DataTypes.INT.fromJsonNode(json("\"42\"")));		// 숫자 문자열은 받는다
+		assertEquals(3, DataTypes.INT.fromJsonNode(json("3.0")));			// 손실 없는 실수는 받는다
+		assertNull(DataTypes.INT.fromJsonNode(json("null")));
+		// 이전에는 "abc"→0, 3.9→3, 3000000000→-1294967296으로 오류 없이 바꿨다.
+		for ( String bad: new String[] { "\"abc\"", "3.9", "\"3.9\"", "3000000000", "true", "{}", "[]" } ) {
+			assertRejected(DataTypes.INT, bad);
+		}
+		assertEquals(3000000000L, DataTypes.LONG.fromJsonNode(json("3000000000")));
+		assertRejected(DataTypes.LONG, "1e30");
+		assertRejected(DataTypes.LONG, "\"x\"");
+		assertEquals((short)7, DataTypes.SHORT.fromJsonNode(json("7")));
+		assertRejected(DataTypes.SHORT, "40000");
+		assertRejected(DataTypes.SHORT, "1.5");
+		assertEquals("invalid xs:int value: int expected, but non-numeric string",
+					assertThrows(utils.json.JacksonDeserializationException.class,
+								() -> DataTypes.INT.fromJsonNode(json("\"abc\""))).getMessage());
+	}
+
+	@Test
+	public void fromJsonNode_realTypes() throws java.io.IOException {
+		assertEquals(1.5, DataTypes.DOUBLE.fromJsonNode(json("1.5")));
+		assertEquals(2.0, DataTypes.DOUBLE.fromJsonNode(json("\"2\"")));
+		assertEquals(1.5f, DataTypes.FLOAT.fromJsonNode(json("1.5")));
+		for ( String bad: new String[] { "\"abc\"", "\"NaN\"", "\"Infinity\"", "1e400", "true" } ) {
+			assertRejected(DataTypes.DOUBLE, bad);
+		}
+		assertRejected(DataTypes.FLOAT, "1e300");			// float 범위 초과
+		assertEquals(new java.math.BigDecimal("0.1"), DataTypes.DECIMAL.fromJsonNode(json("\"0.1\"")));
+		// 고정밀 값은 문자열로 넣으면 그대로 보존된다. JSON 숫자로 넣으면 공유 매퍼가 readTree 단계에서
+		// double로 읽어 정밀도를 잃는다(매퍼 설정의 한계, fromJsonNode와 무관).
+		assertEquals(new java.math.BigDecimal("12345678901234567890.5"),
+					DataTypes.DECIMAL.fromJsonNode(json("\"12345678901234567890.5\"")));
+		assertRejected(DataTypes.DECIMAL, "\"abc\"");
+	}
+
+	@Test
+	public void fromJsonNode_boolean() throws java.io.IOException {
+		assertEquals(true, DataTypes.BOOLEAN.fromJsonNode(json("true")));
+		assertEquals(false, DataTypes.BOOLEAN.fromJsonNode(json("\"FALSE\"")));
+		assertEquals(true, DataTypes.BOOLEAN.fromJsonNode(json("\"1\"")));
+		// 이전에는 "yes"를 false로 읽었다.
+		for ( String bad: new String[] { "\"yes\"", "1", "{}" } ) {
+			assertRejected(DataTypes.BOOLEAN, bad);
+		}
+		// 값 문자열 해석도 같은 규칙이다.
+		assertEquals(false, DataTypes.BOOLEAN.parseValueString("0"));
+		assertNull(DataTypes.BOOLEAN.parseValueString(""));
+		assertThrows(IllegalArgumentException.class, () -> DataTypes.BOOLEAN.parseValueString("yes"));
+	}
+
+	@Test
+	public void fromJsonNode_stringAndTemporal() throws java.io.IOException {
+		// 문자열은 스칼라를 텍스트로, 객체·배열은 JSON 텍스트로 받는다(RPC 출력 경로 호환).
+		assertEquals("1", DataTypes.STRING.fromJsonNode(json("1")));
+		assertEquals("{\"a\":1}", DataTypes.STRING.fromJsonNode(json("{\"a\":1}")));
+		assertEquals(Duration.ofSeconds(5), DataTypes.DURATION.fromJsonNode(json("\"PT5S\"")));
+		assertRejected(DataTypes.DURATION, "5");
+		assertRejected(DataTypes.DATE_TIME, "\"not-a-date\"");
+		assertRejected(DataTypes.TIME, "{}");
+	}
 }

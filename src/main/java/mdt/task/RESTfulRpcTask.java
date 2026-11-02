@@ -3,6 +3,7 @@ package mdt.task;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +34,7 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
+import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 
@@ -62,11 +64,11 @@ public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 	public Map<String, SubmodelElement> run(MDTInstanceManager manager)
 		throws InterruptedException, CancellationException, TaskException {
 		try {
-			Map<String,ElementValue> argValues
-							= FStream.from(m_descriptor.getInputArguments())
-									.mapOrThrow(arg -> KeyValue.of(arg.getId(), arg.readValue(manager)))
-									.mapToKeyValue(kv -> kv)
-									.toMap();
+			// task-output 인자는 읽을 수 없으므로 TaskException으로 거부한다(TaskUtils.readArgumentValue).
+			Map<String,ElementValue> argValues = new LinkedHashMap<>();
+			for ( ArgumentSpec arg: m_descriptor.getInputArguments() ) {
+				argValues.put(arg.getId(), TaskUtils.readArgumentValue(arg, manager));
+			}
 			m_restClient = buildClient(argValues);
 			
 			Map<String,JsonNode> outputs = m_restClient.call();
@@ -75,16 +77,19 @@ public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 			// RPC 수행 결과를 outputArguments에 반영한다.
 			return FStream.from(m_descriptor.getOutputArguments())
 							.mapOrThrow(arg -> {
-								SubmodelElement sme = arg.getReference(manager).read();
+								SubmodelElement sme = arg.resolveReference(manager).read();
 								JsonNode jnode = outputs.get(arg.getId());
 								if ( jnode != null ) {
-									ElementValues.update(sme, jnode);
+									ElementValues.updateFromValueJson(sme, jnode);
 								}
 								
 								return KeyValue.of(arg.getId(), sme);
 							})
 							.mapToKeyValue(kv -> kv)
 							.toMap();
+		}
+		catch ( TaskException e ) {
+			throw e;
 		}
 		catch ( ExecutionException e ) {
 			Throwable cause = Throwables.unwrapThrowable(e);

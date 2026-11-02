@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import utils.Preconditions;
 
@@ -18,12 +16,8 @@ import mdt.workflow.model.TaskDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 public class SetTask implements MDTTask {
-	@SuppressWarnings("unused")
-	private static final Logger s_logger = LoggerFactory.getLogger(SetTask.class);
-	
 	public static final String ARG_SOURCE = "source";
 	public static final String ARG_TARGET = "target";
-	public static final String OPTION_LOG_LEVEL = "loglevel";
 	
 	private final TaskArgument m_source;
 	private final TaskArgument.ReferenceArgument m_target;
@@ -45,9 +39,7 @@ public class SetTask implements MDTTask {
 	public Map<String, SubmodelElement> run(MDTInstanceManager manager)
 			throws InterruptedException, CancellationException, TaskException {
 		try {
-			if ( m_source instanceof TaskArgument.ReferenceArgument ) {
-				((TaskArgument.ReferenceArgument)m_source).activate(manager);
-			}
+			m_source.activate(manager);
 			m_target.activate(manager);
 
 			m_target.updateValue(m_source.readValue());

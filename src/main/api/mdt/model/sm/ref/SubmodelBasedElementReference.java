@@ -7,14 +7,11 @@ import java.io.OutputStream;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import org.jetbrains.annotations.NotNull;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import utils.Preconditions;
 import utils.func.Lazy;
 import utils.http.RESTfulRemoteException;
 
 import mdt.model.AASUtils;
-import mdt.model.MDTModelSerDe;
 import mdt.model.SubmodelService;
 import mdt.model.SubmodelService.Modifier;
 import mdt.model.instance.MDTInstance;
@@ -73,15 +70,29 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 		m_submodelRef = submodelRef;
 	}
 
+	/**
+	 * 이 참조를 활성화한다.
+	 * <p>
+	 * 다시 활성화할 수 있다(다른 관리자로도). 대상이 바뀔 수 있으므로 시작할 때 이전 경로와 원형 캐시
+	 * ({@link #getPrototype()})를 버린다. 활성화가 실패하면 비활성 상태로 남는다. 2026-11-01 이전에는 원형 캐시를
+	 * 비우지 않아 이전 대상의 원형을 계속 썼고, 경로 생성이 실패하면 새 Submodel 참조에 이전 경로가 남은 채
+	 * 활성 상태로 보였다.
+	 *
+	 * @param manager	활성화에 사용할 {@link MDTInstanceManager}.
+	 */
 	@Override
 	public void activate(MDTInstanceManager manager) {
 		Preconditions.checkNotNullArgument(manager, "manager must not be null");
 
+		m_idShortPath = null;
+		m_prototype.unload();
+
 		m_submodelRef.activate(manager);
-		m_idShortPath = buildIdShortPath();
-		if ( m_idShortPath == null ) {
+		String idShortPath = buildIdShortPath();
+		if ( idShortPath == null ) {
 			throw new IllegalStateException("buildIdShortPath() returned null");
 		}
+		m_idShortPath = idShortPath;
 	}
 
 	@Override
@@ -108,8 +119,18 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 		return m_submodelRef;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * 실제 접근(읽기·쓰기·값 갱신·첨부파일·원형 적재)은 모두 이 메소드를 거치므로, 활성 상태가 아니면 여기서 막는다.
+	 * 경로 조회({@link #getIdShortPathString()})는 구현에 따라 활성화 전에도 허용된다. 2026-11-01 이전에는 상태를
+	 * 확인하지 않아, 재활성화가 실패한 뒤에도 이전 대상에 읽고 쓸 수 있었다.
+	 *
+	 * @throws IllegalStateException	참조가 활성화되지 않은 경우.
+	 */
 	@Override
 	public SubmodelService getSubmodelService() {
+		Preconditions.checkState(isActivated(), "ElementReference is not activated: %s", toStringExpr());
 		return m_submodelRef.get();
 	}
 
@@ -146,13 +167,26 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 		return getSubmodelService().getSubmodelElementValueByPath(getIdShortPathString(), m_prototype.get());
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * 값을 값 JSON으로 바꾸어 서비스에 기록한다. 오버라이드 가능한 {@link #updateFromValueJson(String)}를 거치지
+	 * 않는다. 하위 클래스가 그 메소드를 다른 입력 형식으로 재정의해도 이 경로가 영향을 받지 않게 하기 위해서다
+	 * (2026-11-01 이전에는 거쳐서, {@code MDTParameterCollectionReference}가 잘못된 값을 기록했다).
+	 */
 	@Override
 	public void updateValue(ElementValue smev) throws IOException {
-		updateValue(smev.toValueJsonString());
+		Preconditions.checkNotNullArgument(smev, "ElementValue is null");
+		writeValueJson(smev.toValueJsonString());
 	}
 	
 	@Override
-	public void updateValue(String valueJsonString) throws IOException {
+	public void updateFromValueJson(String valueJsonString) throws IOException {
+		Preconditions.checkNotNullArgument(valueJsonString, "value JSON string is null");
+		writeValueJson(valueJsonString);
+	}
+	
+	private void writeValueJson(String valueJsonString) throws IOException {
 		SubmodelService service = getSubmodelService();
 		try {
 			service.updateSubmodelElementValueByPath(getIdShortPathString(), valueJsonString);
@@ -178,7 +212,7 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	private void updateValueLocally(String valueJsonString) throws IOException {
 		// 일단 SubmodelElement 전체를 읽어와서 JSON 문자열로 업데이트한 뒤 다시 쓰는 방식으로 처리한다.
 		SubmodelElement buffer = read();
-		ElementValues.updateWithValueJsonString(buffer, valueJsonString);
+		ElementValues.updateFromValueJson(buffer, valueJsonString);
 		write(buffer);
 	}
 
@@ -224,27 +258,6 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	public String toString() {
 		String actStr = isActivated() ? "activated" : "deactivated";
 		return String.format("%s (%s)", toStringExpr(), actStr);
-	}
-	
-	/**
-	 * 주어진 JSON 노드에서 특정 필드를 추출하여 반환한다.
-	 * 만약 해당 필드가 존재하지 않으면 {@link IOException} 예외를 던진다.
-	 * <p>
-	 * 이 함수는 본 클래스를 상속받는 하위 클래스에서 JSON 입력을 처리할 때 유용하게 사용할 수 있다.
-	 *
-	 * @param jnode			조회 대상 JSON 노드 객체.
-	 * @param fieldName		추출하려는 필드의 이름.
-	 * @return	추출된 필드에 해당하는 {@link JsonNode} 객체.
-	 * @throws IOException	해당 필드가 존재하지 않는 경우.
-	 */
-	protected static JsonNode checkJsonField(JsonNode jnode, String fieldName) throws IOException {
-		JsonNode fieldNode = jnode.get(fieldName);
-		if ( fieldNode == null ) {
-			String json = MDTModelSerDe.toJsonString(jnode);
-			throw new IOException("Missing required field '" + fieldName + "': ref=" + json);
-		}
-		
-		return fieldNode;
 	}
 	
 	/**

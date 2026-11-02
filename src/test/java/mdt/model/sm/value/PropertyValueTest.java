@@ -50,7 +50,7 @@ public class PropertyValueTest {
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.STRING);
-		ElementValues.updateWithValueJsonString(prop, STRING_VALUE_JSON);
+		ElementValues.updateFromValueJson(prop, STRING_VALUE_JSON);
 		Assertions.assertEquals("abc", prop.getValue());
 	}
 	
@@ -79,7 +79,7 @@ public class PropertyValueTest {
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.INT);
-		ElementValues.updateWithValueJsonString(prop, INTEGER_VALUE_JSON);
+		ElementValues.updateFromValueJson(prop, INTEGER_VALUE_JSON);
 		Assertions.assertEquals("11", prop.getValue());
 	}
 	
@@ -108,7 +108,7 @@ public class PropertyValueTest {
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.DOUBLE);
-		ElementValues.updateWithValueJsonString(prop, DOUBLE_VALUE_JSON);
+		ElementValues.updateFromValueJson(prop, DOUBLE_VALUE_JSON);
 		Assertions.assertEquals("0.234", prop.getValue());
 	}
 	
@@ -137,7 +137,7 @@ public class PropertyValueTest {
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.FLOAT);
-		ElementValues.updateWithValueJsonString(prop, FLOAT_VALUE_JSON);
+		ElementValues.updateFromValueJson(prop, FLOAT_VALUE_JSON);
 		Assertions.assertEquals("12.5", prop.getValue());
 	}
 	
@@ -166,7 +166,7 @@ public class PropertyValueTest {
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.BOOLEAN);
-		ElementValues.updateWithValueJsonString(prop, BOOLEAN_VALUE_JSON);
+		ElementValues.updateFromValueJson(prop, BOOLEAN_VALUE_JSON);
 		Assertions.assertEquals("true", prop.getValue());
 	}
 	
@@ -201,7 +201,7 @@ public class PropertyValueTest {
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.DATE_TIME);
-		ElementValues.updateWithValueJsonString(prop, DATE_TIME_VALUE_JSON);
+		ElementValues.updateFromValueJson(prop, DATE_TIME_VALUE_JSON);
 		Assertions.assertEquals("2023-10-01T12:00:00", prop.getValue());
 	}
 	
@@ -232,7 +232,7 @@ public class PropertyValueTest {
 		
 		DefaultProperty prop = new DefaultProperty();
 		prop.setValueType(DataTypeDefXsd.DURATION);
-		ElementValues.updateWithValueJsonString(prop, DURATION_VALUE_JSON);
+		ElementValues.updateFromValueJson(prop, DURATION_VALUE_JSON);
 		Assertions.assertEquals("PT11S", prop.getValue());
 	}
 }

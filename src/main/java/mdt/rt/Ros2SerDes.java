@@ -10,7 +10,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import utils.json.JsonSerDe;
+import utils.json.JsonNodeSerDe;
 import utils.stream.KeyValueFStream;
 
 import mdt.model.MDTModelSerDe;
@@ -29,7 +29,7 @@ import mdt.rt.Ros2Types.PoseStamped;
 import mdt.rt.Ros2Types.Position;
 
 /**
- * ROS2 메시지의 JSON 표현과 {@link Ros2Types}의 record 사이를 변환하는 {@link JsonSerDe} 모음.
+ * ROS2 메시지의 JSON 표현과 {@link Ros2Types}의 record 사이를 변환하는 {@link JsonNodeSerDe} 모음.
  * <p>
  * JSON 표현은 로봇 트윈(RESTful gateway)이 전달하는 ROS2 메시지 형식을 그대로 따른다.
  * 실수 값의 경우 로봇 트윈이 {@code NaN}/{@code Infinity}를 {@code null}로 변환하여 보내기 때문에,
@@ -61,7 +61,7 @@ public class Ros2SerDes {
 	 * }</pre>
 	 * 반면 {@link Ros2Types.Header#stamp()}는 이 둘을 합쳐 epoch 기준 나노초 하나로 표현한 값이다.
 	 */
-	public static final class HeaderSerDe implements JsonSerDe<Ros2Types.Header>,
+	public static final class HeaderSerDe implements JsonNodeSerDe<Ros2Types.Header>,
 																ElementValueSerDe<Ros2Types.Header> {
 		/**
 		 * ROS2 {@code std_msgs/Header} JSON을 {@link Ros2Types.Header}로 변환한다.
@@ -118,7 +118,7 @@ public class Ros2SerDes {
 	 * { "x": 1.0, "y": 2.0, "z": 3.0 }
 	 * }</pre>
 	 */
-	public static final class PositionSerDe implements JsonSerDe<Ros2Types.Position>,
+	public static final class PositionSerDe implements JsonNodeSerDe<Ros2Types.Position>,
 														ElementValueSerDe<Ros2Types.Position> {
 		/**
 		 * ROS2 {@code geometry_msgs/Point} JSON을 {@link Ros2Types.Position}으로 변환한다.
@@ -161,7 +161,7 @@ public class Ros2SerDes {
 	 * { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
 	 * }</pre>
 	 */
-	public static final class OrientationSerDe implements JsonSerDe<Ros2Types.Orientation>,
+	public static final class OrientationSerDe implements JsonNodeSerDe<Ros2Types.Orientation>,
 														ElementValueSerDe<Ros2Types.Orientation> {
 		/**
 		 * ROS2 {@code geometry_msgs/Quaternion} JSON을 {@link Ros2Types.Orientation}으로 변환한다.
@@ -206,7 +206,7 @@ public class Ros2SerDes {
 	 * }
 	 * }</pre>
 	 */
-	public static final class PoseSerDe implements JsonSerDe<Ros2Types.Pose>,
+	public static final class PoseSerDe implements JsonNodeSerDe<Ros2Types.Pose>,
 													ElementValueSerDe<Ros2Types.Pose> {
 		/**
 		 * ROS2 {@code geometry_msgs/Pose} JSON을 {@link Ros2Types.Pose}로 변환한다.
@@ -268,7 +268,7 @@ public class Ros2SerDes {
 	 * }
 	 * }</pre>
 	 */
-	public static final class PoseStampedSerDe implements JsonSerDe<Ros2Types.PoseStamped>,
+	public static final class PoseStampedSerDe implements JsonNodeSerDe<Ros2Types.PoseStamped>,
 																	ElementValueSerDe<Ros2Types.PoseStamped> {
 		/**
 		 * ROS2 {@code geometry_msgs/PoseStamped} JSON을 {@link Ros2Types.PoseStamped}로 변환한다.
@@ -346,7 +346,7 @@ public class Ros2SerDes {
 	 * }
 	 * }</pre>
 	 */
-	public static final class JointStatesSerDe implements JsonSerDe<Ros2Types.JointStates>,
+	public static final class JointStatesSerDe implements JsonNodeSerDe<Ros2Types.JointStates>,
 															ElementValueSerDe<Ros2Types.JointStates> {
 		/**
 		 * 로봇 관절 상태 JSON을 {@link Ros2Types.JointStates}로 변환한다.
@@ -427,17 +427,17 @@ public class Ros2SerDes {
 		}
 	}
 
-	public static final class JointsSerDe implements JsonSerDe<Map<String,Float>>,
+	public static final class JointsSerDe implements JsonNodeSerDe<Map<String,Float>>,
 															ElementValueSerDe<Map<String,Float>> {
 		/**
 		 * 로봇 관절 상태 JSON을 {@link Ros2Types.JointStates}로 변환한다.
 		 * <p>
 		 * 값이 {@code null}인 관절은 사용할 수 없는 값이므로 결과 맵에서 제외된다.
 		 *
-		 * @param json	변환할 JSON. {@code position} 필드는 필수이고 {@code velocity}와
+		 * @param jnode	변환할 JSON. {@code position} 필드는 필수이고 {@code velocity}와
 		 * 				{@code effort}는 생략 가능하다.
 		 * @return	변환된 {@link Ros2Types.JointStates}.
-		 * @throws IOException	{@code json}이 객체가 아니거나, {@code position}이 없거나,
+		 * @throws IOException	{@code jnode}가 객체가 아니거나, {@code position}이 없거나,
 		 * 						각 필드가 관절 이름 → 숫자 형태의 객체가 아닌 경우.
 		 */
 		@Override

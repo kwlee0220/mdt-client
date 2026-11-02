@@ -27,7 +27,9 @@ import mdt.model.MDTModelSerDe;
  */
 @JsonDeserialize(using = ElementValues.Deserializer.class)
 @JsonSerialize(using = ElementValues.Serializer.class)
-public abstract class AbstractElementValue implements ElementValue {
+public abstract sealed class AbstractElementValue implements ElementValue
+		permits PropertyValue, ElementCollectionValue, ElementListValue, FileValue, MultiLanguagePropertyValue,
+				RangeValue, ReferenceElementValue, OperationVariableValue {
 	/**
 	 * 이 ElementValue 종류를 식별하는 직렬화 타입 문자열을 반환한다.
 	 * <p>

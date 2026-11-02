@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 
 import utils.Preconditions;
+import utils.json.JacksonDeserializationException;
 import utils.stream.FStream;
 
 
@@ -20,13 +21,13 @@ import utils.stream.FStream;
  * {@link SubmodelElementList}의 값을 표현하는 {@link ElementValue}.
  * <p>
  * 리스트의 각 원소 값을 {@link ElementValue}로, 원소 순서를 그대로 유지하며 보관한다.
- * {@link SubmodelElementList}나 그 값으로부터 생성하려면 {@link #from(SubmodelElementList)},
- * {@link #fromValueObject(Object, SubmodelElementList)},
- * {@link #parseValueJsonNode(JsonNode, SubmodelElementList)}를 사용한다.
+ * {@link SubmodelElementList}로부터 생성하려면 {@link #from(SubmodelElementList)}을, 값 객체·값 JSON으로부터
+ * 생성하려면 원소 타입을 정하는 템플릿을 받는 {@link #fromValueObject(Object, ElementListValue)},
+ * {@link #parseValueJsonNode(JsonNode, ElementListValue)}를 사용한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public final class ElementListValue extends AbstractElementValue implements ElementValue {
+public final class ElementListValue extends AbstractElementValue {
 	public static final String SERIALIZATION_TYPE = "mdt:value:list";
 
 	private final List<ElementValue> m_elementValues;
@@ -68,15 +69,17 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 	/**
 	 * 이 리스트의 각 원소 값을 주어진 {@link SubmodelElementList}의 대응 원소에 순서대로 반영한다.
 	 *
+	 * <p>
+	 * 원소 개수와 {@code null} 원소 값은 반영 전에 모두 확인하므로 이때는 아무 원소도 바뀌지 않는다.
+	 * 그러나 원소 하나의 반영이 실패하면(타입 불일치 등) 앞선 원소들은 이미 바뀐 상태로 남는다(원자적이지 않음).
+	 *
 	 * @param sml	갱신할 SubmodelElementList.
-	 * @throws IllegalArgumentException	{@code sml}이 {@code null}이거나 원소 개수가 일치하지 않는 경우.
+	 * @throws IllegalArgumentException	{@code sml}이 {@code null}이거나, 원소 개수가 일치하지 않거나,
+	 * 									{@code null} 원소 값이 있거나, 원소 반영이 실패한 경우.
 	 */
 	public void update(SubmodelElementList sml) {
 		Preconditions.checkNotNullArgument(sml, "SubmodelElementList is null");
-		Preconditions.checkArgument(m_elementValues.size() == sml.getValue().size(),
-									"Element count mismatch: elementValues.size=%s, "
-									+ "submodelElementList.value.size=%s",
-									m_elementValues.size(), sml.getValue().size());
+		checkUpdatable(m_elementValues, sml.getValue().size(), "element");
 		
 		List<SubmodelElement> members = sml.getValue();
 		FStream.zip(members, m_elementValues)
@@ -107,10 +110,10 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 	 * 입력 원소들은 ElementListValue의 원소와 순서대로 짝지어지며,
 	 * 각 원소의 타입은 SML로부터 결정된다.
 	 *
-	 * @param obj	원소 값들의 Iterable.
+	 * @param vobj	원소 값들의 Iterable.
 	 * @param sml	각 원소의 타입 결정에 사용할 대상 ElementListValue.
 	 * @return 생성된 ElementListValue.
-	 * @throws IOException	{@code obj}가 Iterable이 아니거나 원소 개수가 일치하지 않거나
+	 * @throws IOException	{@code vobj}가 Iterable이 아니거나 원소 개수가 일치하지 않거나
 	 * 						변환이 실패한 경우.
 	 */
 	public static ElementListValue fromValueObject(Object vobj, ElementListValue sml) throws IOException {
@@ -211,11 +214,33 @@ public final class ElementListValue extends AbstractElementValue implements Elem
 	 *
 	 * @param vnode	JSON 배열 노드.
 	 * @return 역직렬화된 ElementListValue.
+	 * @throws IOException	{@code vnode}가 배열이 아니거나({@code null}·JSON null 포함) 원소 파싱이 실패한 경우.
 	 */
-	public static ElementListValue deserializeValue(JsonNode vnode) {
+	public static ElementListValue deserializeValue(JsonNode vnode) throws IOException {
+		if ( vnode == null || !vnode.isArray() ) {
+			throw new JacksonDeserializationException(String.format("invalid %s value: array expected, but %s",
+																	SERIALIZATION_TYPE, describeNode(vnode)));
+		}
 		List<ElementValue> elements = FStream.from(vnode.elements())
 											.mapOrThrow(elmNode -> ElementValues.parseJsonNode(elmNode))
 											.toList();
 		return new ElementListValue(elements);
+	}
+
+	/**
+	 * 값 리스트를 개수가 {@code count}인 대상에 반영할 수 있는지 반영 전에 확인한다.
+	 * 개수가 다르거나 {@code null} 값이 있으면 {@link IllegalArgumentException}을 던진다.
+	 */
+	static void checkUpdatable(List<ElementValue> values, int count, String kind) {
+		Preconditions.checkArgument(values.size() == count,
+									"%s count mismatch: values.size=%s, target.size=%s", kind, values.size(), count);
+		for ( int i = 0; i < values.size(); ++i ) {
+			Preconditions.checkArgument(values.get(i) != null, "%s value is null: index=%s", kind, i);
+		}
+	}
+
+	// 노드 종류만 기술한다(값은 넣지 않는다).
+	static String describeNode(JsonNode node) {
+		return (node == null) ? "missing" : node.getNodeType().name().toLowerCase();
 	}
 }

@@ -2,7 +2,9 @@ package mdt.task;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -91,6 +93,8 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 	 * <p>
 	 * 연산이 정상 완료되면 출력 값은 동일 이름의 출력 인자가 가리키는 MDT 요소에,
 	 * 입출력 값은 동일 이름의 입출력 인자가 가리키는 MDT 요소에 각각 기록된 후 반환된다.
+	 * 기록에 실패한 인자가 있으면 나머지 인자도 모두 기록을 시도한 뒤 {@link TaskException}을 던진다.
+	 * 예외의 원인(cause)은 첫 실패이고, 나머지 실패는 suppressed 예외로 붙는다.
 	 * 인자 이름 매칭은 양쪽에 모두 존재하는 이름에 대해서만 이루어지며,
 	 * 한쪽에만 존재하는 인자는 무시된다.
 	 *
@@ -112,37 +116,19 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 			getTimeout().ifPresent(m_opClient::setTimeout);
 			OperationResult result = m_opClient.run();
 
-			// 출력 변수의 값을 수집된 출력 값으로 갱신한다.
-			FStream.from(result.getOutputArguments())
-			        .mapToKeyValue(opv -> KeyValue.of(opv.getValue().getIdShort(), opv.getValue()))
-					.match(m_outputArguments)
-					.forEach((argId, match) -> {
-						SubmodelElement outVal = match._1;
-						TaskArgument.ReferenceArgument refArg = match._2;
-						try {
-							refArg.activate(manager);
-							refArg.updateValue(ElementValues.getValue(outVal));
-						}
-						catch ( IOException e ) {
-							getLogger().warn("Failed to update output argument: id={}, cause={}", argId, e);
-						}
-					});
-
-			// 입출력 변수의 값을 수집된 출력 값으로 갱신한다.
-			FStream.from(result.getInoutputArguments())
-			        .mapToKeyValue(opv -> KeyValue.of(opv.getValue().getIdShort(), opv.getValue()))
-					.match(m_inoutputArguments)
-					.forEach((argId, match) -> {
-						SubmodelElement outVal = match._1;
-						TaskArgument.ReferenceArgument refArg = match._2;
-						try {
-							refArg.activate(manager);
-							refArg.updateValue(ElementValues.getValue(outVal));
-						}
-						catch ( IOException e ) {
-							getLogger().warn("Failed to update inoutput argument: id={}, cause={}", argId, e);
-						}
-					});
+			// 출력·입출력 변수의 값을 같은 이름의 인자가 가리키는 요소에 기록한다.
+			// 하나가 실패해도 나머지는 모두 시도한 뒤, 실패가 있으면 태스크를 실패로 처리한다.
+			// (2026-11-01 이전에는 실패를 경고 로그로만 남기고 태스크는 성공으로 끝났다.)
+			List<String> failedIds = new ArrayList<>();
+			List<IOException> failures = new ArrayList<>();
+			writeResults("output", result.getOutputArguments(), m_outputArguments, manager, failedIds, failures);
+			writeResults("inoutput", result.getInoutputArguments(), m_inoutputArguments, manager, failedIds, failures);
+			if ( !failures.isEmpty() ) {
+				TaskException error = new TaskException("fails to write operation results to arguments: "
+														+ failedIds, failures.get(0));
+				failures.subList(1, failures.size()).forEach(error::addSuppressed);
+				throw error;
+			}
 
 			return FStream.from(result.getOutputArguments())
 							.concatWith(result.getInoutputArguments())
@@ -205,6 +191,33 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 	}
 
 	/**
+	 * 연산 결과 변수의 값을 같은 이름(idShort)의 인자가 가리키는 요소에 기록한다.
+	 * <p>
+	 * 실패해도 멈추지 않고 나머지 인자를 계속 기록한다. 실패한 인자의 식별자와 원인은
+	 * {@code failedIds}·{@code failures}에 더한다.
+	 */
+	private void writeResults(String kind, List<OperationVariable> resultVars,
+								Map<String,TaskArgument.ReferenceArgument> args, MDTInstanceManager manager,
+								List<String> failedIds, List<IOException> failures) {
+		FStream.from(resultVars)
+				.mapToKeyValue(opv -> KeyValue.of(opv.getValue().getIdShort(), opv.getValue()))
+				.match(args)
+				.forEach((argId, match) -> {
+					SubmodelElement outVal = match._1;
+					TaskArgument.ReferenceArgument refArg = match._2;
+					try {
+						refArg.activate(manager);
+						refArg.updateValue(ElementValues.getValue(outVal));
+					}
+					catch ( IOException e ) {
+						getLogger().warn("Failed to update {} argument: id={}", kind, argId, e);
+						failedIds.add(kind + ":" + argId);
+						failures.add(e);
+					}
+				});
+	}
+
+	/**
 	 * 태스크에 기술된 인자를 연산의 입력 및 입출력(inoutput) 변수에 반영한다.
 	 * <p>
 	 * 기본 구현은 입력 인자를 이름(idShort)이 일치하는 연산의 입력 변수에, 입출력 인자를
@@ -260,46 +273,25 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 	 * @param opv		값을 반영할 연산의 입력 변수.
 	 * @param arg		반영할 태스크 인자. ({@code null} 불가)
 	 * @throws IOException				인자의 값을 읽는 과정에서 입출력 오류가 발생한 경우.
-	 * @throws IllegalArgumentException	지원하지 않는 종류의 인자가 주어진 경우.
 	 */
 	protected final void updateOperationVariable(MDTInstanceManager manager, OperationVariable opv,
 													TaskArgument arg) throws IOException {
 		SubmodelElement opvSme = opv.getValue();
 
-		if ( arg instanceof TaskArgument.ReferenceArgument refArg ) {
-			// 'Value' 값만 읽어오는 경우 (특히 SMC/SML 의 경우), 읽어온 값을 모두 반영할 수 없기
-			// 때문에 SubmodelElement 전체를 읽어온다.
-			// 특히 Timeseries SMC의 경우에는 가변 길이의 값을 지원할 수 없게 됨.
-			// 다만, OperationVariable의 SubmodelElement의 idShort가 인자의 이름을 결정하기 때문에
-			// 갱신된 SubmodelElement의 idshort은 변경시키지 않는다.
-			refArg.activate(manager);
-			SubmodelElement newSme = refArg.read();
-			newSme.setIdShort(opvSme.getIdShort());
-			opv.setValue(newSme);
-		}
-		else if ( arg instanceof TaskArgument.LiteralArgument literal ) {
-			ElementValue argv = literal.readValue();
-			
-//			if ( !(opvSme instanceof StringPropertyValue) ) {
-//				ElementValue v = literal.readValue();
-//				if ( v instanceof StringPropertyValue strPv ) {
-//					String jsonStr = strPv.toValueJsonString();
-//					jsonStr = MDTModelSerDe.MAPPER.readTree(jsonStr).asText();
-//					ElementValues.updateWithValueJsonString(opvSme, jsonStr);
-//				}
-//				else {
-//					throw new IllegalArgumentException("Unsupported TaskArgument type: " + arg.getClass().getName());
-//				}
-//			}
-//			else {
-				ElementValues.update(opvSme, argv);
-//			}
-		}
-		else {
-			// 'TaskOutput'은 읽어오는 것을 지원하지 않음.
-			String msg = String.format("Unsupported TaskArgument[%s]: %s",
-										opvSme.getIdShort(), arg.getClass().getName());
-			throw new IllegalArgumentException(msg);
+		// TaskArgument는 봉인 클래스이므로 분기가 빠지면 컴파일 오류가 난다.
+		switch ( arg ) {
+			case TaskArgument.ReferenceArgument refArg -> {
+				// 'Value' 값만 읽어오는 경우 (특히 SMC/SML 의 경우), 읽어온 값을 모두 반영할 수 없기
+				// 때문에 SubmodelElement 전체를 읽어온다.
+				// 특히 Timeseries SMC의 경우에는 가변 길이의 값을 지원할 수 없게 됨.
+				// 다만, OperationVariable의 SubmodelElement의 idShort가 인자의 이름을 결정하기 때문에
+				// 갱신된 SubmodelElement의 idshort은 변경시키지 않는다.
+				refArg.activate(manager);
+				SubmodelElement newSme = refArg.read();
+				newSme.setIdShort(opvSme.getIdShort());
+				opv.setValue(newSme);
+			}
+			case TaskArgument.LiteralArgument literal -> ElementValues.update(opvSme, literal.readValue());
 		}
 	}
 

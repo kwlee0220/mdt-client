@@ -19,7 +19,6 @@ import utils.func.Funcs;
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
-import mdt.model.MDTModelSerDe;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.ElementReference;
@@ -120,7 +119,7 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	 * @throws UnsupportedOperationException 항상 발생한다.
 	 */
 	@Override
-	public void updateValue(String valueJsonString) throws IOException {
+	public void updateFromValueJson(String valueJsonString) throws IOException {
 		throw new UnsupportedOperationException("TimeSeriesRecordsReference does not support value update");
 	}
 
@@ -158,6 +157,12 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		return String.format("%s (%s)", toStringExpr(), actStr);
 	}
 	
+	/**
+	 * 대상 Submodel, 조회 범위, 조회 컬럼이 모두 같으면 같은 참조이다.
+	 * <p>
+	 * 2026-11-01 이전에는 대상 Submodel만 비교해서, 같은 Submodel의 {@code last=1}과 {@code last=100}
+	 * 참조가 같다고 판단했다.
+	 */
 	@Override
 	public boolean equals(Object obj) {
 		if ( this == obj ) {
@@ -168,12 +173,14 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		}
 
 		TimeSeriesRecordsReference other = (TimeSeriesRecordsReference) obj;
-		return Objects.equals(getSubmodelReference(), other.getSubmodelReference());
+		return Objects.equals(getSubmodelReference(), other.getSubmodelReference())
+				&& Objects.equals(m_range, other.m_range)
+				&& Objects.equals(m_columns, other.m_columns);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getSubmodelReference());
+		return Objects.hash(getSubmodelReference(), m_range, m_columns);
 	}
 	
 	/**
@@ -354,8 +361,8 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
 	 */
 	public static TimeSeriesRecordsReference deserializeFields(JsonNode jnode) throws IOException {
-		JsonNode smRefNode = checkJsonField(jnode, FIELD_SUBMODEL_REF);
-		DefaultSubmodelReference smRef = MDTModelSerDe.readValue(smRefNode, DefaultSubmodelReference.class);
+		JsonNode smRefNode = JacksonUtils.getField(jnode, FIELD_SUBMODEL_REF);
+		DefaultSubmodelReference smRef = DefaultSubmodelReference.parseJson(smRefNode);
 		
 		TimeSeriesRange range = null;
 		JsonNode lastNode = JacksonUtils.getFieldOrNull(jnode, FIELD_LAST);

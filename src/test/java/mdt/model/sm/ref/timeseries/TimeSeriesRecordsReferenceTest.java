@@ -22,8 +22,8 @@ import mdt.model.sm.ref.timeseries.TimeSeriesRange.Anchor;
 /**
  * {@link TimeSeriesRecordsReference}의 단위 테스트.
  * <p>
- * {@code equals}는 submodel 참조만 비교하고 range/columns는 비교하지 않으므로,
- * range/columns의 보존은 {@code toStringExpr()}(이 둘을 인코딩) 문자열로 검증한다.
+ * range/columns의 보존은 {@code toStringExpr()}(이 둘을 인코딩) 문자열로 검증한다. 2026-11-01부터 {@code equals}도
+ * range/columns를 비교한다(이전에는 submodel 참조만 비교했다).
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -226,14 +226,27 @@ public class TimeSeriesRecordsReferenceTest {
 		assertEquals(100, sinceNode.path("since").path("length").asInt());
 	}
 
-	// --- equals 동작 명세(range/columns는 비교에 포함되지 않음) ---
+	// --- equals 동작 명세(submodel 참조·range·columns를 모두 비교) ---
 
 	@Test
-	public void equals_ignoresRangeAndColumns() {
-		TimeSeriesRecordsReference plain = builder().build();
-		TimeSeriesRecordsReference withRange = builder().last(7).columns(List.of("current")).build();
-		// submodel 참조가 같으면 range/columns가 달라도 동치로 취급된다.
-		assertEquals(plain, withRange);
+	public void equals_comparesRangeAndColumns() {
+		// 이전에는 submodel 참조만 비교해서 아래가 모두 같다고 판단했다.
+		Assertions.assertNotEquals(builder().last(1).build(), builder().last(100).build());
+		Assertions.assertNotEquals(builder().build(), builder().last(7).build());
+		Assertions.assertNotEquals(builder().columns(List.of("current")).build(),
+									builder().columns(List.of("power")).build());
+
+		TimeSeriesRecordsReference a = builder().last(7).columns(List.of("current")).build();
+		TimeSeriesRecordsReference b = builder().last(7).columns(List.of("current")).build();
+		assertEquals(a, b);
+		assertEquals(a.hashCode(), b.hashCode());
+	}
+
+	@Test
+	public void jsonRoundTrip_preservesRangeAndColumns() throws java.io.IOException {
+		TimeSeriesRecordsReference ref = builder().last(Duration.ofHours(1), Anchor.NOW)
+												.columns(List.of("current", "power")).build();
+		assertEquals(ref, mdt.model.sm.ref.ElementReferences.parseJsonString(ref.toJsonString()));
 	}
 
 	@Test

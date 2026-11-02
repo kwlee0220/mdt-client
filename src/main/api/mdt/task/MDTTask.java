@@ -27,8 +27,11 @@ public interface MDTTask extends Cancellable {
 	
 	/**
 	 * 태스크 기술자를 반환한다.
+	 * <p>
+	 * 기술자 없이 코드로 직접 만든 태스크(예: builder로 만든 {@code SetTask}, {@code AbstractOperationTask}
+	 * 하위 클래스)는 {@code null}을 돌려줄 수 있다.
 	 *
-	 * @return	태스크 기술자.
+	 * @return	태스크 기술자. 없으면 {@code null}.
 	 */
 	public TaskDescriptor getTaskDescriptor();
 	

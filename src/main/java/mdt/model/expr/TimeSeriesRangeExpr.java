@@ -80,8 +80,8 @@ public sealed interface TimeSeriesRangeExpr extends MDTExpression
 				throw new IllegalArgumentException("end must be a String expression: " + end);
 			}
 			
-			Instant startTs = FOption.map(start, Instants::fromString);  // validate startStr
-			Instant endTs = FOption.map(end, Instants::fromString);  // validate endStr
+			Instant startTs = FOption.map(start, Instants::parse);  // validate startStr
+			Instant endTs = FOption.map(end, Instants::parse);  // validate endStr
 			return TimeSeriesRange.between(startTs, endTs);
 		}
 	}
@@ -105,7 +105,7 @@ public sealed interface TimeSeriesRangeExpr extends MDTExpression
 				throw new IllegalArgumentException("'from' must be a String expression: " + from);
 			}
 
-			Instant fromTs = Instants.fromString(fromStr);  // validate fromStr
+			Instant fromTs = Instants.parse(fromStr);  // validate fromStr
 			return TimeSeriesRange.since(fromTs, m_length);
 		}
 	}

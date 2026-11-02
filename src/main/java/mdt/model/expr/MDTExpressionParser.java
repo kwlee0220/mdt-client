@@ -73,8 +73,10 @@ public class MDTExpressionParser {
 	/**
 	 * 주어진 문자열을 지정한 파서 규칙으로 파싱한다.
 	 * <p>
-	 * 어휘/구문 오류 발생 시 {@link IllegalArgumentException}을 던지며, 규칙이 입력 전체를 소비하지
-	 * 않고 남은 토큰이 있으면(후행 토큰) 역시 예외를 던진다(EOF 강제).
+	 * 어휘/구문 오류가 나거나, 규칙이 입력 전체를 소비하지 않고 남은 토큰이 있으면(후행 토큰, EOF 강제)
+	 * {@link MDTParserException}을 던진다. {@code exprStr}이 {@code null}이면 {@link IllegalArgumentException}이다.
+	 * <p>
+	 * 2026-11-01 이전에는 후행 토큰만 {@link IllegalArgumentException}으로 보고해, 호출자마다 두 예외를 함께 잡아야 했다.
 	 */
 	private static <T extends ParserRuleContext> T parse(String exprStr,
 														Function<MdtExprParser, T> rule) {
@@ -93,9 +95,9 @@ public class MDTExpressionParser {
 
 		Token next = parser.getCurrentToken();
 		if ( next.getType() != Token.EOF ) {
-			throw new IllegalArgumentException(
-					String.format("Unexpected trailing input '%s' in expression: %s",
-									next.getText(), exprStr));
+			throw new MDTParserException(
+					String.format("Unexpected trailing input at %d:%d - '%s' in expression: %s",
+									next.getLine(), next.getCharPositionInLine(), next.getText(), exprStr));
 		}
 		return tree;
 	}

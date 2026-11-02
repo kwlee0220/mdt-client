@@ -486,17 +486,17 @@ assignment.evaluate();
 | `MDTExpressionParser` 메서드 | 받는 형태 | 반환 Expr → `evaluate()` | 파사드 |
 |------------------------------|-----------|---------------------------|--------|
 | `parseElementReference` | 요소 참조 (6장) | `MDTElementReferenceExpr` → `MDTElementReference` | `ElementReferences.parseExpr` |
-| `parseSubmodelReference` | Submodel 참조 (4장) | `MDTSubmodelExpr` → `DefaultSubmodelReference` | `ElementReferences.parseSubmodelReference`, `DefaultSubmodelReference.parseStringExpr` |
+| `parseSubmodelReference` | Submodel 참조 (4장) | `MDTSubmodelExpr` → `DefaultSubmodelReference` | `ElementReferences.parseSubmodelExpr`, `DefaultSubmodelReference.parseStringExpr` |
 | `parseValueLiteral` | 값 리터럴 (7장) | `LiteralExpr` → `ElementValue` | `ElementValues.parseExpr` |
 | `parseTimeSeriesRange` | 시계열 범위 (`last=5`, `from~to` ...) | `TimeSeriesRangeExpr` → `TimeSeriesRange` | `TimeSeriesRange.parse` |
 | `parseIdShortPath` | idShortPath (5장) | `SimpleValueExpr<IdShortPath>` → `IdShortPath` | — |
 | `parseInstanceReference` | 인스턴스 id (`line-01`, `mdt:` 접두사 없이) | `StringExpr` → `String` | — |
-| `parseExpr` | 위의 것 전부 + 대입 + `null` (8장) | `MDTExpression` | `TaskArgument.parseTaskArgument` (참조/리터럴) |
+| `parseExpr` | 위의 것 전부 + 대입 + `null` (8장) | `MDTExpression` | `TaskArgument.parseExpr` (참조/리터럴) |
 
 ```java
 TimeSeriesRange range = TimeSeriesRange.parse("last=1h@now");
 IdShortPath path = MDTExpressionParser.parseIdShortPath("A.B[2].C").evaluate();
-DefaultSubmodelReference smRef = ElementReferences.parseSubmodelReference("line-01:Simulation");
+DefaultSubmodelReference smRef = ElementReferences.parseSubmodelExpr("line-01:Simulation");
 ```
 
 ---
@@ -510,7 +510,7 @@ DefaultSubmodelReference smRef = ElementReferences.parseSubmodelReference("line-
 
 ```java
 MDTElementReference ref = ElementReferences.parseExpr("oparg:line-01:Simulation:out:Result");
-ref.activate(manager);     // 또는 ElementReferences.activate(ref, manager)
+ref.activate(manager);
 ```
 
 활성화 전에 `getInstance()`, `getSubmodelService()`를 호출하면 `IllegalStateException`이 발생한다.
@@ -536,9 +536,14 @@ ref.write(newElement);                             // 요소 전체 교체
 
 ```java
 String json = ref.toJsonString();                          // {"@type":"mdt:ref:param", ...}
-ElementReference back = ElementReferences.parseJsonString(json);   // 역직렬화 직후에도 비활성 상태
+MDTElementReference back = (MDTElementReference)ElementReferences.parseJsonString(json);   // 역직렬화 직후에도 비활성 상태
 back.activate(manager);
 ```
+
+`parseJsonString`은 문자열 전체가 JSON 값 하나여야 한다. `"null"`, `@type` 누락·미등록 타입, 필수 필드 누락,
+문자열 필드에 JSON `null`·숫자가 온 경우는 `JacksonDeserializationException`, 문법 오류와 뒤에 붙은 입력은 Jackson의
+`IOException`이다. JSON 역직렬화가 `MDTElementReference`가 아닌 `ElementReference`를 돌려주는 것은 JSON으로만 만들 수
+있는 `FileStoreReference`(`mdt:ref:file`)가 `MDTElementReference`가 아니기 때문이다.
 
 자세한 API는 [`mdt.model.sm.ref` README](../src/main/api/mdt/model/sm/ref/README.md)를 참고한다.
 
@@ -690,7 +695,7 @@ import mdt.task.SetTask;
 import mdt.task.TaskArgument;
 
 SetTask task = SetTask.builder()
-        .source(TaskArgument.parseTaskArgument("25.0"))          // 리터럴 또는 참조
+        .source(TaskArgument.parseExpr("25.0"))          // 리터럴 또는 참조
         .target(TaskArgument.reference("param:line-01:SetPoint"))
         .build();
 task.run(manager);
@@ -712,18 +717,20 @@ for ( SubmodelElement arg : list.getValue() ) {
 
 ```java
 // 참조이면 ReferenceArgument, 리터럴이면 LiteralArgument
-TaskArgument a1 = TaskArgument.parseTaskArgument("param:line-01:Speed");   // reference
-TaskArgument a2 = TaskArgument.parseTaskArgument("25.3");                  // literal(xs:double)
-TaskArgument a3 = TaskArgument.parseTaskArgument("hello");                 // literal(xs:string)
+TaskArgument a1 = TaskArgument.parseExpr("param:line-01:Speed");   // reference
+TaskArgument a2 = TaskArgument.parseExpr("25.3");                  // literal(xs:double)
+TaskArgument a3 = TaskArgument.parseExpr("hello");                 // literal(xs:string)
 
 // 명시적으로 만들 때
 TaskArgument ref = TaskArgument.reference("oparg:line-01:Simulation:out:Result");
 TaskArgument lit = TaskArgument.literal(25.3);
 ```
 
-`parseTaskArgument`는 Submodel 참조(`line-01:Data`)나 `null`처럼 요소 참조도 리터럴도 아닌 입력, 그리고
-일부 파싱 실패를 문자열 리터럴로 취급한다. 입력 검증 용도로 쓰면 오타가 문자열로 넘어갈 수 있으므로,
-참조가 꼭 필요한 자리에는 `TaskArgument.reference` 또는 `ElementReferences.parseExpr`를 쓴다.
+`TaskArgument.parseExpr`(2026-11-01 이전 이름 `parseTaskArgument`)는 요소 참조와 값 리터럴만 받는다. Submodel 참조(`line-01:Data`), 대입식, `null`, 그리고
+문법에 맞지 않는 입력(빈 문자열, 따옴표 없는 날짜·기간 `2024-01-01T00:00:00Z`·`PT5S`, 공백이 든 단어 등)은
+`MDTParserException`으로 거부한다. 이런 값을 문자열로 넘기려면 따옴표로 감싼다(예: `'PT5S'`).
+2026-11-01 이전에는 이런 입력을 오류 없이 문자열 리터럴로 바꿨다.
+참조만 받아야 하는 자리에는 `TaskArgument.reference` 또는 `ElementReferences.parseExpr`를 쓴다.
 
 ### 12.9 워크플로 기술자(JSON)
 
@@ -749,7 +756,7 @@ TaskArgument lit = TaskArgument.literal(25.3);
 | 상황 | 예외 | 발생 시점 |
 |------|------|-----------|
 | 문법 오류, 인식할 수 없는 문자 | `MDTParserException` (`RuntimeException`) | 파싱 |
-| 규칙이 끝났는데 입력이 남음 (후행 토큰) | `IllegalArgumentException` | 파싱 |
+| 규칙이 끝났는데 입력이 남음 (후행 토큰) | `MDTParserException` (2026-11-01 이전에는 `IllegalArgumentException`) | 파싱 |
 | 정수 리터럴이 `int` 범위 초과 | `NumberFormatException` | 파싱 |
 | 시각 형식 오류(날짜만 쓴 경우 포함) | `DateTimeParseException` | `evaluate()` |
 | 활성화 전 인스턴스/Submodel 접근 | `IllegalStateException` | 사용 |
@@ -757,9 +764,9 @@ TaskArgument lit = TaskArgument.literal(25.3);
 | `param:`을 지원하지 않는 asset type, Simulation/AI가 아닌 Submodel에 `oparg:` | `IllegalArgumentException`, `ModelValidationException` | 활성화 / 사용 |
 | 시계열 참조에 쓰기 | `UnsupportedOperationException` | 사용 |
 
-**"참조이면 참조로, 아니면 리터럴로"** 처리하는 코드를 직접 짤 때는 `MDTParserException`만 잡으면
-안 된다. 후행 토큰 오류는 `IllegalArgumentException`으로 나오기 때문이다(예: `hello world`는 `hello`까지
-파싱된 뒤 `world`가 남는다). 두 예외를 모두 잡는다.
+**"참조이면 참조로, 아니면 리터럴로"** 처리하는 코드를 직접 짤 때, 문법 오류는 후행 토큰(예: `hello world`는
+`hello`까지 파싱된 뒤 `world`가 남는다)을 포함해 모두 `MDTParserException`이다. 다만 `ElementReferences.parseExpr`는
+참조 객체를 만드는 평가 단계까지 포함하므로, 그 단계의 의미 오류(`IllegalArgumentException`)도 함께 잡는다.
 
 ```java
 try {

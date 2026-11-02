@@ -4,6 +4,8 @@ import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import utils.json.JacksonDeserializationException;
+
 
 /**
  * {@link DataType} 구현의 공통 기반 클래스이다.
@@ -68,16 +70,43 @@ public abstract class AbstractDataType<T> implements DataType<T> {
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * 기본 구현은 노드의 텍스트 표현을 {@link #parseValueString(String)}으로 파싱한다.
+	 * {@code null}·JSON {@code null}을 처리한 뒤 실제 변환을 {@link #convertJsonNode(JsonNode)}에 맡기고, 변환 중 난
+	 * 예외({@code NumberFormatException}, {@code DateTimeParseException} 등)를 모두 같은 예외로 바꿔 알린다.
+	 * 메시지에는 데이터 타입과 JSON 노드 종류만 넣고, 값은 원인 예외에 남긴다.
 	 */
 	@Override
-	public T fromJsonNode(JsonNode jnode) {
-		if ( jnode != null && !jnode.isNull() ) {
-			return parseValueString(jnode.asText());
-		}
-		else {
+	public final T fromJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+		if ( jnode == null || jnode.isNull() ) {
 			return null;
 		}
+		try {
+			return convertJsonNode(jnode);
+		}
+		catch ( JacksonDeserializationException e ) {
+			// 수치·불리언 변환(JsonScalars)의 메시지("int expected, but string" 등)에 데이터 타입을 붙인다.
+			throw new JacksonDeserializationException(String.format("invalid %s value: %s", getId(), e.getMessage()), e);
+		}
+		catch ( RuntimeException e ) {
+			throw new JacksonDeserializationException(String.format("invalid %s value: %s", getId(),
+																	jnode.getNodeType().name().toLowerCase()), e);
+		}
+	}
+
+	/**
+	 * {@code null}이 아닌 JSON 노드를 값으로 변환한다. 변환할 수 없으면 비검사 예외를 던진다.
+	 * <p>
+	 * 기본 구현은 스칼라 노드의 텍스트를 {@link #parseValueString(String)}으로 해석하고, 객체·배열은 거부한다.
+	 * 숫자·불리언처럼 JSON 자체의 타입을 그대로 쓸 수 있는 데이터 타입은 재정의한다.
+	 *
+	 * @param jnode	변환할 JSON 노드({@code null}·JSON {@code null}이 아님).
+	 * @return	변환된 값.
+	 * @throws JacksonDeserializationException	변환할 수 없는 경우(비검사 예외로 알려도 된다).
+	 */
+	protected T convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+		if ( jnode.isContainerNode() ) {
+			throw new IllegalArgumentException("scalar expected");
+		}
+		return parseValueString(jnode.asText());
 	}
 
 	/**

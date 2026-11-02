@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
  *
  * @author Kang-Woo Lee (ETRI)
  */
-public interface ElementValue {
+public sealed interface ElementValue permits AbstractElementValue, DataElementValue {
 	/**
 	 * ElementValue에 해당하는 자바 객체를 반환한다.
 	 * <p>

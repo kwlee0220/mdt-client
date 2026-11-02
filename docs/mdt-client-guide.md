@@ -272,6 +272,7 @@ Submodel ID의 URL 표현에는 Base64 URL-safe 인코딩을 사용한다.
 
 `ElementValues.getValue(element)`는 전체 AAS 요소에서 값을 추출한다.
 `ElementValues.update(element, value)`는 전달받은 Java 모델 객체의 값을 갱신한다.
+값의 형태에 따라 메서드가 다르다(2026-11-01 이름 정리): 값 객체는 `update(sme, ElementValue)`, value-only JSON은 `updateFromValueJson(sme, JsonNode|String)`(문자열 속성이면 `"\"abc\""`), AAS 값 문자열(`xs:*` 표기)은 `updateFromValueString(sme, String)`(`abc`, `42`), Java 숫자는 `updateValue(sme, Number)`.
 이 메서드만 호출하면 원격 서버에 저장되는 것은 아니다. 저장하려면 Service나 활성 참조의 쓰기 API를 호출한다.
 
 `ElementValues.parseJsonString()`은 MDT 타입 포함 JSON을 읽는다.
@@ -280,6 +281,12 @@ value-only JSON을 해석할 때는 `parseValueJsonNode()` 등 대상 타입·pr
 주요 값 타입은 `PropertyValue`, `ElementCollectionValue`, `ElementListValue`, `RangeValue`,
 `MultiLanguagePropertyValue`, `FileValue`, `ReferenceElementValue`, `OperationVariableValue`다.
 `mdt.aas.DataTypes`는 AAS XSD 타입과 Java 값, JSON 값, JDBC 값 사이의 변환을 담당한다.
+JSON 값 변환(`DataType.fromJsonNode`)은 값을 조용히 바꾸지 않는다(2026-11-01부터). 수치·불리언 변환은 utils의 `utils.json.JsonScalars`(`TEXT_TOLERANT` 정책)를 쓴다.
+숫자 타입은 범위 안의 JSON 숫자(정수 타입은 `3.0`처럼 손실 없는 실수 포함)와 숫자 문자열(`"42"`)만 받고, 숫자가 아닌 문자열·소수·범위 초과·`NaN`은 `JacksonDeserializationException`으로 거부한다.
+`xs:boolean`은 JSON 불리언과 `"true"`/`"false"`/`"1"`/`"0"`만 받으며, AAS 값 문자열(`parseValueString`)도 같은 규칙이다.
+`xs:string`은 숫자·객체도 JSON 텍스트로 받는다. 공유 매퍼는 JSON 실수를 `double`로 읽으므로, `xs:decimal`에 그보다 높은 정밀도가 필요하면 값을 JSON 문자열로 보낸다.
+속성 갱신(`ElementValues.update`)은 속성의 `valueType`을 확인한다(2026-11-01부터). 값의 타입이 다르면 숫자끼리의 손실 없는 변환(`xs:int` 값 → `xs:long`·`xs:integer`·`xs:double` 속성, `3.0` → `xs:int`)과 `xs:string` 속성에 값 문자열을 쓰는 것만 허용하고, 그 밖의 불일치는 `IllegalArgumentException`으로 거부한다. `updateFromValueString(sme, String)`은 문자열을 속성 타입으로 해석할 수 있는지 확인한 뒤 원래 문자열을 기록한다(`xs:int` 속성에 `"42"`는 받고 `"abc"`는 거부). 정수 타입(`xs:integer`·`xs:byte` 포함)은 정수 문법만 받는다(`"3.0"`, 앞뒤 공백은 거부).
+`Range` 갱신도 같은 타입 규칙을 따르며 min/max를 모두 확인한 뒤 기록한다. Collection 값 JSON에서 빠진 필드는 그대로 두고(부분 갱신), JSON null인 필드는 Property면 값을 지우며 그 밖의 원소(Collection·List 등)면 거부한다. List·Operation·Collection 갱신은 원소(변수·필드) 개수와 `null` 값을 쓰기 전에 모두 확인하지만, 원소 하나의 반영이 실패하면 앞선 원소는 이미 바뀐 채로 남는다(원자적이지 않음). `@type` JSON의 `mdt:value:list` 값은 배열, `mdt:value:collection` 값은 객체여야 한다(JSON null 포함 그 밖은 `JacksonDeserializationException`).
 
 ### 6.2 모델 변환 계층
 
@@ -480,12 +487,18 @@ AI·Simulation 모델의 입력 정의에서 보충하는 변형이다.
 | `Workflow` | 실행 한 건의 이름·모델 ID·상태·시각·노드 목록 |
 | `NodeTask` | 실행 노드의 메타데이터 |
 | `MDTTask` | `run(manager)`로 실행하고 결과 Map을 반환하는 Java 계약 |
-| `TaskArgument` | Builder 기반 태스크 실행 인자. reference·literal |
+| `TaskArgument` | Builder 기반 태스크 실행 인자. reference·literal. 문자열 입력은 `TaskArgument.parseExpr`로 해석 |
 
 `ArgumentSpec`와 `TaskArgument`는 이름이 비슷하지만 다른 타입이다.
 전자는 `id` 등의 명세 메타데이터와 `mdt:task_arg:*` 판별자를 사용하며 task-output을 지원한다.
 후자는 `mdt:argument:*` 판별자와 실제 참조·값 객체를 사용하고 task-output 구현은 없다.
-`ArgumentSpec.TaskOutputArgument.readValue()`도 직접 값을 읽을 수 없으므로 실행 엔진에서 선행 결과를 해결해야 한다.
+`TaskArgument`는 사용하기 전에 `activate(manager)`를 부른다. 종류와 상관없이 부를 수 있고 literal에서는 아무 일도 하지 않는다.
+값은 `readValue()`로 읽고, 요소 전체(`read()`)는 reference 인자(`TaskArgument.ReferenceArgument`)에서만 읽을 수 있다.
+두 종류 모두 감싼 참조·값으로 `equals`를 비교한다. 인자 자체는 바꿀 수 없지만 감싼 `ElementValue`는 가변일 수 있으므로(예: `MultiLanguagePropertyValue`), 그 값을 바꾸면 `equals`·`hashCode`도 바뀐다. 해시 기반 컬렉션에 넣은 인자의 값은 바꾸지 않는다.
+`ArgumentSpec`은 값을 읽는 메서드가 없다(2026-11-01에 `readValue`를 제거). RPC 태스크는 `TaskUtils.readArgumentValue`로 입력 값을 읽으며, task-output 인자는 실행 엔진이 선행 결과로 해결해야 하므로 `TaskException`으로 거부한다.
+`ReferenceArgument`는 생성할 때(코드·JSON 모두) 참조 표현식의 문법을 검사한다.
+`ArgumentSpec.ReferenceArgument`의 표현식은 `getReferenceExpr()`로, 활성화된 참조는 `resolveReference(manager)`로 얻는다(부를 때마다 새로 해석). 식별자는 공백일 수 없고, `literal(id, Integer)` 같은 편의 메서드는 `null` 값을 거부한다. 세 종류 모두 공통 필드(식별자·이름·설명)와 자기 필드로 `equals`를 비교한다.
+JSON에서 `id`·`taskId`·`argumentName`·`reference`는 비어 있지 않은 JSON 문자열이어야 한다(숫자·불리언 거부). `TaskOutputArgument.getOutputArgumentId()`(JSON 필드 `argumentName`)는 원래 태스크의 출력 인자 `id`다. `ArgumentSpec`·`TaskArgument`·`ElementValues`의 `parseJsonString`은 문자열 전체가 JSON 값 하나여야 한다(`MDTModelSerDe.readSingleJsonNode`).
 
 다음은 값을 복사하는 태스크의 **전송·저장용 명세** 예시다.
 
@@ -658,7 +671,6 @@ gradle test --tests 'mdt.workflow.model.ArgumentSpecRoundTripTest'
 | `HttpOperationClient` | 폐기 예정이며 현재 RPC 서버 계약과 불일치 |
 | Builder 기반 태스크 | descriptor 반환·취소 계약 일부 미구현. 실행 객체와 명세 객체를 구분 |
 | REST RPC 태스크 | 결과 객체 반환과 원격 값 저장이 분리되어 있음 |
-| `TaskDescriptors.loadArgumentSpecs()` | 출력 descriptor를 순회하는 분기에서도 `addInputArgument()` 호출. 자동 생성 명세의 입력·출력 구분 확인 필요 |
 | `BuiltInTaskTemplates` | Map 초기화 비활성. 현재 정상적인 내장 템플릿 목록을 제공하지 못함 |
 | 시계열 참조의 `equals()` | 범위·컬럼을 제외하므로 조회별 동등성 비교에 주의 |
 

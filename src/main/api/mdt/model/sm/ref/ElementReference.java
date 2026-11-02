@@ -429,15 +429,27 @@ public interface ElementReference {
 	 */
 	public void updateValue(ElementValue smev) throws IOException;
 	
-	public void updateValue(JsonNode valueNode) throws IOException;
-
 	/**
-	 * 주어진 Json 문자열을 이용하여 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
-	 * 
-	 * @param valueJsonString    New Json string
+	 * 주어진 값 JSON 노드로 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
+	 * <p>
+	 * 2026-11-01 이전 이름은 {@code updateValue(JsonNode)}이다(별칭 없이 바꿈).
+	 *
+	 * @param valueNode	값 JSON 노드.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
-	public void updateValue(String valueJsonString) throws IOException;
+	public void updateFromValueJson(JsonNode valueNode) throws IOException;
+
+	/**
+	 * 주어진 값 JSON 문자열로 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
+	 * <p>
+	 * 값 JSON은 {@link ElementValue#toValueJsonString()} 형식이다(예: 문자열 속성이면 따옴표를 포함한 {@code "abc"}).
+	 * 2026-11-01 이전 이름은 {@code updateValue(String)}이다(별칭 없이 바꿈). 이름이 같아 일반 문자열 값과
+	 * 헷갈렸다.
+	 *
+	 * @param valueJsonString	값 JSON 문자열.
+	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
+	 */
+	public void updateFromValueJson(String valueJsonString) throws IOException;
 	
 	/**
 	 * 주어진 InputStream에서 내용을 읽어 참조가 가리키는

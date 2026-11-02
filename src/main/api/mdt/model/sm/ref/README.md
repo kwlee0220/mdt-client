@@ -32,7 +32,7 @@ SubmodelElement에 대한 **참조(reference)**를 다루는 패키지다. 참�
 `ElementReferences.parseExpr(String)`이 MdtExpr 문법으로 참조를 파싱한다(내부적으로
 `mdt.model.expr.MDTExpressionParser` → 파스 트리 → `MDTExpressionVisitor` → 참조 객체).
 선두 라벨로 종류가 결정되며, 라벨이 없으면 `DefaultElementReference`로 해석된다.
-파서는 **입력을 끝까지 소비(EOF)** 하며 오류 시 `IllegalArgumentException`을 던진다.
+파서는 **입력을 끝까지 소비(EOF)** 하며 문법 오류와 뒤에 남는 입력은 `MDTParserException`, `null` 입력은 `IllegalArgumentException`이다.
 
 ### 서브모델 참조 (submodelSpec)
 ```
@@ -104,7 +104,7 @@ ElementReference back = ElementReferences.parseExpr(expr);   // back.toStringExp
 String json = ref.toJsonString();
 ElementReference back2 = ElementReferences.parseJsonString(json);
 ```
-> `TimeSeriesRecordsReference.equals`는 submodel 참조만 비교하고 range/columns는 제외한다.
+> `TimeSeriesRecordsReference.equals`는 submodel 참조·range·columns를 모두 비교한다(2026-11-01 이전에는 submodel 참조만 비교했다).
 > 따라서 range/columns 보존 검증은 `equals`가 아니라 `toStringExpr()`(이 둘을 인코딩)로 한다.
 
 ## 활성화 (activation)
@@ -114,7 +114,7 @@ ElementReference back2 = ElementReferences.parseJsonString(json);
 
 ```java
 MDTElementReference ref = ElementReferences.parseExpr("param:test-instance:Temperature");
-ref.activate(manager);          // 또는 ElementReferences.activate(ref, manager);
+ref.activate(manager);
 Property prop = ref.readAsProperty();
 ```
 활성화 전 `getSubmodelService()`/`getInstance()` 호출 시 `IllegalStateException`.
@@ -130,13 +130,18 @@ Integer i = ref.readAsInt();      // readAsFloat/readAsLong/readAsBoolean/readAs
 SubmodelElementCollection coll = ref.readCollection();
 
 ref.updateValue(elementValue);                 // ElementValue로 갱신
-ref.updateValue("{\"value\": \"42\"}");        // JSON 문자열로 갱신
+ref.updateFromValueJson("\"42\"");            // 값 JSON으로 갱신(문자열 속성이면 따옴표 포함)
 ref.write(submodelElement);                    // 요소 전체 교체
 
 ref.readAttachment(outputFile);                // 'File' 요소 첨부파일
 ref.updateAttachment(contentFile);
 ref.removeAttachment();
 ```
+
+값 JSON 갱신은 2026-11-01 이전에 `updateValue(String)`/`updateValue(JsonNode)`였다(별칭 없이 `updateFromValueJson`으로
+바꿈). 파라미터 집합(`param:<inst>:*`)은 `readValue()`와 같은 `{"<ParameterID>": <값>, …}` 형태로 ID별로 갱신하며,
+주어진 ID만 바꾼다(부분 갱신). 모르는 ID가 있으면 아무것도 기록하지 않고 `IllegalArgumentException`이다. 예전의
+"파라미터 순서대로 나열한 배열" 입력은 받지 않는다.
 
 ## JSON 직렬화
 
@@ -145,9 +150,14 @@ ref.removeAttachment();
 
 ```java
 String json = ref.toJsonString();
-MDTElementReference parsed = ElementReferences.parseJsonString(json);
+MDTElementReference parsed = (MDTElementReference)ElementReferences.parseJsonString(json);
 // 역직렬화된 참조는 비활성 상태이므로 사용 전 activate() 필요
 ```
+
+반환 타입이 `ElementReference`인 것은 JSON으로만 만들 수 있는 `FileStoreReference`가 `MDTElementReference`가
+아니기 때문이다. `parseJsonString`은 문자열 전체가 JSON 값 하나여야 하며(`"null"`·뒤에 붙은 입력은 거부),
+필드 오류는 `JacksonDeserializationException`(필드 이름만 담은 메시지)이다. 문자열 필드는 JSON 문자열만,
+`ordinal`은 JSON 정수만 받는다.
 
 > `mdt:ref:param`은 `MDTParameterReference`와 `MDTParameterCollectionReference`가 공유한다.
 > 역직렬화 시 `parameterExpr`이 `*`이면 전체 집합 참조로, 아니면 개별 파라미터 참조로 복원된다.

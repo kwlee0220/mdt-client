@@ -31,6 +31,9 @@ import mdt.model.SubmodelService;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.info.MDTAssetType;
+import mdt.model.sm.value.ElementCollectionValue;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.PropertyValue;
 
 /**
  * {@link MDTParameterCollectionReference}의 단위 테스트.
@@ -206,6 +209,88 @@ public class MDTParameterCollectionReferenceTest {
 
 		ref.write(input);
 		verify(m_svc).setSubmodelElementByPath(EQUIP_PATH, raw);
+	}
+
+	// --- updateValue / updateFromValueJson (ParameterID -> 값 형태, ID별 부분 갱신) ---
+
+	/**
+	 * {@code updateValue}는 {@code readValue()}와 같은 {@code ParameterID -> 값} 형태를 받아 ID별로 갱신해야 한다.
+	 * 이전에는 펼친 목록이 문자열 갱신으로 재진입해 {@code {"ParameterID":…}} 텍스트가 값으로 기록됐다.
+	 */
+	@Test
+	public void updateValue_updatesByIdAndKeepsOthers() throws IOException {
+		MDTParameterCollectionReference ref = activate(MDTAssetType.Machine);
+		when(m_svc.getSubmodelElementByPath(EQUIP_PATH)).thenAnswer(inv -> parameters("temp", "20", "speed", "5"));
+
+		java.util.LinkedHashMap<String,ElementValue> fields = new java.util.LinkedHashMap<>();
+		fields.put("speed", PropertyValue.STRING("7"));
+		ref.updateValue(new ElementCollectionValue(fields));
+
+		SubmodelElementList written = captureWritten();
+		Assertions.assertEquals("20", parameterValue(written, "temp"));
+		Assertions.assertEquals("7", parameterValue(written, "speed"));
+	}
+
+	@Test
+	public void updateFromValueJson_objectForm() throws IOException {
+		MDTParameterCollectionReference ref = activate(MDTAssetType.Machine);
+		when(m_svc.getSubmodelElementByPath(EQUIP_PATH)).thenAnswer(inv -> parameters("temp", "20", "speed", "5"));
+
+		ref.updateFromValueJson("{\"temp\":\"99\"}");
+
+		SubmodelElementList written = captureWritten();
+		Assertions.assertEquals("99", parameterValue(written, "temp"));
+		Assertions.assertEquals("5", parameterValue(written, "speed"));
+	}
+
+	@Test
+	public void update_unknownIdOrWrongForm_writesNothing() throws IOException {
+		MDTParameterCollectionReference ref = activate(MDTAssetType.Machine);
+		when(m_svc.getSubmodelElementByPath(EQUIP_PATH)).thenAnswer(inv -> parameters("temp", "20", "speed", "5"));
+
+		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
+												() -> ref.updateFromValueJson("{\"temp\":\"1\",\"nope\":\"2\"}"));
+		Assertions.assertEquals("unknown ParameterID: nope", e.getMessage());
+		// 이전 입력 형식(순서대로 나열한 배열)은 거부한다.
+		Assertions.assertThrows(utils.json.JacksonDeserializationException.class,
+								() -> ref.updateFromValueJson("[\"1\",\"2\"]"));
+		Assertions.assertThrows(IllegalArgumentException.class,
+								() -> ref.updateValue(PropertyValue.STRING("1")));
+		verify(m_svc, org.mockito.Mockito.never()).setSubmodelElementByPath(org.mockito.ArgumentMatchers.any(),
+																			org.mockito.ArgumentMatchers.any());
+	}
+
+	private SubmodelElementList captureWritten() {
+		org.mockito.ArgumentCaptor<SubmodelElement> captor = org.mockito.ArgumentCaptor.forClass(SubmodelElement.class);
+		verify(m_svc).setSubmodelElementByPath(org.mockito.ArgumentMatchers.eq(EQUIP_PATH), captor.capture());
+		return (SubmodelElementList)captor.getValue();
+	}
+
+	// 기록된 원래 형태(ParameterID/ParameterValue 멤버 목록)에서 주어진 ID의 값을 꺼낸다.
+	private static String parameterValue(SubmodelElementList written, String paramId) {
+		for ( SubmodelElement member: written.getValue() ) {
+			var smc = (org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection)member;
+			String id = null, value = null;
+			for ( SubmodelElement field: smc.getValue() ) {
+				if ( "ParameterID".equals(field.getIdShort()) ) id = ((Property)field).getValue();
+				if ( "ParameterValue".equals(field.getIdShort()) ) value = ((Property)field).getValue();
+			}
+			if ( paramId.equals(id) ) {
+				return value;
+			}
+		}
+		throw new AssertionError("no parameter: " + paramId);
+	}
+
+	/** 읽을 때마다 새로 만드는 두 파라미터 목록(read()가 결과를 바꾸므로 호출마다 새 객체가 필요하다). */
+	private static SubmodelElementList parameters(String id1, String v1, String id2, String v2) {
+		List<SubmodelElement> members = new ArrayList<>();
+		members.addAll(parameterCollection(id1, v1).getValue());
+		members.addAll(parameterCollection(id2, v2).getValue());
+		return new DefaultSubmodelElementList.Builder()
+						.idShort("EquipmentParameterValues")
+						.value(members)
+						.build();
 	}
 
 	// --- 헬퍼 ---

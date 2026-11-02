@@ -51,4 +51,18 @@ public class ReferenceElementValueTest {
 		ReferenceElementValue refValue = (ReferenceElementValue)value;
 		Assertions.assertEquals(REFFERENCE, refValue.getReference());
 	}
+
+	@Test
+	public void equalsComparesReference() throws IOException {
+		// 2026-11-01 이전에는 equals가 없어 같은 참조라도 다른 객체로 판단했다.
+		ElementValue parsed = ElementValues.parseJsonString(JSON);
+		Assertions.assertEquals(new ReferenceElementValue(REFFERENCE), parsed);
+		Assertions.assertEquals(new ReferenceElementValue(REFFERENCE).hashCode(), parsed.hashCode());
+
+		Reference other = new DefaultReference.Builder()
+								.type(ReferenceTypes.MODEL_REFERENCE)
+								.keys(new DefaultKey.Builder().type(KeyTypes.SUBMODEL).value("urn:other").build())
+								.build();
+		Assertions.assertNotEquals(new ReferenceElementValue(REFFERENCE), new ReferenceElementValue(other));
+	}
 }

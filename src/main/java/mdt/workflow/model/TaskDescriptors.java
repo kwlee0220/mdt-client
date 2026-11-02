@@ -126,7 +126,8 @@ public class TaskDescriptors {
 		for ( Map.Entry<String, SubmodelArgumentDescriptor> ent: opSmDesc.getOutputs().entrySet() ) {
 			SubmodelArgumentDescriptor argDesc = ent.getValue();
 			MDTArgumentReference ref = MDTArgumentReference.newInstance(smRef, MDTArgumentKind.OUTPUT, argDesc.getId());
-			task.addInputArgument(ArgumentSpec.reference(ent.getKey(), ref.toStringExpr()));
+			// 2026-11-01 이전에는 addInputArgument를 불러 출력 인자가 입력 인자로 등록됐다.
+			task.addOutputArgument(ArgumentSpec.reference(ent.getKey(), ref.toStringExpr()));
 		}
 	}
 }

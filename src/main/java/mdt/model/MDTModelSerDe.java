@@ -11,6 +11,7 @@ import org.eclipse.digitaltwin.aas4j.v3.dataformat.core.SerializationException;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonDeserializer;
 import org.eclipse.digitaltwin.aas4j.v3.dataformat.json.JsonSerializer;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -66,6 +67,23 @@ public class MDTModelSerDe {
 
 	public static JsonNode readJsonNode(String jsonString) throws IOException {
 		return MAPPER.readTree(jsonString);
+	}
+
+	/**
+	 * 문자열 전체가 JSON 값 하나인지 확인하며 트리로 읽는다.
+	 * <p>
+	 * {@link #readJsonNode(String)}({@code readTree})는 첫 JSON 값만 읽고 뒤의 입력을 무시한다(예:
+	 * {@code {...} garbage}, {@code {...} {}}). 이 메소드는 공유 매퍼의 설정은 바꾸지 않고
+	 * {@code FAIL_ON_TRAILING_TOKENS}를 켠 reader로 읽어 그런 입력을 거부한다. 뒤의 공백·개행은 허용한다.
+	 *
+	 * @param jsonString	JSON 문자열.
+	 * @return	JSON 노드.
+	 * @throws IOException	입력이 비었거나, JSON 문법이 틀렸거나, 첫 값 뒤에 다른 입력이 있는 경우.
+	 */
+	public static JsonNode readSingleJsonNode(String jsonString) throws IOException {
+		return MAPPER.readerFor(JsonNode.class)
+					.with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+					.readValue(jsonString);
 	}
 
 	public static <T> T readValue(String json, Class<T> cls) throws IOException {

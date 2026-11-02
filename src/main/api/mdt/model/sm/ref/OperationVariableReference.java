@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import utils.Preconditions;
+import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
 import mdt.model.instance.MDTInstanceManager;
@@ -117,8 +118,19 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 */
 	@Override
 	public void activate(MDTInstanceManager manager) {
+		// super.activate가 실패하면 m_opRef.activate가 호출되지 않아 m_opRef가 이전 대상으로 활성 상태로 남는다.
+		// 그래서 이 참조의 활성 여부는 자신과 m_opRef를 함께 본다(isActivated). 2026-11-01 이전에는 접근 메소드가
+		// m_opRef.isActivated()만 확인해, 재활성화가 실패한 뒤에도 이전 Operation에 접근했다.
 		super.activate(manager);
 		m_opRef.activate(manager);
+	}
+
+	/**
+	 * 이 참조와 대상 Operation 참조가 모두 활성 상태이면 {@code true}이다.
+	 */
+	@Override
+	public boolean isActivated() {
+		return super.isActivated() && m_opRef.isActivated();
 	}
 	
 	/**
@@ -164,7 +176,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 */
 	@Override
 	public SubmodelElement read() throws IOException {
-		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
+		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
 
 		SubmodelElement holder = m_opRef.read();
 		Preconditions.checkState(holder instanceof Operation, "target reference is not Operation: %s", holder);
@@ -176,7 +188,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 
 	@Override
 	public void write(SubmodelElement newSme) throws IOException {
-		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
+		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
 		
 		SubmodelElement holder = m_opRef.read();
 		Preconditions.checkState(holder instanceof Operation, "target reference is not Operation: %s", holder);
@@ -201,7 +213,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	}
 
 	@Override
-	public void updateValue(String valueJsonString) throws IOException {
+	public void updateFromValueJson(String valueJsonString) throws IOException {
 		ElementValue proto = readValue();
 		ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
 		updateValue(newVal);
@@ -209,21 +221,21 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 
 	@Override
 	public void readAttachment(OutputStream out) throws IOException {
-		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
+		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
 		
 		m_opRef.readAttachment(out);
 	}
 
 	@Override
 	public void updateAttachment(FileValue file, InputStream content) throws IOException {
-		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
+		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
 		
 		m_opRef.updateAttachment(file, content);
 	}
 
 	@Override
 	public void removeAttachment() throws IOException {
-		Preconditions.checkState(m_opRef.isActivated(), "OperationVariableReference is not activated");
+		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
 		
 		m_opRef.removeAttachment();
 	}
@@ -301,23 +313,16 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 */
 	public static OperationVariableReference deserializeFields(JsonNode jnode) throws IOException {
 		JsonNode baseOpVar = JacksonUtils.getField(jnode, FIELD_AAS_OP_VAR);
-		ElementReference ref = ElementReferences.parseTypedJsonNode(baseOpVar);
-		if ( !(ref instanceof SubmodelBasedElementReference) ) {
-			throw new IOException("Invalid OperationVariableReference: " + jnode);
+		ElementReference ref = ElementReferences.parseJsonNode(baseOpVar);
+		if ( !(ref instanceof SubmodelBasedElementReference opRef) ) {
+			throw new JacksonDeserializationException(String.format("invalid field '%s': submodel-based reference expected, but %s",
+																	FIELD_AAS_OP_VAR, ref.getClass().getSimpleName()));
 		}
-		SubmodelBasedElementReference opRef = (SubmodelBasedElementReference)ref;
-		String kindStr = checkJsonField(jnode, FIELD_KIND).asText();
-		Kind kind = Kind.fromString(kindStr);
+		Kind kind = Kind.fromString(JacksonUtils.getTextField(jnode, FIELD_KIND));
+		// ordinal은 JSON 정수로 직렬화된다. 이전에는 문자열("1")도 받았다.
+		int ordinal = JacksonUtils.getIntField(jnode, FIELD_ORDINAL);
 
-		try {
-			String ordinalStr = checkJsonField(jnode, FIELD_ORDINAL).asText();
-			int ordinal = Integer.parseInt(ordinalStr);
-
-			return newInstance(opRef, kind, ordinal);
-		}
-		catch ( NumberFormatException e ) {
-			throw new IOException("Invalid ordinal value for OperationVariableReference: " + e.getMessage(), e);
-		}
+		return newInstance(opRef, kind, ordinal);
 	}
 	
 	private static OperationVariable getVariable(Operation op, Kind kind, int ordinal) {

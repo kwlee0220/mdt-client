@@ -149,4 +149,27 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 						})
 						.toList();
 	}
+
+	/**
+	 * 감싼 aas4j {@link Reference}의 {@code equals}로 비교한다. {@code Reference}는 가변 객체이므로
+	 * ({@code setKeys} 등) 그것을 바꾸면 이 값의 {@code equals}와 {@code hashCode}도 바뀐다.
+	 * 해시 기반 컬렉션에 넣은 뒤에는 참조를 바꾸지 않는다.
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		else if ( obj == null || ReferenceElementValue.class != obj.getClass() ) {
+			return false;
+		}
+
+		ReferenceElementValue other = (ReferenceElementValue)obj;
+		return m_reference.equals(other.m_reference);
+	}
+
+	@Override
+	public int hashCode() {
+		return m_reference.hashCode();
+	}
 }

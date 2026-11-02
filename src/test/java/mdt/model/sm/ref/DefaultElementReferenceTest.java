@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import utils.json.JacksonDeserializationException;
+
 import mdt.model.MDTModelSerDe;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 
@@ -225,12 +227,13 @@ public class DefaultElementReferenceTest {
 	}
 
 	@Test
-	public void deserializeFields_nullSubmodelReference_throwsIllegalArgument() {
+	public void deserializeFields_nullSubmodelReference_throws() {
 		ObjectNode node = MDTModelSerDe.getJsonMapper().createObjectNode();
 		node.putNull("submodelReference");
 		node.put("elementPath", PATH);
 
-		Assertions.assertThrows(IllegalArgumentException.class,
+		// 필수 필드의 JSON null은 필드를 읽을 때 거부한다(이전에는 해석 단계의 IllegalArgumentException).
+		Assertions.assertThrows(JacksonDeserializationException.class,
 								() -> DefaultElementReference.deserializeFields(node));
 	}
 

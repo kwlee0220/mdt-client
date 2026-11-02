@@ -168,11 +168,26 @@ public final class TaskDescriptor {
 		return Lists.newArrayList(m_inputArgumentSpecs.values());
 	}
 
+	/**
+	 * 입력 인자 명세들을 설정한다. 기존 명세는 모두 지운다.
+	 * <p>
+	 * {@link #addInputArgument(ArgumentSpec)}와 같이 식별자가 중복되면 거부한다. 2026-11-01 이전에는 뒤에 오는 같은
+	 * 식별자의 명세가 앞의 것을 조용히 덮어썼다.
+	 *
+	 * @param vars	입력 인자 명세들.
+	 * @throws IllegalArgumentException	식별자가 중복된 명세가 있는 경우.
+	 */
 	@JsonProperty("inputArguments")
 	public void setInputArguments(Iterable<ArgumentSpec> vars) {
-		m_inputArgumentSpecs = FStream.from(vars)
-										.tagKey(ArgumentSpec::getId)
-										.toMap(new LinkedHashMap<>());
+		Preconditions.checkNotNullArgument(vars, "input argument specs must not be null");
+		LinkedHashMap<String,ArgumentSpec> specs = new LinkedHashMap<>();
+		for ( ArgumentSpec spec: vars ) {
+			Preconditions.checkNotNullArgument(spec, "Input argument spec must not be null");
+			if ( specs.putIfAbsent(spec.getId(), spec) != null ) {
+				throw new IllegalArgumentException("Input argument spec already exists: " + spec.getId());
+			}
+		}
+		m_inputArgumentSpecs = specs;
 	}
 	
 	public ArgumentSpec.ReferenceArgument getOutputArgument(String argId) {
@@ -191,11 +206,26 @@ public final class TaskDescriptor {
 		return Lists.newArrayList(m_outputArgumentSpecs.values());
 	}
 
+	/**
+	 * 출력 인자 명세들을 설정한다. 기존 명세는 모두 지운다.
+	 * <p>
+	 * {@link #addOutputArgument(ArgumentSpec.ReferenceArgument)}와 같이 식별자가 중복되면 거부한다.
+	 * 2026-11-01 이전에는 이름이 {@code setOutputVariables}였고(별칭 없이 바꿈), 중복 식별자를 조용히 덮어썼다.
+	 *
+	 * @param args	출력 인자 명세들.
+	 * @throws IllegalArgumentException	식별자가 중복된 명세가 있는 경우.
+	 */
 	@JsonProperty("outputArguments")
-	public void setOutputVariables(Iterable<ArgumentSpec.ReferenceArgument> args) {
-		m_outputArgumentSpecs = FStream.from(args)
-										.tagKey(ArgumentSpec::getId)
-										.toMap(new LinkedHashMap<>());
+	public void setOutputArguments(Iterable<ArgumentSpec.ReferenceArgument> args) {
+		Preconditions.checkNotNullArgument(args, "output argument specs must not be null");
+		LinkedHashMap<String,ArgumentSpec.ReferenceArgument> specs = new LinkedHashMap<>();
+		for ( ArgumentSpec.ReferenceArgument spec: args ) {
+			Preconditions.checkNotNullArgument(spec, "Output argument spec must not be null");
+			if ( specs.putIfAbsent(spec.getId(), spec) != null ) {
+				throw new IllegalArgumentException("Output argument spec already exists: " + spec.getId());
+			}
+		}
+		m_outputArgumentSpecs = specs;
 	}
 	
 	@NotNull

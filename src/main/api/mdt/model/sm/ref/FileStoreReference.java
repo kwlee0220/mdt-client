@@ -100,7 +100,7 @@ public final class FileStoreReference extends AbstractElementReference implement
 	}
 
 	@Override
-	public void updateValue(String valueJsonString) throws IOException {
+	public void updateFromValueJson(String valueJsonString) throws IOException {
 		ElementValue proto = readValue();
 		ElementValue newVal = ElementValues.parseValueJsonString(valueJsonString, proto);
 		updateValue(newVal);

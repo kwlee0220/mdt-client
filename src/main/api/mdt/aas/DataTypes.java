@@ -28,6 +28,8 @@ import com.google.common.collect.Maps;
 
 import utils.DataUtils;
 import utils.Split;
+import utils.json.JacksonDeserializationException;
+import utils.json.JsonScalars;
 
 import mdt.model.ModelGenerationException;
 
@@ -164,6 +166,10 @@ public final class DataTypes {
 	/** 타입 이름/{@code xs:} 식별자 → {@link DataType} 매핑(불변). */
 	public static final Map<String,DataType<?>> NAME_TO_TYPES = Collections.unmodifiableMap(_NAME_TO_TYPES);
 	
+	// 수치·불리언의 JSON 변환은 utils.json.JsonScalars(TEXT_TOLERANT)에 맡긴다: 범위 안의 JSON 숫자, 손실 없는 실수(정수
+	// 타입의 3.0), 숫자 문자열("42"), 불리언은 "true"/"false"/"1"/"0"을 받고, 값을 잃는 변환은 거부한다.
+	private static final JsonScalars.Policy JSON_POLICY = JsonScalars.Policy.TEXT_TOLERANT;
+
 	/** {@code xs:boolean} ↔ {@link Boolean} 데이터 타입. */
 	public static class BooleanType extends AbstractDataType<Boolean> implements DataType<Boolean> {
 		private BooleanType() {
@@ -176,9 +182,28 @@ public final class DataTypes {
 			return (value != null) ? "" + DataUtils.asBoolean(value) : null;
 		}
 	
+		/**
+		 * {@code xs:boolean} 값 문자열을 해석한다. {@code "true"}/{@code "false"}(대소문자 무관)와 XSD가 허용하는
+		 * {@code "1"}/{@code "0"}만 받는다. 빈 문자열은 {@code null}이다.
+		 * <p>
+		 * 2026-11-01 이전에는 {@code Boolean.parseBoolean}을 써서 {@code "yes"} 같은 값을 오류 없이 {@code false}로,
+		 * 빈 문자열을 {@code false}로 읽었다.
+		 *
+		 * @throws IllegalArgumentException	그 밖의 문자열인 경우.
+		 */
 		@Override
 		public Boolean parseValueString(String str) {
-			return (str != null) ? Boolean.parseBoolean(str) : null;
+			if ( str == null || str.isEmpty() ) {
+				return null;
+			}
+			String trimmed = str.trim();
+			if ( trimmed.equalsIgnoreCase("true") || trimmed.equals("1") ) {
+				return true;
+			}
+			if ( trimmed.equalsIgnoreCase("false") || trimmed.equals("0") ) {
+				return false;
+			}
+			throw new IllegalArgumentException("Invalid string (not xs:boolean string): " + str);
 		}
 
 		@Override
@@ -197,8 +222,8 @@ public final class DataTypes {
 		}
 
 		@Override
-		public Boolean fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : jnode.asBoolean();
+		protected Boolean convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+			return JsonScalars.toBoolean(jnode, JSON_POLICY);
 		}
 	}
 
@@ -402,8 +427,8 @@ public final class DataTypes {
 		}
 
 		@Override
-		public Float fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : (float)jnode.asDouble();
+		protected Float convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+			return JsonScalars.toFloat(jnode, JSON_POLICY);
 		}
 	}
 
@@ -444,8 +469,8 @@ public final class DataTypes {
 		}
 
 		@Override
-		public Integer fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : jnode.asInt();
+		protected Integer convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+			return JsonScalars.toInt(jnode, JSON_POLICY);
 		}
 	}
 
@@ -486,8 +511,8 @@ public final class DataTypes {
 		}
 
 		@Override
-		public Long fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : jnode.asLong();
+		protected Long convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+			return JsonScalars.toLong(jnode, JSON_POLICY);
 		}
 	}
 
@@ -528,8 +553,8 @@ public final class DataTypes {
 		}
 
 		@Override
-		public Short fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : (short)jnode.asInt();
+		protected Short convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+			return JsonScalars.toShort(jnode, JSON_POLICY);
 		}
 	}
 
@@ -570,8 +595,8 @@ public final class DataTypes {
 		}
 
 		@Override
-		public Double fromJsonNode(JsonNode jnode) {
-			return (jnode == null || jnode.isNull()) ? null : jnode.asDouble();
+		protected Double convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+			return JsonScalars.toDouble(jnode, JSON_POLICY);
 		}
 	}
 
@@ -606,14 +631,15 @@ public final class DataTypes {
 			return value;
 		}
 
+		/**
+		 * 문자열은 그대로, 그 밖의 노드는 JSON 텍스트로 받는다(예: {@code 1} → {@code "1"}, 객체 → {@code "{...}"}).
+		 * <p>
+		 * 다른 타입과 달리 객체·배열도 거부하지 않는다. RPC 태스크가 서버의 출력 JSON(객체일 수 있음)을 문자열 속성에
+		 * 담는 경로가 있기 때문이다.
+		 */
 		@Override
-		public String fromJsonNode(JsonNode jnode) {
-			if ( jnode == null || jnode.isNull() ) {
-				return null;
-			}
-			else {
-				return jnode.isTextual() ? jnode.asText() : jnode.toString();
-			}
+		protected String convertJsonNode(JsonNode jnode) {
+			return jnode.isTextual() ? jnode.textValue() : jnode.toString();
 		}
 	}
 
@@ -678,6 +704,12 @@ public final class DataTypes {
 		@Override
 		public BigDecimal parseValueString(String str) {
 			return (str != null) ? BigDecimalParser.parse(str) : null;
+		}
+
+		@Override
+		protected BigDecimal convertJsonNode(JsonNode jnode) throws JacksonDeserializationException {
+			// 공유 매퍼는 JSON 실수를 double로 읽으므로, 그보다 높은 정밀도가 필요한 값은 JSON 문자열로 보낸다.
+			return JsonScalars.toDecimal(jnode, JSON_POLICY);
 		}
 
 		@Override

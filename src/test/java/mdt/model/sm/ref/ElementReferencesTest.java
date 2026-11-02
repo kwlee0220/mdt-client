@@ -1,20 +1,20 @@
 package mdt.model.sm.ref;
 
-import static org.mockito.Mockito.mock;
-
 import java.io.IOException;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import utils.json.JacksonDeserializationException;
 
 import mdt.model.MDTModelSerDe;
-import mdt.model.instance.MDTInstanceManager;
+import mdt.model.expr.MDTParserException;
 import mdt.model.sm.ref.timeseries.TimeSeriesRecordsReference;
+import mdt.model.sm.value.ElementValues;
 
 /**
  * {@link ElementReferences}의 표현식 파싱 / Json 직렬화 / 활성화 동작에 대한 단위 테스트.
@@ -82,18 +82,25 @@ public class ElementReferencesTest {
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementReferences.parseExpr(null));
 	}
 
-	// --- parseSubmodelReference ---
+	// --- parseSubmodelExpr ---
 
 	@Test
-	public void parseSubmodelReference_idShort() {
-		DefaultSubmodelReference smRef = ElementReferences.parseSubmodelReference("inst:Data");
+	public void parseSubmodelExpr_idShort() {
+		DefaultSubmodelReference smRef = ElementReferences.parseSubmodelExpr("inst:Data");
 		Assertions.assertEquals(DefaultSubmodelReference.ofIdShort("inst", "Data"), smRef);
 	}
 
 	@Test
-	public void parseSubmodelReference_submodelId() {
-		DefaultSubmodelReference smRef = ElementReferences.parseSubmodelReference("submodel:id=mysm");
+	public void parseSubmodelExpr_submodelId() {
+		DefaultSubmodelReference smRef = ElementReferences.parseSubmodelExpr("submodel:id=mysm");
 		Assertions.assertEquals(DefaultSubmodelReference.ofId("mysm"), smRef);
+	}
+
+	@Test
+	public void parseSubmodelExpr_errors() {
+		// 문법 오류는 MDTParserException이다(이전 문서는 IllegalArgumentException이라고 적었다).
+		Assertions.assertThrows(MDTParserException.class, () -> ElementReferences.parseSubmodelExpr("inst"));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementReferences.parseSubmodelExpr(null));
 	}
 
 	// --- parseTimeSeriesRecordsReference ---
@@ -142,8 +149,18 @@ public class ElementReferencesTest {
 
 	@Test
 	public void parseTimeSeries_invalidRangeKey_throws() {
-		Assertions.assertThrows(IllegalArgumentException.class,
+		// 후행 입력도 문법 오류(MDTParserException)다. 2026-11-01 이전에는 IllegalArgumentException이었다.
+		Assertions.assertThrows(MDTParserException.class,
 				() -> ElementReferences.parseExpr("timeseries:inst:Data(bogus=1):"));
+	}
+
+	@Test
+	public void parseExpr_trailingInput_isParserException() {
+		MDTParserException e = Assertions.assertThrows(MDTParserException.class,
+															() -> ElementReferences.parseExpr("inst:Data:a b"));
+		Assertions.assertTrue(e.getMessage().startsWith("Unexpected trailing input at 1:12 - 'b'"), e.getMessage());
+		Assertions.assertThrows(MDTParserException.class, () -> ElementValues.parseExpr("a b"));
+		Assertions.assertThrows(MDTParserException.class, () -> ElementReferences.parseSubmodelExpr("inst:Data x"));
 	}
 
 	// --- Json 직렬화/역직렬화 ---
@@ -156,11 +173,125 @@ public class ElementReferencesTest {
 	}
 
 	@Test
-	public void parseTypedJsonNode_missingType_throws() {
+	public void parseJsonNode_roundTrip() throws IOException {
+		ElementReference ref = DefaultElementReference.newInstance("inst", "Data", "DataInfo.x");
+		Assertions.assertEquals(ref, ElementReferences.parseJsonNode(ref.toJsonNode()));
+	}
+
+	@Test
+	public void parseJsonNode_missingType_throws() {
 		ObjectNode node = MDTModelSerDe.getJsonMapper().createObjectNode();
 		node.put("instanceId", "inst");
 		Assertions.assertThrows(JacksonDeserializationException.class,
-								() -> ElementReferences.parseTypedJsonNode(node));
+								() -> ElementReferences.parseJsonNode(node));
+	}
+
+	/**
+	 * 구현체가 던진 {@link IOException}이 그대로 전달되어야 한다.
+	 * (이전에는 Jackson {@code treeToValue}를 거치면서 {@link IllegalArgumentException}으로 바뀌었다.)
+	 */
+	@Test
+	public void parseJsonNode_missingRequiredField_throwsIOException() throws IOException {
+		ElementReference ref = DefaultElementReference.newInstance("inst", "Data", "DataInfo.x");
+		ObjectNode node = (ObjectNode)ref.toJsonNode();
+		node.remove("elementPath");
+		IOException e = Assertions.assertThrows(IOException.class, () -> ElementReferences.parseJsonNode(node));
+		Assertions.assertTrue(e.getMessage().contains("elementPath"), e.getMessage());
+	}
+
+	/**
+	 * {@code null}은 거부한다. (이전에는 {@code null}과 JSON {@code null} 노드에 대해 예외 없이 {@code null}을 반환했다.)
+	 */
+	@Test
+	public void parseJsonNode_null_throws() {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementReferences.parseJsonNode(null));
+		Assertions.assertThrows(JacksonDeserializationException.class,
+								() -> ElementReferences.parseJsonNode(NullNode.getInstance()));
+	}
+
+	/**
+	 * {@code parseJsonString}은 {@code parseJsonNode}와 같이 동작한다. 이전에는 {@code "null"}이면 {@code null}을
+	 * 돌려주고, 뒤에 붙은 입력을 무시했으며, 오류 메시지에 JSON 전체를 넣었다.
+	 */
+	@Test
+	public void parseJsonString_strict() throws IOException {
+		Assertions.assertThrows(JacksonDeserializationException.class, () -> ElementReferences.parseJsonString("null"));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementReferences.parseJsonString(null));
+		String json = MDTParameterReference.newInstance("inst", "Speed").toJsonString();
+		Assertions.assertThrows(IOException.class, () -> ElementReferences.parseJsonString(json + " garbage"));
+		Assertions.assertThrows(IOException.class, () -> ElementReferences.parseJsonString("{"));
+
+		// 필드 누락 메시지는 필드 이름만 담는다(이전에는 JSON 전체를 담은 IOException).
+		String noPath = "{\"@type\":\"" + DefaultElementReference.SERIALIZATION_TYPE + "\","
+						+ "\"submodelReference\":{\"instanceId\":\"secret-inst\",\"submodelIdShort\":\"Data\"}}";
+		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
+														() -> ElementReferences.parseJsonString(noPath));
+		Assertions.assertTrue(e.getMessage().contains("elementPath"), e.getMessage());
+		Assertions.assertFalse(e.getMessage().contains("secret-inst"), e.getMessage());
+	}
+
+	/**
+	 * 문자열 필드는 JSON 문자열만 받는다. 이전에는 JSON {@code null}을 {@code "null"}로, 숫자를 문자열로 받아
+	 * 오류 없이 참조를 만들었다. 오류 메시지에는 필드 이름만 들어가고 값은 들어가지 않는다.
+	 */
+	@Test
+	public void parseJsonNode_stringFieldRejectsNullAndNumber() throws IOException {
+		ObjectNode node = (ObjectNode)MDTParameterReference.newInstance("secret-inst", "Speed").toJsonNode();
+		node.putNull("instanceId");
+		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
+														() -> ElementReferences.parseJsonNode(node));
+		Assertions.assertTrue(e.getMessage().contains("instanceId"), e.getMessage());
+
+		node.put("instanceId", 123);
+		e = Assertions.assertThrows(JacksonDeserializationException.class, () -> ElementReferences.parseJsonNode(node));
+		Assertions.assertTrue(e.getMessage().contains("instanceId"), e.getMessage());
+		Assertions.assertFalse(e.getMessage().contains("Speed"), e.getMessage());
+
+		ObjectNode elm = (ObjectNode)DefaultElementReference.newInstance("inst", "Data", "DataInfo.x").toJsonNode();
+		elm.put("elementPath", 1);
+		Assertions.assertThrows(JacksonDeserializationException.class, () -> ElementReferences.parseJsonNode(elm));
+	}
+
+	/**
+	 * 중첩된 Submodel 참조의 식별자도 비어 있지 않은 JSON 문자열만 받는다. 이전에는 {@code true}·{@code 42}를
+	 * 문자열로 받아 {@code true:42:x} 참조를 만들었다.
+	 */
+	@Test
+	public void parseJsonNode_nestedSubmodelReferenceIdsMustBeText() throws IOException {
+		String json = "{\"@type\":\"mdt:ref:element\",\"submodelReference\":{\"instanceId\":true,"
+						+ "\"submodelIdShort\":42},\"elementPath\":\"x\"}";
+		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
+														() -> ElementReferences.parseJsonString(json));
+		Assertions.assertTrue(e.getMessage().contains("submodelIdShort"), e.getMessage());
+
+		String blank = "{\"@type\":\"mdt:ref:element\",\"submodelReference\":{\"instanceId\":\" \","
+						+ "\"submodelIdShort\":\"Data\"},\"elementPath\":\"x\"}";
+		e = Assertions.assertThrows(JacksonDeserializationException.class, () -> ElementReferences.parseJsonString(blank));
+		Assertions.assertEquals("invalid field 'instanceId': blank", e.getMessage());
+
+		String missing = "{\"@type\":\"mdt:ref:element\",\"submodelReference\":{\"instanceId\":\"secret-inst\"},"
+						+ "\"elementPath\":\"x\"}";
+		e = Assertions.assertThrows(JacksonDeserializationException.class, () -> ElementReferences.parseJsonString(missing));
+		Assertions.assertFalse(e.getMessage().contains("secret-inst"), e.getMessage());
+
+		// 생성자도 같은 규칙이다.
+		Assertions.assertThrows(IllegalArgumentException.class, () -> DefaultSubmodelReference.ofIdShort("", "Data"));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> DefaultSubmodelReference.ofId(" "));
+	}
+
+	/**
+	 * {@code ordinal}은 JSON 정수만 받는다(직렬화 형식). 이전에는 문자열 {@code "1"}도 받았다.
+	 */
+	@Test
+	public void parseJsonNode_opvarOrdinalMustBeInt() throws IOException {
+		ElementReference ref = ElementReferences.parseExpr("opvar:inst:AddAndSleep:Operation:out:1");
+		Assertions.assertEquals(ref, ElementReferences.parseJsonNode(ref.toJsonNode()));
+
+		ObjectNode node = (ObjectNode)ref.toJsonNode();
+		node.put("ordinal", "1");
+		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
+														() -> ElementReferences.parseJsonNode(node));
+		Assertions.assertTrue(e.getMessage().contains("ordinal"), e.getMessage());
 	}
 
 	// --- 공유 "mdt:ref:param" 타입의 Json 디스패치 (parameterExpr 기준 분기) ---
@@ -201,23 +332,5 @@ public class ElementReferencesTest {
 									MDTParameterReference.newInstance("inst", "X").toJsonString());
 		Assertions.assertTrue(coll instanceof MDTParameterCollectionReference);
 		Assertions.assertTrue(param instanceof MDTParameterReference);
-	}
-
-	// --- activate ---
-
-	@Test
-	public void activate_nullArguments_throw() {
-		MDTInstanceManager manager = mock(MDTInstanceManager.class);
-		ElementReference ref = DefaultElementReference.newInstance("inst", "Data", "x");
-		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementReferences.activate(null, manager));
-		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementReferences.activate(ref, null));
-	}
-
-	@Test
-	public void activate_nonMdtElementReference_throws() {
-		ElementReference ref = mock(ElementReference.class);
-		MDTInstanceManager manager = mock(MDTInstanceManager.class);
-		Assertions.assertThrows(IllegalArgumentException.class,
-								() -> ElementReferences.activate(ref, manager));
 	}
 }

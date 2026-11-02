@@ -10,8 +10,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import utils.Preconditions;
+import utils.json.JacksonDeserializationException;
+import utils.json.JacksonUtils;
 
-import mdt.model.MDTModelSerDe;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.value.References;
 
@@ -134,16 +135,16 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	 *
 	 * @param jnode	{@code submodelReference}, {@code elementPath} 필드를 담은 Json 노드.
 	 * @return 복원된 {@link DefaultElementReference} 객체.
+	 * @throws JacksonDeserializationException	필수 필드가 없거나 JSON {@code null}이거나, {@code elementPath}가
+	 * 											JSON 문자열이 아닌 경우.
 	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
 	 * @throws IllegalArgumentException	{@code submodelReference}를 해석할 수 없는 경우.
 	 */
 	public static DefaultElementReference deserializeFields(JsonNode jnode) throws IOException {
-		JsonNode smNode = checkJsonField(jnode, FIELD_SUBMODEL_REF);
-		MDTSubmodelReference smRef = MDTModelSerDe.readValue(smNode, MDTSubmodelReference.class);
+		JsonNode smNode = JacksonUtils.getField(jnode, FIELD_SUBMODEL_REF);
+		MDTSubmodelReference smRef = DefaultSubmodelReference.parseJson(smNode);
 
-		JsonNode elementPathNode = checkJsonField(jnode, FIELD_ELEMENT_PATH);
-		
-		String idShortPath = elementPathNode.asText();
+		String idShortPath = JacksonUtils.getTextField(jnode, FIELD_ELEMENT_PATH);
 		return DefaultElementReference.newInstance(smRef, idShortPath);
 	}
 	

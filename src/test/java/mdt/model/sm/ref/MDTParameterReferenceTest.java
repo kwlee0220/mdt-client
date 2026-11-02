@@ -220,6 +220,22 @@ public class MDTParameterReferenceTest {
 								ref.getIdShortPathString());
 	}
 
+	/**
+	 * 배열 접근 뒤에 필드 접근이 오면 '['에서 잘라야 한다. 이전에는 '.'을 먼저 찾아 parameter id를
+	 * {@code "Samples[0]"}로 조회했다.
+	 */
+	@Test
+	public void buildIdShortPath_bracketThenDotSubPath() {
+		MDTInstance instance = mockInstance(MDTAssetType.Machine);
+		ParameterCollection paramColl = mock(ParameterCollection.class);
+		when(instance.getParameterCollection()).thenReturn(paramColl);
+		when(paramColl.getParameterIndex("Samples")).thenReturn(1);
+
+		MDTParameterReference ref = activate("inst", "Samples[0].value", instance);
+		Assertions.assertEquals("DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue[0].value",
+								ref.getIdShortPathString());
+	}
+
 	@Test
 	public void buildIdShortPath_nullAssetType_throwsModelValidation() {
 		MDTInstance instance = mockInstance(null);

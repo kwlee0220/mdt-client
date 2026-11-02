@@ -396,7 +396,7 @@ public class Ros2SerDes {
 			
 			var valueMap = KeyValueFStream.from(postions)
 											.filterValue(v -> v != null)
-											.mapValue((k,v) -> (ElementValue)PropertyValue.FLOAT(v))
+											.mapValue(v -> (ElementValue)PropertyValue.FLOAT(v))
 											.toMap(new LinkedHashMap<>());
 			return new ElementCollectionValue(valueMap);
 		}
@@ -406,7 +406,7 @@ public class Ros2SerDes {
 			if ( elem instanceof ElementCollectionValue smcv ) {
 				Map<String,Float> positions = KeyValueFStream.from(smcv.getFieldMap())
 																.filterValue(v -> v instanceof FloatPropertyValue)
-																.mapValue((k,v) -> ((FloatPropertyValue)v).toValueObject())
+																.mapValue(v -> ((FloatPropertyValue)v).toValueObject())
 																.toMap(new LinkedHashMap<>());
 				return new JointStates(positions, Map.of(), Map.of());
 			}
@@ -463,7 +463,7 @@ public class Ros2SerDes {
 		public ElementCollectionValue serializeToElementValue(Map<String,Float> joints) throws IOException {
 			var valueMap = KeyValueFStream.from(joints)
 											.filterValue(v -> v != null)
-											.mapValue((k,v) -> (ElementValue)PropertyValue.FLOAT(v))
+											.mapValue(v -> (ElementValue)PropertyValue.FLOAT(v))
 											.toMap(new LinkedHashMap<>());
 			return new ElementCollectionValue(valueMap);
 		}
@@ -473,7 +473,7 @@ public class Ros2SerDes {
 			if ( elem instanceof ElementCollectionValue smcv ) {
 				Map<String,Float> positions = KeyValueFStream.from(smcv.getFieldMap())
 																.filterValue(v -> v instanceof FloatPropertyValue)
-																.mapValue((k,v) -> ((FloatPropertyValue)v).toValueObject())
+																.mapValue(v -> ((FloatPropertyValue)v).toValueObject())
 																.toMap(new LinkedHashMap<>());
 				return positions;
 			}

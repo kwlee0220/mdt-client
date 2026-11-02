@@ -12,7 +12,6 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -131,8 +130,7 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 	private Map<String,String> collectOutput() throws IOException {
 		return FStream.from(m_fileArguments)
 						.filter(FileArgument::isOutput)
-						.mapOrThrow(fa -> KeyValue.of(fa.getName(), fa.read()))
-						.toKeyValueStream(Function.identity())
+						.mapToKeyValueOrThrow(fa -> KeyValue.of(fa.getName(), fa.read()))
 						.toMap();
 	}
 	

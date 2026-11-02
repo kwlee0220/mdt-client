@@ -1,7 +1,6 @@
 package mdt.model.sm;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -159,19 +158,14 @@ public class OperationSubmodelService implements SubmodelService {
 		
 		public List<OperationVariable> toOperationVariables() {
 			return KeyValueFStream.from(m_argMap)
-							.map((argId, argValue) -> {
-								try {
-									JsonNode jnode = MDTModelSerDe.toJsonNode(argValue);
-									SubmodelElement copied = MDTModelSerDe.readValue(jnode, SubmodelElement.class);
-									copied.setIdShort(argId);
-									
-									return (OperationVariable)new DefaultOperationVariable.Builder()
-																		.value(copied)
-																		.build();
-								}
-								catch ( IOException e ) {
-									throw new UncheckedIOException(e);
-								}
+							.mapOrThrow((argId, argValue) -> {
+								JsonNode jnode = MDTModelSerDe.toJsonNode(argValue);
+								SubmodelElement copied = MDTModelSerDe.readValue(jnode, SubmodelElement.class);
+								copied.setIdShort(argId);
+								
+								return (OperationVariable)new DefaultOperationVariable.Builder()
+																	.value(copied)
+																	.build();
 							})
 							.toList();
 		}

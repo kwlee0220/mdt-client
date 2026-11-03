@@ -1,25 +1,10 @@
 package mdt.model.timeseries;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-
-import org.eclipse.digitaltwin.aas4j.v3.model.OperationResult;
-import org.eclipse.digitaltwin.aas4j.v3.model.OperationVariable;
 import org.eclipse.digitaltwin.aas4j.v3.model.Submodel;
-import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElementCollection;
 
-import utils.Throwables;
-import utils.stream.FStream;
-
-import mdt.client.operation.AASOperationClient;
 import mdt.model.sm.data.Data;
 import mdt.model.sm.entity.SMCollectionField;
 import mdt.model.sm.entity.SubmodelEntity;
-import mdt.model.sm.value.PropertyValue;
-
-import ch.qos.logback.core.util.Duration;
 
 
 /**

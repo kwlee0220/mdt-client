@@ -665,7 +665,7 @@ gradle test --tests 'mdt.workflow.model.ArgumentSpecRoundTripTest'
 | 위치 | 현재 동작과 사용 시 영향 |
 | --- | --- |
 | `HttpMDTManager.getService()` | 인스턴스·Shell·Submodel 조회 분기만 구현. 범용 계약과 달리 미지원 타입에 예외 발생. Workflow는 전용 getter 사용 |
-| `HttpMDTManager.shutdown()` | 요청 코드가 주석 처리되어 실제 종료 요청을 보내지 않음 |
+| `HttpMDTManager.shutdown()` | mdt-manager가 원격 종료를 제공하지 않아 `UnsupportedOperationException` 발생 |
 | `HttpMDTInstanceClient.start(..., listener)` | listener를 받는 오버로드가 null 반환. 두 인자 start와 별도 감시 경로 사용 |
 | `HttpWorkflowManager` | ID 목록·상태 전용 메서드 미구현. 구현된 조회 API 이용 |
 | `HttpOperationClient` | 폐기 예정이며 현재 RPC 서버 계약과 불일치 |

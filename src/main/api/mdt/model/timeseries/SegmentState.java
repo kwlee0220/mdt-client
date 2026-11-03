@@ -8,7 +8,7 @@ package mdt.model.timeseries;
  */
 public enum SegmentState {
 	/** 레코드가 계속 추가되고 있는 진행 중 상태. */
-	IN_PREGRESS,
+	IN_PROGRESS,
 	/** 레코드 추가가 끝나 완료된 상태. */
 	COMPLETED,
 }

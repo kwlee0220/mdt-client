@@ -34,8 +34,7 @@ public class MDTInfoTest {
 		SubmodelElementCollection smc = info.newSubmodelElement();
 		String field;
 
-		field = SubmodelUtils.getStringFieldById(smc, "IdShort");
-		Assertions.assertEquals("mdt-info", field);
+		Assertions.assertEquals("mdt-info", smc.getIdShort());
 		field = SubmodelUtils.getStringFieldById(smc, "AssetName");
 		Assertions.assertEquals("inspector-1", field);
 		field = SubmodelUtils.getStringFieldById(smc, "AssetType");
@@ -43,7 +42,7 @@ public class MDTInfoTest {
 		field = SubmodelUtils.getStringFieldById(smc, "Status");
 		Assertions.assertEquals(MDTAssetStatus.Created.name(), field);
 		
-		SubmodelUtils.getFieldById(smc, "IdShort", Property.class).setValue("idShort2");
+		smc.setIdShort("idShort2");
 		SubmodelUtils.getFieldById(smc, "AssetName", Property.class).setValue("name2");
 		SubmodelUtils.getFieldById(smc, "AssetType", Property.class).setValue(MDTAssetType.Process.name());
 		SubmodelUtils.getFieldById(smc, "Status", Property.class).setValue(MDTAssetStatus.Executed.name());

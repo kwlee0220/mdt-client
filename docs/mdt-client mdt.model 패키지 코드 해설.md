@@ -351,7 +351,7 @@ IDTA TimeSeries 서브모델 템플릿을 표현하는 인터페이스다. seman
 | `InternalSegment` | 레코드를 내부에 가진 구간 | `getRecords()` |
 | `ExternalSegment` | 파일에 저장된 구간 | `getData()`(AAS `File`) |
 | `LinkedSegment` | 외부 저장소에 있는 구간 | `getEndpoint()`, `getQuery()` |
-| `SegmentState` | 구간 상태 enum | `IN_PREGRESS`, `COMPLETED` |
+| `SegmentState` | 구간 상태 enum | `IN_PROGRESS`, `COMPLETED` |
 | `TimeSeriesOperationReference` | 연산 요소를 감싼 `MDTElementReference` | `read()`가 입력 `Timespan`(DATE\_TIME Range)으로 연산을 실행한다. 나머지는 미지원이거나 `null` 반환 |
 
 구현은 `src/main/java/mdt/model/timeseries`의 `DefaultTimeSeries`, `DefaultMetadata`, `DefaultRecord(s)`, `DefaultSegment(s)`, `DefaultInternalSegment`, `DefaultLinkedSegment`다. `ExternalSegment`의 구현은 없다.
@@ -440,4 +440,4 @@ Map<String,ElementValue> outputs = sim.run(Map.of("Speed", speed),
 - **구현 없음**: `Shape`/`ShapeInfo`, `ExternalSegment`.
 - **연결되지 않은 타입**: `StatusChangedListener`는 등록 메서드가 어느 인터페이스에도 없다. `@ReferenceField`는 변환 코드가 없고, `@SMListField.orderRelevant`는 읽히지 않는다. `DependencyType`과 `NamedValueType`은 저장소들에서 참조하는 곳이 없다.
 - **주석 처리된 필드**: `Equipment`(약 14개), `Operation`(시작·종료 시각), `Line`(BOM·품목·라우팅 목록), `AIInfo.getModel` 등.
-- **명명**: `SegmentState.IN_PREGRESS`(오타), `Shape.getSimulationInfo()`가 `ShapeInfo`를 반환, `Segment.getState()`가 `SegmentState`가 아닌 `String`을 반환.
+- **명명**: `Shape.getSimulationInfo()`가 `ShapeInfo`를 반환, `Segment.getState()`가 `SegmentState`가 아닌 `String`을 반환.

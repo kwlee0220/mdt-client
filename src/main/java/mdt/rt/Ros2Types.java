@@ -3,6 +3,9 @@ package mdt.rt;
 import java.util.Map;
 
 /**
+ * MDT에서 사용하는 ROS2 메시지 타입들을 Java record로 정의한다.
+ * <p>
+ * 각 record와 JSON/{@link mdt.model.sm.value.ElementValue} 사이의 변환은 {@link Ros2SerDes}가 제공한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -11,10 +14,47 @@ public class Ros2Types {
 		throw new AssertionError("Should not be called: " + getClass());
 	}
 	
+	/**
+	 * 메시지 header. (ROS2 {@code std_msgs/Header}에 해당)
+	 *
+	 * @param stamp		시각. epoch 기준 나노초.
+	 * @param frame_id	좌표계(frame) 식별자. 지정되지 않은 경우 {@code null}.
+	 */
 	public static final record Header(long stamp, String frame_id) {}
+
+	/**
+	 * 3차원 위치. (ROS2 {@code geometry_msgs/Point}에 해당)
+	 *
+	 * @param x	x 좌표.
+	 * @param y	y 좌표.
+	 * @param z	z 좌표.
+	 */
 	public static final record Position(float x, float y, float z) {}
+
+	/**
+	 * 쿼터니언으로 표현된 방향. (ROS2 {@code geometry_msgs/Quaternion}에 해당)
+	 *
+	 * @param x	x 성분.
+	 * @param y	y 성분.
+	 * @param z	z 성분.
+	 * @param w	w 성분.
+	 */
 	public static final record Orientation(float x, float y, float z, float w) {}
+
+	/**
+	 * 위치와 방향으로 구성된 자세. (ROS2 {@code geometry_msgs/Pose}에 해당)
+	 *
+	 * @param position		위치.
+	 * @param orientation	방향.
+	 */
 	public final record Pose(Position position, Orientation orientation) { }
+
+	/**
+	 * header가 붙은 자세. (ROS2 {@code geometry_msgs/PoseStamped}에 해당)
+	 *
+	 * @param header	메시지 header.
+	 * @param pose		자세.
+	 */
 	public static final record PoseStamped(Header header, Pose pose) {}
 
 	/**

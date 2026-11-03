@@ -16,10 +16,18 @@ import mdt.model.sm.value.ElementValue;
 import mdt.model.sm.value.ElementValues;
 
 /**
+ * TimeSeries 서브모델의 {@code ReadRecordsByRange} 연산을 호출하여 반환된 레코드를 출력하는
+ * 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestReadRecordsByRangeOperation {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		String id = AASUtils.encodeBase64UrlSafe("https://www.samcheon.com/mdt/Welder/sm/TimeSeries/WelderAmpereLog");
 		String url = String.format("https://192.168.0.7:19042/api/v3.0/submodels/%s", id);

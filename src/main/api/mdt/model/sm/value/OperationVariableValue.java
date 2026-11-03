@@ -17,6 +17,11 @@ import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
 /**
+ * AAS {@link Operation}의 input/output/inoutput 변수 값 목록을 표현하는 클래스.
+ * <p>
+ * 값 객체({@link #toValueObject()})와 value-only JSON은 {@code inputs}/{@code outputs}/{@code inoutputs}
+ * 필드에 각 변수 값 목록을 가진 객체이다. polymorphic JSON의 타입 식별자는 {@value #SERIALIZATION_TYPE}이며,
+ * 이 때 각 필드는 {@link ElementListValue}의 polymorphic JSON으로 직렬화된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -25,6 +30,16 @@ public final class OperationVariableValue extends AbstractElementValue {
     private final List<ElementValue> m_outputValues;
     private final List<ElementValue> m_inoutputValues;
 
+	/**
+	 * 주어진 input/output/inoutput 변수 값 목록으로 {@code OperationVariableValue} 객체를 생성한다.
+	 * <p>
+	 * 목록은 복사되지 않고 그대로 보관된다.
+	 *
+	 * @param inValues		input 변수 값 목록.
+	 * @param outValues		output 변수 값 목록.
+	 * @param inoutValues	inoutput 변수 값 목록.
+	 * @throws IllegalArgumentException	인자 중 {@code null}이 있는 경우.
+	 */
     public OperationVariableValue(List<ElementValue> inValues, List<ElementValue> outValues,
     								List<ElementValue> inoutValues) {
 		Preconditions.checkNotNullArgument(inValues, "inValues is null");
@@ -36,14 +51,29 @@ public final class OperationVariableValue extends AbstractElementValue {
     	m_inoutputValues = inoutValues;
     }
 
+	/**
+	 * input 변수 값 목록을 반환한다.
+	 *
+	 * @return	input 변수 값 목록.
+	 */
 	public List<ElementValue> getInputValues() {
 		return m_inputValues;
 	}
 
+	/**
+	 * output 변수 값 목록을 반환한다.
+	 *
+	 * @return	output 변수 값 목록.
+	 */
 	public List<ElementValue> getOutputValues() {
 		return m_outputValues;
 	}
 
+	/**
+	 * inoutput 변수 값 목록을 반환한다.
+	 *
+	 * @return	inoutput 변수 값 목록.
+	 */
 	public List<ElementValue> getInoutputValues() {
 		return m_inoutputValues;
 	}
@@ -147,6 +177,7 @@ public final class OperationVariableValue extends AbstractElementValue {
 											proto.m_inoutputValues));
 	}
 
+	/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 	public static final String SERIALIZATION_TYPE = "mdt:value:opvars";
 	private static final String FIELD_INPUT_VARIABLES = "inputs";
 	private static final String FIELD_OUTPUT_VARIABLES = "outputs";
@@ -157,6 +188,16 @@ public final class OperationVariableValue extends AbstractElementValue {
 		return SERIALIZATION_TYPE;
 	}
 
+	/**
+	 * polymorphic JSON의 {@code value} 하위 노드로부터 {@code OperationVariableValue}를 생성한다.
+	 * <p>
+	 * {@code inputs}/{@code outputs}/{@code inoutputs} 필드는 각각 {@link ElementListValue}의 polymorphic
+	 * JSON이어야 하며, 없는 필드는 빈 리스트로 간주된다. {@link ElementValues}의 역직렬화 등록부에서 사용된다.
+	 *
+	 * @param vnode	JSON 객체 노드.
+	 * @return	생성된 {@code OperationVariableValue} 객체.
+	 * @throws IOException	변수 목록 필드를 역직렬화할 수 없는 경우.
+	 */
 	public static OperationVariableValue deserializeValue(JsonNode vnode) throws IOException {
 		return new OperationVariableValue(deserializeVariables(vnode, FIELD_INPUT_VARIABLES),
 											deserializeVariables(vnode, FIELD_OUTPUT_VARIABLES),

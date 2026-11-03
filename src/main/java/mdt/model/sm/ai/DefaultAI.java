@@ -9,6 +9,10 @@ import mdt.model.sm.entity.SubmodelEntity;
 
 
 /**
+ * {@link AI} Submodel의 기본 구현 엔티티.
+ * <p>
+ * {@code SubModelInfo}({@link DefaultSubModelInfo})와 {@code AIInfo}({@link DefaultAIInfo})
+ * SubmodelElementCollection을 필드로 갖는다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -19,6 +23,12 @@ public class DefaultAI extends SubmodelEntity implements AI {
 	@SMCollectionField(idShort="AIInfo")
 	private DefaultAIInfo AIInfo;
 	
+	/**
+	 * 주어진 AI Submodel로부터 {@link DefaultAI} 객체를 생성한다.
+	 *
+	 * @param submodel	AI Submodel.
+	 * @return	생성된 {@link DefaultAI} 객체.
+	 */
 	public static DefaultAI from(Submodel submodel) {
 		DefaultAI AI = new DefaultAI();
 		AI.updateFromAasModel(submodel);
@@ -26,6 +36,9 @@ public class DefaultAI extends SubmodelEntity implements AI {
 		return AI;
 	}
 
+	/**
+	 * semanticId가 {@link AI#SEMANTIC_ID_REFERENCE}로 설정된 빈 AI Submodel 엔티티를 생성한다.
+	 */
 	public DefaultAI() {
 		setSemanticId(SEMANTIC_ID_REFERENCE);
 	}
@@ -34,6 +47,11 @@ public class DefaultAI extends SubmodelEntity implements AI {
 		return this.subModelInfo;
 	}
 	
+	/**
+	 * Submodel 정보를 설정한다.
+	 *
+	 * @param subModelInfo	Submodel 정보.
+	 */
 	public void setSubModelInfo(SubModelInfo subModelInfo) {
 		this.subModelInfo = subModelInfo;
 	}
@@ -42,6 +60,11 @@ public class DefaultAI extends SubmodelEntity implements AI {
 		return this.AIInfo;
 	}
 	
+	/**
+	 * AI 정보를 설정한다.
+	 *
+	 * @param AIInfo	AI 정보.
+	 */
 	public void setAIInfo(DefaultAIInfo AIInfo) {
 		this.AIInfo = AIInfo;
 	}

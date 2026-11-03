@@ -107,15 +107,39 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 	public static LiteralArgument literal(ElementValue value) {
 		return new LiteralArgument(value);
 	}
+	/**
+	 * 정수 값을 {@link PropertyValue#INTEGER(Integer)}로 감싼 리터럴 인자를 만든다.
+	 *
+	 * @param value	인자 값.
+	 * @return	리터럴 인자.
+	 */
 	public static LiteralArgument literal(Integer value) {
 		return literal(PropertyValue.INTEGER(value));
 	}
+	/**
+	 * 실수 값을 {@link PropertyValue#FLOAT(Float)}로 감싼 리터럴 인자를 만든다.
+	 *
+	 * @param value	인자 값.
+	 * @return	리터럴 인자.
+	 */
 	public static LiteralArgument literal(Float value) {
 		return literal(PropertyValue.FLOAT(value));
 	}
+	/**
+	 * 실수 값을 {@link PropertyValue#DOUBLE(Double)}로 감싼 리터럴 인자를 만든다.
+	 *
+	 * @param value	인자 값.
+	 * @return	리터럴 인자.
+	 */
 	public static LiteralArgument literal(Double value) {
 		return literal(PropertyValue.DOUBLE(value));
 	}
+	/**
+	 * 문자열 값을 {@link PropertyValue#STRING(String)}로 감싼 리터럴 인자를 만든다.
+	 *
+	 * @param value	인자 값.
+	 * @return	리터럴 인자.
+	 */
 	public static LiteralArgument literal(String value) {
 		return literal(PropertyValue.STRING(value));
 	}
@@ -259,11 +283,18 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 	 * 불러야 한다.
 	 */
 	public static final class ReferenceArgument extends TaskArgument {
+		/** JSON 직렬화 시 {@code @type} 필드에 기록되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:argument:reference";
 		private static final String FIELD_REFERENCE = "reference";
 
 		private final MDTElementReference m_ref;
 
+		/**
+		 * 주어진 참조를 감싼 인자를 만든다.
+		 *
+		 * @param ref	MDT 요소 참조.
+		 * @throws IllegalArgumentException	{@code ref}가 {@code null}인 경우.
+		 */
 		public ReferenceArgument(MDTElementReference ref) {
 			Preconditions.checkNotNullArgument(ref, "ref must not be null");
 			m_ref = ref;
@@ -311,9 +342,9 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 		}
 		
 		/**
-		 * 참조가 가리키는 요소를 주어진 요소로 바꾼다.
+		 * 참조가 가리키는 요소의 값을 주어진 요소의 값으로 바꾼다({@link ElementReference#update(SubmodelElement)}).
 		 *
-		 * @param sme	새 요소.
+		 * @param sme	새 값을 담은 요소.
 		 * @throws IOException	쓰는 중 오류가 발생한 경우.
 		 */
 		public void update(SubmodelElement sme) throws IOException {
@@ -389,11 +420,18 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 	 * 고정된 값을 갖는 인자.
 	 */
 	public static final class LiteralArgument extends TaskArgument {
+		/** JSON 직렬화 시 {@code @type} 필드에 기록되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:argument:literal";
 		private static final String FIELD_VALUE = "value";
 
 		private final ElementValue m_value;
 
+		/**
+		 * 주어진 값을 갖는 인자를 만든다. 값은 복사하지 않고 그대로 보관한다.
+		 *
+		 * @param value	인자 값.
+		 * @throws IllegalArgumentException	{@code value}가 {@code null}인 경우.
+		 */
 		public LiteralArgument(ElementValue value) {
 			Preconditions.checkNotNullArgument(value, "value must not be null");
 			
@@ -484,6 +522,9 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends JsonNodeStdDeserializer<TaskArgument> {
+		/**
+		 * {@link TaskArgument} 등록부를 사용하는 deserializer를 만든다.
+		 */
 		public Deserializer() {
 			super(TaskArgument.class, DESERIALIZER);
 		}

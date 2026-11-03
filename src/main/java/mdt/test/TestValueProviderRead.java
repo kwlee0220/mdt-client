@@ -15,10 +15,17 @@ import mdt.model.AASUtils;
 import mdt.model.sm.SubmodelUtils;
 
 /**
+ * Data 서브모델의 파라미터 값을 반복 조회하여 평균 읽기 시간을 측정하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestValueProviderRead {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		int port = 20001;
 		String assetId = "KRCW-01EATT018";

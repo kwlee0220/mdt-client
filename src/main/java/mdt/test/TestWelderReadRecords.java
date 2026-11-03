@@ -20,10 +20,18 @@ import mdt.model.timeseries.DefaultRecords;
 import mdt.model.timeseries.Record;
 
 /**
+ * welder 인스턴스의 WelderAmpereLog 서브모델 {@code ReadRecords} 연산을 시간 구간으로 호출하여
+ * 레코드를 출력하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestWelderReadRecords {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		HttpMDTManager mgr = HttpMDTManager.connect("http://localhost:12985");
 		HttpMDTInstanceManager mdt = mgr.getInstanceManager();

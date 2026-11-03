@@ -9,6 +9,11 @@ import mdt.model.ResourceNotFoundException;
 
 
 /**
+ * AAS Registry에 등록된 {@link AssetAdministrationShellDescriptor}들을 조회/등록/갱신/해제하는
+ * 인터페이스를 정의한다.
+ * <p>
+ * {@link AssetAdministrationShellRegistry}와 같은 역할을 하며, 메소드 이름 체계만 다르다
+ * ({@code add}/{@code update}/{@code remove}).
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -30,14 +35,19 @@ public interface ShellRegistry {
 	public AssetAdministrationShellDescriptor getAssetAdministrationShellDescriptorById(String shellId)
 		throws ResourceNotFoundException;
 
+	/**
+	 * 주어진 idShort를 갖는 모든 {@link AssetAdministrationShellDescriptor}들을 반환한다.
+	 *
+	 * @param idShort	검색할 AssetAdministrationShell의 idShort.
+	 * @return	idShort가 일치하는 AssetAdministrationShellDescriptor 리스트.
+	 */
     public List<AssetAdministrationShellDescriptor> getAllAssetAdministrationShellDescriptorsByIdShort(String idShort);
 	
 	/**
-	 * 주어진 전역 자산 식별자에 해당하는 {@link AssetAdministrationShellDescriptor}를 반환한다.
+	 * 주어진 전역 자산 식별자에 해당하는 {@link AssetAdministrationShellDescriptor}들을 반환한다.
 	 * 
 	 * @param assetId		자산 식별자.
-	 * @return AssetAdministrationShellDescriptor 객체
-	 * @throws ResourceNotFoundException	식별자에 해당하는 등록 AssetAdministrationShellDescriptor가 없는 경우.
+	 * @return 자산 식별자가 일치하는 AssetAdministrationShellDescriptor 리스트.
 	 */
 	public List<AssetAdministrationShellDescriptor> getAllAssetAdministrationShellDescriptorByAssetId(String assetId);
 	

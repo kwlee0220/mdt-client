@@ -51,7 +51,8 @@ import mdt.model.sm.value.PropertyValue.StringPropertyValue;
  *       값 객체/JSON으로부터 {@link ElementValue}를 생성({@link #fromValueObject(Object, ElementValue)},
  *       {@link #parseValueJsonNode(JsonNode, ElementValue)},
  *       {@link #parseValueJsonString(String, ElementValue)}).</li>
- *   <li>{@link ElementValue}를 {@link SubmodelElement}에 반영({@link #update(SubmodelElement, ElementValue)}).</li>
+ *   <li>{@link ElementValue}를 {@link SubmodelElement}에 반영
+ *       ({@link #update(SubmodelElement, ElementValue)}).</li>
  *   <li>{@code @type}/{@code value} 형태의 polymorphic JSON 직렬화({@link #serializeJson})·
  *       역직렬화({@link #parseJsonNode(JsonNode)}/{@link #parseJsonString(String)}). Jackson 연동용
  *       {@link Serializer}/{@link Deserializer}가 이를 사용한다.</li>
@@ -231,9 +232,10 @@ public final class ElementValues {
 	 * 원격 접근 등으로 비용이 큰 경우를 위해 실제로 필요한 경우(= {@code @type} 필드가 없는 경우)에만
 	 * {@code protoSupplier}를 호출한다. {@code @type}과 {@code proto}의 타입이 같은지 확인하지 않는 것도 같다.
 	 * <p>
-	 * 2026-11-01 이전 이름은 {@code parseGeneralJsonNode}이다(별칭 없이 바꿈). 또 그 이전에는 {@code @type}을 {@code asText()}로 읽어 숫자(예: {@code 5})도 타입 이름으로 받았고,
-	 * 빈 문자열은 '없음'으로 보았으며, {@code mdt:value:}로 시작하지 않는 타입은 {@code IllegalArgumentException}으로
-	 * 거부했다(같은 접두어의 미등록 타입은 {@code JacksonDeserializationException}이어서 예외 계열이 달랐다).
+	 * 2026-11-01 이전 이름은 {@code parseGeneralJsonNode}이다(별칭 없이 바꿈). 또 그 이전에는 {@code @type}을 {@code asText()}로
+	 * 읽어 숫자(예: {@code 5})도 타입 이름으로 받았고, 빈 문자열은 '없음'으로 보았으며, {@code mdt:value:}로 시작하지 않는 타입은
+	 * {@code IllegalArgumentException}으로 거부했다(같은 접두어의 미등록 타입은
+	 * {@code JacksonDeserializationException}이어서 예외 계열이 달랐다).
 	 *
 	 * @param jnode			파싱할 JSON 노드.
 	 * @param protoSupplier	{@code @type} 필드가 없는 경우 참조할 {@link ElementValue} 공급자.
@@ -422,9 +424,10 @@ public final class ElementValues {
 	 * Java 숫자 값으로 {@link SubmodelElement}를 갱신한다.
 	 * <p>
 	 * 값의 타입에 맞는 {@link PropertyValue}({@code Integer}→{@code xs:int}, {@code Long}→{@code xs:long},
-	 * {@code Short}·{@code Byte}→{@code xs:short}, {@code Float}→{@code xs:float}, {@code Double}→{@code xs:double},
-	 * {@code BigDecimal}·{@code BigInteger}·그 밖→{@code xs:decimal})로 감싸 {@link #update(SubmodelElement, ElementValue)}에
-	 * 넘긴다. 따라서 Property의 데이터 타입과 다르면 숫자끼리의 손실 없는 변환만 허용된다(예: {@code 5} → {@code xs:long}).
+	 * {@code Short}·{@code Byte}→{@code xs:short}, {@code Float}→{@code xs:float},
+	 * {@code Double}→{@code xs:double}, {@code BigDecimal}·{@code BigInteger}·그 밖→{@code xs:decimal})로 감싸
+	 * {@link #update(SubmodelElement, ElementValue)}에 넘긴다. 따라서 Property의 데이터 타입과 다르면 숫자끼리의
+	 * 손실 없는 변환만 허용된다(예: {@code 5} → {@code xs:long}).
 	 * {@code null}이면 속성 값을 비운다.
 	 * <p>
 	 * 2026-11-01 이전에는 {@code update(SubmodelElement, Integer|Float|Double)} overload였다(별칭 없이 바꿈).
@@ -493,6 +496,9 @@ public final class ElementValues {
 	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends JsonNodeStdDeserializer<ElementValue> {
+		/**
+		 * {@link ElementValues}의 타입 등록부를 사용하는 deserializer를 생성한다.
+		 */
 		public Deserializer() {
 			super(ElementValue.class, DESERIALIZER);
 		}

@@ -6,6 +6,7 @@ import mdt.model.ResourceAlreadyExistsException;
 import mdt.model.ResourceNotFoundException;
 
 /**
+ * 워크플로우 모델({@link WorkflowModel})의 등록, 조회, 삭제를 관리하는 인터페이스.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -32,7 +33,7 @@ public interface WorkflowModelManager {
 	 * 만일 동일한 식별자를 갖는 워크플로우 모델이 이미 존재하는 경우에는 예외가 발생된다.
 	 * 
 	 * @param desc		추가할 워크플로우 모델 등록정보.
-	 * @return	추가된 워크플로우 모델 식별자.
+	 * @return	추가된 워크플로우 모델.
 	 * @throws ResourceAlreadyExistsException	동일한 식별자를 갖는 워크플로우 모델이 이미 존재하는 경우.
 	 */
 	public WorkflowModel addWorkflowModel(WorkflowModel desc) throws ResourceAlreadyExistsException;
@@ -44,7 +45,7 @@ public interface WorkflowModelManager {
 	 * 그렇지 않은 경우에는 새로운 워크플로우 모델로 추가된다.
 	 * 
 	 * @param desc		추가 또는 갱신할 워크플로우 모델 등록정보.
-	 * @return		추가 또는 갱신된 워크플로우 모델 식별자.
+	 * @return		추가 또는 갱신된 워크플로우 모델.
 	 */
 	public WorkflowModel addOrReplaceWorkflowModel(WorkflowModel desc);
 

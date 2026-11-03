@@ -40,7 +40,7 @@ import mdt.model.instance.MDTInstanceStatus;
  * 주요 동작 옵션:
  * <ul>
  *   <li>{@link #pollInterval(Duration)}: 인스턴스 상태 폴링 주기.
- * 		{@code null}이면 서버 측에서 인스턴스가 시작 작업이 종료될 때까지 대기한다.</li>
+ * 		{@code null}이면 시작 요청 후 시작 완료를 기다리지 않는다 (재귀 모드 제외).</li>
  *   <li>{@link #startTimeout(Duration)}: 단일 인스턴스 시작 최대 대기 시간.</li>
  *   <li>{@link #concurrency(int)}: 동시에 시작할 수 있는 인스턴스 수.</li>
  *   <li>{@link #recursive(boolean)}: 시작된 인스턴스의 종속 인스턴스들도 재귀적으로 시작.</li>
@@ -80,7 +80,7 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	 * <p>
 	 * 기본 설정은 다음과 같다:
 	 * <ul>
-	 *   <li>폴링 주기: {@code null} (서버 통지 방식)</li>
+	 *   <li>폴링 주기: {@code null} (시작 완료를 기다리지 않음)</li>
 	 *   <li>시작 타임아웃: {@link #DEFAULT_START_TIMEOUT} (1분)</li>
 	 *   <li>재귀 시작: 비활성화</li>
 	 *   <li>동시성: 1</li>
@@ -109,10 +109,13 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	/**
 	 * 인스턴스 시작 후 상태를 주기적으로 확인하는 폴링 간격을 설정한다.
 	 * <p>
-	 * {@code null}을 지정하면 폴링 대신 서버 측 상태 변경 통지 방식을 사용한다.
+	 * {@code null}을 지정하면 시작 요청 후 인스턴스가 {@link MDTInstanceStatus#STARTING} 상태를
+	 * 벗어날 때까지 기다리지 않고, 요청 직후 조회한 상태를 최종 상태로 사용한다.
+	 * 단, 재귀 모드({@link #recursive(boolean)})에서는 종속 인스턴스를 찾기 위해
+	 * 1초 주기로 시작 완료를 기다린다.
 	 * {@code null}이 아닌 경우 양수 {@link Duration}이어야 한다.
 	 *
-	 * @param interval	상태 확인 간격. {@code null}이면 서버 통지 방식을 사용.
+	 * @param interval	상태 확인 간격. {@code null}이면 시작 완료를 기다리지 않음.
 	 * @return	자기 자신.
 	 * @throws IllegalArgumentException	{@code interval}이 0이거나 음수인 경우.
 	 */
@@ -157,11 +160,13 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	/**
 	 * 단일 인스턴스의 시작을 기다리는 최대 시간을 설정한다.
 	 * <p>
-	 * 기본값은 {@link #DEFAULT_START_TIMEOUT} (1분)이다.
+	 * 기본값은 {@link #DEFAULT_START_TIMEOUT} (1분)이다. 제한 시간 내에 시작되지 않은 인스턴스는
+	 * {@link TimeoutException}과 함께 실패 리스너로 통지된다.
 	 *
-	 * @param timeout	시작 최대 대기 시간. 양수 {@link Duration}이어야 함.
+	 * @param timeout	시작 최대 대기 시간. {@code null}이면 무한 대기하며,
+	 * 					그렇지 않으면 양수 {@link Duration}이어야 함.
 	 * @return	자기 자신.
-	 * @throws IllegalArgumentException	{@code timeout}이 {@code null}이거나, 0 또는 음수인 경우.
+	 * @throws IllegalArgumentException	{@code timeout}이 0 또는 음수인 경우.
 	 */
 	public StartInstances startTimeout(Duration timeout) {
 		Preconditions.checkArgument(timeout == null || (!timeout.isNegative() && !timeout.isZero()),
@@ -176,6 +181,7 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	 * <p>
 	 * {@code true}로 설정하면 시작에 성공한 인스턴스의 종속(component) 인스턴스들을 모두
 	 * 조회하여 대기 큐에 추가하고, 동일한 절차로 재귀적으로 시작시킨다.
+	 * 이 경우 폴링 주기가 {@code null}이더라도 1초 주기로 시작 완료를 기다린다.
 	 *
 	 * @param flag	{@code true}이면 종속 인스턴스도 재귀적으로 시작.
 	 * @return	자기 자신.
@@ -207,7 +213,8 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	 * 인스턴스 상태 변경 시 호출될 리스너를 설정한다.
 	 * <p>
 	 * 각 인스턴스의 시작 작업이 종료된 후 최종 상태(예: {@link MDTInstanceStatus#RUNNING},
-	 * {@link MDTInstanceStatus#FAILED})를 전달받아 처리할 수 있다.
+	 * {@link MDTInstanceStatus#FAILED})를 전달받아 처리할 수 있다. 시작 작업 쓰레드에서 호출되므로
+	 * 동시성 수준이 1보다 크면 여러 쓰레드에서 동시에 호출될 수 있다.
 	 *
 	 * @param listener	상태 변경 리스너. {@code null}이면 통지를 받지 않음.
 	 * @return	자기 자신.
@@ -223,6 +230,7 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	 * 별도로 지정하지 않는 경우에는 실패 원인을 표준 출력에 출력하는 기본 리스너가 사용된다.
 	 *
 	 * @param listener	실패 리스너. 첫 번째 인자는 실패한 인스턴스, 두 번째 인자는 원인 예외.
+	 * 					{@code null}이면 실패 통지를 받지 않음.
 	 * @return	자기 자신.
 	 */
 	public StartInstances failureListener(BiConsumer<HttpMDTInstanceClient, Exception> listener) {
@@ -302,7 +310,8 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	 *   <li>{@link HttpMDTInstanceClient#start(Duration, Duration)}을 호출하여 시작 요청을 보낸다.
 	 *       이미 시작된 상태 등으로 발생하는 {@link InvalidResourceStatusException}은 무시한다.</li>
 	 *   <li>재귀 모드이거나 폴링 주기가 설정된 경우, 인스턴스 상태가 {@link MDTInstanceStatus#STARTING}을
-	 *       벗어날 때까지 대기한다.</li>
+	 *       벗어날 때까지 대기한다 (재귀 모드에서 폴링 주기가 없으면 1초 주기).
+	 *       그렇지 않으면 시작 요청 직후 조회한 상태를 최종 상태로 사용한다.</li>
 	 *   <li>최종 상태가 {@link MDTInstanceStatus#RUNNING}이면 결과 목록에 추가하고, 재귀 모드인 경우
 	 *       종속 인스턴스들을 수집하여 대기 큐에 추가한다.</li>
 	 *   <li>상태 변경 리스너에게 최종 상태를 통지한다.</li>

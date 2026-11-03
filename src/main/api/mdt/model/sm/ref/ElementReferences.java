@@ -113,7 +113,8 @@ public final class ElementReferences {
 	 *   <li>{@code opvar:<submodelSpec>:<idShortPath>:(in|out|inout):<ordinal>}
 	 *       → {@link OperationVariableReference}</li>
 	 *   <li>{@code timeseries:<submodelSpec>[#<range>][|<columns>]} → {@link TimeSeriesRecordsReference}
-	 *       (range: {@code last=N}(마지막 N개) | {@code last=dur[@now|@latest]} | {@code from~to})</li>
+	 *       (range: {@code last=N}(마지막 N개) | {@code last=dur[@now|@latest]} | {@code from~to}
+	 *       | {@code from+N}, {@link mdt.model.sm.ref.timeseries.TimeSeriesRange} 참고)</li>
 	 *   <li>그 외(라벨 없음) {@code <submodelSpec>:<elementPath>} → {@link DefaultElementReference}</li>
 	 * </ul>
 	 * {@code submodelSpec}은 {@code <instanceId>:[idShort=]<submodelIdShort>} 또는
@@ -180,6 +181,11 @@ public final class ElementReferences {
 	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends JsonNodeStdDeserializer<ElementReference> {
+		/**
+		 * 이 패키지의 {@code @type} 등록부를 사용하는 deserializer를 생성한다.
+		 * <p>
+		 * {@link com.fasterxml.jackson.databind.annotation.JsonDeserialize}가 인자 없는 생성자로 만든다.
+		 */
 		public Deserializer() {
 			super(ElementReference.class, DESERIALIZER);
 		}

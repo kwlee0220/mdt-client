@@ -13,6 +13,10 @@ import mdt.model.sm.value.MultiLanguagePropertyValue;
 
 
 /**
+ * {@link Segment}의 공통 속성을 구현하는 기본 클래스.
+ * <p>
+ * 각 속성은 같은 이름(첫 글자 대문자)의 idShort를 갖는 SubmodelElement와 매핑되며,
+ * getter/setter는 Lombok으로 생성된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

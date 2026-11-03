@@ -15,6 +15,11 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 import utils.func.Nullables;
 
 /**
+ * {@link TwinComposition}의 기본 구현 엔티티 ({@code TwinComposition} SubmodelElementCollection).
+ * <p>
+ * {@code CompositionID}, {@code CompositionType} Property와 {@code CompositionItems},
+ * {@code CompositionDependencies} SubmodelElementList를 필드로 갖는다.
+ * 접근자는 Lombok {@code @Getter}/{@code @Setter}로 생성된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -30,6 +35,11 @@ public class DefaultTwinComposition extends SubmodelElementCollectionEntity
 	@SMListField(idShort="CompositionDependencies", elementClass=DefaultCompositionDependency.class)
 	private List<CompositionDependency> compositionDependencies = Lists.newArrayList();
 	
+	/**
+	 * idShort를 반환한다. idShort가 설정되지 않은 경우는 composition 식별자를 반환한다.
+	 *
+	 * @return	idShort 또는 composition 식별자.
+	 */
 	@Override
 	public String getIdShort() {
 		return Nullables.orElse(super.getIdShort(), this.compositionID);

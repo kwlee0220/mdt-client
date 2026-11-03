@@ -27,6 +27,14 @@ import mdt.workflow.WorkflowStatus;
 
 
 /**
+ * HTTP(REST)를 통해 원격 워크플로우 관리자(mdt-workflow)에 접근하는 {@link WorkflowManager} 클라이언트.
+ * <p>
+ * endpoint 하위의 {@code /models}로 워크플로우 모델을, {@code /workflows}로 워크플로우 인스턴스를 관리한다.
+ * 모든 요청은 동기적으로 전송된다. 서버 오류는 {@link MDTRESTfulClients}에 등록된 MDT 예외 타입
+ * (예: {@link ResourceNotFoundException}, {@link ResourceAlreadyExistsException}) 또는
+ * {@link utils.http.RESTfulRemoteException}으로, 통신 오류는 {@link utils.http.RESTfulIOException}으로 전달된다.
+ * <p>
+ * {@link #listWorkflowIds()}와 {@link #getWorkflowStatus(String)}는 지원하지 않는다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -34,6 +42,13 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	private final String m_endpoint;
 	private final HttpRESTfulClient m_restfulClient;
 	
+	/**
+	 * 클라이언트 객체를 생성한다.
+	 *
+	 * @param client	HTTP 요청 전송에 사용할 OkHttp 클라이언트.
+	 * @param endpoint	워크플로우 관리자 endpoint (예: {@code <mdt-url>/workflow-manager}).
+	 * @throws IllegalArgumentException	{@code endpoint}가 {@code null}인 경우.
+	 */
 	public HttpWorkflowManager(OkHttpClient client, String endpoint) {
 		Preconditions.checkArgument(endpoint != null, getClass().getSimpleName() + ": endpoint is null");
 		
@@ -55,15 +70,27 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		return m_restfulClient.getHttpClient();
 	}
 
+	/**
+	 * 지원하지 않는다.
+	 *
+	 * @return	정상적으로 반환되지 않는다.
+	 * @throws UnsupportedOperationException	항상 발생된다.
+	 */
 	@Override
 	public List<String> listWorkflowIds() {
 		throw new UnsupportedOperationException("listWorkflowIds is not supported in HttpWorkflowManager");
 	}
 
+	/**
+	 * 지원하지 않는다.
+	 *
+	 * @param wfIdStr	워크플로우 인스턴스 식별자.
+	 * @return	정상적으로 반환되지 않는다.
+	 * @throws UnsupportedOperationException	항상 발생된다.
+	 */
 	@Override
 	public WorkflowStatus getWorkflowStatus(String wfIdStr) throws ResourceNotFoundException {
-		String url = String.format("%s/workflows", m_endpoint);
-		throw new UnsupportedOperationException("listWorkflowIds is not supported in HttpWorkflowManager");
+		throw new UnsupportedOperationException("getWorkflowStatus is not supported in HttpWorkflowManager");
 	}
 
 	@Override
@@ -143,6 +170,15 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 		return m_restfulClient.get(url, m_wfModelDeser);
 	}
 
+	/**
+	 * 주어진 워크플로우 모델로부터 생성된 워크플로우 스크립트를 반환한다.
+	 * <p>
+	 * {@code GET <endpoint>/models/<wfModelId>/script} 요청의 응답 본문을 그대로 반환한다.
+	 *
+	 * @param wfModelId	워크플로우 모델 식별자.
+	 * @return	워크플로우 스크립트 문자열.
+	 * @throws ResourceNotFoundException	식별자에 해당하는 워크플로우 모델이 존재하지 않는 경우.
+	 */
 	public String getWorkflowScript(String wfModelId) throws ResourceNotFoundException {
 		String url = String.format("%s/models/%s/script", m_endpoint, wfModelId);
 		return m_restfulClient.get(url, HttpRESTfulClient.STRING_DESER);

@@ -65,6 +65,12 @@ public class InstanceDescriptor {
 		return m_id;
 	}
 	
+	/**
+	 * 대상 MDTInstance의 식별자를 설정한다.
+	 *
+	 * @param id	식별자.
+	 * @throws IllegalArgumentException	{@code id}가 {@code null}인 경우.
+	 */
 	public void setId(String id) {
 		Preconditions.checkNotNullArgument(id, "id should not be null in InstanceDescriptor");
 		
@@ -74,12 +80,18 @@ public class InstanceDescriptor {
 	/**
 	 * 대상 MDTInstance의 상태를 반환한다.
 	 * 
-	 * @return	상태 정보
+	 * @return	상태 정보.
 	 */
 	@NotNull public MDTInstanceStatus getStatus() {
 		return m_status;
 	}
 	
+	/**
+	 * 대상 MDTInstance의 상태를 설정한다.
+	 *
+	 * @param status	상태 정보.
+	 * @throws IllegalArgumentException	{@code status}가 {@code null}인 경우.
+	 */
 	public void setStatus(MDTInstanceStatus status) {
 		Preconditions.checkNotNullArgument(status, "status should not be null in InstanceDescriptor");
 		
@@ -98,6 +110,11 @@ public class InstanceDescriptor {
 		return m_baseEndpoint;
 	}
 	
+	/**
+	 * 대상 MDTInstance에 부여된 기반 endpoint를 설정한다.
+	 *
+	 * @param endpoint	기반 endpoint URL. {@code null}이 허용된다.
+	 */
 	public void setBaseEndpoint(String endpoint) {
 		m_baseEndpoint = endpoint;
 	}
@@ -126,6 +143,12 @@ public class InstanceDescriptor {
 		return AASUtils.encodeBase64UrlSafe(m_aasId);
 	}
 	
+	/**
+	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 식별자를 설정한다.
+	 *
+	 * @param aasId	AAS 식별자.
+	 * @throws IllegalArgumentException	{@code aasId}가 {@code null}인 경우.
+	 */
 	public void setAasId(String aasId) {
 		Preconditions.checkNotNullArgument(aasId, "aasId should not be null in InstanceDescriptor");
 		
@@ -142,6 +165,11 @@ public class InstanceDescriptor {
 		return m_aasIdShort;
 	}
 	
+	/**
+	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 idShort를 설정한다.
+	 *
+	 * @param aasIdShort	idShort. {@code null}이 허용된다.
+	 */
 	public void setAasIdShort(String aasIdShort) {
 		m_aasIdShort = aasIdShort;
 	}
@@ -156,6 +184,11 @@ public class InstanceDescriptor {
 		return m_globalAssetId;
 	}
 	
+	/**
+	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 GlobalAssetId를 설정한다.
+	 *
+	 * @param globalAssetId	자산 식별자. {@code null}이 허용된다.
+	 */
 	public void setGlobalAssetId(String globalAssetId) {
 		m_globalAssetId = globalAssetId;
 	}
@@ -170,6 +203,12 @@ public class InstanceDescriptor {
 		return m_assetType;
 	}
 	
+	/**
+	 * 대상 MDTInstance가 포함한 AssetAdministrationShell의 자산 타입을 설정한다.
+	 *
+	 * @param assetType	자산 타입.
+	 * @throws IllegalArgumentException	{@code assetType}이 {@code null}인 경우.
+	 */
 	public void setAssetType(MDTAssetType assetType) {
 		Preconditions.checkNotNullArgument(assetType, "assetType should not be null in InstanceDescriptor");
 		
@@ -186,8 +225,10 @@ public class InstanceDescriptor {
 	 * @param paramIdx		MDTParameter의 인덱스(0-based).
 	 * @param smEndpoint	대상 Submodel의 endpoint URL.
 	 * @return				MDTParameter 값에 접근할 수 있는 endpoint URL.
+	 * @throws IllegalArgumentException
+	 * 						{@code smEndpoint}가 {@code null}이거나 {@code paramIdx}가 음수인 경우.
 	 * @throws IllegalStateException
-	 * 						{@code smEndpoint} 또는 {@code assetType}이 설정되지 않았거나,
+	 * 						{@code assetType}이 설정되지 않았거나,
 	 * 						{@code assetType}이 {@code Machine}/{@code Process}가 아닌 경우.
 	 */
 	public String getParameterEndpoint(int paramIdx, String smEndpoint) {
@@ -218,9 +259,17 @@ public class InstanceDescriptor {
 	public static class Serializer extends StdSerializer<InstanceDescriptor> {
 		private static final long serialVersionUID = 1L;
 
+		/**
+		 * 시리얼라이저를 생성한다.
+		 */
 		public Serializer() {
 			this(null);
 		}
+		/**
+		 * 시리얼라이저를 생성한다.
+		 *
+		 * @param cls	직렬화 대상 클래스.
+		 */
 		public Serializer(Class<InstanceDescriptor> cls) {
 			super(cls);
 		}
@@ -260,9 +309,17 @@ public class InstanceDescriptor {
 	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends StdDeserializer<InstanceDescriptor> {
+		/**
+		 * 디시리얼라이저를 생성한다.
+		 */
 		public Deserializer() {
 			this(null);
 		}
+		/**
+		 * 디시리얼라이저를 생성한다.
+		 *
+		 * @param vc	역직렬화 대상 클래스.
+		 */
 		public Deserializer(Class<?> vc) {
 			super(vc);
 		}

@@ -62,7 +62,8 @@ public interface ElementReference {
 	 * 참조가 가리키는 {@link SubmodelElement}의 원형(prototype) 객체를 반환한다.
 	 * <p>
 	 * 원형은 실제 값을 읽지 않고도 참조 대상의 구조(식별자, 타입 등)를 알 수 있도록
-	 * 제공되는 기준 객체이다.
+	 * 제공되는 기준 객체이다. 구현에 따라 처음 호출될 때 대상을 읽어 적재하므로(예:
+	 * {@link SubmodelBasedElementReference}는 지연 적재 후 캐시), 읽기 실패는 unchecked 예외로 전달된다.
 	 *
 	 * @return 원형 {@link SubmodelElement} 객체.
 	 */
@@ -157,8 +158,8 @@ public interface ElementReference {
 	/**
 	 * 참조가 가리키는 'File' SubmodelElement을 읽어 값에 해당하는 부분을 반환한다.
 	 * 
-	 * @return	'File' SubmodelElement의 값에 해당하는 객체.
-	 * @throws	IOException    읽기 과정에서 예외가 발생한 경우.
+	 * @return	'File' SubmodelElement의 값에 해당하는 객체. {@link #readValue()}가 {@code null}이면 {@code null}.
+	 * @throws	IOException    읽기 과정에서 예외가 발생하거나, 값이 {@link FileValue}가 아닌 경우.
 	 */
 	@Nullable public default FileValue readAASFileValue() throws IOException {
 		ElementValue smev = readValue();
@@ -465,8 +466,13 @@ public interface ElementReference {
 	 * 주어진 InputStream에서 내용을 읽어 참조가 가리키는
 	 * 'File' SubmodelElement에 첨부된 파일 내용을 갱신한다.
 	 * 
+	 * <p>
+	 * 현재 값({@link #readValue()})의 {@link FileValue}를 그대로 사용하여
+	 * {@link #updateAttachment(FileValue, InputStream)}를 호출한다.
+	 *
 	 * @param content	첨부 파일 내용이 담긴 InputStream.
-	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
+	 * @throws	IOException	갱신 과정에서 예외가 발생하거나, 값이 {@link FileValue}가 아닌 경우.
+	 * @throws	IllegalStateException	참조 대상에 값이 없는 경우.
 	 */
 	public default void updateAttachment(InputStream content) throws IOException {
 		ElementValue sme = readValue();
@@ -485,10 +491,12 @@ public interface ElementReference {
 	/**
 	 * 주어진 파일을 읽어 참조가 가리키는
 	 * 'File' SubmodelElement에 첨부된 파일 내용을 갱신한다.
+	 * <p>
+	 * 새 값은 {@link FileValue#of(File)}로 주어진 파일에서 만들며, 현재 값이 없어도({@code null}) 갱신한다.
 	 * 
 	 * @param contentFile	첨부 파일 내용이 담긴 파일 객체.
 	 * @return	갱신된 'File' SubmodelElement의 값 객체.
-	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
+	 * @throws	IOException	갱신 과정에서 예외가 발생하거나, 현재 값이 {@link FileValue}가 아닌 경우.
 	 */
 	public default FileValue updateAttachment(File contentFile) throws IOException {
 		ElementValue sme = readValue();
@@ -514,9 +522,12 @@ public interface ElementReference {
 	public void removeAttachment() throws IOException;
 
 	/**
-	 * 참조가 가리키는 SubmodelElement의 경로 표현식을 반환한다.
+	 * 이 참조를 문자열 표현식으로 반환한다.
+	 * <p>
+	 * {@link MDTElementReference} 구현은 {@link ElementReferences#parseExpr(String)}로 다시 파싱할 수 있는
+	 * MdtExpr 표현식을 반환한다.
 	 * 
-	 * @return 경로 표현식 문자열.
+	 * @return 참조 표현식 문자열.
 	 */
 	public String toStringExpr();
 
@@ -530,7 +541,10 @@ public interface ElementReference {
 	public String getSerializationType();
 	
 	/**
-	 * JsonGenerator를 이용하여 참조가 가리키는 SubmodelElement의 값을 Json으로 직렬화한다.
+	 * JsonGenerator를 이용하여 이 참조를 구성하는 필드들을 Json으로 기록한다.
+	 * <p>
+	 * {@link ElementReferences.Serializer}가 Json 객체를 열고 {@code @type} 필드를 기록한 뒤 호출하므로,
+	 * 구현은 객체 안의 필드들만 기록한다. 참조 대상 SubmodelElement의 값은 기록하지 않는다.
 	 * 
 	 * @param gen	Json 직렬화 과정에서 사용할 JsonGenerator.
 	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
@@ -538,7 +552,10 @@ public interface ElementReference {
 	public void serializeFields(JsonGenerator gen) throws IOException;
 	
 	/**
-	 * 참조가 가리키는 SubmodelElement의 값을 Json 문자열로 직렬화한다.
+	 * 이 참조({@code @type} 필드 포함)를 Json 문자열로 직렬화한다.
+	 * <p>
+	 * 참조 대상 SubmodelElement의 값이 아니라 참조 자체를 직렬화하며,
+	 * {@link ElementReferences#parseJsonString(String)}로 복원할 수 있다.
 	 * 
 	 * @return	Json 문자열.
 	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
@@ -546,7 +563,10 @@ public interface ElementReference {
 	public String toJsonString() throws IOException;
 	
 	/**
-	 * 참조가 가리키는 SubmodelElement의 값을 JsonNode로 직렬화한다.
+	 * 이 참조({@code @type} 필드 포함)를 JsonNode로 직렬화한다.
+	 * <p>
+	 * 참조 대상 SubmodelElement의 값이 아니라 참조 자체를 직렬화하며,
+	 * {@link ElementReferences#parseJsonNode(JsonNode)}로 복원할 수 있다.
 	 * 
 	 * @return	JsonNode 객체.
 	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.

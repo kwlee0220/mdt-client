@@ -17,6 +17,11 @@ import mdt.model.timeseries.RecordMetadata.Field;
 
 
 /**
+ * {@link Metadata}의 기본 구현 클래스.
+ * <p>
+ * idShort는 항상 {@code "Metadata"}이다. 이름과 설명은 {@code Name}, {@code Description}
+ * MultiLanguageProperty와 매핑되고, 레코드 메타데이터({@link RecordMetadata})는 {@code Record}
+ * SubmodelElementCollection의 하위 Property들(필드 이름은 idShort, 타입은 valueType)과 변환된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -35,6 +40,11 @@ public class DefaultMetadata extends SubmodelElementCollectionEntity implements 
 		return name;
 	}
 	
+	/**
+	 * Metadata의 이름을 설정한다.
+	 *
+	 * @param mpv	Metadata의 이름.
+	 */
 	public void setName(MultiLanguagePropertyValue mpv) {
 		this.name = mpv;
 	}
@@ -44,6 +54,11 @@ public class DefaultMetadata extends SubmodelElementCollectionEntity implements 
 		return description;
 	}
 	
+	/**
+	 * Metadata의 설명을 설정한다.
+	 *
+	 * @param mpv	Metadata의 설명.
+	 */
 	public void setDescription(MultiLanguagePropertyValue mpv) {
 		this.description = mpv;
 	}

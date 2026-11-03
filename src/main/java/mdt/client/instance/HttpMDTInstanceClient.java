@@ -179,32 +179,68 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	@Override
 	public MDTInstanceStatus start(@Nullable Duration pollInterval, @Nullable Duration timeout)
 		throws TimeoutException, InterruptedException, InvalidResourceStatusException {
+		return startAndWait(pollInterval, timeout, null);
+	}
+
+	/**
+	 * MDTInstance를 시작시키고, 시작 과정에서 관찰된 상태 변화를 {@code listener}에 통보한다.
+	 * <p>
+	 * 동작은 {@link #start(Duration, Duration)}와 같다. 시작 요청의 응답으로 받은 상태를 먼저 통보하고,
+	 * {@code pollInterval}이 지정되어 {@link MDTInstanceStatus#STARTING} 상태에서 벗어날 때까지 polling 하는
+	 * 동안에는 조회한 상태가 직전에 통보한 상태와 다를 때마다 통보한다. polling은 호출 쓰레드에서
+	 * 동기적으로 수행되므로 통보도 모두 호출 쓰레드에서 이루어진다. polling 간격 사이에 지나간 상태는
+	 * 관찰되지 않으므로 통보되지 않는다.
+	 *
+	 * @param pollInterval	시작 완료 체크 시간 간격. {@code null}이면 시작 요청 후 바로 반환한다.
+	 * @param timeout	최대 대기 시간. {@code null}인 경우에는 무한 대기를 의미함.
+	 * @param listener	상태 변화를 통보받을 리스너.
+	 * @return	대기 종료 시점의 상태.
+	 * @throws IllegalArgumentException	{@code listener}가 {@code null}인 경우.
+	 * @throws TimeoutException	{@code timeout} 경과 시까지 {@link MDTInstanceStatus#STARTING} 상태가 지속된 경우.
+	 * @throws InterruptedException	대기 중 쓰레드가 인터럽트된 경우.
+	 * @throws InvalidResourceStatusException	MDTInstance가 이미 동작 중인 경우.
+	 */
+	public MDTInstanceStatus start(@Nullable Duration pollInterval, @Nullable Duration timeout,
+									@NotNull StatusChangedListener listener)
+		throws TimeoutException, InterruptedException, InvalidResourceStatusException {
+		Preconditions.checkNotNullArgument(listener, "listener is null");
+		return startAndWait(pollInterval, timeout, listener);
+	}
+
+	private MDTInstanceStatus startAndWait(@Nullable Duration pollInterval, @Nullable Duration timeout,
+											@Nullable StatusChangedListener listener)
+		throws TimeoutException, InterruptedException, InvalidResourceStatusException {
 		Instant due = null;
 		if ( timeout != null ) {
 			due = Instant.now().plus(timeout);
 		}
 
 		MDTInstanceStatus status = sendStartRequest().getStatus();
+		if ( listener != null ) {
+			listener.statusChanged(status);
+		}
 		if ( status != MDTInstanceStatus.STARTING || pollInterval == null ) {
 			return status;
 		}
 
 		// 'STARTING' 상태가 바뀔 때까지 대기한다.
+		// 리스너가 있으면 polling 때마다 조회된 상태가 직전 통보 상태와 다른 경우 통보한다.
+		MDTInstanceStatus[] lastNotified = { status };
+		Predicate<MDTInstanceStatus> waitCond = state -> {
+			if ( listener != null && state != lastNotified[0] ) {
+				lastNotified[0] = state;
+				listener.statusChanged(state);
+			}
+			return state == MDTInstanceStatus.STARTING;
+		};
 		try {
-			status = waitWhileStatus(state -> state == MDTInstanceStatus.STARTING, pollInterval, due);
-			return status;
+			return waitWhileStatus(waitCond, pollInterval, due);
 		}
 		catch ( ExecutionException e ) {
 			// 상태 체크만 하던 과정에서 오류가 발생할 경우가 거의 없으므로
 			// 이 경우는 InternalException을 발생시킨다.
 			throw new InternalException(Throwables.unwrapThrowable(e));
 		}
-	}
-
-	public MDTInstanceStatus start(@Nullable Duration pollInterval, @Nullable Duration timeout,
-									@NotNull StatusChangedListener listener)
-		throws TimeoutException, InterruptedException, InvalidResourceStatusException {
-		return null;
 	}
 
 	/**

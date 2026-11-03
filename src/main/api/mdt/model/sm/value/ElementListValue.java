@@ -24,10 +24,15 @@ import utils.stream.FStream;
  * {@link SubmodelElementList}로부터 생성하려면 {@link #from(SubmodelElementList)}을, 값 객체·값 JSON으로부터
  * 생성하려면 원소 타입을 정하는 템플릿을 받는 {@link #fromValueObject(Object, ElementListValue)},
  * {@link #parseValueJsonNode(JsonNode, ElementListValue)}를 사용한다.
+ * <p>
+ * 값 객체({@link #toValueObject()})와 value-only JSON은 원소 값들의 배열이다. polymorphic JSON의 타입
+ * 식별자는 {@value #SERIALIZATION_TYPE}이며, 이 때 각 원소는 자신의 polymorphic JSON
+ * ({@code @type}/{@code value})으로 직렬화된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public final class ElementListValue extends AbstractElementValue {
+	/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 	public static final String SERIALIZATION_TYPE = "mdt:value:list";
 
 	private final List<ElementValue> m_elementValues;

@@ -69,7 +69,19 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	/** broker 구독·해제 응답을 기다리는 기본 시간. */
 	public static final Duration DEFAULT_OPERATION_TIMEOUT = Duration.ofSeconds(10);
 
+	/**
+	 * {@link MqttService}가 수신한 MQTT 메시지를 전달받는 구독자.
+	 */
 	public interface Subscriber {
+		/**
+		 * 구독한 topic 패턴과 일치하는 메시지가 수신되었을 때 호출된다.
+		 * <p>
+		 * Paho 콜백 쓰레드에서 호출되므로 오래 걸리는 작업은 별도 쓰레드에서 수행하는 것이 좋다.
+		 * 이 메소드가 예외를 던지면 경고 로그만 남기고 다른 구독자에게는 계속 전달된다.
+		 *
+		 * @param topic	메시지가 발행된 실제 topic.
+		 * @param msg	수신된 메시지.
+		 */
 		public void onMessage(String topic, MqttMessage msg);
 	}
 	
@@ -95,9 +107,13 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	
 	/**
 	 * MQTT Service를 생성한다.
+	 * <p>
+	 * 내부 {@link MqttClient}만 생성하며, broker 접속은 서비스가 시작될 때 이루어진다.
 	 * 
 	 * @param brokerUrl		MQTT Broker URL
 	 * @param opts			MQTT 연결 옵션
+	 * @throws IllegalArgumentException	인자가 {@code null}인 경우.
+	 * @throws InternalException	{@link MqttClient} 생성에 실패한 경우.
 	 */
 	public MqttService(String brokerUrl, MqttConnectOptions opts) {
 		Preconditions.checkArgument(brokerUrl != null, "brokerUrl is null");
@@ -114,7 +130,7 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	}
 
 	/**
-	 * MQTT Service를 생성한다.
+	 * clean session과 자동 재연결이 설정된 기본 연결 옵션으로 MQTT Service를 생성한다.
 	 * 
 	 * @param brokerUrl		MQTT Broker URL
 	 */
@@ -123,7 +139,10 @@ public class MqttService extends AbstractService implements LoggerSettable {
 	}
 	
 	/**
-	 * MQTT Service를 생성한다.
+	 * 주어진 broker 연결 설정으로 MQTT Service를 생성한다.
+	 * <p>
+	 * clean session과 자동 재연결을 사용하며, 설정에 지정된 접속 제한시간, keep-alive 간격을 적용한다.
+	 * {@code reconnectInterval}은 첫 연결 재시도 간격과 Paho 자동 재연결 간격의 상한으로 함께 사용된다.
 	 * 
 	 * @param config		MQTT Broker 연결 설정
 	 */
@@ -135,13 +154,32 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		}
 	}
 	
+	/**
+	 * broker 접속에 사용하는 연결 옵션을 반환한다.
+	 *
+	 * @return	MQTT 연결 옵션.
+	 */
 	public MqttConnectOptions getConnectOptions() {
 		return m_options;
 	}
 	
+	/**
+	 * 서비스 시작 후 첫 연결에 성공할 때까지 연결을 다시 시도하는 간격을 반환한다.
+	 *
+	 * @return	첫 연결 재시도 간격. 기본값은 5초.
+	 */
 	public Duration getReconnectInterval() {
 		return m_reconnectInterval;
 	}
+	/**
+	 * 서비스 시작 후 첫 연결에 성공할 때까지 연결을 다시 시도하는 간격을 설정한다.
+	 * <p>
+	 * 서비스 시작({@code startAsync()}) 시점의 값이 사용되므로, 시작 전에 설정해야 한다.
+	 * 연결된 뒤 끊어졌을 때의 재연결은 Paho 자동 재연결이 담당하며 이 값의 영향을 받지 않는다.
+	 *
+	 * @param interval	재시도 간격 (양수).
+	 * @throws IllegalArgumentException	{@code interval}이 {@code null}이거나 양수가 아닌 경우.
+	 */
 	public void setReconnectInterval(Duration interval) {
 		Preconditions.checkArgument(interval != null && DurationUtils.isPositive(interval),
 									"invalid reconnect interval: " + interval);
@@ -170,6 +208,11 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		m_operationTimeout = timeout;
 	}
 	
+	/**
+	 * broker와 현재 연결되어 있는지 여부를 반환한다.
+	 *
+	 * @return	연결되어 있으면 {@code true}, 그렇지 않으면 {@code false}.
+	 */
 	public boolean isConnected() {
 		return m_guard.get(this::isConnectedInGuard);
 	}
@@ -178,10 +221,26 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		return m_client.isConnected();
 	}
 	
+	/**
+	 * broker와 연결된 경우 내부 {@link MqttClient}를 반환한다.
+	 *
+	 * @return	연결된 {@link MqttClient}. 연결되어 있지 않으면 {@code null}.
+	 */
 	public @Nullable MqttClient getMqttClient() {
 		return m_guard.get(() -> isConnectedInGuard() ? m_client : null);
 	}
 	
+	/**
+	 * 메시지를 발행한다.
+	 * <p>
+	 * {@link MqttClient#publish(String, MqttMessage)}로 발행하므로, QoS 1, 2 메시지는 broker의 확인을
+	 * {@link MqttClient}에 설정된 대기 시간(기본값은 무한 대기)까지 기다린다.
+	 * 발행마다 대기 시간을 지정하려면 {@link #publish(String, MqttMessage, Duration)}을 사용한다.
+	 *
+	 * @param topic	발행할 topic.
+	 * @param message	발행할 메시지.
+	 * @throws MqttException	broker와 연결되어 있지 않거나 발행이 실패한 경우.
+	 */
 	public void publish(String topic, MqttMessage message) throws MqttException {
 		Preconditions.checkArgument(topic != null, "topic is null");
 		Preconditions.checkArgument(message != null, "message is null");
@@ -216,6 +275,14 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		token.waitForCompletion(timeout.toMillis());
 	}
 	
+	/**
+	 * 문자열 payload를 UTF-8로 인코딩한 메시지(기본 QoS 1)를 발행한다.
+	 *
+	 * @param topic	발행할 topic.
+	 * @param payload	발행할 문자열.
+	 * @throws MqttException	broker와 연결되어 있지 않거나 발행이 실패한 경우.
+	 * @see #publish(String, MqttMessage)
+	 */
 	public void publish(String topic, String payload) throws MqttException {
 		publish(topic, new MqttMessage(payload.getBytes(StandardCharsets.UTF_8)));
 	}
@@ -352,14 +419,31 @@ public class MqttService extends AbstractService implements LoggerSettable {
 			m_subscriber = subscriber;
 		}
 		
+		/**
+		 * 구독한 topic(패턴)을 반환한다.
+		 *
+		 * @return	topic.
+		 */
 		public String getTopic() {
 			return m_topic;
 		}
 		
+		/**
+		 * 구독 시 요청한 QoS를 반환한다.
+		 * <p>
+		 * 같은 topic을 다른 구독자가 더 높은 QoS로 구독한 경우, 실제 broker 구독의 QoS는 이 값보다 클 수 있다.
+		 *
+		 * @return	요청 QoS.
+		 */
 		public int getQos() {
 			return m_qos;
 		}
 		
+		/**
+		 * 이 구독이 해제되었는지 여부를 반환한다.
+		 *
+		 * @return	{@link #unsubscribe()} 또는 {@link #close()}가 호출되었으면 {@code true}.
+		 */
 		public boolean isClosed() {
 			return m_closed.get();
 		}
@@ -373,6 +457,9 @@ public class MqttService extends AbstractService implements LoggerSettable {
 			return !m_closed.compareAndSet(false, true) || MqttService.this.unsubscribe(m_topic, m_subscriber);
 		}
 		
+		/**
+		 * 구독을 해제한다. {@link #unsubscribe()}와 동일하나 결과를 반환하지 않는다.
+		 */
 		@Override
 		public void close() {
 			unsubscribe();
@@ -630,6 +717,12 @@ public class MqttService extends AbstractService implements LoggerSettable {
 		}
 	}
 	
+	/**
+	 * {@code tcp://localhost:1883} broker로 구독·발행을 시험하는 예제 프로그램.
+	 *
+	 * @param args	사용하지 않는다.
+	 * @throws Exception	예제 실행 중 오류가 발생한 경우.
+	 */
 	public static final void main(String... args) throws Exception {
 		LoggerContext lc = (LoggerContext)LoggerFactory.getILoggerFactory();
 		Logger root = lc.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);

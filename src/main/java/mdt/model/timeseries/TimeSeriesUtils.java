@@ -20,6 +20,7 @@ import mdt.model.sm.ref.SubmodelReference;
 import mdt.model.sm.ref.timeseries.TimeSeriesRange;
 
 /**
+ * 시계열(TimeSeries) Submodel을 다루기 위한 유틸리티 메소드들을 제공한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

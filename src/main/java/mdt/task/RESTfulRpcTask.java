@@ -26,7 +26,6 @@ import utils.func.Nullables;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 import utils.rpc.restful.RESTfulRpcClient;
-import utils.rpc.restful.RpcRequestMessage;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
@@ -40,27 +39,59 @@ import mdt.workflow.model.TaskDescriptor;
 
 
 /**
- * 
+ * {@link RESTfulRpcClient}로 원격 연산을 동기 RPC로 호출하는 {@link MDTTask} 구현체.
+ * <p>
+ * 태스크 기술자의 입력 인자 값을 읽어 하나의 HTTP 요청으로 보내고, 원격 연산이 끝나 응답이 올 때까지
+ * 대기한다. 응답의 출력 중 기술자의 출력 인자와 이름이 같은 값을 해당 인자가 가리키는 요소의 현재 값에
+ * 반영하여 반환한다. 이때 반영된 값을 요소에 다시 기록하지는 않는다.
+ * <p>
+ * 사용하는 기술자 옵션은 {@value #OPTION_URL}(연산 URL, 필수)과 {@value MDTTask#OPTION_TIMEOUT}(호출 전체
+ * 제한 시간, 초 단위, 선택)이다. 제한 시간이 없으면 응답을 무제한 기다린다.
+ *
  * @author Kang-Woo Lee (ETRI)
  */
 public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 	private static final Logger s_logger = LoggerFactory.getLogger(RESTfulRpcTask.class);
 
+	/** 호출할 연산의 URL을 지정하는 옵션 이름. */
 	public static final String OPTION_URL = "opUrl";
 	
 	private final TaskDescriptor m_descriptor;
 	private RESTfulRpcClient m_restClient = null;
 	private Logger m_logger = s_logger;
 	
+	/**
+	 * 주어진 태스크 기술자로 태스크를 만든다.
+	 *
+	 * @param descriptor	입출력 인자와 옵션을 담은 태스크 기술자.
+	 */
 	public RESTfulRpcTask(TaskDescriptor descriptor) {
 		m_descriptor = descriptor;
 	}
 
+	/**
+	 * 생성자로 전달된 태스크 기술자를 반환한다.
+	 *
+	 * @return	태스크 기술자.
+	 */
 	@Override
 	public TaskDescriptor getTaskDescriptor() {
 		return m_descriptor;
 	}
 
+	/**
+	 * 입력 인자 값을 RPC 요청으로 보내고 원격 연산의 응답이 올 때까지 대기한다.
+	 *
+	 * @param manager	인자의 참조를 활성화할 MDT 인스턴스 관리자.
+	 * @return	출력 인자 이름을 키로, RPC 출력 값이 반영된 요소를 값으로 하는 맵.
+	 * @throws InterruptedException	대기 중 인터럽트된 경우. 진행 중인 HTTP 호출이 인터럽트로 중단된 경우도
+	 * 						포함한다.
+	 * @throws CancellationException	원격 연산이 취소된 경우.
+	 * @throws TaskException	입력 인자에 task-output 인자가 있거나, {@value #OPTION_URL} 옵션이 없거나,
+	 * 						원격 연산이 실패하거나 제한 시간을 초과한 경우. 단, 실패 원인이 {@link MDTException},
+	 * 						{@link RESTfulRemoteException}, {@link RESTfulIOException}이면 감싸지 않고
+	 * 						그대로 던진다.
+	 */
 	@Override
 	public Map<String, SubmodelElement> run(MDTInstanceManager manager)
 		throws InterruptedException, CancellationException, TaskException {
@@ -129,16 +160,35 @@ public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 		}
 	}
 
+	/**
+	 * 취소를 지원하지 않는다. 수행 중인 원격 호출도 중단하지 않는다.
+	 *
+	 * @return	항상 {@code false}.
+	 */
 	@Override
 	public boolean cancel() {
 		return false;
 	}
 	
+	/**
+	 * 기술자의 {@value #OPTION_POLL_INTERVAL} 옵션 값을 초 단위 duration으로 해석해 반환한다.
+	 * <p>
+	 * 동기 호출에서는 polling을 하지 않으므로 이 값은 태스크 수행에 사용되지 않는다.
+	 *
+	 * @return	polling 주기. 옵션이 없으면 {@link FOption#empty()}.
+	 * @throws IllegalArgumentException	옵션 값을 duration으로 해석할 수 없는 경우.
+	 */
 	public FOption<Duration> getPollInterval() {
 		return m_descriptor.findOptionValue(OPTION_POLL_INTERVAL)
 							.map(UnitUtils::parseSecondDuration);
 	}
 	
+	/**
+	 * 기술자의 {@value #OPTION_TIMEOUT} 옵션 값을 초 단위 duration으로 해석해 반환한다.
+	 *
+	 * @return	제한 시간. 옵션이 없으면 {@link FOption#empty()}.
+	 * @throws IllegalArgumentException	옵션 값을 duration으로 해석할 수 없는 경우.
+	 */
 	public FOption<Duration> getTimeout() {
 		return m_descriptor.findOptionValue(OPTION_TIMEOUT)
 							.map(UnitUtils::parseSecondDuration);
@@ -177,7 +227,6 @@ public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 														return (JsonNode)mapper.valueToTree(smev.toValueObject());
 													})
 													.toMap();
-		RpcRequestMessage reqMsg = new RpcRequestMessage(args);
 
 		return RESTfulRpcClient.builder()
 								.setHttpClient(httpClient)

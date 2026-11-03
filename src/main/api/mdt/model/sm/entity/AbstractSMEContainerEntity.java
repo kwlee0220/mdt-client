@@ -38,6 +38,15 @@ import mdt.model.sm.value.MultiLanguagePropertyValue;
 
 
 /**
+ * Submodel 또는 SubmodelElement 컨테이너(SubmodelElementCollection/List)에 대응되는 엔티티의
+ * 공통 기반 클래스.
+ * <p>
+ * idShort와 semanticId를 보관하며, 하위 클래스에 선언된 annotation({@link PropertyField},
+ * {@link SMCollectionField}, {@link SMListField}, {@link MultiLanguagePropertyField},
+ * {@link SMElementField}) 필드와 하위 SubmodelElement 사이의 리플렉션 기반 변환 기능을 제공한다.
+ * 필드 값은 Apache Commons BeanUtils를 통해 Java Bean 접근자로 읽고 쓴다.
+ *
+ * @param <T>	대응되는 AAS 모델 객체의 타입.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -45,18 +54,38 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 	private String m_idShort;
 	private Reference m_semanticId;
 	
+	/**
+	 * 대응되는 AAS 모델 객체의 idShort를 반환한다.
+	 *
+	 * @return	idShort.
+	 */
 	public String getIdShort() {
 		return m_idShort;
 	}
 	
+	/**
+	 * 대응되는 AAS 모델 객체의 idShort를 설정한다.
+	 *
+	 * @param idShort	idShort.
+	 */
 	public void setIdShort(String idShort) {
 		m_idShort = idShort;
 	}
 	
+	/**
+	 * 대응되는 AAS 모델 객체의 semanticId를 반환한다.
+	 *
+	 * @return	semanticId 참조.
+	 */
 	public Reference getSemanticId() {
 		return m_semanticId;
 	}
 	
+	/**
+	 * 대응되는 AAS 모델 객체의 semanticId를 설정한다.
+	 *
+	 * @param semanticId	semanticId 참조.
+	 */
 	public void setSemanticId(Reference semanticId) {
 		m_semanticId = semanticId;
 	}
@@ -77,11 +106,19 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 //		}
 //	}
 	
+	/**
+	 * annotation이 붙은 필드들의 값을 SubmodelElement로 변환하여 반환한다.
+	 * <p>
+	 * 값이 {@code null}이어서 생성되지 않은 요소는 결과에 포함되지 않는다. getter가 없는 필드는 건너뛴다.
+	 *
+	 * @return	필드들로부터 생성된 SubmodelElement 리스트.
+	 * @throws ModelGenerationException	필드 값을 SubmodelElement로 변환하지 못한 경우.
+	 */
 	protected List<SubmodelElement> readSubmodelElementFromFields() {
 		List<SubmodelElement> elements = Lists.newArrayList();
 		
 		for ( Field field: ReflectionUtils.getFieldList(getClass()) ) {
-			if ( getSMEEntityField(field) == null ) {
+			if ( getSMEEntityField(field) == null || !PropertyUtils.isReadable(this, field.getName()) ) {
 				continue;
 			}
 			
@@ -94,14 +131,28 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 					elements.add(element);
 				}
 			}
-			catch ( Exception ignored ) {
-				ignored.printStackTrace();
+			catch ( ModelGenerationException e ) {
+				throw e;
+			}
+			catch ( Exception e ) {
+				throw new ModelGenerationException(String.format("Failed to generate SubmodelElement: field=%s, cause=%s",
+																	field.getName(), Throwables.unwrapThrowable(e)));
 			}
 		}
 		
 		return elements;
 	}
 	
+	/**
+	 * AAS → 필드 변환 시 사용할 데이터 타입을 결정한다.
+	 * <p>
+	 * annotation의 {@code valueType}이 지정되어 있으면 이를 사용하고, 그렇지 않으면 Property의
+	 * valueType(없으면 {@link DataTypes#STRING})을 사용한다.
+	 *
+	 * @param anno	필드의 {@link PropertyField} annotation.
+	 * @param prop	읽어 들일 Property.
+	 * @return	데이터 타입.
+	 */
 	public static DataType<?> getDataType(PropertyField anno, Property prop) {
 		if ( anno.valueType().equals("") ) {
 			DataTypeDefXsd vtype = prop.getValueType();
@@ -112,12 +163,32 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 	}
 	
+	/**
+	 * 필드 → AAS 변환 시 사용할 데이터 타입을 결정한다.
+	 * <p>
+	 * annotation의 {@code valueType}이 지정되어 있으면 이를 사용하고, 그렇지 않으면 값의 Java 클래스로부터
+	 * 데이터 타입을 결정한다.
+	 *
+	 * @param anno	필드의 {@link PropertyField} annotation.
+	 * @param value	필드 값. {@code valueType}이 지정되지 않은 경우 {@code null}이 아니어야 한다.
+	 * @return	데이터 타입.
+	 */
 	public static DataType<?> getDataType(PropertyField anno, Object value) {
 		return ( anno.valueType().equals("") )
 				? DataTypes.fromJavaClass(value.getClass())
 				: DataTypes.fromDataTypeName(anno.valueType());
 	}
 	
+	/**
+	 * 주어진 SubmodelElement들을 idShort로 매칭하여 annotation이 붙은 필드들의 값을 갱신한다.
+	 * <p>
+	 * setter가 없는 필드나 annotation({@link SubmodelElementEntityField} 메타 annotation이 붙은 것)이
+	 * 없는 필드는 무시된다. 필드 annotation의 {@code idShort}와 일치하는 요소가 없으면 해당 필드는
+	 * 변경되지 않는다. {@link ReferenceField}가 붙은 필드는 처리하지 않는다.
+	 *
+	 * @param submodelElements	읽어 들일 SubmodelElement 리스트.
+	 * @throws ModelGenerationException	대응되는 요소의 종류가 annotation과 맞지 않거나 변환에 실패한 경우.
+	 */
 	protected void updateFields(List<SubmodelElement> submodelElements) {
 		Map<String,SubmodelElement> smeMap = FStream.from(submodelElements)
 													.tagKey(SubmodelElement::getIdShort)
@@ -296,6 +367,16 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 	}
 
+	/**
+	 * Property의 값을 파싱하여 주어진 필드에 설정한다.
+	 * <p>
+	 * Enum 타입 필드의 경우 값 문자열을 Enum 이름으로 해석하며, 빈 문자열은 {@code null}로 설정된다.
+	 *
+	 * @param field	대상 필드.
+	 * @param anno	필드의 {@link PropertyField} annotation.
+	 * @param prop	읽어 들일 Property.
+	 * @throws ModelGenerationException	값 설정에 실패한 경우.
+	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	protected void updatePropertyField(Field field, PropertyField anno, Property prop) {
 		DataType<?> dtype = getDataType(anno, prop);
@@ -318,6 +399,14 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 	}
 
+	/**
+	 * MultiLanguageProperty의 값을 {@link MultiLanguagePropertyValue}로 변환하여 주어진 필드에 설정한다.
+	 *
+	 * @param field	대상 필드.
+	 * @param anno	필드의 {@link MultiLanguagePropertyField} annotation.
+	 * @param mlprop	읽어 들일 MultiLanguageProperty.
+	 * @throws ModelGenerationException	값 설정에 실패한 경우.
+	 */
 	protected void updateMLPropertyField(Field field, MultiLanguagePropertyField anno, MultiLanguageProperty mlprop) {
 		try {
 			MultiLanguagePropertyValue mlpv = MultiLanguagePropertyValue.from(mlprop);
@@ -329,6 +418,17 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 	}
 
+	/**
+	 * SubmodelElementCollection으로부터 엔티티를 생성하여 주어진 필드에 설정한다.
+	 * <p>
+	 * 엔티티 클래스는 annotation의 {@code adaptorClass}(지정되지 않으면 필드 타입)이며,
+	 * 기본 생성자로 생성한 후 {@link SubmodelElementEntity#updateFromAasModel(Object)}로 갱신한다.
+	 *
+	 * @param field	대상 필드.
+	 * @param anno	필드의 {@link SMCollectionField} annotation.
+	 * @param smc	읽어 들일 SubmodelElementCollection.
+	 * @throws ModelGenerationException	{@code adaptorClass}가 필드 타입과 호환되지 않거나 변환에 실패한 경우.
+	 */
 	protected void updateSMCField(Field field, SMCollectionField anno, SubmodelElementCollection smc) {
 		Class<?> entityType = anno.adaptorClass();
 		
@@ -358,6 +458,19 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 	}
 
+	/**
+	 * SubmodelElementList로부터 주어진 필드의 값을 갱신한다.
+	 * <p>
+	 * 필드의 현재 값이 {@link SubmodelElementListEntity}이면 그 엔티티를 직접 갱신한다. 그 외의 경우는
+	 * {@link SMListField#elementClass()}에 따라 원소 엔티티 리스트, 값 문자열 리스트 또는 원소
+	 * SubmodelElement 리스트를 새로 만들어 필드에 설정한다.
+	 *
+	 * @param field	대상 필드.
+	 * @param anno	필드의 {@link SMListField} annotation.
+	 * @param sml	읽어 들일 SubmodelElementList.
+	 * @throws ModelGenerationException	필드 값 읽기/설정에 실패한 경우.
+	 * @throws InternalException	{@code elementClass}가 지원되지 않는 타입인 경우.
+	 */
 	protected void updateSMLField(Field field, SMListField anno, SubmodelElementList sml) {
 		Object fieldValue;
 		try {
@@ -426,6 +539,14 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 	}
 
+	/**
+	 * 주어진 SubmodelElement 객체를 그대로 필드에 설정한다.
+	 *
+	 * @param field	대상 필드.
+	 * @param anno	필드의 {@link SMElementField} annotation.
+	 * @param sme	필드에 설정할 SubmodelElement.
+	 * @throws ModelGenerationException	값 설정에 실패한 경우.
+	 */
 	protected void updateSMEField(Field field, SMElementField anno, SubmodelElement sme) {
 		try {
 			PropertyUtils.setSimpleProperty(this, field.getName(), sme);
@@ -437,6 +558,17 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 		}
 	}
 	
+	/**
+	 * SubmodelElement 리스트의 각 원소를 주어진 엔티티 클래스의 객체로 변환한다.
+	 * <p>
+	 * 각 원소마다 엔티티 클래스의 기본 생성자로 객체를 만들고
+	 * {@link SubmodelElementEntity#updateFromAasModel(Object)}로 갱신한다.
+	 *
+	 * @param elmEntityClass	{@link SubmodelElementEntity} 구현 클래스.
+	 * @param members	변환할 SubmodelElement 리스트.
+	 * @return	변환된 엔티티 리스트.
+	 * @throws InternalException	엔티티 생성 또는 갱신에 실패한 경우.
+	 */
 	public static List<SubmodelElementEntity>
 	fromSubmodelElementList(Class<?> elmEntityClass, List<SubmodelElement> members) {
 		return FStream.from(members)
@@ -514,14 +646,21 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 				DataType dtype;
 				String propStr;
 				
+				if ( value == null ) {
+					// keepNullField인 null 값: 값으로 타입을 정할 수 없으므로 annotation의 valueType을 쓰고,
+					// 지정되지 않았으면 AAS → 필드 변환과 같이 xs:string으로 간주한다.
+					dtype = anno.valueType().equals("") ? DataTypes.STRING
+														: DataTypes.fromDataTypeName(anno.valueType());
+					propStr = null;
+				}
 				// value의 타입이 Enum인 경우은 Enum의 name을 사용한다.
-				if ( value.getClass().isEnum() ) {
+				else if ( value.getClass().isEnum() ) {
 					dtype = DataTypes.STRING;
 					propStr = ((Enum)value).name();
 				}
 				else {
 					dtype = getDataType(anno, value);
-					propStr = (value != null) ? dtype.toValueString(value) : null;
+					propStr = dtype.toValueString(value);
 				}
 
 				String idShort = (anno.idShort().length() > 0) ? anno.idShort() : null;
@@ -672,10 +811,11 @@ public abstract class AbstractSMEContainerEntity<T> implements AasCRUDActions, A
 	}
 	
 	/**
-	 * 주어진 {@link Field}에서 SubmodelElementEntityField annotation을 검색한다.
+	 * 주어진 {@link Field}에 선언된 annotation 중에서 {@link SubmodelElementEntityField} 메타
+	 * annotation이 붙은 첫 annotation을 검색한다.
 	 *
 	 * @param field	검색 대상 Field 객체.
-	 * @return	검색된 {@link SubmodelElementEntityField} annotation 객체.
+	 * @return	검색된 필드 annotation 객체 (예: {@link PropertyField}).
 	 * 			만일 검색되지 않은 경우에는 {@code null}.
 	 */
 	private static Annotation getSMEEntityField(Field field) {

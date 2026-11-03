@@ -29,22 +29,31 @@ import mdt.rt.Ros2Types.PoseStamped;
 import mdt.rt.Ros2Types.Position;
 
 /**
- * ROS2 메시지의 JSON 표현과 {@link Ros2Types}의 record 사이를 변환하는 {@link JsonNodeSerDe} 모음.
+ * ROS2 메시지의 JSON 표현 및 SubmodelElement 값({@link ElementValue})과 {@link Ros2Types}의 record
+ * 사이를 변환하는 변환기({@link JsonNodeSerDe}, {@link ElementValueSerDe}) 모음.
  * <p>
  * JSON 표현은 로봇 트윈(RESTful gateway)이 전달하는 ROS2 메시지 형식을 그대로 따른다.
  * 실수 값의 경우 로봇 트윈이 {@code NaN}/{@code Infinity}를 {@code null}로 변환하여 보내기 때문에,
- * 역직렬화 시 {@code null}은 {@link Double#NaN}으로 읽고 직렬화 시 유한하지 않은 값은 다시
- * {@code null}로 기록한다.
+ * 위치/방향 성분의 {@code null}은 역직렬화 시 {@link Float#NaN}으로 읽고(관절 값의 {@code null}은
+ * 결과에서 제외된다), 직렬화 시 유한하지 않은 값은 다시 {@code null}로 기록한다.
+ * <p>
+ * {@link ElementValue} 표현은 {@link ElementCollectionValue}를 기반으로 하며, 그 필드 구성은
+ * 각 변환기 클래스의 설명을 참고한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class Ros2SerDes {
 	private static final long NANOS_PER_SEC = 1_000_000_000L;
 	
+	/** {@link HeaderSerDe} 공유 객체. */
 	public static final HeaderSerDe HEADER_SERDE = new HeaderSerDe();
+	/** {@link PoseSerDe} 공유 객체. */
 	public static final PoseSerDe POSE_SERDE = new PoseSerDe();
+	/** {@link PoseStampedSerDe} 공유 객체. */
 	public static final PoseStampedSerDe POSE_STAMPED_SERDE = new PoseStampedSerDe();
+	/** {@link JointsSerDe} 공유 객체. */
 	public static final JointsSerDe JOINTS_SERDE = new JointsSerDe();
+	/** {@link JointStatesSerDe} 공유 객체. */
 	public static final JointStatesSerDe JOINT_STATES_SERDE = new JointStatesSerDe();
 
 	private Ros2SerDes() {
@@ -60,6 +69,11 @@ public class Ros2SerDes {
 	 * { "stamp": { "sec": 1730000000, "nanosec": 123456789 }, "frame_id": "base_link" }
 	 * }</pre>
 	 * 반면 {@link Ros2Types.Header#stamp()}는 이 둘을 합쳐 epoch 기준 나노초 하나로 표현한 값이다.
+	 * <p>
+	 * {@link ElementValue} 표현은 {@code Stamp}(long, 나노초)와 {@code FrameId}(string) 필드로 구성된
+	 * {@link ElementCollectionValue}이다. 역변환 시 두 필드가 없거나 타입이 다르면
+	 * {@link IOException}이 아닌 런타임 예외({@link NullPointerException}/{@link ClassCastException})가
+	 * 발생한다.
 	 */
 	public static final class HeaderSerDe implements JsonNodeSerDe<Ros2Types.Header>,
 																ElementValueSerDe<Ros2Types.Header> {
@@ -101,10 +115,14 @@ public class Ros2SerDes {
 		@Override
 		public Header deserializeFromElementValue(ElementValue elem) throws IOException {
 			if ( elem instanceof ElementCollectionValue smcv ) {
-				Long stamp = ((LongPropertyValue)smcv.getField("Stamp")).toValueObject();
-				String frameId = ((StringPropertyValue)smcv.getField("FrameId")).toValueObject();
-				
-				return new Ros2Types.Header(stamp, frameId);
+				if ( !(smcv.getField("Stamp") instanceof LongPropertyValue stampValue) ) {
+					throw new IOException("invalid Header.Stamp (not xs:long property): " + smcv.getField("Stamp"));
+				}
+				if ( !(smcv.getField("FrameId") instanceof StringPropertyValue frameIdValue) ) {
+					throw new IOException("invalid Header.FrameId (not xs:string property): "
+											+ smcv.getField("FrameId"));
+				}
+				return new Ros2Types.Header(stampValue.toValueObject(), frameIdValue.toValueObject());
 			}
 			else {
 				throw new IOException(String.format("invalid Header (not ElementCollectionValue): %s", elem));
@@ -117,6 +135,8 @@ public class Ros2SerDes {
 	 * <pre>{@code
 	 * { "x": 1.0, "y": 2.0, "z": 3.0 }
 	 * }</pre>
+	 * {@link ElementValue} 표현은 {@code x}, {@code y}, {@code z} float 필드로 구성된
+	 * {@link ElementCollectionValue}이다.
 	 */
 	public static final class PositionSerDe implements JsonNodeSerDe<Ros2Types.Position>,
 														ElementValueSerDe<Ros2Types.Position> {
@@ -160,6 +180,8 @@ public class Ros2SerDes {
 	 * <pre>{@code
 	 * { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
 	 * }</pre>
+	 * {@link ElementValue} 표현은 {@code x}, {@code y}, {@code z}, {@code w} float 필드로 구성된
+	 * {@link ElementCollectionValue}이다.
 	 */
 	public static final class OrientationSerDe implements JsonNodeSerDe<Ros2Types.Orientation>,
 														ElementValueSerDe<Ros2Types.Orientation> {
@@ -193,7 +215,7 @@ public class Ros2SerDes {
 
 		@Override
 		public Ros2Types.Orientation deserializeFromElementValue(ElementValue elem) throws IOException {
-			return parseOrientation(elem, "Position");
+			return parseOrientation(elem, "Orientation");
 		}
 	}
 
@@ -205,6 +227,9 @@ public class Ros2SerDes {
 	 *   "orientation": { "x": 0.0, "y": 0.0, "z": 0.0, "w": 1.0 }
 	 * }
 	 * }</pre>
+	 * {@link ElementValue} 표현은 {@code Position}과 {@code Orientation} 필드로 구성된
+	 * {@link ElementCollectionValue}이며, 각 필드는 {@link PositionSerDe}/{@link OrientationSerDe}의
+	 * 표현을 따른다.
 	 */
 	public static final class PoseSerDe implements JsonNodeSerDe<Ros2Types.Pose>,
 													ElementValueSerDe<Ros2Types.Pose> {
@@ -242,12 +267,26 @@ public class Ros2SerDes {
 			return parsePose(elem, "Pose");
 		}
 		
+		/**
+		 * 주어진 SubmodelElement의 값을 읽어 ROS2 {@code geometry_msgs/Pose} JSON으로 변환한다.
+		 *
+		 * @param sme	pose 값을 담은 SubmodelElement.
+		 * @return	변환된 JSON.
+		 * @throws IOException	SubmodelElement 값의 구성이 pose 표현과 다른 경우.
+		 */
 		public JsonNode toJsonNode(SubmodelElement sme) throws IOException {
 			var smev = ElementValues.getValue(sme);
 			var pose = deserializeFromElementValue(smev);
 			return serialize(pose);
 		}
 		
+		/**
+		 * ROS2 {@code geometry_msgs/Pose} JSON을 읽어 주어진 SubmodelElement의 값을 갱신한다.
+		 *
+		 * @param sme	갱신할 SubmodelElement.
+		 * @param jnode	pose JSON.
+		 * @throws IOException	JSON의 구성이 ROS2 형식과 다르거나 값 갱신에 실패한 경우.
+		 */
 		public void updateSubmodelElement(SubmodelElement sme, JsonNode jnode) throws IOException {
 			Pose pose = deserialize(jnode);
 			ElementValue value = serializeToElementValue(pose);
@@ -267,6 +306,8 @@ public class Ros2SerDes {
 	 *   }
 	 * }
 	 * }</pre>
+	 * {@link ElementValue} 표현은 {@code Pose}와 {@code Header} 필드로 구성된
+	 * {@link ElementCollectionValue}이며, 각 필드는 {@link PoseSerDe}/{@link HeaderSerDe}의 표현을 따른다.
 	 */
 	public static final class PoseStampedSerDe implements JsonNodeSerDe<Ros2Types.PoseStamped>,
 																	ElementValueSerDe<Ros2Types.PoseStamped> {
@@ -320,12 +361,26 @@ public class Ros2SerDes {
 			}
 		}
 		
+		/**
+		 * 주어진 SubmodelElement의 값을 읽어 ROS2 {@code geometry_msgs/PoseStamped} JSON으로 변환한다.
+		 *
+		 * @param sme	pose-stamped 값을 담은 SubmodelElement.
+		 * @return	변환된 JSON.
+		 * @throws IOException	SubmodelElement 값의 구성이 pose-stamped 표현과 다른 경우.
+		 */
 		public JsonNode toJsonNode(SubmodelElement sme) throws IOException {
 			ElementValue smev = ElementValues.getValue(sme);
 			PoseStamped poseStamped = deserializeFromElementValue(smev);
 			return serialize(poseStamped);
 		}
 		
+		/**
+		 * ROS2 {@code geometry_msgs/PoseStamped} JSON을 읽어 주어진 SubmodelElement의 값을 갱신한다.
+		 *
+		 * @param sme	갱신할 SubmodelElement.
+		 * @param jnode	pose-stamped JSON.
+		 * @throws IOException	JSON의 구성이 ROS2 형식과 다르거나 값 갱신에 실패한 경우.
+		 */
 		public void updateSubmodelElement(SubmodelElement sme, JsonNode jnode) throws IOException {
 			PoseStamped pose = deserialize(jnode);
 			ElementValue value = serializeToElementValue(pose);
@@ -345,6 +400,10 @@ public class Ros2SerDes {
 	 *   "effort": { "panda_joint1": 0.1, "panda_joint2": -0.2 }
 	 * }
 	 * }</pre>
+	 * {@link ElementValue} 표현은 관절 이름을 필드 이름으로 하는 float 필드들로 구성된
+	 * {@link ElementCollectionValue}이며, <b>위치({@code position}) 값만</b> 담는다. 따라서 이 표현으로
+	 * 변환하면 {@code velocity}와 {@code effort}는 버려지고, 역변환 결과의 {@code velocity}와
+	 * {@code effort}는 항상 빈 맵이다.
 	 */
 	public static final class JointStatesSerDe implements JsonNodeSerDe<Ros2Types.JointStates>,
 															ElementValueSerDe<Ros2Types.JointStates> {
@@ -414,12 +473,31 @@ public class Ros2SerDes {
 			throw new IOException(String.format("invalid JointStates (not ElementCollectionValue): %s", elem));
 		}
 		
+		/**
+		 * 주어진 SubmodelElement의 값을 읽어 로봇 관절 상태 JSON으로 변환한다.
+		 * <p>
+		 * SubmodelElement에는 위치 값만 저장되므로, 결과 JSON의 {@code velocity}와 {@code effort}는
+		 * 빈 객체이다.
+		 *
+		 * @param sme	관절 위치 값을 담은 SubmodelElement.
+		 * @return	변환된 JSON.
+		 * @throws IOException	SubmodelElement 값이 {@link ElementCollectionValue}가 아닌 경우.
+		 */
 		public JsonNode toJsonNode(SubmodelElement sme) throws IOException {
 			ElementValue smev = ElementValues.getValue(sme);
 			JointStates joints = deserializeFromElementValue(smev);
 			return serialize(joints);
 		}
 		
+		/**
+		 * 로봇 관절 상태 JSON을 읽어 주어진 SubmodelElement의 값을 관절 위치 값으로 갱신한다.
+		 * <p>
+		 * {@code velocity}와 {@code effort}는 SubmodelElement에 반영되지 않는다.
+		 *
+		 * @param sme	갱신할 SubmodelElement.
+		 * @param jnode	관절 상태 JSON.
+		 * @throws IOException	JSON의 구성이 관절 상태 형식과 다르거나 값 갱신에 실패한 경우.
+		 */
 		public void updateSubmodelElement(SubmodelElement sme, JsonNode jnode) throws IOException {
 			JointStates joints = deserialize(jnode);
 			ElementValue value = serializeToElementValue(joints);
@@ -427,18 +505,28 @@ public class Ros2SerDes {
 		}
 	}
 
+	/**
+	 * 관절 이름 → 값 맵의 JSON 표현과 {@code Map<String,Float>} 사이의 변환기.
+	 * <p>
+	 * {@link JointStatesSerDe}와 달리 {@code position}/{@code velocity}/{@code effort} 구분 없이,
+	 * 관절 이름을 키로 하는 단일 JSON 객체를 다룬다.
+	 * <pre>{@code
+	 * { "panda_joint1": 0.0, "panda_joint2": -0.785 }
+	 * }</pre>
+	 * {@link ElementValue} 표현은 관절 이름을 필드 이름으로 하는 float 필드들로 구성된
+	 * {@link ElementCollectionValue}이다.
+	 */
 	public static final class JointsSerDe implements JsonNodeSerDe<Map<String,Float>>,
 															ElementValueSerDe<Map<String,Float>> {
 		/**
-		 * 로봇 관절 상태 JSON을 {@link Ros2Types.JointStates}로 변환한다.
+		 * 관절 이름 → 값 JSON 객체를 맵으로 변환한다.
 		 * <p>
 		 * 값이 {@code null}인 관절은 사용할 수 없는 값이므로 결과 맵에서 제외된다.
 		 *
-		 * @param jnode	변환할 JSON. {@code position} 필드는 필수이고 {@code velocity}와
-		 * 				{@code effort}는 생략 가능하다.
-		 * @return	변환된 {@link Ros2Types.JointStates}.
-		 * @throws IOException	{@code jnode}가 객체가 아니거나, {@code position}이 없거나,
-		 * 						각 필드가 관절 이름 → 숫자 형태의 객체가 아닌 경우.
+		 * @param jnode	변환할 JSON 객체.
+		 * @return	관절 이름 → 값 맵 (수정 불가, JSON에 기록된 순서 유지).
+		 * @throws IOException	{@code jnode}가 객체가 아니거나, {@code null}도 숫자도 아닌 값을 갖는
+		 * 						관절이 있는 경우.
 		 */
 		@Override
 		public Map<String,Float> deserialize(JsonNode jnode) throws IOException {
@@ -447,11 +535,11 @@ public class Ros2SerDes {
 		}
 
 		/**
-		 * {@link Ros2Types.JointStates}를 로봇 관절 상태 JSON으로 변환한다.
+		 * 관절 이름 → 값 맵을 JSON 객체로 변환한다.
 		 * <p>
-		 * {@code velocity}와 {@code effort}는 비어 있더라도 빈 객체로 기록된다.
+		 * {@code null} 또는 유한하지 않은 값은 {@code null}로 기록된다.
 		 *
-		 * @param obj	변환할 관절 상태.
+		 * @param obj	변환할 관절 값 맵.
 		 * @return	변환된 JSON.
 		 */
 		@Override
@@ -481,14 +569,37 @@ public class Ros2SerDes {
 			throw new IOException(String.format("invalid JointStates (not ElementCollectionValue): %s", elem));
 		}
 		
+		/**
+		 * 주어진 SubmodelElement의 값을 읽어 관절 이름 → 값 JSON 객체로 변환한다.
+		 *
+		 * @param sme	관절 값을 담은 SubmodelElement.
+		 * @return	변환된 JSON.
+		 * @throws IOException	SubmodelElement 값이 {@link ElementCollectionValue}가 아닌 경우.
+		 */
 		public JsonNode toJsonNode(SubmodelElement sme) throws IOException {
 			return toJsonNode(ElementValues.getValue(sme));
 		}
+		/**
+		 * 주어진 {@link ElementValue}를 관절 이름 → 값 JSON 객체로 변환한다.
+		 * <p>
+		 * float 타입이 아닌 필드는 무시된다.
+		 *
+		 * @param smev	관절 값을 담은 {@link ElementValue}.
+		 * @return	변환된 JSON.
+		 * @throws IOException	{@code smev}가 {@link ElementCollectionValue}가 아닌 경우.
+		 */
 		public JsonNode toJsonNode(ElementValue smev) throws IOException {
 			Map<String,Float> joints = deserializeFromElementValue(smev);
 			return serialize(joints);
 		}
 		
+		/**
+		 * 관절 이름 → 값 JSON 객체를 읽어 주어진 SubmodelElement의 값을 갱신한다.
+		 *
+		 * @param sme	갱신할 SubmodelElement.
+		 * @param jnode	관절 값 JSON 객체.
+		 * @throws IOException	JSON의 구성이 올바르지 않거나 값 갱신에 실패한 경우.
+		 */
 		public void updateSubmodelElement(SubmodelElement sme, JsonNode jnode) throws IOException {
 			Map<String,Float> joints = deserialize(jnode);
 			ElementValue value = serializeToElementValue(joints);

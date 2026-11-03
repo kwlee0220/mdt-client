@@ -8,6 +8,10 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
+ * {@link CompositionItem}의 기본 구현 엔티티.
+ * <p>
+ * {@code ID}, {@code Reference}, {@code Description} Property를 필드로 갖는다.
+ * 접근자는 Lombok {@code @Getter}/{@code @Setter}로 생성된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -18,6 +22,11 @@ public class DefaultCompositionItem extends SubmodelElementCollectionEntity
 	@PropertyField(idShort="Reference") private String reference;
 	@PropertyField(idShort="Description") private String description;
 	
+	/**
+	 * 구성 항목 식별자({@code ID} 필드 값)를 idShort로 반환한다.
+	 *
+	 * @return	구성 항목 식별자.
+	 */
 	@Override
 	public String getIdShort() {
 		return ID;

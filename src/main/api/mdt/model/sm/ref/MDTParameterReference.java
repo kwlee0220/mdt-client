@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import utils.Preconditions;
 import utils.json.JacksonUtils;
 
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.ModelValidationException;
 import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
@@ -30,11 +31,17 @@ import mdt.model.sm.info.MDTAssetType;
  *   <li>파라미터 식별자(예: {@code "Temperature"})</li>
  *   <li>식별자 + 하위 경로(예: {@code "Temperature.unit"}, {@code "Samples[0]"})</li>
  * </ul>
+ * 하위 경로는 {@code .}과 {@code [} 중 먼저 나오는 곳부터이며, 파라미터의 {@code ParameterValue} 요소
+ * 아래 경로로 붙는다(예: {@code "Samples[0].value"} → {@code ...[i].ParameterValue[0].value}).
+ * 대상 Submodel은 항상 인스턴스의 idShort {@code "Data"} Submodel이다.
  * 값을 읽거나 쓰기 전에 {@link #activate(MDTInstanceManager)}로 활성화해야 한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class MDTParameterReference extends SubmodelBasedElementReference {
+	/**
+	 * Json 직렬화 타입 식별자({@code "mdt:ref:param"}). {@link MDTParameterCollectionReference}와 공유한다.
+	 */
 	public static final String SERIALIZATION_TYPE = "mdt:ref:param";
 	private static final String FIELD_INSTANCE_ID = "instanceId";
 	static final String FIELD_PARAMETER_EXPR = "parameterExpr";
@@ -96,7 +103,10 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 
 	@Override
 	public String toStringExpr() {
-		return String.format("param:%s:%s", getInstanceId(), m_parameterExpr);
+		// 파라미터 번호(정수)는 그대로, 파라미터 id와 하위 경로는 따옴표가 필요하면 감싼다.
+		String paramExpr = m_parameterExpr.matches("\\d+")
+							? m_parameterExpr : MDTExpressionParser.toIdShortPathExpr(m_parameterExpr);
+		return String.format("param:%s:%s", MDTExpressionParser.toNameExpr(getInstanceId()), paramExpr);
 	}
 	
 	@Override
@@ -124,6 +134,7 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 	 * @param instanceId	대상 MDT 인스턴스의 식별자.
 	 * @param parameterExpr	파라미터 명세(인덱스, 식별자 또는 식별자+하위 경로).
 	 * @return 생성된 {@link MDTParameterReference} 객체.
+	 * @throws IllegalArgumentException	인자가 {@code null}이거나 {@code instanceId}가 빈 문자열인 경우.
 	 */
 	public static MDTParameterReference newInstance(String instanceId, String parameterExpr) {
 		return new MDTParameterReference(instanceId, parameterExpr);
@@ -141,6 +152,7 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 	 * @return 대상 파라미터의 idShort path.
 	 * @throws ModelValidationException	인스턴스의 에셋 종류가 설정되어 있지 않은 경우.
 	 * @throws IllegalArgumentException	지원하지 않는 에셋 종류인 경우.
+	 * @throws mdt.model.ResourceNotFoundException	식별자에 해당하는 파라미터가 없는 경우.
 	 */
 	@Override
 	protected String buildIdShortPath() {

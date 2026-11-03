@@ -22,6 +22,7 @@ import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 /**
+ * {@link MDTTask} 구현에서 공통으로 사용하는 유틸리티 메소드 모음.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -30,6 +31,12 @@ public final class TaskUtils {
 		throw new AssertionError("Should not be called: class=" + TaskUtils.class.getName());
 	}
 	
+	/**
+	 * 태스크 기술자에서 태스크가 수행하는 연산 Submodel의 참조 표현식을 담는 레이블 이름.
+	 * <p>
+	 * 이 레이블이 가리키는 AI 또는 Simulation Submodel의 {@code LastExecutionTime}이
+	 * {@link #updateLastExecutionTime(MDTInstanceManager, TaskDescriptor, Instant, Logger)}로 갱신된다.
+	 */
 	public static final String LABEL_MDT_OPERATION = "mdt-operation";
 	static DefaultElementReference loadLastExecutionTimeRef(MDTInstanceManager manager,
 															TaskDescriptor descriptor) throws TaskException {
@@ -55,6 +62,20 @@ public final class TaskUtils {
 		return null;
 	}
 
+	/**
+	 * 태스크 기술자에 {@link #LABEL_MDT_OPERATION} 레이블이 있으면, 그 레이블이 가리키는 연산 Submodel의
+	 * {@code LastExecutionTime}을 {@code startTime}부터 현재까지의 경과 시간으로 갱신한다.
+	 * <p>
+	 * 대상 Submodel이 AI이면 {@code AIInfo.Model.LastExecutionTime}을, Simulation이면
+	 * {@code SimulationInfo.Model.LastExecutionTime}을 갱신한다. 레이블이 없으면 아무 일도 하지 않는다.
+	 * 값을 기록하는 중 발생한 오류는 경고 로그만 남기고 무시한다.
+	 *
+	 * @param manager		Submodel 참조를 활성화할 MDT 인스턴스 관리자.
+	 * @param m_descriptor	태스크 기술자.
+	 * @param startTime		태스크 수행 시작 시각.
+	 * @param logger		경고 로그를 남길 logger.
+	 * @throws TaskException	레이블이 가리키는 Submodel이 AI나 Simulation이 아닌 경우.
+	 */
 	public static void updateLastExecutionTime(MDTInstanceManager manager, TaskDescriptor m_descriptor,
 										Instant startTime, Logger logger)
 		throws TaskException {

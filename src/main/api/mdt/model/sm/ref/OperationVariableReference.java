@@ -37,6 +37,7 @@ import mdt.model.sm.value.FileValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public class OperationVariableReference extends SubmodelBasedElementReference {
+	/** Json 직렬화 타입 식별자({@code "mdt:ref:opvar"}). */
 	public static final String SERIALIZATION_TYPE = "mdt:ref:opvar";
 //	private static final String FIELD_SUBMODEL_REF = "submodelReference";
 //	private static final String FIELD_ELEMENT_PATH = "elementPath";
@@ -58,12 +59,14 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		/**
 		 * 문자열을 {@link Kind}로 변환한다.
 		 * <p>
-		 * 순번(숫자) 또는 {@code "in"}/{@code "out"}/{@code "inout"} 표현을 허용하며,
-		 * {@code "*"}는 종류 미지정을 의미하는 {@code null}로 변환된다.
+		 * 순번(0=INPUT, 1=OUTPUT, 2=INOUTPUT) 또는 {@code "in"}/{@code "out"}/{@code "inout"}(대소문자 무시,
+		 * 앞뒤 공백 제거) 표현을 허용하며, {@code "*"}는 종류 미지정을 의미하는 {@code null}로 변환된다.
+		 * {@link #toString()}은 이 짧은 이름을 반환한다.
 		 *
 		 * @param kindStr	변환할 문자열.
 		 * @return 대응하는 {@link Kind}. {@code "*"}인 경우 {@code null}.
-		 * @throws IllegalArgumentException	인식할 수 없는 문자열인 경우.
+		 * @throws IllegalArgumentException	인식할 수 없는 문자열이거나 순번이 범위를 벗어난 경우.
+		 * @throws NullPointerException	{@code kindStr}이 {@code null}인 경우.
 		 */
 		public static Kind fromString(String kindStr) {
 			try {
@@ -115,6 +118,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 * 상위 클래스의 활성화에 더해, 대상 {@link Operation}을 가리키는 내부 참조도 함께 활성화한다.
 	 *
 	 * @param manager	활성화에 사용할 {@link MDTInstanceManager}.
+	 * @throws IllegalArgumentException	{@code manager}가 {@code null}인 경우.
 	 */
 	@Override
 	public void activate(MDTInstanceManager manager) {
@@ -127,6 +131,8 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 
 	/**
 	 * 이 참조와 대상 Operation 참조가 모두 활성 상태이면 {@code true}이다.
+	 *
+	 * @return 활성화 여부.
 	 */
 	@Override
 	public boolean isActivated() {
@@ -160,6 +166,14 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		return m_ordinal;
 	}
 
+	/**
+	 * 대상 {@link Operation} 요소의 idShort path를 반환한다(Operation 참조에 위임).
+	 * <p>
+	 * 변수는 idShort path로 직접 가리킬 수 없으므로 변수 자체가 아니라 변수를 포함한 Operation의 경로이다.
+	 *
+	 * @return Operation 요소의 idShort path.
+	 * @throws IllegalStateException	Operation 참조의 경로가 아직 확정되지 않은 경우.
+	 */
 	@Override
 	public String getIdShortPathString() {
 		return m_opRef.getIdShortPathString();
@@ -173,6 +187,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 * @return 변수 값에 해당하는 {@link SubmodelElement}.
 	 * @throws IOException 읽기 과정에서 예외가 발생한 경우.
 	 * @throws IllegalStateException 참조가 활성화되지 않았거나 대상이 {@link Operation}이 아닌 경우.
+	 * @throws IllegalArgumentException	순번이 해당 종류 변수 목록의 범위를 벗어난 경우.
 	 */
 	@Override
 	public SubmodelElement read() throws IOException {
@@ -186,6 +201,16 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		return opv.getValue();
 	}
 
+	/**
+	 * 참조가 가리키는 Operation 변수의 값을 주어진 요소로 교체한다.
+	 * <p>
+	 * 대상 {@link Operation}을 읽어 지정된 종류/순번 변수의 값을 바꾼 뒤 Operation 전체를 다시 기록한다.
+	 *
+	 * @param newSme	새 변수 값.
+	 * @throws IOException 읽기·쓰기 과정에서 예외가 발생한 경우.
+	 * @throws IllegalStateException 참조가 활성화되지 않았거나 대상이 {@link Operation}이 아닌 경우.
+	 * @throws IllegalArgumentException	순번이 해당 종류 변수 목록의 범위를 벗어난 경우.
+	 */
 	@Override
 	public void write(SubmodelElement newSme) throws IOException {
 		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
@@ -219,25 +244,40 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 		updateValue(newVal);
 	}
 
+	/**
+	 * 지원하지 않는다.
+	 * <p>
+	 * 첨부파일은 idShort path로 대상 요소를 지정하는데, Operation 변수는 idShort path로 가리킬 수 없다.
+	 *
+	 * @throws UnsupportedOperationException 항상 발생한다.
+	 */
 	@Override
 	public void readAttachment(OutputStream out) throws IOException {
-		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
-		
-		m_opRef.readAttachment(out);
+		throw new UnsupportedOperationException("readAttachment is not supported for OperationVariableReference");
 	}
 
+	/**
+	 * 지원하지 않는다.
+	 * <p>
+	 * 첨부파일은 idShort path로 대상 요소를 지정하는데, Operation 변수는 idShort path로 가리킬 수 없다.
+	 *
+	 * @throws UnsupportedOperationException 항상 발생한다.
+	 */
 	@Override
 	public void updateAttachment(FileValue file, InputStream content) throws IOException {
-		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
-		
-		m_opRef.updateAttachment(file, content);
+		throw new UnsupportedOperationException("updateAttachment is not supported for OperationVariableReference");
 	}
 
+	/**
+	 * 지원하지 않는다.
+	 * <p>
+	 * 첨부파일은 idShort path로 대상 요소를 지정하는데, Operation 변수는 idShort path로 가리킬 수 없다.
+	 *
+	 * @throws UnsupportedOperationException 항상 발생한다.
+	 */
 	@Override
 	public void removeAttachment() throws IOException {
-		Preconditions.checkState(isActivated(), "OperationVariableReference is not activated");
-		
-		m_opRef.removeAttachment();
+		throw new UnsupportedOperationException("removeAttachment is not supported for OperationVariableReference");
 	}
 
 	@Override
@@ -273,6 +313,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 * @param kind		변수의 종류(입력/출력/입출력).
 	 * @param ordinal	같은 종류 변수 목록 안에서의 순번(0부터 시작).
 	 * @return 생성된 {@link OperationVariableReference} 객체.
+	 * @throws IllegalArgumentException	{@code opRef}나 {@code kind}가 {@code null}이거나 {@code ordinal}이 음수인 경우.
 	 */
 	public static OperationVariableReference newInstance(SubmodelBasedElementReference opRef, Kind kind, int ordinal) {
 		Preconditions.checkNotNullArgument(opRef, "operation reference is null");
@@ -309,7 +350,11 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	 * @param jnode	{@code aasOpVar}({@code @type} 포함 중첩 참조), {@code kind}, {@code ordinal}
 	 * 				필드를 담은 Json 노드.
 	 * @return 복원된 {@link OperationVariableReference} 객체.
-	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
+	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우. 필드가 없거나 타입이 맞지 않거나({@code ordinal}은
+	 * 						JSON 정수만), {@code aasOpVar}가 {@link SubmodelBasedElementReference}가 아니면
+	 * 						{@link JacksonDeserializationException}.
+	 * @throws IllegalArgumentException	{@code kind} 값을 인식할 수 없거나 {@code "*"}이거나, {@code ordinal}이
+	 * 									음수인 경우.
 	 */
 	public static OperationVariableReference deserializeFields(JsonNode jnode) throws IOException {
 		JsonNode baseOpVar = JacksonUtils.getField(jnode, FIELD_AAS_OP_VAR);
@@ -337,18 +382,24 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	}
 	
 	/**
-	 * 대상 {@link Operation}의 idShort path를 반환한다.
+	 * 상위 클래스가 활성화 시점에 기록할 idShort path를 반환한다. 항상 {@code "Operation"}이다.
 	 * <p>
-	 * Operation은 Submodel 내 {@code "Operation"} idShort에 위치하는 것으로 고정되어 있으므로 항상
-	 * {@code "Operation"}을 반환한다.
+	 * 이 값은 상위 클래스의 활성화 여부 판단에만 쓰인다. 실제 접근 경로는 {@link #getIdShortPathString()}이
+	 * 반환하는 Operation 참조의 경로이며, 읽기·쓰기도 모두 Operation 참조를 통해 수행된다.
 	 *
-	 * @return Operation의 idShort path({@code "Operation"}).
+	 * @return 고정 문자열 {@code "Operation"}.
 	 */
 	@Override
 	protected String buildIdShortPath() {
 		return "Operation";
 	}
 	
+	/**
+	 * 원형으로 변수의 현재 값({@link #read()})을 적재한다.
+	 *
+	 * @return 변수 값에 해당하는 {@link SubmodelElement}.
+	 * @throws UncheckedIOException	읽기 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	protected SubmodelElement loadPrototype() {
 		try {

@@ -8,6 +8,10 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
+ * {@link CompositionDependency}의 기본 구현 엔티티.
+ * <p>
+ * {@code SourceId}, {@code TargetId}, {@code DependencyType} Property를 필드로 갖는다.
+ * 접근자는 Lombok {@code @Getter}/{@code @Setter}로 생성된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

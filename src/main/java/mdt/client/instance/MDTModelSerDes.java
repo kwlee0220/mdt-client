@@ -18,6 +18,11 @@ import mdt.model.instance.MDTTwinCompositionDescriptor;
 import okhttp3.Headers;
 
 /**
+ * MDT 매니저 REST 응답 본문을 MDT/AAS 모델 객체로 변환하는
+ * {@link ResponseBodyDeserializer}들을 모아둔 유틸리티 클래스.
+ * <p>
+ * 각 deserializer는 {@link MDTModelSerDe}를 사용하여 JSON 응답 본문을 해당 타입(또는 그 리스트)으로 읽으며,
+ * 본 패키지 내 클라이언트들({@link HttpMDTInstanceManager}, {@link HttpMDTInstanceClient})에서 사용된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -42,6 +47,13 @@ public class MDTModelSerDes {
 		}
 	};
 	
+	/**
+	 * 주어진 {@link InstanceDescriptor}를 JSON 문자열로 변환한다.
+	 *
+	 * @param instDesc	변환할 {@link InstanceDescriptor}.
+	 * @return	JSON 문자열.
+	 * @throws IOException	JSON 직렬화에 실패한 경우.
+	 */
 	public static String toJson(InstanceDescriptor instDesc) throws IOException {
 		return MDTModelSerDe.toJsonString(instDesc);
 	}

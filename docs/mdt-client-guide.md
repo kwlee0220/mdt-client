@@ -373,8 +373,7 @@ public class LocalValueExample {
 }
 ```
 
-문법 전체와 표현식별 예제는 [MDTExpression 사용 가이드](mdt-expr-guide.md),
-참조의 타입·확장 규약은 [sm.ref README](../src/main/api/mdt/model/sm/ref/README.md)에 있다.
+문법 전체, 표현식별 예제, 참조 타입과 API는 [`mdt.model.sm.ref` README](../src/main/api/mdt/model/sm/ref/README.md)에 있다.
 
 ### 7.1 시계열 참조
 
@@ -411,8 +410,9 @@ FAILED는 `ExecutionException`, CANCELED와 서버 TIMEOUT은 `CancellationExcep
 클라이언트 timeout을 지정하지 않으면 서버에 전달하는 연산 timeout은 `P7D`다.
 `saveOperation()`은 현재 변수들을 Operation 요소에 저장하는 별도 작업이며 단순 결과 조회와 다르다.
 
-`SubmodelService.runOperation()`도 비동기 호출 뒤 polling하지만 실패 처리가 동일하지 않다.
-현재 FAILED를 종료 상태로 보고 결과 조회로 진행하며, 로컬 경과 시간을 따로 검사하지 않는다.
+`SubmodelService.runOperation()`도 비동기 호출 뒤 polling한다.
+FAILED는 서버 메시지를 담은 `ExecutionException`, 서버 TIMEOUT은 `TimeoutException`, CANCELED는 `CancellationException`으로 처리하며,
+로컬 경과 시간을 따로 검사하지 않는다.
 이 메서드의 timeout은 서버 요청에 전달되는 값이다. 어떤 실행 래퍼를 선택했는지에 따라
 예외·시간 제한·취소 동작을 확인해야 한다.
 

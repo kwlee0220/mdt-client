@@ -73,7 +73,7 @@ public final class Workflow {
 		m_startTime = startTime;
 		m_finishTime = finishTime;
 //		m_tasks = sortTopologically(tasks);
-		m_tasks = Nullables.orElseGet(tasks, Lists::newArrayList);
+		m_tasks = Nullables.orGet(tasks, Lists::newArrayList);
 	}
 
 	/**
@@ -93,13 +93,13 @@ public final class Workflow {
 		Preconditions.checkNotNullArgument(builder.m_status, "Status is null");
 
 		m_name = builder.m_name;
-		m_modelId = Nullables.orElseGet(builder.m_modelId, () -> Split.splitLast(m_name, "-").head());
+		m_modelId = Nullables.orGet(builder.m_modelId, () -> Split.splitLast(m_name, "-").head());
 		m_status = builder.m_status;
 		m_creationTime = builder.m_creationTime;
 		m_startTime = builder.m_startTime;
 		m_finishTime = builder.m_finishTime;
 //		m_tasks = sortTopologically(builder.m_tasks);
-		m_tasks = Nullables.orElseGet(builder.m_tasks, Lists::newArrayList);
+		m_tasks = Nullables.orGet(builder.m_tasks, Lists::newArrayList);
 	}
 
 	/**

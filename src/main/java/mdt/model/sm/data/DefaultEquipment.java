@@ -15,6 +15,14 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
+ * {@link Equipment} 인터페이스의 기본 구현 클래스이다.
+ * <p>
+ * 각 속성은 SubmodelElementCollection의 Property에 대응되며, 각 Property의 idShort는
+ * 인터페이스의 접근자 문서에 명시되어 있다.
+ * <p>
+ * 이 밖에 {@code WorkingLOTs}, {@code EquipmentParameters}, {@code EquipmentParameterValues}
+ * SubmodelElementList를 각각 {@link LOT}, {@link Parameter}, {@link ParameterValue} 목록으로 관리한다.
+ * SubmodelElementCollection의 idShort는 설비 식별자 ({@code EquipmentID})이다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -33,6 +41,12 @@ public class DefaultEquipment extends SubmodelElementCollectionEntity implements
 	@SMListField(idShort="EquipmentParameterValues", elementClass=DefaultEquipmentParameterValue.class)
 	private List<ParameterValue> parameterValueList = Lists.newArrayList();
 	
+	/**
+	 * 주어진 SubmodelElement로부터 {@code DefaultEquipment} 객체를 생성한다.
+	 *
+	 * @param sme	Equipment SubmodelElementCollection.
+	 * @return	생성된 {@code DefaultEquipment} 객체.
+	 */
 	public static DefaultEquipment from(SubmodelElement sme) {
 		DefaultEquipment equip = new DefaultEquipment();
 		equip.updateFromAasModel(sme);

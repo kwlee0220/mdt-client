@@ -14,11 +14,13 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 
+import utils.Preconditions;
 import utils.UnitUtils;
 import utils.func.Funcs;
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.instance.MDTInstanceManager;
 import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.ElementReference;
@@ -34,8 +36,9 @@ import mdt.model.timeseries.TimeSeriesUtils;
  * <p>
  * 대상 시계열 Submodel에 대한 참조와 선택적 조회 범위({@link TimeSeriesRange}),
  * 선택적 조회 컬럼 목록으로 구성되며, 읽기 시 대상 Submodel의 {@code ReadRecordsByRange}
- * 연산을 호출하여 레코드를 얻는다. 레코드 갱신({@code write}/{@code updateValue})은
- * 지원하지 않는다.
+ * 연산을 호출하여 레코드를 얻는다. 범위를 지정하지 않으면 전체 레코드를, 컬럼을 지정하지 않으면 전체 컬럼을
+ * 읽는다. 컬럼을 지정하면 {@code "Time"} 컬럼이 항상 맨 앞에 추가된다. 레코드 갱신({@code write}/
+ * {@code updateValue}/{@code updateFromValueJson})은 지원하지 않는다.
  * <p>
  * Json 직렬화 시 {@link #SERIALIZATION_TYPE}({@code "mdt:ref:timeseries"}) 타입으로 식별되며,
  * 레코드를 읽기 위해서는 {@link #activate(MDTInstanceManager)}를 호출하여 참조를 활성화해야 한다.
@@ -43,6 +46,7 @@ import mdt.model.timeseries.TimeSeriesUtils;
  * @author Kang-Woo Lee (ETRI)
  */
 public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
+	/** Json 직렬화 타입 식별자({@code "mdt:ref:timeseries"}). */
 	public static final String SERIALIZATION_TYPE = "mdt:ref:timeseries";
 	private static final String FIELD_SUBMODEL_REF = "submodelReference";
 	private static final String FIELD_LAST = "last";			// 마지막 N개(Count, 숫자) 또는 "<기간>@<anchor>"(Trailing, 문자열, optional)
@@ -72,13 +76,18 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	/**
 	 * 지정된 범위/컬럼의 시계열 레코드들을 읽어 반환한다.
 	 * <p>
-	 * 대상 시계열 Submodel의 {@code ReadRecordsByRange} 연산을 호출하여 결과를 얻는다.
+	 * 대상 시계열 Submodel의 {@code ReadRecordsByRange} 연산을 호출하여 결과를 얻는다. 범위는
+	 * {@link TimeSeriesRange}의 {@code toString()} 문자열로 {@code Range} 입력에, 컬럼 목록은 쉼표로 이은 문자열로
+	 * {@code Columns} 입력에 전달하며, 지정하지 않은 입력은 설정하지 않는다.
 	 *
 	 * @return 레코드들을 담은 {@link SubmodelElementCollection}.
 	 * @throws IOException 읽기 과정에서 예외가 발생한 경우.
+	 * @throws IllegalStateException 참조가 활성화되지 않은 경우.
 	 */
 	@Override
 	public SubmodelElementCollection read() throws IOException {
+		// 연산 호출은 Submodel 참조로 직접 하므로, 다른 접근과 같이 활성화 여부를 먼저 확인한다.
+		Preconditions.checkState(isActivated(), "ElementReference is not activated: %s", toStringExpr());
 		return TimeSeriesUtils.readRecords(getSubmodelReference(), m_range, m_columns);
 	}
 
@@ -133,7 +142,7 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	@Override
 	public String toStringExpr() {
 		// MdtExpr 문법(timeseriesSpec)에 맞춰 직렬화한다:
-		//   timeseries:<submodelSpec>:<tsSpec>[#<range>][|<col,...>]
+		//   timeseries:<submodelSpec>[#<range>][|<col,...>]
 		StringBuilder sb = new StringBuilder("timeseries:");
 		sb.append(getSubmodelReference().toStringExpr());
 
@@ -143,6 +152,7 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		if ( m_columns != null ) {
 			String columnsExpr = FStream.from(m_columns)
 										.drop(1)	// Time 컬럼은 제외
+										.map(MDTExpressionParser::toNameExpr)
 										.join(',');
 			if ( !columnsExpr.isEmpty() ) {
 				sb.append('|').append(columnsExpr);
@@ -162,6 +172,9 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	 * <p>
 	 * 2026-11-01 이전에는 대상 Submodel만 비교해서, 같은 Submodel의 {@code last=1}과 {@code last=100}
 	 * 참조가 같다고 판단했다.
+	 *
+	 * @param obj	비교할 객체.
+	 * @return 같은 참조이면 {@code true}.
 	 */
 	@Override
 	public boolean equals(Object obj) {
@@ -203,15 +216,16 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		 * 지금까지 설정된 값으로 {@link TimeSeriesRecordsReference}를 생성한다.
 		 *
 		 * @return 생성된 {@link TimeSeriesRecordsReference} 객체.
+		 * @throws IllegalArgumentException	Submodel 참조가 설정되지 않은 경우.
 		 */
 		public TimeSeriesRecordsReference build() {
 			return new TimeSeriesRecordsReference(m_submodelRef, m_range, m_columns);
 		}
 
 		/**
-		 * 인자가 속한 Submodel 참조를 설정한다.
+		 * 레코드를 읽어올 시계열 Submodel 참조를 설정한다.
 		 *
-		 * @param smRef	대상 Submodel에 대한 참조.
+		 * @param smRef	대상 시계열 Submodel에 대한 참조.
 		 * @return 이 빌더 객체.
 		 */
 		public Builder submodelReference(DefaultSubmodelReference smRef) {
@@ -222,7 +236,8 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		/**
 		 * 읽어올 컬럼명 목록을 설정한다.
 		 * <p>
-		 * 설정하지 않으면 전체 컬럼을 읽는다.
+		 * 설정하지 않으면({@code null}) 전체 컬럼을 읽는다. {@code "Time"} 컬럼은 포함하지 않아도 맨 앞에
+		 * 추가된다.
 		 *
 		 * @param columns	읽어올 컬럼명 목록.
 		 * @return 이 빌더 객체.
@@ -233,10 +248,11 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		}
 
 		/**
-		 * 최근 {@code length}개 레코드만 읽도록 범위를 설정한다.
+		 * 최근 {@code length}개 레코드만 읽도록 범위를 설정한다({@link TimeSeriesRange.Count}).
 		 *
 		 * @param length	읽어올 최근 레코드 개수.
 		 * @return 이 빌더 객체.
+		 * @throws IllegalArgumentException	{@code length}가 음수인 경우.
 		 */
 		public Builder last(int length) {
 			m_range = TimeSeriesRange.length(length);
@@ -244,10 +260,14 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		}
 		
 		/**
-		 * 마지막 {@code duration} 기간의 레코드만 읽도록 범위를 설정한다.
+		 * 기준점({@code anchor})으로부터 마지막 {@code last} 기간의 레코드만 읽도록 범위를 설정한다
+		 * ({@link TimeSeriesRange.Trailing}).
 		 *
 		 * @param last	읽어올 마지막 기간.
+		 * @param anchor	기간의 기준점(마지막 레코드 시각 또는 현재 시각).
 		 * @return 이 빌더 객체.
+		 * @throws IllegalArgumentException	{@code last}나 {@code anchor}가 {@code null}이거나 {@code last}가
+		 * 									음수인 경우.
 		 */
 		public Builder last(Duration last, TimeSeriesRange.Anchor anchor) {
 			m_range = TimeSeriesRange.last(last, anchor);
@@ -257,9 +277,11 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		/**
 		 * 절대 범위 {@code from}~{@code to}에 해당하는 레코드만 읽도록 범위를 설정한다.
 		 *
-		 * @param from	읽어올 범위의 시작 시각(포함).
-		 * @param to	읽어올 범위의 종료 시각(포함).
+		 * @param from	읽어올 범위의 시작 시각(포함). {@code null}이면 시작 제한 없음.
+		 * @param to	읽어올 범위의 종료 시각(포함). {@code null}이면 종료 제한 없음.
 		 * @return 이 빌더 객체.
+		 * @throws IllegalArgumentException	두 시각이 모두 {@code null}이거나 {@code from}이 {@code to}보다
+		 * 									늦은 경우.
 		 */
 		public Builder between(Instant from, Instant to) {
 			m_range = TimeSeriesRange.between(from, to);
@@ -272,6 +294,7 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 		 * @param from		읽어올 범위의 시작 시각(포함).
 		 * @param length	읽어올 레코드 개수.
 		 * @return 이 빌더 객체.
+		 * @throws IllegalArgumentException	{@code from}이 {@code null}이거나 {@code length}가 음수인 경우.
 		 */
 		public Builder since(Instant from, int length) {
 			m_range = TimeSeriesRange.since(from, length);
@@ -302,6 +325,15 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	 * <p>
 	 * Jackson 기반의 {@link ElementReferences.Serializer}가 {@link ElementReference} 객체를
 	 * 직렬화하는 과정에서 호출된다.
+	 * <p>
+	 * 범위는 종류에 따라 다음 필드 하나로 기록한다(범위가 없으면 생략).
+	 * <ul>
+	 *   <li>{@link TimeSeriesRange.Count}: {@code "last": N}(정수)
+	 *   <li>{@link TimeSeriesRange.Trailing}: {@code "last": "<ISO8601 기간>@<latest|now>"}(문자열)
+	 *   <li>{@link TimeSeriesRange.Absolute}: {@code "timeSpan": {"from": ..., "to": ...}}(한쪽 생략 가능)
+	 *   <li>{@link TimeSeriesRange.Since}: {@code "since": {"from": ..., "length": N}}
+	 * </ul>
+	 * 컬럼 목록은 내부용 선두 {@code "Time"} 컬럼을 뺀 {@code columns} 배열로 기록한다.
 	 *
 	 * @param gen	직렬화에 사용할 {@link JsonGenerator}.
 	 * @throws	IOException	Json 직렬화 과정에서 예외가 발생한 경우.
@@ -355,10 +387,19 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	 * Jackson 기반의 {@link ElementReferences.Deserializer}가 {@link ElementReference} 객체를
 	 * 역직렬화하는 과정에서 호출된다.
 	 *
-	 * @param jnode	{@code submodelReference} 필드와 선택적 {@code last}/{@code timeSpan}/{@code columns}
-	 * 				필드를 담은 Json 노드.
+	 * 필드 형식은 {@link #serializeFields(JsonGenerator)}와 같다. 범위 필드는 {@code last}, {@code timeSpan},
+	 * {@code since} 순으로 처음 발견된 것 하나만 사용한다. 문자열 {@code last}의 anchor가 생략되면
+	 * {@link TimeSeriesRange.Anchor#LATEST}로 간주하며, 기간은 ISO8601({@code PT...}) 또는 단위 접미사
+	 * 형식({@code 10s} 등)을 받는다.
+	 *
+	 * @param jnode	{@code submodelReference} 필드와 선택적 {@code last}/{@code timeSpan}/{@code since}/
+	 * 				{@code columns} 필드를 담은 Json 노드.
 	 * @return 복원된 {@link TimeSeriesRecordsReference} 객체.
-	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
+	 * @throws IOException	{@code submodelReference}가 없거나 잘못된 경우, 또는 범위 필드의 형식이 잘못된 경우.
+	 * @throws IllegalArgumentException	범위 값이 유효하지 않거나(음수 개수 등) 단위 접미사 기간의 형식이
+	 * 									잘못된 경우.
+	 * @throws java.time.format.DateTimeParseException	시각 문자열이 ISO-8601 {@link Instant} 형식이 아니거나
+	 * 													ISO8601 기간의 형식이 잘못된 경우.
 	 */
 	public static TimeSeriesRecordsReference deserializeFields(JsonNode jnode) throws IOException {
 		JsonNode smRefNode = JacksonUtils.getField(jnode, FIELD_SUBMODEL_REF);
@@ -395,8 +436,8 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 			JsonNode timeSpanNode = JacksonUtils.getFieldOrNull(jnode, FIELD_TIME_SPAN);
 			JsonNode sinceNode = JacksonUtils.getFieldOrNull(jnode, FIELD_SINCE);
 			if ( timeSpanNode != null && !timeSpanNode.isNull() ) {
-				String fromStr = JacksonUtils.getStringFieldOrNull(timeSpanNode, FIELD_FROM);
-				String toStr = JacksonUtils.getStringFieldOrNull(timeSpanNode, FIELD_TO);
+				String fromStr = JacksonUtils.getTextFieldOrNull(timeSpanNode, FIELD_FROM);
+				String toStr = JacksonUtils.getTextFieldOrNull(timeSpanNode, FIELD_TO);
 				if ( fromStr != null || toStr != null ) {
 					Instant from = (fromStr != null) ? Instant.parse(fromStr) : null;
 					Instant to = (toStr != null) ? Instant.parse(toStr) : null;
@@ -407,7 +448,7 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 				}
 			}
 			else if ( sinceNode != null && !sinceNode.isNull() ) {
-				String fromStr = JacksonUtils.getStringFieldOrNull(sinceNode, FIELD_FROM);
+				String fromStr = JacksonUtils.getTextFieldOrNull(sinceNode, FIELD_FROM);
 				JsonNode lengthNode = JacksonUtils.getFieldOrNull(sinceNode, FIELD_LENGTH);
 				if ( fromStr == null || lengthNode == null || !lengthNode.isInt() ) {
 					throw new IOException("Invalid since field: " + sinceNode);

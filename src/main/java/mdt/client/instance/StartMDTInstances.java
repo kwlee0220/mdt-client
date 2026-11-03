@@ -9,6 +9,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 
 import org.slf4j.Logger;
@@ -49,7 +50,11 @@ import mdt.model.instance.MDTInstanceStatus;
  * </ul>
  * <p>
  * 진행 상황은 내부 카운터({@code m_pendingCount}, {@code m_startingCount})와 시도 이력
- * ({@code m_triedInstances})으로 추적되며, 모든 상태 접근은 {@link Guard}로 직렬화된다.
+ * ({@code m_triedInstances})으로 추적되며, 모두 {@link Guard}로 보호된다.
+ * <p>
+ * 실행기는 {@link Builder#executor(ExecutorService)}로 주어진 것을 쓰고, 주어지지 않으면 {@link #run()}마다
+ * {@link Builder#nthreads(int)} 크기(기본 1)의 쓰레드 풀을 새로 만들어 쓰고 종료 시 {@code shutdown()} 한다.
+ * 주어진 실행기는 종료시키지 않으므로 호출자가 관리한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -57,8 +62,6 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	private static final Logger s_logger = LoggerFactory.getLogger(StartMDTInstances.class);
 	/** 기본 상태 확인 주기 (1초). */
 	private static final Duration DEFAULT_POLLING_INTERVAL = UnitUtils.parseDuration("1s");
-	/** 기본 실행기 (단일 쓰레드). */
-	private static final ExecutorService DEFAULT_EXECUTOR = Executors.newSingleThreadExecutor();
 
 	private final MDTInstanceManager m_manager;
 	private final List<String> m_instanceIdList;
@@ -66,8 +69,10 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	private final Duration m_timeout;
 	private final boolean m_nowait;
 	private final boolean m_startAll;
-	private final ExecutorService m_executor;
+	@Nullable private final ExecutorService m_givenExecutor;	// 호출자가 준 실행기. 종료시키지 않는다.
+	private final int m_nthreads;								// 실행기를 직접 만들 때의 쓰레드 수
 	private final boolean m_recursive;
+	private volatile ExecutorService m_executor;				// 현재 run()이 사용하는 실행기
 
 	private final Guard m_guard = Guard.create();
 	/** 시작 요청은 들어왔으나 아직 쓰레드를 할당받지 못해 대기 중인 인스턴스 수. */
@@ -92,7 +97,8 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
         m_timeout = builder.m_timeout;
         m_nowait = builder.m_nowait;
         m_startAll = builder.m_startAll;
-        m_executor = Nullables.orElse(builder.m_executor, DEFAULT_EXECUTOR);
+        m_givenExecutor = builder.m_executor;
+        m_nthreads = builder.m_nthreads;
         m_recursive = builder.m_recursive;
 	}
 	
@@ -101,15 +107,17 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	 * <p>
 	 * 동작 절차:
 	 * <ol>
-	 *   <li>{@code startAll}이 켜져 있으면 매니저로부터 비실행 인스턴스 전부를, 그렇지 않으면
-	 *       {@code instanceIdList}에 지정된 인스턴스만 조회한다. 개별 조회 실패는 표준 출력에
-	 *       경고를 남기고 다음 인스턴스로 넘어간다.</li>
+	 *   <li>{@code startAll}이 켜져 있으면 매니저로부터 상태가 RUNNING이 아닌 인스턴스 전부를,
+	 *       그렇지 않으면 {@code instanceIdList}에 지정된 인스턴스만 조회한다. 개별 조회 실패는
+	 *       표준 출력에 경고를 남기고 다음 인스턴스로 넘어간다.</li>
 	 *   <li>각 대상 인스턴스에 대해 {@link #startInstanceAsync(MDTInstance)}를 호출하여
 	 *       {@link ExecutorService}에 시작 작업을 제출한다.</li>
-	 *   <li>{@code nowait}와 {@code recursive} 설정에 따라 대기 조건이 달라진다.
-	 *       대기하지 않더라도 마지막 요청들이 실제로 시작될 시간을 주기 위해 1초간 대기한다.</li>
+	 *   <li>{@code nowait}가 꺼져 있거나 {@code recursive}가 켜져 있으면 모든 시작 작업이 끝날 때까지
+	 *       대기한다. 그렇지 않으면 모든 작업이 쓰레드를 할당받을 때까지만 대기한 뒤, 마지막 요청들이
+	 *       실제로 전송될 시간을 주기 위해 1초간 더 대기한다.</li>
 	 * </ol>
-	 * 마지막에는 {@link ExecutorService#shutdown()}을 호출하여 실행기를 정리한다.
+	 * 직접 만든 실행기는 마지막에 {@link ExecutorService#shutdown()}으로 정리하고, 주어진 실행기는 그대로 둔다.
+	 * 개별 인스턴스의 시작 실패는 예외로 전달되지 않고 표준 출력에 출력된다.
 	 *
 	 * @throws InterruptedException 대기 도중 인터럽트된 경우.
 	 */
@@ -134,9 +142,16 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 			}
 		}
 
+		m_guard.run(() -> {
+			m_pendingCount = 0;
+			m_startingCount = 0;
+			m_triedInstances.clear();
+		});
+		boolean ownsExecutor = (m_givenExecutor == null);
+		m_executor = ownsExecutor ? Executors.newFixedThreadPool(m_nthreads) : m_givenExecutor;
 		try {
 			for ( MDTInstance instance : initialInstances ) {
-				if ( m_triedInstances.add(instance.getId()) ) {
+				if ( markTried(instance) ) {
 					startInstanceAsync(instance);
 				}
 			}
@@ -155,8 +170,15 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 			}
 		}
 		finally {
-			m_executor.shutdown();
+			if ( ownsExecutor ) {
+				m_executor.shutdown();
+			}
 		}
+	}
+	
+	// 처음 시도하는 인스턴스이면 시도 이력에 기록하고 true를 반환한다. 여러 작업 쓰레드가 동시에 호출한다.
+	private boolean markTried(MDTInstance instance) {
+		return m_guard.get(() -> m_triedInstances.add(instance.getId()));
 	}
 	
 	/**
@@ -195,7 +217,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	 * 작업 쓰레드가 할당된 후 실제 인스턴스 시작 절차를 수행한다.
 	 * <p>
 	 * 카운터를 업데이트한 뒤 {@link MDTInstance#start(Duration, Duration)}을 호출하여 인스턴스의
-	 * 상태가 RUNNING이 될 때까지 또는 timeout이 만료될 때까지 대기한다. 이미 RUNNING 상태인
+	 * 상태가 STARTING을 벗어날 때까지 또는 timeout이 만료될 때까지 대기한다. 이미 RUNNING 상태인
 	 * 인스턴스에 대한 {@link InvalidResourceStatusException}은 정상 흐름으로 간주하여 무시한다.
 	 * <p>
 	 * {@code recursive}가 켜져 있으면 시작에 성공한 인스턴스의 종속 컴포넌트 인스턴스 목록을
@@ -247,7 +269,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 					s_logger.info("On finished: {} -> Starting dependent instances: {}", instance.getId(), depInstIdList);
 				}
 				for ( MDTInstance dependent: dependents ) {
-					if ( m_triedInstances.add(dependent.getId()) ) {
+					if ( markTried(dependent) ) {
 						startInstanceAsync(dependent);
 					}
 				}
@@ -289,6 +311,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		private boolean m_nowait = false;
 		private boolean m_startAll = false;
 		private ExecutorService m_executor = null;
+		private int m_nthreads = 1;
 		private boolean m_recursive = false;
 		
 		/**
@@ -341,7 +364,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		/**
 		 * 각 MDTInstance 시작 요청 후, 해당 인스턴스의 상태를 주기적으로 확인하는 간격을 설정한다.
 		 * <p>
-		 * 별도로 지정하지 않는 경우에는 {@link #DEFAULT_POLLING_INTERVAL}이 사용된다.
+		 * 별도로 지정하지 않거나 {@code null}인 경우에는 {@link #DEFAULT_POLLING_INTERVAL} (1초)이 사용된다.
 		 *
 		 * @param interval	상태 확인 간격
 		 * @return		빌더 자신
@@ -366,6 +389,8 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		
 		/**
 		 * 모든 MDTInstance 시작 요청 후, 해당 인스턴스의 실행 결과가 판정될 때까지 대기하지 않도록 설정한다.
+		 * <p>
+		 * {@link #recursive(boolean)}가 켜져 있으면 이 설정은 무시되고 항상 대기한다.
 		 *
 		 * @param flag	{@code true}이면 대기하지 않음.
 		 * @return	빌더 자신
@@ -389,29 +414,33 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		/**
 		 * MDTInstance 시작 작업을 수행할 쓰레드 풀의 크기를 설정한다.
 		 * <p>
-		 * 별도로 지정하지 않는 경우에는 1로 설정된다.
+		 * {@link StartMDTInstances#run()}마다 지정된 크기의 고정 쓰레드 풀을 만들어 쓰고 종료 시 {@code shutdown()}
+		 * 한다. {@link #executor(ExecutorService)} 설정을 대체한다. 별도로 지정하지 않으면 크기는 1이다.
 		 *
 		 * @param nthreads	쓰레드 풀 크기
 		 * @return	빌더 자신
+		 * @throws IllegalArgumentException	{@code nthreads}가 1 미만인 경우.
 		 */
 		public Builder nthreads(int nthreads) {
-			Preconditions.checkArgument(nthreads > 0, "invalid nthreads: " + nthreads);
-            m_executor = Executors.newFixedThreadPool(nthreads);
+			Preconditions.checkArgument(nthreads > 0, "invalid nthreads: %s", nthreads);
+			m_nthreads = nthreads;
+			m_executor = null;
             return this;
 		}
 		
 		/**
 		 * MDTInstance 시작 작업을 수행할 {@link ExecutorService} 객체를 설정한다.
 		 * <p>
-		 * 별도로 지정하지 않는 경우에는 단일 쓰레드로 구성된 {@link ExecutorService}가 사용된다.
 		 * 지정된 ExecutorService를 통해 사용할 수 있는 모든 쓰레드들이 동시에 MDTInstance
-		 * 시작 작업을 수행할 수 있다. 이 경우에는 {@link #nthreads(int)}의 설정은 무시된다.
+		 * 시작 작업을 수행할 수 있다. {@link #nthreads(int)} 설정을 대체하므로 나중에 호출된 것이 적용된다.
+		 * 주어진 실행기는 {@link StartMDTInstances#run()}이 종료시키지 않으므로 호출자가 관리한다.
 		 *
 		 * @param executor	작업을 실행할 {@link ExecutorService} 객체
 		 * @return	빌더 자신
 		 */
 		public Builder executor(ExecutorService executor) {
 			m_executor = executor;
+			m_nthreads = 1;
 			return this;
 		}
 		

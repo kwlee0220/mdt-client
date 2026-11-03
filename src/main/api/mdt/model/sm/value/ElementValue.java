@@ -34,6 +34,14 @@ public sealed interface ElementValue permits AbstractElementValue, DataElementVa
 	 */
 	public String toJsonString();
 	
+	/**
+	 * Polymorphic한 JSON 표현을 포함한 전체 JSON 트리를 반환한다.
+	 * <p>
+	 * {@link #toJsonString()}과 같은 내용({@code @type}/{@code value} 필드를 가진 JSON 객체)을
+	 * {@link JsonNode} 형태로 반환한다.
+	 *
+	 * @return	JSON 노드.
+	 */
 	public JsonNode toJsonNode();
 	
 	/**
@@ -45,6 +53,13 @@ public sealed interface ElementValue permits AbstractElementValue, DataElementVa
 	 */
 	public String toValueJsonString();
 	
+	/**
+	 * Polymorphic한 JSON 표현을 제외한 값에 해당하는 부분의 JSON 트리를 반환한다.
+	 * <p>
+	 * {@link #toValueObject()} 메소드에서 반환되는 자바 객체를 {@link JsonNode}로 변환하여 반환한다.
+	 *
+	 * @return	값에 해당하는 부분의 JSON 노드.
+	 */
 	public JsonNode toValueJsonNode();
 	
 	/**

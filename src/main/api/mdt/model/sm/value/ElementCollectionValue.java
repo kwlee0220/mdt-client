@@ -28,10 +28,15 @@ import utils.stream.KeyValueFStream;
  * {@link #from(SubmodelElementCollection)}을, 값 객체·값 JSON으로부터 생성하려면 필드 타입을 정하는 템플릿을 받는
  * {@link #fromValueObject(Object, ElementCollectionValue)},
  * {@link #parseValueJsonNode(JsonNode, ElementCollectionValue)}를 사용한다.
+ * <p>
+ * 값 객체({@link #toValueObject()})와 value-only JSON은 필드 idShort를 키로 하는 객체이다. polymorphic
+ * JSON의 타입 식별자는 {@value #SERIALIZATION_TYPE}이며, 이 때 각 필드는 자신의 polymorphic JSON
+ * ({@code @type}/{@code value})으로 직렬화된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public final class ElementCollectionValue extends AbstractElementValue {
+	/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 	public static final String SERIALIZATION_TYPE = "mdt:value:collection";
 
 	private final LinkedHashMap<String,? extends ElementValue> m_fields;
@@ -49,6 +54,11 @@ public final class ElementCollectionValue extends AbstractElementValue {
 		m_fields = Maps.newLinkedHashMap(elements);
 	}
 	
+	/**
+	 * 필드 수를 반환한다.
+	 *
+	 * @return	필드 수.
+	 */
 	public int size() {
 		return m_fields.size();
 	}

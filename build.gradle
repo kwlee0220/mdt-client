@@ -93,6 +93,20 @@ tasks.named('test') {
 	jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
 }
 
+// utils의 javadoc 작업을 참조하려면 utils 프로젝트가 먼저 평가되어 있어야 한다.
+evaluationDependsOn(':utils')
+
+javadoc {
+	// utils의 클래스·메소드를 utils javadoc으로 링크한다. utils 문서를 먼저 만들고, 그 element-list를 읽는다.
+	// 문서를 함께 배포할 때는 첫 번째 인자를 배포 위치 기준의 상대 경로(예: '../../utils/')로 바꾼다.
+	dependsOn ':utils:javadoc'
+	def utilsDoc = project(':utils').javadoc.destinationDir
+	options.linksOffline(utilsDoc.toURI().toString(), utilsDoc.path)
+	options.links('https://docs.oracle.com/en/java/javase/17/docs/api/')
+	options.encoding = 'UTF-8'
+	options.charSet = 'UTF-8'
+}
+
 jar {
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 	// 의존 프로젝트의 logback-test.xml / logback-spring.xml은 jar에 포함하지 않는다.

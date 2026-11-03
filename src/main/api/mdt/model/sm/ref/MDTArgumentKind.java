@@ -16,12 +16,14 @@ public enum MDTArgumentKind {
 	/**
 	 * 문자열을 {@link MDTArgumentKind}로 변환한다.
 	 * <p>
-	 * 순번(0=INPUT, 1=OUTPUT) 또는 {@code "in"}/{@code "out"}으로 시작하는 이름을 허용하며,
-	 * {@code "*"}는 종류 미지정을 의미하는 {@code null}로 변환된다.
+	 * 순번(0=INPUT, 1=OUTPUT) 또는 이름 {@code "in"}·{@code "input"}, {@code "out"}·{@code "output"}(대소문자 무시,
+	 * 앞뒤 공백 제거)을 허용하며, {@code "*"}는 종류 미지정을 의미하는 {@code null}로 변환된다.
+	 * {@code "inout"}처럼 이 밖의 값은 거부한다.
 	 *
 	 * @param kindStr	변환할 문자열.
 	 * @return 대응하는 {@link MDTArgumentKind}. {@code "*"}인 경우 {@code null}.
-	 * @throws IllegalArgumentException	인식할 수 없는 문자열인 경우.
+	 * @throws IllegalArgumentException	인식할 수 없는 문자열이거나 순번이 범위를 벗어난 경우.
+	 * @throws NullPointerException	{@code kindStr}이 {@code null}인 경우.
 	 */
 	public static MDTArgumentKind fromString(String kindStr) {
 		try {
@@ -31,19 +33,12 @@ public enum MDTArgumentKind {
 			return MDTArgumentKind.values()[ordinal];
 		}
 		catch ( NumberFormatException expected ) {
-			kindStr = kindStr.trim().toLowerCase();
-			if ( kindStr.startsWith("in") ) {
-				return INPUT;
-			}
-			else if ( kindStr.startsWith("out") ) {
-                return OUTPUT;
-            }
-			else if ( kindStr.equals("*") ) {
-				return null;
-			}
-			else {
-				throw new IllegalArgumentException("Invalid OperationArgument's kind: " + kindStr);
-			}
+			return switch ( kindStr.trim().toLowerCase() ) {
+				case "in", "input" -> INPUT;
+				case "out", "output" -> OUTPUT;
+				case "*" -> null;
+				default -> throw new IllegalArgumentException("Invalid OperationArgument's kind: " + kindStr);
+			};
 		}
 	}
 }

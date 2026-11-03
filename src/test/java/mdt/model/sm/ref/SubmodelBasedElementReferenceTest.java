@@ -419,7 +419,10 @@ public class SubmodelBasedElementReferenceTest {
 
 		Assertions.assertFalse(ref.isActivated());
 		Assertions.assertThrows(IllegalStateException.class, ref::read);
-		Assertions.assertThrows(IllegalStateException.class, () -> ref.readAttachment(mock(OutputStream.class)));
+		Assertions.assertThrows(IllegalStateException.class, () -> ref.write(mock(SubmodelElement.class)));
+		// Operation 변수는 idShort path로 가리킬 수 없어 첨부파일을 지원하지 않는다.
+		Assertions.assertThrows(UnsupportedOperationException.class,
+								() -> ref.readAttachment(mock(OutputStream.class)));
 		org.mockito.Mockito.verifyNoInteractions(m_svc);
 	}
 

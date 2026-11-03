@@ -10,10 +10,18 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 /**
+ * 로컬 MQTT 브로커에 접속하여 {@code /mdt/#} 토픽을 구독하고 메시지를 발행해 수신 여부를 확인하는
+ * 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestMqtt implements MqttCallback {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	@SuppressWarnings({ "unused", "resource" })
 	public static final void main(String... args) throws Exception {
 		MqttConnectOptions opts = new MqttConnectOptions();

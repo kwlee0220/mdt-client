@@ -9,6 +9,7 @@ import mdt.model.ResourceNotFoundException;
 
 
 /**
+ * Submodel Registry에 등록된 {@link SubmodelDescriptor}들을 조회/등록/갱신/해제하는 인터페이스를 정의한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -30,8 +31,20 @@ public interface SubmodelRegistry {
 	public SubmodelDescriptor getSubmodelDescriptorById(String submodelId)
 		throws ResourceNotFoundException;
 
+	/**
+	 * 주어진 idShort를 갖는 모든 {@link SubmodelDescriptor}들을 반환한다.
+	 *
+	 * @param idShort	검색할 Submodel의 idShort.
+	 * @return	idShort가 일치하는 SubmodelDescriptor 리스트.
+	 */
 	public List<SubmodelDescriptor> getAllSubmodelDescriptorsByIdShort(String idShort);
 
+	/**
+	 * 주어진 semantic id를 갖는 모든 {@link SubmodelDescriptor}들을 반환한다.
+	 *
+	 * @param semanticId	검색할 Submodel의 semantic id.
+	 * @return	semantic id가 일치하는 SubmodelDescriptor 리스트.
+	 */
 	public List<SubmodelDescriptor> getAllSubmodelDescriptorsBySemanticId(String semanticId);
 	
 	/**

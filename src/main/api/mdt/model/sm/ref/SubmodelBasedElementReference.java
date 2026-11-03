@@ -64,6 +64,12 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	 */
 	@NotNull abstract protected String buildIdShortPath();
 	
+	/**
+	 * 주어진 Submodel 참조를 기반으로 하는 비활성 상태의 참조를 생성한다.
+	 *
+	 * @param submodelRef	대상 SubmodelElement가 속한 Submodel에 대한 참조.
+	 * @throws IllegalArgumentException	{@code submodelRef}가 {@code null}인 경우.
+	 */
 	protected SubmodelBasedElementReference(MDTSubmodelReference submodelRef) {
 		Preconditions.checkNotNullArgument(submodelRef, "submodelRef must not be null");
 		
@@ -79,6 +85,8 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 	 * 활성 상태로 보였다.
 	 *
 	 * @param manager	활성화에 사용할 {@link MDTInstanceManager}.
+	 * @throws IllegalArgumentException	{@code manager}가 {@code null}인 경우.
+	 * @throws IllegalStateException	{@link #buildIdShortPath()}가 {@code null}을 반환한 경우.
 	 */
 	@Override
 	public void activate(MDTInstanceManager manager) {

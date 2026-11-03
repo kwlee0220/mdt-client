@@ -60,8 +60,9 @@ public class ReferenceHelper {
 
 
     /**
-     * Converts a list of keys to a reference. If possible, the key type is automatically determined or set to null if
-     * this not possible.
+     * Converts a list of keys to a reference. The reference type is determined from the first key
+     * ({@code ExternalReference} for {@code GlobalReference}/{@code FragmentReference} keys, otherwise
+     * {@code ModelReference}); it is set to null only if no key is given.
      *
      * @param keys which are converted to a reference
      * @return the reference with the keys
@@ -97,8 +98,8 @@ public class ReferenceHelper {
 
 
     /**
-     * Compares if two {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} are equal. This also works when keys
-     * have different but compatible {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes}, e.g.
+     * Compares if two {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} are equal. This also works
+     * when keys have different but compatible {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes}, e.g.
      * {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes#SUBMODEL_ELEMENT} and
      * {@link org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes#PROPERTY}.
      *
@@ -145,8 +146,9 @@ public class ReferenceHelper {
      * Gets a Java interface representing the type provided by key.
      *
      * @param key The KeyElements type
-     * @return a Java interface representing the provided KeyElements type or null if no matching Class/interface could
-     *         be found. It also returns abstract types like SUBMODEL_ELEMENT or DATA_ELEMENT
+     * @return a Java interface representing the provided KeyElements type or null if no matching
+     *         Class/interface could be found. It also returns abstract types like SUBMODEL_ELEMENT or
+     *         DATA_ELEMENT
      */
     private static Class<?> keyTypeToClass(KeyTypes key) {
         return Stream.concat(ReflectionHelper.INTERFACES.stream(), ReflectionHelper.INTERFACES_WITHOUT_DEFAULT_IMPLEMENTATION.stream())
@@ -161,20 +163,21 @@ public class ReferenceHelper {
      *
      * @param key the key to check
      * @param type the expected AAS type
+     * @throws NullPointerException if key is null or its key type is not supported
      * @throws IllegalArgumentException if key is not compatible with given type
      */
     public static void ensureKeyType(Key key, Class<?> type) {
     	Preconditions.checkNotNull(key, "key must be non-null");
         Class<?> keyClass = keyTypeToClass(key.getType());
         Preconditions.checkNotNull(keyClass, String.format("unsupported key type '%s'", key.getType()));
-        Preconditions.checkState(type.isAssignableFrom(keyClass),
+        Preconditions.checkArgument(type.isAssignableFrom(keyClass),
         						"key must be compatible to %s (found: %s)", type, keyClass);
     }
 
 
     /**
-     * Finds the first occuring key with given keyType and returns its value. If no key of given keyType is found null
-     * is return.
+     * Finds the first occuring key with given keyType and returns its value. If no key of given keyType is
+     * found null is return.
      *
      * @param reference the reference
      * @param keyType the key type to find
@@ -195,9 +198,9 @@ public class ReferenceHelper {
      * Gets the reference to the parent element of the element addressed by given reference.
      *
      * @param reference the reference to the element to find the parent for
-     * @return The reference to the parent element of the element addressed by given reference. If no parent exists null
-     *         is returned.
-     * @throws IllegalArgumentException if reference is null
+     * @return The reference to the parent element of the element addressed by given reference. If no parent
+     *         exists null is returned.
+     * @throws NullPointerException if reference is null
      */
     public static Reference getParent(Reference reference) {
     	Preconditions.checkNotNull(reference, "reference must be non-null");
@@ -240,9 +243,10 @@ public class ReferenceHelper {
     /**
      * Parses a reference from string.
      *
-     * @param reference the string representation of the reference to parse or null is the input is null or blank
-     * @return the parsed reference
-     * @throws IllegalArgumentException if the reference does not contain at least one key
+     * @param reference the string representation of the reference to parse
+     * @return the parsed reference, or null if the input is null or blank
+     * @throws IllegalArgumentException if the reference does not contain at least one key, or if the
+     *         reference type or a key is malformed
      */
     public static Reference parse(String reference) {
     	if ( reference == null || reference.isBlank() ) {
@@ -283,10 +287,11 @@ public class ReferenceHelper {
 
 
     /**
-     * Parses a given string as Reference. If the given string is not a valid reference, null is returned.
+     * Parses a given string as Reference. If the given string is null or blank, null is returned.
      *
      * @param value String representation of the reference
-     * @return parsed Reference or null is given value is not a valid Reference
+     * @return parsed Reference or null if given value is null or blank
+     * @throws IllegalArgumentException if given value is not a valid Reference
      */
     public static Reference parseReference(String value) {
         return parseReference(value, ReflectionHelper.getDefaultImplementation(Reference.class));
@@ -294,12 +299,15 @@ public class ReferenceHelper {
 
 
     /**
-     * Parses a given string as Reference using the provided implementation of Reference and Key interface. If the given
-     * string is not a valid reference, null is returned.
+     * Parses a given string as Reference using the provided implementation of Reference interface. If the
+     * given string is null or blank, null is returned. A leading {@code [...]} reference type part is
+     * skipped.
      *
      * @param value String representation of the reference
      * @param referenceType implementation type of Reference interface
-     * @return parsed Reference or null is given value is not a valid Reference
+     * @return parsed Reference or null if given value is null or blank
+     * @throws IllegalArgumentException if given value is not a valid Reference or the implementation type
+     *         cannot be instantiated
      */
     public static Reference parseReference(String value, Class<? extends Reference> referenceType) {
         String reference = value;
@@ -416,16 +424,20 @@ public class ReferenceHelper {
 
 
     /**
-     * Formats a Reference as string.
+     * Formats a Reference as string in the form {@code [<ModelRef|ExternalRef>](<KeyType>)<value>, ...}.
+     * <p>
+     * Unlike {@link #toString(Reference)}, the referred semanticId is not included. The result can be read
+     * back by {@link #parse(String)}.
      *
      * @param reference Reference to serialize
      * @return string representation of the reference for serialization, null if reference is null
+     * @throws IllegalArgumentException if the reference type is not supported
      */
     public static String asString(Reference reference) {
         if (reference == null) {
             return null;
         }
-        return String.format("[%s]%s", reference.getType(),
+        return String.format("[%s]%s", toString(reference.getType()),
                 reference.getKeys().stream().map(x -> String.format("(%s)%s", EnumSerializer.serializeEnumName(x.getType().name()), x.getValue()))
                         .collect(Collectors.joining(KEY_SEPARATOR)));
     }
@@ -437,6 +449,7 @@ public class ReferenceHelper {
      * @param parent reference of the parent
      * @param child reference of the child
      * @return the combined reference
+     * @throws IllegalArgumentException if neither reference has any key
      */
     public static Reference combine(Reference parent, Reference child) {
         List<Key> keys = new ArrayList<>();
@@ -448,6 +461,7 @@ public class ReferenceHelper {
         if (Objects.nonNull(child) && Objects.nonNull(child.getKeys())) {
             keys.addAll(child.getKeys());
         }
+        Preconditions.checkArgument(!keys.isEmpty(), "both parent and child references have no keys");
         if (Objects.isNull(referenceType)) {
             referenceType = determineReferenceType(keys.get(0));
         }
@@ -462,8 +476,8 @@ public class ReferenceHelper {
      * Serializes a {@link Reference} to string including reference type information and referredSemanticId.
      *
      * @param reference the reference to serialize
-     * @return the serialized reference or null if reference is null, reference.keys is null or reference does not
-     *         contain any keys
+     * @return the serialized reference or null if reference is null, reference.keys is null or reference does
+     *         not contain any keys
      */
     public static String toString(Reference reference) {
         return toString(reference, true, true);
@@ -476,8 +490,8 @@ public class ReferenceHelper {
      * @param reference the reference to serialize
      * @param includeReferenceType if reference type information should be included
      * @param includeReferredSemanticId if referred semanticId should be included
-     * @return the serialized reference or null if reference is null, reference.keys is null or reference does not
-     *         contain any keys
+     * @return the serialized reference or null if reference is null, reference.keys is null or reference does
+     *         not contain any keys
      */
     public static String toString(Reference reference, boolean includeReferenceType, boolean includeReferredSemanticId) {
 		if ( reference == null ) {
@@ -518,8 +532,9 @@ public class ReferenceHelper {
 
 
     /**
-     * Tries to automatically determine the reference type of a reference. If reference type is set, this is returned.
-     * If reference type is null it is automatically determinde if possible, otherwise is null is returned.
+     * Tries to automatically determine the reference type of a reference. If reference type is set, this is
+     * returned. If reference type is null it is automatically determinde if possible, otherwise is null is
+     * returned.
      *
      * @param reference the reference
      * @return the determined reference type
@@ -572,6 +587,7 @@ public class ReferenceHelper {
                     key1.getValue(),
                     type1,
                     type2));
+            return false;
         }
         return true;
     }

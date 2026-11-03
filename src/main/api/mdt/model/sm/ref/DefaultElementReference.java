@@ -13,6 +13,7 @@ import utils.Preconditions;
 import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.ResourceNotFoundException;
 import mdt.model.sm.value.References;
 
@@ -28,6 +29,7 @@ import mdt.model.sm.value.References;
  * @author Kang-Woo Lee (ETRI)
  */
 public final class DefaultElementReference extends SubmodelBasedElementReference {
+	/** Json 직렬화 타입 식별자({@code "mdt:ref:element"}). */
 	public static final String SERIALIZATION_TYPE = "mdt:ref:element";
 	private static final String FIELD_SUBMODEL_REF = "submodelReference";
 	private static final String FIELD_ELEMENT_PATH = "elementPath";
@@ -70,6 +72,7 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	 * 현재 참조 경로 아래의 자식 SubmodelElement를 가리키는 새 참조를 생성한다.
 	 * <p>
 	 * 같은 Submodel 참조를 공유하며 요소 경로 뒤에 {@code "." + name}을 덧붙인다.
+	 * 이 참조가 활성 상태이면 새 참조도 같은 {@link mdt.model.instance.MDTInstanceManager}로 활성화한다.
 	 *
 	 * @param name	자식 SubmodelElement의 idShort.
 	 * @return 자식 요소를 가리키는 {@link DefaultElementReference} 객체.
@@ -85,7 +88,7 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 
 	@Override
 	public String toStringExpr() {
-		return getSubmodelReference().toStringExpr() + ":" + m_elementPath;
+		return getSubmodelReference().toStringExpr() + ":" + MDTExpressionParser.toIdShortPathExpr(m_elementPath);
 	}
 	
 	@Override
@@ -155,6 +158,8 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	 * @param smIdShort		대상 Submodel의 idShort.
 	 * @param elementPath	대상 SubmodelElement의 idShort 경로.
 	 * @return 생성된 {@link DefaultElementReference} 객체.
+	 * @throws IllegalArgumentException	인자 중 하나가 {@code null}이거나, {@code instanceId}/{@code smIdShort}가
+	 * 									빈 문자열인 경우.
 	 */
 	public static DefaultElementReference newInstance(String instanceId, String smIdShort, String elementPath) {
 		DefaultSubmodelReference smRef = DefaultSubmodelReference.ofIdShort(instanceId, smIdShort);
@@ -167,6 +172,7 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 	 * @param smRef			대상 Submodel에 대한 참조.
 	 * @param elementPath	대상 SubmodelElement의 idShort 경로.
 	 * @return 생성된 {@link DefaultElementReference} 객체.
+	 * @throws IllegalArgumentException	{@code smRef}나 {@code elementPath}가 {@code null}인 경우.
 	 */
 	public static DefaultElementReference newInstance(MDTSubmodelReference smRef, String elementPath) {
 		return new DefaultElementReference(smRef, elementPath);
@@ -174,10 +180,15 @@ public final class DefaultElementReference extends SubmodelBasedElementReference
 
 	/**
 	 * AAS {@link Reference}로부터 {@link DefaultElementReference}를 생성한다.
+	 * <p>
+	 * {@code ref}는 첫 키가 Submodel 키이고 나머지 키가 SubmodelElement 키인 ModelReference여야 한다.
+	 * 첫 키의 값은 Submodel 식별자로 쓰이고({@link DefaultSubmodelReference.ByIdSubmodelReference}), 나머지
+	 * 키들은 idShort 경로로 변환된다(정수 값의 키는 인덱스). 실제 자원을 조회하지 않는다.
 	 *
 	 * @param ref	SubmodelElement를 가리키는 AAS {@link Reference}.
 	 * @return 생성된 {@link DefaultElementReference} 객체.
 	 * @throws ResourceNotFoundException	참조가 가리키는 자원을 찾을 수 없는 경우.
+	 * @throws IllegalArgumentException	{@code ref}가 {@code null}이거나 위 형식을 따르지 않는 경우.
 	 */
 	public static DefaultElementReference newInstance(Reference ref) throws ResourceNotFoundException {
 		return References.toSubmodelElementReference(ref);

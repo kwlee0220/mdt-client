@@ -14,10 +14,18 @@ import mdt.model.sm.ref.MDTElementReference;
 import mdt.model.sm.ref.MDTSubmodelReference;
 
 /**
+ * {@code MDTExpressionParser}로 값 리터럴, idShort 경로, 각종 element reference 표현식을
+ * 파싱/평가하고 참조 대상 값을 읽어 출력하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestMDTExprParser {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		MDTExpressionParser evaluator = new MDTExpressionParser();
 		

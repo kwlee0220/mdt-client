@@ -18,7 +18,7 @@ MDT Manager가 제공하는 REST/MQTT 서비스에 HTTP로 접근하여 AAS(Asse
 - **MQTT 구독**: MDT Manager 이벤트 구독
 - **표현식 처리**: ANTLR 기반 MDT 표현식 파서(`MdtExpr.g4`)
 
-MDT 표현식의 문법, Java API와 CLI 활용 예제는 [MDTExpression 사용 가이드](docs/mdt-expr-guide.md)를 참고한다.
+MDT 표현식의 문법, 요소 참조 API와 CLI·REST 활용 예제는 [`mdt.model.sm.ref` README](src/main/api/mdt/model/sm/ref/README.md)를 참고한다.
 
 ## 요구 사항
 

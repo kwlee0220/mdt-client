@@ -11,10 +11,17 @@ import mdt.model.sm.data.DefaultData;
 import mdt.model.sm.data.Equipment;
 
 /**
+ * Data 서브모델에서 {@code Equipment} 엔티티를 찾아 파라미터 목록을 출력하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestEquipment {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 //		JsonSerializer ser = new JsonSerializer();
 		

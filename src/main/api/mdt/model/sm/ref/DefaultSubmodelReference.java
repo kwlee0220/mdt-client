@@ -26,7 +26,7 @@ import mdt.model.instance.MDTInstanceManager;
  *   <li>{@link ByIdSubmodelReference}: Submodel 식별자로 지정.
  *       표현식: {@code submodel:id=<submodelId>}, Json: {@code {"submodelId": ...}}</li>
  *   <li>{@link ByIdShortSubmodelReference}: MDTInstance 식별자와 Submodel의 idShort로 지정.
- *       표현식: {@code <instanceId>:<submodelIdShort>},
+ *       표현식: {@code <instanceId>:[idShort=]<submodelIdShort>},
  *       Json: {@code {"instanceId": ..., "submodelIdShort": ...}}</li>
  * </ul>
  * 두 구현 모두 {@link #activate(MDTInstanceManager)}로 활성화한 후에 대상 Submodel에
@@ -39,8 +39,12 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	private static final String FIELD_SUBMODEL_ID = "submodelId";
 	private static final String FIELD_SUBMODEL_ID_SHORT = "submodelIdShort";
 	
-	// 활성화 여부를 결정한다. 재활성화가 실패하면 null이 된다(2026-11-01 이전에는 이전 인스턴스가 남아
-	// 활성 상태로 보였다).
+	/**
+	 * 활성화 시점에 찾은 대상 Submodel의 소속 {@link MDTInstance}. 비활성 상태이면 {@code null}이다.
+	 * <p>
+	 * 이 필드가 활성화 여부({@link #isActivated()})를 결정한다. 재활성화가 실패하면 {@code null}이 된다
+	 * (2026-11-01 이전에는 이전 인스턴스가 남아 활성 상태로 보였다).
+	 */
 	protected volatile MDTInstance m_instance;
 
 	@Override
@@ -110,7 +114,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 
 		@Override
 		public String toStringExpr() {
-			return String.format("submodel:id=%s", m_submodelId);
+			return "submodel:id=" + MDTExpressionParser.toNameExpr(m_submodelId);
 		}
 		
 		@Override
@@ -213,7 +217,8 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 
 		@Override
 		public String toStringExpr() {
-			return String.format("%s:%s", getInstanceId(), m_submodelIdShort);
+			return MDTExpressionParser.toNameExpr(getInstanceId()) + ":"
+					+ MDTExpressionParser.toNameExpr(m_submodelIdShort);
 		}
 		
 		@Override
@@ -286,6 +291,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	 *
 	 * @param submodelId	대상 Submodel의 식별자.
 	 * @return 생성된 참조 객체.
+	 * @throws IllegalArgumentException	{@code submodelId}가 {@code null}이거나 빈 문자열인 경우.
 	 */
 	public static ByIdSubmodelReference ofId(String submodelId) {
 		return new ByIdSubmodelReference(submodelId);
@@ -297,6 +303,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	 * @param instanceId		대상 Submodel이 소속된 MDTInstance의 식별자.
 	 * @param submodelIdShort	대상 Submodel의 idShort.
 	 * @return 생성된 참조 객체.
+	 * @throws IllegalArgumentException	인자가 {@code null}이거나 빈 문자열인 경우.
 	 */
 	public static ByIdShortSubmodelReference ofIdShort(String instanceId, String submodelIdShort) {
 		Preconditions.checkNotNullArgument(instanceId, "instanceId is null");

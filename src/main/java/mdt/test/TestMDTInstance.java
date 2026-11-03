@@ -17,10 +17,17 @@ import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceStatus;
 
 /**
+ * MDTInstance의 등록, 시작/종료, 삭제 과정과 각 단계의 상태를 {@code assert}로 확인하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestMDTInstance {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		HttpMDTManager mdtClient = HttpMDTManager.connect("http://localhost:12985");
 		HttpMDTInstanceManager client = mdtClient.getInstanceManager();

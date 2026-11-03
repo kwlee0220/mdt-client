@@ -32,20 +32,18 @@ import mdt.model.instance.MDTInstanceStatus;
  * 등록된 MDTInstance들의 상태 변경을 주기적으로 감시하는 컴포넌트.
  * <p>
  * Guava의 {@link AbstractScheduledService}를 기반으로 일정 주기마다 등록된 인스턴스들의
- * {@link InstanceDescriptor}를 조회하여 직전 관찰값({@code lastStatus})과 비교한다. 상태가
+ * 상태({@link MDTInstance#getStatus()})를 조회하여 등록 시 주어진 기준 상태({@code lastStatus})와 비교한다. 상태가
  * 변경된 인스턴스는 감시 대상에서 제거된 후 등록된 listener에 비동기로 통지된다. 즉, 한
  * 인스턴스에 대해 상태 변경 콜백은 최대 한 번 호출되며, 변경 후에는 자동으로 unwatch된다.
  * <p>
  * 모든 등록/해제/조회 연산은 {@link Guard}로 직렬화된다. listener 호출은
  * 별도의 {@link Executor}를 통해 비동기로 수행되므로, 콜백 내부 작업이 길더라도 다음 polling을
- * 지연시키지 않는다. 기본 executor는 {@link ForkJoinPool#commonPool()}이며, 호출 순서나 격리가
- * 필요하면 생성자에 별도 executor를 주입할 수 있다.
+ * 지연시키지 않는다. 현재 생성자는 항상 {@link ForkJoinPool#commonPool()}을 executor로 사용한다.
  * <p>
  * 동시성·라이프사이클 관련 주의 사항:
  * <ul>
  *   <li>연속된 두 주기 모두에서 변경이 감지되면 두 비동기 통지 작업이 executor에서 병행 실행될 수
- *       있다. 따라서 listener는 반드시 thread-safe해야 하며 호출 순서에 의존해서는 안 된다.
- *       (단일 쓰레드 executor를 주입하면 순차 실행을 보장할 수 있다.)</li>
+ *       있다. 따라서 listener는 반드시 thread-safe해야 하며 호출 순서에 의존해서는 안 된다.</li>
  *   <li>{@link #stopAsync()}로 서비스가 중단되더라도 이미 executor에 제출된 listener 호출은
  *       그대로 진행된다. 즉, 서비스 중단 후에도 listener가 호출될 수 있다.</li>
  *   <li>listener 내부에서 발생한 예외는 로깅되지 않고 무시된다.</li>
@@ -71,7 +69,7 @@ public class InstanceStatusMonitor extends AbstractScheduledService {
 	 * 감시 중인 인스턴스 한 건의 스냅샷.
 	 *
 	 * @param instance   인스턴스 객체. 콜백 호출 시 그대로 전달된다.
-	 * @param lastStatus 최근 polling 시점에 관찰된 상태. 다음 주기에서 비교 기준으로 사용된다.
+	 * @param lastStatus 등록 시 주어진 기준 상태. 매 주기마다 조회된 상태와 비교된다.
 	 */
 	private record Waiter(MDTInstance instance, MDTInstanceStatus lastStatus) { }
 
@@ -95,14 +93,13 @@ public class InstanceStatusMonitor extends AbstractScheduledService {
 	/**
 	 * 주어진 인스턴스를 감시 대상에 추가한다.
 	 * <p>
-	 * 현재 상태를 조회하여 {@code lastStatus} 기준값으로 저장한다. 같은 ID로 다시 호출되면
-	 * 기존 등록을 덮어쓴다.
-	 * <p>
-	 * 주기적 점검({@link #runOneIteration()})과 달리 이 메서드에서 발생한 디스크립터 조회 오류는
-	 * 흡수되지 않고 호출자에게 그대로 전파된다. 호출 시점에 매니저와의 통신이 가능한 상태여야 한다.
+	 * 주어진 {@code status}를 비교 기준 상태로 저장하며, 이후 주기적 점검에서 조회된 상태가
+	 * 이와 다르면 상태 변경으로 간주한다. 이 메소드는 원격 상태를 조회하지 않는다.
+	 * 같은 ID로 다시 호출되면 기존 등록을 덮어쓴다.
 	 *
-	 * @param instance 감시할 인스턴스.
-	 * @throws RuntimeException 디스크립터 조회 중 통신 오류 등이 발생한 경우.
+	 * @param instance	감시할 인스턴스.
+	 * @param status	비교 기준이 되는 인스턴스 상태.
+	 * @throws IllegalArgumentException	{@code instance} 또는 {@code status}가 {@code null}인 경우.
 	 */
 	public void watchInstance(MDTInstance instance, MDTInstanceStatus status) {
 		Preconditions.checkNotNullArgument(instance, "instance is null");
@@ -134,10 +131,12 @@ public class InstanceStatusMonitor extends AbstractScheduledService {
 	 * 동작 절차:
 	 * <ol>
 	 *   <li>현재 등록된 모든 {@link Waiter}를 스냅샷한다.</li>
-	 *   <li>각 인스턴스의 최신 디스크립터를 조회하여 {@code lastStatus}와 비교한다.</li>
+	 *   <li>각 인스턴스의 현재 상태를 {@link MDTInstance#getStatus()}로 조회하여 {@code lastStatus}와
+	 *       비교한다. ({@link HttpMDTInstanceClient}는 매 호출마다 원격 매니저에서
+	 *       {@link InstanceDescriptor}를 다시 로드한다.)</li>
 	 *   <li>변경된 인스턴스는 등록부에서 제거하고 별도 쓰레드에서 listener에 통지한다.</li>
 	 * </ol>
-	 * 디스크립터 조회 도중 발생한 예외는 각 인스턴스별로 흡수 및 로깅되며, 다음 주기에서 다시
+	 * 상태 조회 도중 발생한 예외는 각 인스턴스별로 흡수 및 로깅되며, 다음 주기에서 다시
 	 * 시도된다.
 	 */
 	@Override

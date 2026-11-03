@@ -9,21 +9,25 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Resource;
 
 
 /**
+ * 하나의 AssetAdministrationShell(AAS)에 대한 조회/갱신 서비스를 정의하는 인터페이스이다.
+ * <p>
+ * AAS 자체와 그에 포함된 서브모델 참조, 자산 정보, thumbnail에 대한 접근 메소드를 제공한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public interface AssetAdministrationShellService {
 	/**
-	 * 본 서비스에 해당하는 @link AssetAdministrationShell} 객체를 반환한다.
+	 * 본 서비스에 해당하는 {@link AssetAdministrationShell} 객체를 반환한다.
 	 *
 	 * @return	AssetAdministrationShell 객체.
 	 */
 	public AssetAdministrationShell getAssetAdministrationShell();
 	
 	/**
-	 * 주어진 @link AssetAdministrationShell} 객체를 서비스를 통해 설정한다.
+	 * 주어진 {@link AssetAdministrationShell} 객체를 서비스를 통해 설정한다.
 	 *
 	 * @param aas 설정할 AssetAdministrationShell 객체.
+	 * @return	설정된 AssetAdministrationShell 객체.
 	 */
 	public AssetAdministrationShell putAssetAdministrationShell(AssetAdministrationShell aas);
 

@@ -9,6 +9,10 @@ import utils.Preconditions;
 import utils.stream.FStream;
 
 /**
+ * MDTInstance가 제공하는 MDT 연산(AI 또는 Simulation 연산)의 정보를 담는 디스크립터.
+ * <p>
+ * 연산은 해당 연산 Submodel의 idShort로 식별되며, 연산 타입과 입력/출력 인자 목록을 갖는다.
+ * 각 인자는 {@link ArgumentDescriptor}로 표현된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -19,6 +23,15 @@ public class MDTOperationDescriptor {
 	private final List<ArgumentDescriptor> m_inputArguments;
 	private final List<ArgumentDescriptor> m_outputArguments;
 	
+	/**
+	 * MDT 연산 디스크립터를 생성한다.
+	 *
+	 * @param id		연산 식별자 (연산 Submodel의 idShort).
+	 * @param type		연산 타입 (예: {@code "AI"}, {@code "Simulation"}).
+	 * @param inArgs	입력 인자 목록.
+	 * @param outArgs	출력 인자 목록.
+	 * @throws IllegalArgumentException	인자 중 하나라도 {@code null}인 경우.
+	 */
 	public MDTOperationDescriptor(@JsonProperty("id") String id,
 									@JsonProperty("operationType") String type,
 									@JsonProperty("inputArguments") List<ArgumentDescriptor> inArgs,
@@ -35,9 +48,11 @@ public class MDTOperationDescriptor {
 	}
 
 	/**
-	 * MDT 연산의 식별자을 반환한다.
+	 * MDT 연산의 식별자를 반환한다.
+	 * <p>
+	 * 연산 식별자는 해당 연산 Submodel의 idShort이다.
 	 * 
-	 * @return	MDT 연산 식별자
+	 * @return	MDT 연산 식별자.
 	 */
 	public String getId() {
 		return m_id;
@@ -46,7 +61,7 @@ public class MDTOperationDescriptor {
 	/**
 	 * MDT 연산의 타입을 반환한다.
 	 *
-	 * @return MDT 연산 타입
+	 * @return	MDT 연산 타입 (예: {@code "AI"}, {@code "Simulation"}).
 	 */
 	public String getOperationType() {
 		return m_operationType;
@@ -55,7 +70,7 @@ public class MDTOperationDescriptor {
 	/**
 	 * MDT 연산의 입력 인자 목록을 반환한다.
 	 *
-	 * @return	입력 파라미터 목록
+	 * @return	입력 인자 목록.
 	 */
 	public List<ArgumentDescriptor> getInputArguments() {
 		return m_inputArguments;
@@ -64,12 +79,19 @@ public class MDTOperationDescriptor {
 	/**
 	 * MDT 연산의 출력 인자 목록을 반환한다.
 	 *
-	 * @return	출력 인자 목록
+	 * @return	출력 인자 목록.
 	 */
 	public List<ArgumentDescriptor> getOutputArguments() {
 		return m_outputArguments;
 	}
 	
+	/**
+	 * 연산의 시그니처 문자열을 반환한다.
+	 * <p>
+	 * 형식은 {@code <id>(<입력 인자 id 목록>) -> (<출력 인자 id 목록>)}이다.
+	 *
+	 * @return	시그니처 문자열.
+	 */
 	public String toSignatureString() {
 		String inArgsStr = FStream.from(getInputArguments())
 									.map(ArgumentDescriptor::getId)
@@ -88,6 +110,9 @@ public class MDTOperationDescriptor {
 	}
 	
 
+	/**
+	 * MDT 연산의 입력 또는 출력 인자 하나의 정보를 담는 디스크립터.
+	 */
 	@JsonPropertyOrder({"id", "idShortPath", "valueType", "reference"})
 	public static class ArgumentDescriptor {
 		private final String m_id;
@@ -95,6 +120,14 @@ public class MDTOperationDescriptor {
 		private final String m_valueType;
 		private final String m_reference;
 		
+		/**
+		 * 인자 디스크립터를 생성한다.
+		 *
+		 * @param id			인자 식별자.
+		 * @param idShortPath	연산 Submodel 내에서 인자 값 SubmodelElement의 idShortPath.
+		 * @param valueType		인자 값의 타입 문자열.
+		 * @param reference		인자를 가리키는 참조 문자열.
+		 */
 		public ArgumentDescriptor(@JsonProperty("id") String id,
 									@JsonProperty("idShortPath") String idShortPath,
 									@JsonProperty("valueType") String valueType,
@@ -105,18 +138,38 @@ public class MDTOperationDescriptor {
 			m_idShortPath = idShortPath;
 		}
 		
+		/**
+		 * 인자 식별자를 반환한다.
+		 *
+		 * @return	인자 식별자.
+		 */
 		public String getId() {
 			return m_id;
 		}
 		
+		/**
+		 * 인자 값의 타입 문자열을 반환한다.
+		 *
+		 * @return	값 타입 문자열.
+		 */
 		public String getValueType() {
 			return m_valueType;
 		}
 		
+		/**
+		 * 인자를 가리키는 참조 문자열을 반환한다.
+		 *
+		 * @return	참조 문자열.
+		 */
 		public String getReference() {
 			return m_reference;
 		}
 
+		/**
+		 * 연산 Submodel 내에서 인자 값 SubmodelElement의 idShortPath를 반환한다.
+		 *
+		 * @return	idShortPath.
+		 */
 		public String getIdShortPath() {
 			return m_idShortPath;
 		}

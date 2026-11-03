@@ -54,12 +54,34 @@ import mdt.model.sm.value.FileValue;
 
 
 /**
+ * HTTP(REST)를 통해 FA³ST 서버의 개별 Submodel에 접근하는 {@link SubmodelService} 클라이언트.
+ * <p>
+ * endpoint는 대상 Submodel 자원의 URL이며, SubmodelElement는 {@code <endpoint>/submodel-elements/<idShortPath>}
+ * 경로로 접근한다. idShortPath는 URL 인코딩된다. 모든 요청은 동기적으로 전송되며,
+ * 오류 처리 방식은 {@link Fa3stHttpClient}를 따른다. 요청 본문 직렬화에 실패하면 {@link InternalException}이
+ * 발생한다.
+ * <p>
+ * 구현상 다음 사항에 유의한다.
+ * <ul>
+ * 	<li>{@link Modifier#VALUE}는 지원하지 않으며, 지정하면 {@link IllegalArgumentException}이 발생한다.
+ * 	<li>{@link #getSubmodelElementValueByPath}는 {@code $value} 요청이 서버의 {@code SerializationException}으로
+ * 		실패하면 SubmodelElement 전체를 읽어 값을 추출한다.
+ * 	<li>{@link #invokeOperationSync}는 서버가 실패를 응답하면 {@link RuntimeException}을 던진다.
+ * 	<li>비동기 연산 핸들은 {@link MDTOperationHandle}이어야 한다.
+ * </ul>
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class HttpSubmodelServiceClient extends Fa3stHttpClient implements SubmodelService {
 	private static final Logger s_logger = LoggerFactory.getLogger(HttpSubmodelServiceClient.class);
 	
+	/**
+	 * 모든 인증서를 신뢰하는 OkHttp 클라이언트를 새로 생성하여 사용하는 클라이언트 객체를 생성한다.
+	 *
+	 * @param url	대상 Submodel 자원의 endpoint.
+	 * @return	생성된 클라이언트 객체.
+	 * @throws RESTfulIOException	OkHttp 클라이언트 생성에 실패한 경우.
+	 */
 	public static HttpSubmodelServiceClient newTrustAllSubmodelServiceClient(String url) {
 		try {
 			OkHttpClient client = OkHttpClientUtils.newTrustAllOkHttpClientBuilder().build();
@@ -70,6 +92,12 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		}
 	}
 	
+	/**
+	 * 클라이언트 객체를 생성한다.
+	 *
+	 * @param client	HTTP 요청 전송에 사용할 OkHttp 클라이언트.
+	 * @param endpoint	대상 Submodel 자원의 endpoint.
+	 */
 	public HttpSubmodelServiceClient(OkHttpClient client, String endpoint) {
 		super(client, endpoint);
 	}
@@ -234,6 +262,9 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 		send(req);
 	}
 	
+	/**
+	 * FA³ST 서버의 동기 연산 호출({@code invoke}) 응답에 대응하는 JSON 매핑 클래스.
+	 */
 	@Data
 	@JsonInclude(Include.NON_NULL)
 	public static class OperationResultResponse {
@@ -260,7 +291,11 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			Request req = new Request.Builder().url(url).post(reqBody).build();
 			OperationResultResponse resp = call(req, OperationResultResponse.class);
 			
-			if ( resp != null && resp.success ) {
+			if ( resp == null ) {
+				throw new RuntimeException("Operation invocation failed: idShortPath=" + idShortPath
+											+ ", cause=empty response");
+			}
+			else if ( resp.success ) {
 				return new DefaultOperationResult.Builder()
 												.inoutputArguments(resp.inoutputArguments)
 												.outputArguments(resp.outputArguments)
@@ -268,7 +303,8 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 			}
 			else {
 				throw new RuntimeException("Operation invocation failed: idShortPath=" + idShortPath
-											+ ", state=" + resp.executionState + ", messages=" + resp.messages);
+											+ ", state=" + resp.executionState 
+											+ ", messages=" + resp.messages);
 			}
 		}
 		catch ( IOException e ) {

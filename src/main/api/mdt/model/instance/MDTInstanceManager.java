@@ -23,11 +23,17 @@ import mdt.model.ResourceNotFoundException;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTInstanceManager {
+	/** MDTInstance 실행용 jar 파일의 이름. */
 	public static final String MDT_INSTANCE_JAR_FILE_NAME = "mdt-instance-all.jar";
+	/** JSON 형식의 MDTInstance 초기 모델 파일의 이름. */
 	public static final String MODEL_FILE_NAME = "model.json";
+	/** AASX 형식의 MDTInstance 초기 모델 파일의 이름. */
 	public static final String MODEL_AASX_NAME = "model.aasx";
+	/** MDTInstance 설정 파일의 이름. */
 	public static final String CONF_FILE_NAME = "config.json";
+	/** MDTInstance가 사용하는 인증서(PKCS#12) 파일의 이름. */
 	public static final String CERT_FILE_NAME = "mdt_cert.p12";
+	/** MDT 전역 설정 파일의 이름. */
 	public static final String GLOBAL_CONF_FILE_NAME = "mdt_global_config.json";
 	
 	/**
@@ -65,6 +71,21 @@ public interface MDTInstanceManager {
 	}
 	
 	/**
+	 * 문자열 값을 {@link #getInstanceAllByFilter(String)} 필터 식의 문자열 리터럴로 만든다.
+	 * <p>
+	 * 값을 작은따옴표로 감싸고, 값 안의 작은따옴표는 두 번 써서({@code ''}) escape한다(JPQL 문자열 리터럴 규칙).
+	 * 필터 식을 만들 때 값을 직접 끼워 넣지 말고 이 메소드를 거친다.
+	 *
+	 * @param value	문자열 값.
+	 * @return	필터 식에 쓸 문자열 리터럴 (예: {@code 'it''s'}).
+	 * @throws IllegalArgumentException	{@code value}가 {@code null}인 경우.
+	 */
+	public static String toFilterLiteral(String value) {
+		Preconditions.checkNotNullArgument(value, "filter value is null");
+		return "'" + value.replace("'", "''") + "'";
+	}
+	
+	/**
 	 * AAS 식별자에 해당하는 {@link MDTInstance} 객체를 반환한다.
 	 *
 	 * @param aasId	검색 대상 AAS 식별자.
@@ -75,7 +96,7 @@ public interface MDTInstanceManager {
 	public default MDTInstance getInstanceByAasId(String aasId) throws ResourceNotFoundException {
 		Preconditions.checkNotNullArgument(aasId, "AAS id is null");
 		
-		String filter = String.format("instance.aasId = '%s'", aasId);
+		String filter = "instance.aasId = " + toFilterLiteral(aasId);
 		List<? extends MDTInstance> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 1 ) {
 			return instList.get(0);
@@ -101,7 +122,7 @@ public interface MDTInstanceManager {
 	public default List<? extends MDTInstance> getInstanceAllByAasIdShort(String idShort) {
 		Preconditions.checkNotNullArgument(idShort, "AAS idShort is null");
 		
-		String filter = String.format("instance.aasIdShort = '%s'", idShort);
+		String filter = "instance.aasIdShort = " + toFilterLiteral(idShort);
 		return getInstanceAllByFilter(filter);
 	}
 
@@ -118,7 +139,7 @@ public interface MDTInstanceManager {
 	public default List<? extends MDTInstance> getInstanceAllByAssetId(String assetId) {
 		Preconditions.checkNotNullArgument(assetId, "AssetId is null");
 		
-		String filter = String.format("instance.globalAssetId = '%s'", assetId);
+		String filter = "instance.globalAssetId = " + toFilterLiteral(assetId);
 		return getInstanceAllByFilter(filter);
 	}
 
@@ -133,7 +154,7 @@ public interface MDTInstanceManager {
 	public default MDTInstance getInstanceBySubmodelId(String submodelId) throws ResourceNotFoundException {
 		Preconditions.checkNotNullArgument(submodelId, "Submodel id is null");
 
-		String filter = String.format("submodel.id = '%s'", submodelId);
+		String filter = "submodel.id = " + toFilterLiteral(submodelId);
 		List<? extends MDTInstance> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 1 ) {
 			return instList.get(0);
@@ -159,7 +180,7 @@ public interface MDTInstanceManager {
 	public default List<? extends MDTInstance> getInstanceAllBySubmodelIdShort(String submodelIdShort) {
 		Preconditions.checkNotNullArgument(submodelIdShort, "Submodel idShort is null");
 		
-		String filter = String.format("submodel.idShort = '%s'", submodelIdShort);
+		String filter = "submodel.idShort = " + toFilterLiteral(submodelIdShort);
 		return getInstanceAllByFilter(filter);
 	}
 	

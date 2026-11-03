@@ -31,9 +31,17 @@ public class AASOperationTask extends AbstractOperationTask {
 		return new AASOperationClient(m_operationRef, m_pollInterval);
 	}
 
+	/**
+	 * {@link AASOperationTask}를 만드는 builder를 생성한다.
+	 *
+	 * @return	새 builder.
+	 */
 	public static Builder builder() {
 		return new Builder();
 	}
+	/**
+	 * {@link AASOperationTask} builder.
+	 */
 	public static class Builder extends AbstractBuilder<Builder,AASOperationTask> {
 		private MDTElementReference m_operationRef = null;
 
@@ -42,6 +50,12 @@ public class AASOperationTask extends AbstractOperationTask {
 			return new AASOperationTask(this);
 		}
 
+		/**
+		 * 호출할 연산 element의 참조를 설정한다.
+		 *
+		 * @param ref	연산 element를 가리키는 참조.
+		 * @return	이 builder.
+		 */
 		public Builder operation(MDTElementReference ref) {
 			m_operationRef = ref;
 			return this;

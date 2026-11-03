@@ -44,6 +44,7 @@ import mdt.aas.DataTypes;
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract sealed class PropertyValue<T> extends AbstractElementValue implements DataElementValue {
+	/** Property 값. {@code null}이면 값이 설정되지 않았음을 의미한다. */
 	protected final T m_value;
 
 	/**
@@ -66,8 +67,8 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 	 * 이 값을 주어진 {@link Property}에 값 문자열로 설정한다.
 	 * <p>
 	 * Property의 {@code valueType}과 이 값의 데이터 타입이 같아야 한다. 다르면 숫자끼리의 <b>손실 없는</b> 변환만
-	 * 허용한다(예: {@code xs:int} 값 → {@code xs:long}·{@code xs:integer}·{@code xs:double} 속성, 3.0 → {@code xs:int}).
-	 * {@code xs:string} 속성에는 어떤 값이든 그 값 문자열로 기록한다.
+	 * 허용한다(예: {@code xs:int} 값 → {@code xs:long}·{@code xs:integer}·{@code xs:double} 속성, 3.0 →
+	 * {@code xs:int}). {@code xs:string} 속성에는 어떤 값이든 그 값 문자열로 기록한다.
 	 * 그 밖의 불일치(문자열 값 → 정수 속성, 3.7 → {@code xs:int}, 범위 초과 등)는 거부한다.
 	 * {@code valueType}이 없는 Property와 {@code null} 값은 검사하지 않는다.
 	 * <p>
@@ -206,6 +207,13 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 		};
 	}
 	
+	/**
+	 * 이 값의 데이터 타입과 값 문자열이 설정된 {@link DefaultProperty.Builder}를 반환한다.
+	 * <p>
+	 * idShort 등 나머지 속성은 호출자가 설정해야 한다. 값이 {@code null}이면 값 문자열도 {@code null}이다.
+	 *
+	 * @return	Property 빌더.
+	 */
 	public DefaultProperty.Builder toElementBuilder() {
 		DefaultProperty.Builder builder = new DefaultProperty.Builder();
 		builder.valueType(getDataType().getTypeDefXsd());
@@ -283,14 +291,32 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 	/**
 	 * JSON 노드와 대상 {@link Property}의 데이터 타입으로부터 알맞은 {@code PropertyValue} 하위 타입을 생성한다.
 	 *
+	 * <p>
+	 * {@link #parseValueJsonNode(JsonNode, DataTypeDefXsd)}에 {@code prop}의 XSD 데이터 타입을 넘긴다.
+	 *
 	 * @param vnode	값에 해당하는 JSON 노드.
-	 * @param prop	데이터 타입 결정에 사용할 대상 Property.
+	 * @param prop	데이터 타입 결정에 사용할 템플릿 PropertyValue.
 	 * @return 생성된 PropertyValue.
 	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
+	 * @throws IOException	JSON 노드를 해당 데이터 타입의 값으로 해석할 수 없는 경우.
 	 */
 	public static PropertyValue<?> parseValueJsonNode(JsonNode vnode, PropertyValue<?> prop) throws IOException {
 		return parseValueJsonNode(vnode, prop.getDataType().getTypeDefXsd());
 	}
+	/**
+	 * JSON 노드를 주어진 XSD 데이터 타입의 값으로 해석하여 알맞은 {@code PropertyValue} 하위 타입을 생성한다.
+	 * <p>
+	 * 해석은 각 하위 타입의 {@code deserializeValue}(즉 {@link DataType#fromJsonNode(JsonNode)})가 담당한다.
+	 * 지원하는 데이터 타입은 {@code xs:string}, {@code xs:int}, {@code xs:float}, {@code xs:double},
+	 * {@code xs:boolean}, {@code xs:dateTime}, {@code xs:duration}, {@code xs:long}, {@code xs:short},
+	 * {@code xs:decimal}이다.
+	 *
+	 * @param vnode		값에 해당하는 JSON 노드.
+	 * @param xsdType	값의 XSD 데이터 타입.
+	 * @return 생성된 PropertyValue.
+	 * @throws IllegalArgumentException	지원하지 않는 데이터 타입인 경우.
+	 * @throws IOException	JSON 노드를 해당 데이터 타입의 값으로 해석할 수 없는 경우.
+	 */
 	public static PropertyValue<?> parseValueJsonNode(JsonNode vnode, DataTypeDefXsd xsdType) throws IOException {
 		switch ( xsdType ) {
 			case STRING:
@@ -344,6 +370,9 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 	
 	/**
 	 * 주어진 {@link Property}의 값 문자열을 데이터 타입에 맞게 파싱하여 {@code PropertyValue}를 생성한다.
+	 * <p>
+	 * {@code xs:integer}는 대응하는 {@code PropertyValue}가 없으므로 {@link LongPropertyValue}({@code xs:long})로
+	 * 생성한다. 따라서 long 범위를 넘는 값은 파싱하지 못한다.
 	 *
 	 * @param prop	값과 데이터 타입을 가진 Property.
 	 * @return 생성된 PropertyValue.
@@ -356,8 +385,10 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			case STRING:
 				return STRING(value);
 			case INT:
-			case INTEGER:
 				return INTEGER(DataTypes.INT.parseValueString(value));
+			case INTEGER:
+				// xs:integer는 범위 제한이 없는 정수지만 대응하는 PropertyValue가 없으므로, int보다 넓은 long으로 읽는다.
+				return LONG(DataTypes.LONG.parseValueString(value));
 			case FLOAT:
 				return FLOAT(DataTypes.FLOAT.parseValueString(value));
 			case DOUBLE:
@@ -379,12 +410,27 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 		}
 	}
 	
+	/**
+	 * 주어진 값을 갖는 {@code xs:string} 타입의 {@link StringPropertyValue}를 생성한다.
+	 *
+	 * @param value	문자열 값({@code null} 허용).
+	 * @return	생성된 {@link StringPropertyValue}.
+	 */
 	public static StringPropertyValue STRING(@Nullable String value) {
 		return new StringPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:string} 타입 Property 값. 값의 Java 타입은 {@link String}이다.
+	 */
 	public static final class StringPropertyValue extends PropertyValue<String> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:string";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	문자열 값({@code null} 허용).
+		 */
 		public StringPropertyValue(String value) {
 			super(value);
 		}
@@ -404,17 +450,42 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:string} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:string} 값으로 해석할 수 없는 경우.
+		 */
 		public static StringPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new StringPropertyValue(DataTypes.STRING.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:int} 타입의 {@link IntegerPropertyValue}를 생성한다.
+	 *
+	 * @param value	정수 값({@code null} 허용).
+	 * @return	생성된 {@link IntegerPropertyValue}.
+	 */
 	public static IntegerPropertyValue INTEGER(Integer value) {
 		return new IntegerPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:int} 타입 Property 값. 값의 Java 타입은 {@link Integer}이다.
+	 */
 	public static final class IntegerPropertyValue extends PropertyValue<Integer> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:integer";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	정수 값({@code null} 허용).
+		 */
 		public IntegerPropertyValue(Integer value) {
 			super(value);
 		}
@@ -434,17 +505,42 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:int} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:int} 값으로 해석할 수 없는 경우.
+		 */
 		public static IntegerPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new IntegerPropertyValue(DataTypes.INT.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:float} 타입의 {@link FloatPropertyValue}를 생성한다.
+	 *
+	 * @param value	float 값({@code null} 허용).
+	 * @return	생성된 {@link FloatPropertyValue}.
+	 */
 	public static FloatPropertyValue FLOAT(Float value) {
 		return new FloatPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:float} 타입 Property 값. 값의 Java 타입은 {@link Float}이다.
+	 */
 	public static final class FloatPropertyValue extends PropertyValue<Float> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:float";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	float 값({@code null} 허용).
+		 */
 		public FloatPropertyValue(Float value) {
 			super(value);
 		}
@@ -464,17 +560,42 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:float} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:float} 값으로 해석할 수 없는 경우.
+		 */
 		public static FloatPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new FloatPropertyValue(DataTypes.FLOAT.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:double} 타입의 {@link DoublePropertyValue}를 생성한다.
+	 *
+	 * @param value	double 값({@code null} 허용).
+	 * @return	생성된 {@link DoublePropertyValue}.
+	 */
 	public static DoublePropertyValue DOUBLE(Double value) {
 		return new DoublePropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:double} 타입 Property 값. 값의 Java 타입은 {@link Double}이다.
+	 */
 	public static final class DoublePropertyValue extends PropertyValue<Double> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:double";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	double 값({@code null} 허용).
+		 */
 		public DoublePropertyValue(Double value) {
 			super(value);
 		}
@@ -494,17 +615,42 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:double} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:double} 값으로 해석할 수 없는 경우.
+		 */
 		public static DoublePropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new DoublePropertyValue(DataTypes.DOUBLE.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:boolean} 타입의 {@link BooleanPropertyValue}를 생성한다.
+	 *
+	 * @param value	boolean 값({@code null} 허용).
+	 * @return	생성된 {@link BooleanPropertyValue}.
+	 */
 	public static BooleanPropertyValue BOOLEAN(Boolean value) {
 		return new BooleanPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:boolean} 타입 Property 값. 값의 Java 타입은 {@link Boolean}이다.
+	 */
 	public static final class BooleanPropertyValue extends PropertyValue<Boolean> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:boolean";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	boolean 값({@code null} 허용).
+		 */
 		public BooleanPropertyValue(Boolean value) {
 			super(value);
 		}
@@ -524,17 +670,42 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:boolean} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:boolean} 값으로 해석할 수 없는 경우.
+		 */
 		public static BooleanPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new BooleanPropertyValue(DataTypes.BOOLEAN.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:dateTime} 타입의 {@link DateTimePropertyValue}를 생성한다.
+	 *
+	 * @param value	시각 값({@code null} 허용).
+	 * @return	생성된 {@link DateTimePropertyValue}.
+	 */
 	public static DateTimePropertyValue DATE_TIME(Instant value) {
 		return new DateTimePropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:dateTime} 타입 Property 값. 값의 Java 타입은 {@link Instant}이다.
+	 */
 	public static final class DateTimePropertyValue extends PropertyValue<Instant> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:dateTime";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	시각 값({@code null} 허용).
+		 */
 		public DateTimePropertyValue(Instant value) {
 			super(value);
 		}
@@ -554,11 +725,27 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:dateTime} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:dateTime} 값으로 해석할 수 없는 경우.
+		 */
 		public static DateTimePropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new DateTimePropertyValue(DataTypes.DATE_TIME.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:duration} 타입의 {@link DurationPropertyValue}를 생성한다.
+	 *
+	 * @param value	기간 값({@code null} 허용).
+	 * @return	생성된 {@link DurationPropertyValue}.
+	 */
 	public static DurationPropertyValue DURATION(Duration value) {
 		return new DurationPropertyValue(value);
 	}
@@ -566,11 +753,17 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 	 * XSD {@code xs:duration} 타입 Property 값.
 	 * <p>
 	 * 다른 타입과 달리 값을 ISO-8601 duration 문자열로 직렬화한다
-	 * ({@link #toValueJsonString()}/{@link #serializeValue(JsonGenerator)} 재정의).
+	 * ({@link #toValueJsonString()}/{@link #toValueJsonNode()}/{@link #serializeValue(JsonGenerator)} 재정의).
 	 */
 	public static final class DurationPropertyValue extends PropertyValue<Duration> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:duration";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	기간 값({@code null} 허용).
+		 */
 		public DurationPropertyValue(Duration value) {
 			super(value);
 		}
@@ -603,21 +796,47 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 
 		@Override
 		public void serializeValue(JsonGenerator gen) throws IOException {
-			String str = (m_value != null) ? m_value.toString() : null;
+			// value-only JSON(toValueJsonString/toValueJsonNode)과 같은 문자열 표현을 쓴다.
+			String str = (m_value != null) ? DataTypes.DURATION.toValueString(m_value) : null;
 			gen.writeObject(str);
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:duration} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:duration} 값으로 해석할 수 없는 경우.
+		 */
 		public static DurationPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new DurationPropertyValue(DataTypes.DURATION.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:long} 타입의 {@link LongPropertyValue}를 생성한다.
+	 *
+	 * @param value	long 정수 값({@code null} 허용).
+	 * @return	생성된 {@link LongPropertyValue}.
+	 */
 	public static LongPropertyValue LONG(Long value) {
 		return new LongPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:long} 타입 Property 값. 값의 Java 타입은 {@link Long}이다.
+	 */
 	public static final class LongPropertyValue extends PropertyValue<Long> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:long";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	long 정수 값({@code null} 허용).
+		 */
 		public LongPropertyValue(Long value) {
 			super(value);
 		}
@@ -637,17 +856,42 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:long} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:long} 값으로 해석할 수 없는 경우.
+		 */
 		public static LongPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new LongPropertyValue(DataTypes.LONG.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:short} 타입의 {@link ShortPropertyValue}를 생성한다.
+	 *
+	 * @param value	short 정수 값({@code null} 허용).
+	 * @return	생성된 {@link ShortPropertyValue}.
+	 */
 	public static ShortPropertyValue SHORT(Short value) {
 		return new ShortPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:short} 타입 Property 값. 값의 Java 타입은 {@link Short}이다.
+	 */
 	public static final class ShortPropertyValue extends PropertyValue<Short> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:short";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	short 정수 값({@code null} 허용).
+		 */
 		public ShortPropertyValue(Short value) {
 			super(value);
 		}
@@ -667,17 +911,42 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:short} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:short} 값으로 해석할 수 없는 경우.
+		 */
 		public static ShortPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new ShortPropertyValue(DataTypes.SHORT.fromJsonNode(vnode));
 		}
 	}
 
+	/**
+	 * 주어진 값을 갖는 {@code xs:decimal} 타입의 {@link DecimalPropertyValue}를 생성한다.
+	 *
+	 * @param value	십진수 값({@code null} 허용).
+	 * @return	생성된 {@link DecimalPropertyValue}.
+	 */
 	public static DecimalPropertyValue DECIMAL(BigDecimal value) {
 		return new DecimalPropertyValue(value);
 	}
+	/**
+	 * XSD {@code xs:decimal} 타입 Property 값. 값의 Java 타입은 {@link BigDecimal}이다.
+	 */
 	public static final class DecimalPropertyValue extends PropertyValue<BigDecimal> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:value:decimal";
 		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	십진수 값({@code null} 허용).
+		 */
 		public DecimalPropertyValue(BigDecimal value) {
 			super(value);
 		}
@@ -697,6 +966,16 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 			return SERIALIZATION_TYPE;
 		}
 		
+		/**
+		 * JSON 노드를 {@code xs:decimal} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:decimal} 값으로 해석할 수 없는 경우.
+		 */
 		public static DecimalPropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new DecimalPropertyValue(DataTypes.DECIMAL.fromJsonNode(vnode));
 		}

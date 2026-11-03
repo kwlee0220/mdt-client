@@ -13,10 +13,18 @@ import mdt.client.resource.HttpSubmodelServiceClient;
 import mdt.model.AASUtils;
 
 /**
+ * Welder의 ProductivityPrediction 시뮬레이션 연산을 서브모델의 입력 값으로 구성하여
+ * 동기 호출하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestOperationWelder {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		String id = AASUtils.encodeBase64UrlSafe("https://www.samcheon.com/mdt/Welder/sm/Simulation/ProductivityPrediction");
 		String url = String.format("https://localhost:19001/api/v3.0/submodels/%s", id);

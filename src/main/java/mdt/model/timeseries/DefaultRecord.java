@@ -18,6 +18,10 @@ import mdt.model.timeseries.RecordMetadata.Field;
 
 
 /**
+ * {@link Record}의 기본 구현 클래스.
+ * <p>
+ * 레코드는 하나의 SubmodelElementCollection으로 표현되며, 각 필드 값은 필드 이름을 idShort로 하는
+ * Property로 변환된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -30,7 +34,7 @@ public final class DefaultRecord extends SubmodelElementCollectionEntity impleme
 	/**
 	 * Empty 레코드를 생성한다.
 	 * <p>
-	 * 레코드의 메타데이터와 값은 null로 제대로 초기화되지 않은 상태로 생성된다.
+	 * 레코드의 메타데이터와 값은 {@code null}로, 제대로 초기화되지 않은 상태로 생성된다.
 	 * 이 경우에는 반드시 {@link #updateFromAasModel(SubmodelElement)} 메소드를 통해
 	 * AAS 모델에서 레코드의 필드 정보를 가져와야 한다.
 	 */
@@ -43,8 +47,11 @@ public final class DefaultRecord extends SubmodelElementCollectionEntity impleme
 	
 	/**
 	 * 주어진 스키마를 사용한 empty 레코드를 생성한다.
+	 * <p>
+	 * 모든 필드 값은 {@code null}로 초기화된다.
 	 * 
-	 * @param metadata 레코드 메타데이터
+	 * @param metadata	레코드 메타데이터.
+	 * @throws IllegalArgumentException	{@code metadata}가 {@code null}인 경우.
 	 */
 	public DefaultRecord(RecordMetadata metadata) {
 		Preconditions.checkArgument(metadata != null, "'metadata' should not be null");
@@ -61,8 +68,10 @@ public final class DefaultRecord extends SubmodelElementCollectionEntity impleme
 	 * 주어진 스키마와 값을 사용한 레코드를 생성한다.
 	 * 
 	 * @param idShort	레코드에 부여할 idShort 값.
-	 * @param metadata	레코드 메타데이터
-	 * @param values	레코드 값
+	 * @param metadata	레코드 메타데이터.
+	 * @param values	레코드 필드 값 리스트. 메타데이터의 필드 순서와 일치해야 한다.
+	 * @throws IllegalArgumentException	{@code metadata} 또는 {@code values}가 {@code null}이거나,
+	 * 									{@code values}의 크기가 필드 개수와 다른 경우.
 	 */
 	public DefaultRecord(String idShort, RecordMetadata metadata, List<Object> values) {
 		Preconditions.checkArgument(metadata != null, "'metadata' should not be null");
@@ -99,6 +108,13 @@ public final class DefaultRecord extends SubmodelElementCollectionEntity impleme
 		return m_values;
 	}
 	
+	/**
+	 * 주어진 인덱스의 필드 값을 반환한다.
+	 *
+	 * @param index	필드 인덱스 (0-based).
+	 * @return	필드 값.
+	 * @throws IndexOutOfBoundsException	{@code index}가 유효 범위를 벗어난 경우.
+	 */
 	public FieldValue getFieldValue(int index) {
 		return m_values.get(index);
 	}

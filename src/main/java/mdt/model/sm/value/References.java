@@ -17,6 +17,7 @@ import mdt.model.sm.ref.DefaultSubmodelReference;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdSubmodelReference;
 
 /**
+ * AAS {@link Reference}를 판별하고 MDT 참조 객체로 변환하는 정적 유틸리티.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -70,6 +71,14 @@ public final class References {
 		}
 	}
 	
+	/**
+	 * 주어진 참조가 Submodel을 가리키는 ModelReference인지 여부를 반환한다.
+	 * <p>
+	 * 참조 타입이 {@link ReferenceTypes#MODEL_REFERENCE}이고 키가 {@link KeyTypes#SUBMODEL} 하나뿐이어야 한다.
+	 *
+	 * @param reference	검사할 참조. {@code null}이면 {@code false}를 반환한다.
+	 * @return	Submodel 참조이면 {@code true}, 그렇지 않으면 {@code false}.
+	 */
 	public static boolean isSubmodelReference(Reference reference) {
 		if ( reference == null || reference.getType() != ReferenceTypes.MODEL_REFERENCE ) {
 			return false;
@@ -84,6 +93,15 @@ public final class References {
 		}
 	}
 	
+	/**
+	 * 주어진 참조가 SubmodelElement를 가리키는 ModelReference인지 여부를 반환한다.
+	 * <p>
+	 * 참조 타입이 {@link ReferenceTypes#MODEL_REFERENCE}이고, 키가 둘 이상이며 첫 번째 키가
+	 * {@link KeyTypes#SUBMODEL}이어야 한다. 나머지 키의 타입은 검사하지 않는다.
+	 *
+	 * @param reference	검사할 참조. {@code null}이면 {@code false}를 반환한다.
+	 * @return	SubmodelElement 참조이면 {@code true}, 그렇지 않으면 {@code false}.
+	 */
 	public static boolean isSubmodelElementReference(Reference reference) {
 		if ( reference == null || reference.getType() != ReferenceTypes.MODEL_REFERENCE ) {
 			return false;
@@ -98,6 +116,16 @@ public final class References {
 		}
 	}
 
+	/**
+	 * ModelReference의 첫 번째 키(Submodel 키)로부터 Submodel 식별자 기반 참조를 생성한다.
+	 * <p>
+	 * 두 번째 이후의 키는 무시된다.
+	 *
+	 * @param reference	변환할 참조.
+	 * @return	Submodel 참조.
+	 * @throws IllegalArgumentException	{@code reference}가 {@code null}이거나, ModelReference가 아니거나,
+	 * 									키가 없거나, 첫 번째 키가 {@link KeyTypes#SUBMODEL}이 아닌 경우.
+	 */
     public static ByIdSubmodelReference toSubmodelReference(Reference reference) {
         Preconditions.checkArgument(reference != null, "reference must be non-null");
         Preconditions.checkArgument(Objects.equals(reference.getType(), ReferenceTypes.MODEL_REFERENCE),
@@ -111,6 +139,20 @@ public final class References {
         return DefaultSubmodelReference.ofId(submodelKey.getValue());
     }
 
+	/**
+	 * ModelReference를 SubmodelElement 참조({@link DefaultElementReference})로 변환한다.
+	 * <p>
+	 * 첫 번째 키(Submodel 키)로 Submodel 참조를 만들고, 나머지 키들로 idShort 경로를 구성한다. 정수로 해석되는
+	 * 키 값은 인덱스로, 그 밖의 값은 idShort로 취급한다. Property 등 하위 원소를 가질 수 없는 타입의 키는 마지막
+	 * 키여야 한다.
+	 *
+	 * @param reference	변환할 참조.
+	 * @return	SubmodelElement 참조.
+	 * @throws IllegalArgumentException	{@code reference}가 {@code null}이거나, ModelReference가 아니거나,
+	 * 									키가 둘 미만이거나, 첫 번째 키가 {@link KeyTypes#SUBMODEL}이 아니거나,
+	 * 									나머지 키 중 SubmodelElement 타입이 아닌 키가 있거나, 하위 원소를 가질 수
+	 * 									없는 타입의 키 뒤에 키가 더 있는 경우.
+	 */
     public static DefaultElementReference toSubmodelElementReference(Reference reference) {
         Preconditions.checkArgument(reference != null, "reference must be non-null");
         Preconditions.checkArgument(Objects.equals(reference.getType(), ReferenceTypes.MODEL_REFERENCE),
@@ -125,7 +167,8 @@ public final class References {
         
         IdShortPath.Builder builder = IdShortPath.builder();
         List<Key> idShortKeys = keys.subList(1, keys.size());
-		for ( Key key : idShortKeys ) {
+		for ( int i = 0; i < idShortKeys.size(); ++i ) {
+			Key key = idShortKeys.get(i);
 			KeySpec spec = KEY_TYPE_SPECS.get(key.getType());
 			Preconditions.checkArgument(spec != null, "unknown key type: " + key.getType());
 			Preconditions.checkArgument(spec.m_isSubmodelElement, "key type is not a submodel element: " + key.getType());
@@ -137,9 +180,9 @@ public final class References {
 			catch ( NumberFormatException e ) {
 				builder.idShort(key.getValue());
 			}
-			if ( spec.m_isTerminal ) {
-				break;
-			}
+			// Property 등은 하위 원소를 가질 수 없으므로, 뒤에 키가 더 있으면 잘못된 참조이다.
+			Preconditions.checkArgument(!spec.m_isTerminal || i == idShortKeys.size() - 1,
+										"key type %s cannot have child keys: reference=%s", key.getType(), reference);
 		}
 		IdShortPath idShortPath = builder.build();
 		

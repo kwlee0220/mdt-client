@@ -26,6 +26,10 @@ import mdt.task.TaskUtils;
 
 
 /**
+ * {@link TaskDescriptor} 생성·구성을 돕는 유틸리티 메소드 모음.
+ * <p>
+ * task 클래스 이름과 짧은 type 식별자 사이의 변환, AAS 연산 또는 AI/Simulation Submodel로부터
+ * 입출력 인자 명세를 채우는 기능을 제공한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -52,6 +56,16 @@ public class TaskDescriptors {
 		PYTHON_SCRIPT_TASK_TYPE, "PythonScript"
 	);
 	
+	/**
+	 * task 클래스 이름(또는 {@link #PYTHON_SCRIPT_TASK_TYPE})에 해당하는 짧은 type 식별자를 반환한다.
+	 * <p>
+	 * 예: {@code mdt.task.AASOperationTask} → {@code "AASOperation"},
+	 * {@code mdt.task.SetTask} → {@code "Copy"}.
+	 *
+	 * @param taskClassName	task 클래스의 전체 이름.
+	 * @return	짧은 type 식별자.
+	 * @throws IllegalArgumentException	등록되지 않은 클래스 이름인 경우.
+	 */
 	public static String toShortTaskTypeId(String taskClassName) {
 		String shortId = CLASS_TO_SHORT_ID_MAP.get(taskClassName);;
 		if ( shortId == null ) {
@@ -61,6 +75,18 @@ public class TaskDescriptors {
 		return shortId;
 	}
 	
+	/**
+	 * 참조가 가리키는 AAS 연산의 입력·출력 변수마다 연산 인자 참조({@code oparg:...})를 가리키는 인자 명세를
+	 * 만들어 기술자에 추가한다. 인자 이름은 변수의 idShort이다.
+	 * <p>
+	 * 연산이 속한 Submodel이 AI 또는 Simulation Submodel이면 {@link TaskUtils#LABEL_MDT_OPERATION} 레이블에
+	 * 그 Submodel 참조 표현식을 추가한다. 입출력(inoutput) 변수는 다루지 않는다.
+	 *
+	 * @param opRef			활성화된 연산 element 참조. Submodel 참조가 {@link DefaultSubmodelReference}여야 한다.
+	 * @param descriptor	인자 명세를 추가할 기술자.
+	 * @throws IOException	연산 element나 Submodel을 읽는 중 오류가 발생한 경우.
+	 * @throws IllegalArgumentException	참조가 가리키는 요소가 {@link Operation}이 아닌 경우.
+	 */
 	public static void loadVariablesFromAASOperation(DefaultElementReference opRef,
 													TaskDescriptor descriptor) throws IOException {
 		SubmodelElement sme = opRef.read();
@@ -91,6 +117,14 @@ public class TaskDescriptors {
 		}
 	}
 	
+	/**
+	 * AI 또는 Simulation Submodel의 인자 기술자를 읽어, 각 입력·출력 인자의 연산 인자 참조를 가리키는
+	 * 인자 명세를 기술자에 추가한다.
+	 *
+	 * @param task	인자 명세를 추가할 기술자.
+	 * @param ref	활성화된 AI 또는 Simulation Submodel 참조.
+	 * @throws IllegalArgumentException	Submodel이 AI나 Simulation Submodel이 아닌 경우.
+	 */
 	public static void loadArgumentSpecsFromSubmodel(TaskDescriptor task, DefaultSubmodelReference ref) {
 		Submodel submodel = ref.get().getSubmodel();
 		if ( SubmodelUtils.isAISubmodel(submodel) ) {
@@ -105,10 +139,24 @@ public class TaskDescriptors {
 		}
 	}
 	
+	/**
+	 * Simulation Submodel의 인자 기술자로부터 입력·출력 인자 명세를 기술자에 추가한다.
+	 * Submodel의 종류는 확인하지 않는다.
+	 *
+	 * @param task	인자 명세를 추가할 기술자.
+	 * @param smRef	활성화된 Simulation Submodel 참조.
+	 */
 	public static void loadSimulationVariables(TaskDescriptor task, DefaultSubmodelReference smRef) {
 		loadArgumentSpecs(task, smRef, "Simulation");
 	}
 	
+	/**
+	 * AI Submodel의 인자 기술자로부터 입력·출력 인자 명세를 기술자에 추가한다.
+	 * Submodel의 종류는 확인하지 않는다.
+	 *
+	 * @param task	인자 명세를 추가할 기술자.
+	 * @param smRef	활성화된 AI Submodel 참조.
+	 */
 	public static void loadAIVariables(TaskDescriptor task, DefaultSubmodelReference smRef) {
 		loadArgumentSpecs(task, smRef, "AI");
 	}

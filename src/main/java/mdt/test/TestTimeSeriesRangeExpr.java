@@ -5,10 +5,18 @@ import mdt.model.expr.TimeSeriesRangeExpr;
 import mdt.model.sm.ref.timeseries.TimeSeriesRange;
 
 /**
+ * 여러 형식의 시계열 구간 표현식을 {@code MDTExpressionParser.parseTimeSeriesRange}로 파싱/평가하는
+ * 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestTimeSeriesRangeExpr {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		TimeSeriesRangeExpr expr = MDTExpressionParser.parseTimeSeriesRange("last=5");
 		TimeSeriesRange range = expr.evaluate();

@@ -42,13 +42,20 @@ public interface MDTElementReference extends ElementReference {
 	
 	/**
 	 * 본 참조를 활성화시킨다.
+	 * <p>
+	 * 대상 Submodel 참조를 활성화하고 대상 Element의 idShort path를 확정한다. 다시 활성화할 수 있으며,
+	 * 실패하면 비활성 상태로 남는다.
 	 *
 	 * @param manager	객체 활성화에 사용될 {@link MDTInstanceManager} 객체.
+	 * @throws mdt.model.ResourceNotFoundException	대상 MDTInstance, Submodel 또는 Element를 찾을 수 없는 경우.
 	 */
 	public void activate(MDTInstanceManager manager);
 	
 	/**
 	 * Element를 포함한 MDTInstance의 식별자를 반환한다.
+	 * <p>
+	 * Submodel 식별자({@code submodel:id=...})로 대상을 지정한 참조는 인스턴스가 활성화 시점에 결정되므로
+	 * 활성화 전에 호출하면 {@link IllegalStateException}이 발생한다.
 	 * 
 	 * @return		MDTInstance 식별자.
 	 */
@@ -90,15 +97,12 @@ public interface MDTElementReference extends ElementReference {
 	/**
 	 * 참조가 가리키는 'File' {@link SubmodelElement}을 읽어 {@link AASFile}로 반환한다.
 	 *
-	 * @return	{@link AASFile} 객체. 대상 요소가 존재하지 않는 경우 {@code null}.
+	 * @return	{@link AASFile} 객체.
 	 * @throws	IOException	읽기 과정에서 예외가 발생하거나, 대상이 'File' SubmodelElement가 아닌 경우.
 	 */
 	public default AASFile readAsFile() throws IOException {
 		SubmodelElement sme = read();
-		if ( sme == null ) {
-			return null;
-		}
-		else if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File aasFile ) {
+		if ( sme instanceof org.eclipse.digitaltwin.aas4j.v3.model.File aasFile ) {
 			return AASFile.of(aasFile);
 		}
 		else {

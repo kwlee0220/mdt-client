@@ -30,18 +30,29 @@ public abstract class AbstractElementReference implements ElementReference, Logg
 	private Logger m_logger = s_logger;
 
 	/**
-	 * 참조가 가리키는 SubmodelElement의 값 부분을 주어진 SubmodelElement으로 갱신한다.
+	 * 참조가 가리키는 SubmodelElement의 값 부분을 주어진 SubmodelElement의 값으로 갱신한다.
 	 * <p>
-	 * 기본 구현은 {@link #write(SubmodelElement)}에 위임하여 요소 전체를 갱신한다.
+	 * 기본 구현은 {@code sme}의 값({@link ElementValues#getValue(SubmodelElement)})으로
+	 * {@link #updateValue(ElementValue)}를 호출한다. idShort·semanticId 등 메타데이터는 바뀌지 않는다.
+	 * 요소 전체를 교체하려면 {@link #write(SubmodelElement)}를 쓴다.
 	 *
 	 * @param sme	갱신할 값을 포함한 SubmodelElement 객체.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
 	 */
 	@Override
 	public void update(SubmodelElement sme) throws IOException {
-		write(sme);
+		updateValue(ElementValues.getValue(sme));
 	}
 
+	/**
+	 * 주어진 값 JSON 노드로 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
+	 * <p>
+	 * 기본 구현은 현재 값({@link #readValue()})을 원형으로 삼아 {@code valueNode}를 {@link ElementValue}로
+	 * 해석한 뒤 {@link #updateValue(ElementValue)}에 위임한다. 따라서 갱신 전에 대상을 한 번 읽는다.
+	 *
+	 * @param valueNode	값 JSON 노드.
+	 * @throws	IOException	읽기·해석·갱신 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public void updateFromValueJson(JsonNode valueNode) throws IOException {
 		ElementValue proto = readValue();

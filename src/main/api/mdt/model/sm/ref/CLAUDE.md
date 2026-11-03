@@ -168,3 +168,6 @@ range/columns도 비교한다(이전에는 Submodel만 비교해서 round-trip�
   구현한다(필요 시 `loadPrototype()` 재정의).
 - 새 참조 타입은 JSON 판별자·`DESERIALIZER` 등록·문법·visitor·Expr·`toStringExpr`를 일괄
   갱신(round-trip 유지).
+- `toStringExpr()`에서 이름은 `MDTExpressionParser.toNameExpr`, idShort 경로는 `toIdShortPathExpr`로 출력한다
+  (필요할 때만 따옴표를 붙인다). 문법에 ID 모양의 새 토큰을 추가하면 soft keyword가 아닌 한
+  `toNameExpr`의 예약어 목록에도 넣는다.

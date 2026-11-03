@@ -7,14 +7,27 @@ import mdt.model.sm.OperationSubmodelService;
 
 
 /**
+ * AI Submodel에 대한 {@link OperationSubmodelService}.
+ * <p>
+ * 입출력 인자는 {@code AIInfo.Inputs}/{@code AIInfo.Outputs}에 저장된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class AISubmodelService extends OperationSubmodelService {
+	/**
+	 * 주어진 AI Submodel 서비스를 감싸는 객체를 생성한다.
+	 *
+	 * @param service	대상 AI Submodel 서비스.
+	 */
 	public AISubmodelService(SubmodelService service) {
 		super(service);
 	}
 	
+	/**
+	 * 원격 Submodel 전체를 읽어 {@link AI} 엔티티로 변환하여 반환한다.
+	 *
+	 * @return	{@link AI} 엔티티 ({@link DefaultAI}).
+	 */
 	public AI getAI() {
 		Submodel submodel = m_service.getSubmodel();
 		DefaultAI ai = new DefaultAI();

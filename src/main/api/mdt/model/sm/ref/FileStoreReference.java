@@ -39,6 +39,7 @@ import mdt.model.sm.value.FileValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public final class FileStoreReference extends AbstractElementReference implements ElementReference {
+	/** Json 직렬화 타입 식별자({@code "mdt:ref:file"}). */
 	public static final String SERIALIZATION_TYPE = "mdt:ref:file";
 
 	@SuppressWarnings("unused")
@@ -50,6 +51,7 @@ public final class FileStoreReference extends AbstractElementReference implement
 	 * 주어진 파일에 저장된 SubmodelElement를 참조하는 {@code FileStoreReference}를 생성한다.
 	 *
 	 * @param storeFile	SubmodelElement가 Json 형태로 저장된(또는 저장될) 파일.
+	 * @throws IllegalArgumentException	{@code storeFile}이 {@code null}인 경우.
 	 */
 	public FileStoreReference(File storeFile) {
 		Preconditions.checkNotNullArgument(storeFile, "File is null");
@@ -66,6 +68,13 @@ public final class FileStoreReference extends AbstractElementReference implement
 		return m_file;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * 캐시하지 않고 호출할 때마다 저장 파일을 다시 읽는다({@link #read()}).
+	 *
+	 * @throws UncheckedIOException	파일을 읽는 과정에서 예외가 발생한 경우.
+	 */
 	@Override
 	public SubmodelElement getPrototype() {
 		try {
@@ -141,6 +150,7 @@ public final class FileStoreReference extends AbstractElementReference implement
 	 *
 	 * @param valueExpr	저장 파일의 경로 문자열.
 	 * @return 생성된 {@link FileStoreReference} 객체.
+	 * @throws NullPointerException	{@code valueExpr}이 {@code null}인 경우.
 	 */
 	public static FileStoreReference parseString(String valueExpr) {
 		return new FileStoreReference(new File(valueExpr));
@@ -169,10 +179,11 @@ public final class FileStoreReference extends AbstractElementReference implement
 	 *
 	 * @param jnode	{@code path} 필드를 담은 Json 노드.
 	 * @return 복원된 {@link FileStoreReference} 객체.
-	 * @throws IOException	{@code path} 필드가 존재하지 않는 경우.
+	 * @throws IOException	{@code path} 필드가 없거나 JSON 문자열이 아닌 경우
+	 * 						({@link utils.json.JacksonDeserializationException}).
 	 */
 	public static FileStoreReference deserializeFields(JsonNode jnode) throws IOException {
-		String path = JacksonUtils.getStringField(jnode, "path");
+		String path = JacksonUtils.getTextField(jnode, "path");
 
 		return new FileStoreReference(new File(path));
 	}

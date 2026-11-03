@@ -55,7 +55,7 @@ AAS Part 2(API)의 Submodel 서비스에 대응하며, 327줄로 루트 패키�
 - **요소 CRUD**: `getSubmodelElementByPath`, `addSubmodelElement`, `addSubmodelElementByPath`, `setSubmodelElementByPath`(요소 교체), `updateSubmodelElementByPath`(값만 갱신), `deleteSubmodelElementByPath`.
 - **값 단위 접근**: `getSubmodelElementValueByPath(path, prototype)`은 `ElementValue`를 돌려주고, `updateSubmodelElementValueByPath(path, json)`은 value-only JSON 문자열로 값을 바꾼다.
 - **첨부파일(File 요소)**: `getAttachmentByPath`(OutputStream으로 받기), `getAASFileByPath`(기본 메서드, `TempFile`로 받기), `putAttachmentByPath`(InputStream 또는 `java.io.File`), `deleteAttachmentByPath`.
-- **Operation 실행**: `invokeOperationSync`, `invokeOperationAsync` → `OperationHandle`, `getOperationAsyncStatus`, `getOperationAsyncResult`. 기본 메서드 `runOperation(path, in, inout, timeout, pollInterval)`은 비동기로 시작한 뒤 `pollInterval`마다 상태를 확인해 끝나면 결과를 반환한다. `timeout`이 `null`이면 7일(`P7D`)을 쓰고, 상태가 `TIMEOUT`이면 `TimeoutException`, `CANCELED`이면 `CancellationException`을 던진다.
+- **Operation 실행**: `invokeOperationSync`, `invokeOperationAsync` → `OperationHandle`, `getOperationAsyncStatus`, `getOperationAsyncResult`. 기본 메서드 `runOperation(path, in, inout, timeout, pollInterval)`은 비동기로 시작한 뒤 `pollInterval`마다 상태를 확인해 끝나면 결과를 반환한다. `timeout`이 `null`이면 7일(`P7D`)을 쓰고, 상태가 `FAILED`이면 서버 메시지를 담은 `ExecutionException`, `TIMEOUT`이면 `TimeoutException`, `CANCELED`이면 `CancellationException`을 던진다.
 
 ### AssetAdministrationShellService — AAS 셸 하나를 다루는 서비스
 
@@ -434,19 +434,6 @@ Map<String,ElementValue> outputs = sim.run(Map.of("Speed", speed),
 
 | 위치 | 내용 | 영향 |
 | --- | --- | --- |
-| `SubmodelService.runOperation` | 실행 상태가 FAILED여도 예외 없이 결과를 반환한다(예외 코드는 주석 처리) | 호출자가 결과의 실행 상태를 직접 확인해야 한다 |
-| `AbstractElementReference.update(sme)` | Javadoc은 값 갱신이라고 하지만 `write(sme)`를 불러 요소 전체를 교체한다 | 메타데이터까지 덮어쓴다 |
-| `DefaultSubmodelReference`(id 기준) `toStringExpr()` | `submodel:id=<id>`를 따옴표 없이 출력한다 | URL 형태 id는 다시 파싱되지 않는다 |
-| `MDTParameterReference` 경로 분해 | 표현식을 `.`로 먼저 나눈다 | `Samples[0].x`가 파라미터 id `Samples[0]`로 조회된다 |
-| `MDTArgumentKind.fromString` | `in`으로 시작하면 모두 INPUT으로 본다 | `inout`, `invalid`도 INPUT이 된다 |
-| `sm.Metadata` 생성자 | SML 분기에서 `m_typeValueListElement` 대신 `m_valueType`을 검사한다 | SubmodelElementList마다 `IllegalStateException` |
-| `AbstractSMEContainerEntity.toProperty` | 값이 `null`이고 `keepNullField=true`면 `value.getClass()`에서 NPE | `@PropertyField(keepNullField=true)`가 동작하지 않는다 |
-| `SubmodelElementListEntity.updateFromAasModel` | `valueTypeListElement`를 SML에서 읽지 않고 자기 값을 다시 넣는다 | 원본 값이 반영되지 않는다 |
-| `SubmodelEntity.updateFromAasModel` | `checkNotNullArgument(model != null, …)`에 boolean을 넘긴다 | null 검사가 동작하지 않는다 |
-| `OperationSubmodelService` 생성자 | semanticId로 `switch`하는데 `null` 처리가 없다 | semanticId 없는 서브모델이면 NPE |
-| 엔티티 쓰기(`updateAasModel`) | 자식을 `FStream.toMap()`(HashMap)으로 다시 모은다 | 원래 요소 순서가 유지되지 않는다 |
-| `MDTInstanceManager` 필터 기본 메서드 | 값을 `'%s'`로 그대로 끼워 넣는다 | 작은따옴표가 든 id는 필터가 깨진다 |
-| `ResourceNotFoundException.ofSemanticId` | `target` 인자를 무시하고 "Submodel"로 고정한다 | 메시지의 자원 종류가 틀릴 수 있다 |
 
 ### 미완성·미사용 코드와 명명 문제
 

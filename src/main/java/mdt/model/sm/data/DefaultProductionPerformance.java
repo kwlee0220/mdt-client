@@ -8,6 +8,12 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
+ * {@link ProductionPerformance} 인터페이스의 기본 구현 클래스이다.
+ * <p>
+ * 각 속성은 SubmodelElementCollection의 Property에 대응되며, 각 Property의 idShort는
+ * 인터페이스의 접근자 문서에 명시되어 있다.
+ * {@code CancelIndicator}, {@code CancelDateTime}, {@code BatchID} Property도 함께 읽고 쓰지만
+ * {@link ProductionPerformance} 인터페이스로는 노출되지 않는다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -33,7 +39,7 @@ public class DefaultProductionPerformance extends SubmodelElementCollectionEntit
 	
 	@Override
 	public String getIdShort() {
-		return "" + this.productionOrderID;
+		return "" + this.productionPerformanceID;
 	}
 	
 	@Override

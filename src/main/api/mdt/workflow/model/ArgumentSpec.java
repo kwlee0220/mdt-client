@@ -145,6 +145,9 @@ public abstract sealed class ArgumentSpec
 
 	/**
 	 * 공통 필드(식별자, 이름, 설명)가 같은지 비교한다. 하위 클래스의 {@code equals}가 쓴다.
+	 *
+	 * @param other	비교할 인자 명세.
+	 * @return	공통 필드가 모두 같으면 {@code true}.
 	 */
 	protected final boolean commonFieldsEqual(ArgumentSpec other) {
 		return m_id.equals(other.m_id)
@@ -154,6 +157,9 @@ public abstract sealed class ArgumentSpec
 
 	/**
 	 * 공통 필드와 하위 클래스 필드로 해시값을 만든다. 하위 클래스의 {@code hashCode}가 쓴다.
+	 *
+	 * @param fields	해시값에 포함할 하위 클래스 필드들.
+	 * @return	해시값.
 	 */
 	protected final int commonFieldsHash(Object... fields) {
 		return Objects.hash(m_id, m_name, m_description, Arrays.hashCode(fields));
@@ -167,8 +173,11 @@ public abstract sealed class ArgumentSpec
 	 */
 	public abstract static class AbstractBuilder<B extends AbstractBuilder<B,T>, T extends ArgumentSpec> {
 		// build()에서 검증하므로 설정 전에는 null이다.
+		/** 설정된 인자 식별자. 설정 전에는 {@code null}. */
 		@Nullable protected String m_id;
+		/** 설정된 인자 이름. 설정 전에는 {@code null}. */
 		@Nullable protected String m_name;
+		/** 설정된 인자 설명. 설정 전에는 {@code null}. */
 		@Nullable protected String m_description;
 
 		/**
@@ -189,6 +198,11 @@ public abstract sealed class ArgumentSpec
 		 */
 		public abstract T build();
 
+		/**
+		 * method chaining을 위해 자신을 하위 builder 타입으로 반환한다.
+		 *
+		 * @return	본 builder 객체.
+		 */
 		@SuppressWarnings("unchecked")
 		protected B self() {
 			return (B)this;
@@ -287,15 +301,47 @@ public abstract sealed class ArgumentSpec
 	public static LiteralArgument literal(String id, ElementValue value) {
 		return LiteralArgument.builder().id(id).value(value).build();
 	}
+	/**
+	 * 값을 {@link PropertyValue#INTEGER(Integer)}로 감싼 리터럴 인자 명세를 만든다.
+	 *
+	 * @param id		인자 식별자.
+	 * @param value		인자 값.
+	 * @return	리터럴 인자 명세.
+	 * @throws IllegalArgumentException	인자가 {@code null}이거나 {@code id}가 공백뿐인 경우.
+	 */
 	public static LiteralArgument literal(String id, Integer value) {
 		return LiteralArgument.builder().id(id).value(value).build();
 	}
+	/**
+	 * 값을 {@link PropertyValue#FLOAT(Float)}로 감싼 리터럴 인자 명세를 만든다.
+	 *
+	 * @param id		인자 식별자.
+	 * @param value		인자 값.
+	 * @return	리터럴 인자 명세.
+	 * @throws IllegalArgumentException	인자가 {@code null}이거나 {@code id}가 공백뿐인 경우.
+	 */
 	public static LiteralArgument literal(String id, Float value) {
 		return LiteralArgument.builder().id(id).value(value).build();
 	}
+	/**
+	 * 값을 {@link PropertyValue#DOUBLE(Double)}로 감싼 리터럴 인자 명세를 만든다.
+	 *
+	 * @param id		인자 식별자.
+	 * @param value		인자 값.
+	 * @return	리터럴 인자 명세.
+	 * @throws IllegalArgumentException	인자가 {@code null}이거나 {@code id}가 공백뿐인 경우.
+	 */
 	public static LiteralArgument literal(String id, Double value) {
 		return LiteralArgument.builder().id(id).value(value).build();
 	}
+	/**
+	 * 값을 {@link PropertyValue#STRING(String)}로 감싼 리터럴 인자 명세를 만든다.
+	 *
+	 * @param id		인자 식별자.
+	 * @param value		인자 값.
+	 * @return	리터럴 인자 명세.
+	 * @throws IllegalArgumentException	인자가 {@code null}이거나 {@code id}가 공백뿐인 경우.
+	 */
 	public static LiteralArgument literal(String id, String value) {
 		return LiteralArgument.builder().id(id).value(value).build();
 	}
@@ -375,6 +421,7 @@ public abstract sealed class ArgumentSpec
 	 * MDT 요소 참조 표현식으로 값의 위치를 지정하는 인자 명세.
 	 */
 	public static final class ReferenceArgument extends ArgumentSpec {
+		/** JSON 직렬화 시 {@code @type} 필드에 기록되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:task_arg:reference";
 		private static final String FIELD_REFERENCE = "reference";
 
@@ -518,6 +565,7 @@ public abstract sealed class ArgumentSpec
 	 * 다른 태스크의 출력 인자를 가리키는 인자 명세. 값은 그 태스크의 수행 결과로부터 실행 엔진이 정한다.
 	 */
 	public static final class TaskOutputArgument extends ArgumentSpec {
+		/** JSON 직렬화 시 {@code @type} 필드에 기록되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:task_arg:task-output";
 		private static final String FIELD_TASK_ID = "taskId";
 		private static final String FIELD_ARGUMENT_NAME = "argumentName";
@@ -659,6 +707,7 @@ public abstract sealed class ArgumentSpec
 	 * 고정된 값을 갖는 인자 명세.
 	 */
 	public static final class LiteralArgument extends ArgumentSpec {
+		/** JSON 직렬화 시 {@code @type} 필드에 기록되는 타입 식별자. */
 		public static final String SERIALIZATION_TYPE = "mdt:task_arg:literal";
 		private static final String FIELD_VALUE = "value";
 
@@ -851,6 +900,9 @@ public abstract sealed class ArgumentSpec
 	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends JsonNodeStdDeserializer<ArgumentSpec> {
+		/**
+		 * {@link ArgumentSpec} 등록부를 사용하는 deserializer를 만든다.
+		 */
 		public Deserializer() {
 			super(ArgumentSpec.class, DESERIALIZER);
 		}

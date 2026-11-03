@@ -32,34 +32,75 @@ public class MqttBrokerConfig {
 	private String m_keepAliveInterval;	// null means using default value of MQTT library.
 	private String m_reconnectInterval;	// null means using default values (see class document).
 	
+	/**
+	 * broker URL을 반환한다.
+	 *
+	 * @return	broker URL. 설정되지 않은 경우는 {@code tcp://localhost:1883}.
+	 */
 	public String getBrokerUrl() {
 		return Nullables.orElse(m_brokerUrl, DEFAULT_BROKER_URL);
 	}
 	
+	/**
+	 * broker URL을 설정한다.
+	 *
+	 * @param brokerUrl	broker URL.
+	 */
 	public void setBrokerUrl(String brokerUrl) {
 		m_brokerUrl = brokerUrl;
 	}
 	
+	/**
+	 * broker 접속 제한시간 문자열을 반환한다.
+	 *
+	 * @return	접속 제한시간 (예: {@code "10s"}). 설정되지 않은 경우는 {@code null}이며 Paho 기본값을 사용한다.
+	 */
 	public String getConnectionTimeout() {
 		return m_connectionTimeout;
 	}
 	
+	/**
+	 * broker 접속 제한시간을 설정한다. 초 단위 미만은 버려진다.
+	 *
+	 * @param connectionTimeout	접속 제한시간 (예: {@code "10s"}).
+	 */
 	public void setConnectionTimeout(String connectionTimeout) {
 		m_connectionTimeout = connectionTimeout;
 	}
 	
+	/**
+	 * keep-alive 간격 문자열을 반환한다.
+	 *
+	 * @return	keep-alive 간격 (예: {@code "30s"}). 설정되지 않은 경우는 {@code null}이며 Paho 기본값을 사용한다.
+	 */
 	public String getKeepAliveInterval() {
 		return m_keepAliveInterval;
 	}
 	
+	/**
+	 * keep-alive 간격을 설정한다. 초 단위 미만은 버려진다.
+	 *
+	 * @param keepAliveInterval	keep-alive 간격 (예: {@code "30s"}).
+	 */
 	public void setKeepAliveInterval(String keepAliveInterval) {
 		m_keepAliveInterval = keepAliveInterval;
 	}
 	
+	/**
+	 * 재연결 간격 문자열을 반환한다.
+	 *
+	 * @return	재연결 간격 (예: {@code "5s"}). 설정되지 않은 경우는 {@code null}이며 기본값을 사용한다
+	 * 			(클래스 설명 참고).
+	 */
 	public String getReconnectInterval() {
 		return m_reconnectInterval;
 	}
 	
+	/**
+	 * 재연결 간격을 설정한다. 의미는 클래스 설명을 참고한다.
+	 *
+	 * @param reconnectInterval	재연결 간격 (예: {@code "5s"}).
+	 */
 	public void setReconnectInterval(String reconnectInterval) {
 		m_reconnectInterval = reconnectInterval;
 	}

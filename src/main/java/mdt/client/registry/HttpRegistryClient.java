@@ -24,6 +24,11 @@ import utils.http.RESTfulRemoteException;
 import mdt.client.Fa3stMessage;
 
 /**
+ * AAS4J JSON 직렬화기를 이용하여 FA³ST 레지스트리 서버를 호출하는 HTTP 클라이언트의 공통 기반 클래스.
+ * <p>
+ * 오류 응답은 {@link Fa3stMessage}로 해석하여 {@code code}에 담긴 클래스 이름의 예외를 생성하여 던지고,
+ * 생성할 수 없으면 {@link RESTfulRemoteException}을 던진다.
+ * 현재는 이 클래스를 상속하는 클래스가 없다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

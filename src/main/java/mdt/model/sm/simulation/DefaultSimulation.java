@@ -13,6 +13,11 @@ import mdt.model.sm.entity.SMElementField;
 import mdt.model.sm.entity.SubmodelEntity;
 
 /**
+ * {@link Simulation} Submodel의 기본 구현 엔티티.
+ * <p>
+ * {@code SubModelInfo}, {@code SimulationInfo}({@link DefaultSimulationInfo}) SubmodelElementCollection과
+ * {@code SimulationOperation} Operation을 필드로 갖는다. 접근자는 Lombok {@code @Getter}/{@code @Setter}로
+ * 생성된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -27,6 +32,12 @@ public class DefaultSimulation extends SubmodelEntity implements Simulation {
 	@SMElementField(idShort="SimulationOperation")
 	private Operation simulationOperation;
 	
+	/**
+	 * 주어진 Simulation Submodel로부터 {@link DefaultSimulation} 객체를 생성한다.
+	 *
+	 * @param submodel	Simulation Submodel.
+	 * @return	생성된 {@link DefaultSimulation} 객체.
+	 */
 	public static DefaultSimulation from(Submodel submodel) {
 		DefaultSimulation simulation = new DefaultSimulation();
 		simulation.updateFromAasModel(submodel);
@@ -34,6 +45,9 @@ public class DefaultSimulation extends SubmodelEntity implements Simulation {
 		return simulation;
 	}
 
+	/**
+	 * semanticId가 {@link Simulation#SEMANTIC_ID_REFERENCE}로 설정된 빈 Simulation Submodel 엔티티를 생성한다.
+	 */
 	public DefaultSimulation() {
 		setSemanticId(SEMANTIC_ID_REFERENCE);
 	}

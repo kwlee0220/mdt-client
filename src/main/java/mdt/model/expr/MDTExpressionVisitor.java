@@ -62,6 +62,10 @@ import mdt.model.sm.value.IdShortPath;
 import mdt.model.sm.value.PropertyValue;
 
 /**
+ * ANTLR가 생성한 {@code MdtExpr} 파스 트리를 방문하여 대응하는 {@link MDTExpression} 객체로 변환하는
+ * visitor이다.
+ * <p>
+ * {@link MDTExpressionParser}가 내부적으로 사용한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

@@ -6,10 +6,17 @@ import mdt.model.MDTModelSerDe;
 import mdt.workflow.model.TaskDescriptor;
 
 /**
+ * JSON 파일로 기술된 {@code TaskDescriptor}를 {@code MDTModelSerDe}로 읽어 출력하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestTaskDescriptor {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		File descJsonFile;
 		TaskDescriptor taskDesc;

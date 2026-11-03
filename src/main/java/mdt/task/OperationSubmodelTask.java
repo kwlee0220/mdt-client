@@ -87,9 +87,17 @@ public class OperationSubmodelTask extends AbstractOperationTask {
 						});
 	}
 
+	/**
+	 * {@link OperationSubmodelTask}를 만드는 builder를 생성한다.
+	 *
+	 * @return	새 builder.
+	 */
 	public static Builder builder() {
 		return new Builder();
 	}
+	/**
+	 * {@link OperationSubmodelTask} builder.
+	 */
 	public static class Builder extends AbstractBuilder<Builder,OperationSubmodelTask> {
 		private MDTSubmodelReference m_submodelRef = null;
 
@@ -98,6 +106,12 @@ public class OperationSubmodelTask extends AbstractOperationTask {
 			return new OperationSubmodelTask(this);
 		}
 
+		/**
+		 * 호출할 {@code Operation} element를 가진 연산 Submodel의 참조를 설정한다.
+		 *
+		 * @param ref	연산 Submodel 참조.
+		 * @return	이 builder.
+		 */
 		public Builder submodelReference(MDTSubmodelReference ref) {
 			m_submodelRef = ref;
 			return this;

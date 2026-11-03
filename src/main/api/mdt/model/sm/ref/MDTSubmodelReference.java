@@ -33,8 +33,12 @@ public interface MDTSubmodelReference extends SubmodelReference {
 	
 	/**
 	 * 본 참조를 활성화시킨다.
+	 * <p>
+	 * 주어진 관리자에서 대상 Submodel을 포함한 {@link MDTInstance}를 찾아 연결한다. 다시 호출하면
+	 * 새로 찾으며, 실패하면 비활성 상태가 된다.
 	 *
 	 * @param manager	객체 활성화에 사용될 {@link MDTInstanceManager} 객체.
+	 * @throws mdt.model.ResourceNotFoundException	대상 MDTInstance를 찾을 수 없는 경우.
 	 */
 	public void activate(MDTInstanceManager manager);
 	
@@ -42,6 +46,7 @@ public interface MDTSubmodelReference extends SubmodelReference {
 	 * 주어진 {@link MDTInstance}가 소속된 {@link MDTInstanceManager}를 이용하여 본 참조를 활성화시킨다.
 	 *
 	 * @param instance	활성화에 사용할 MDTInstance 객체.
+	 * @throws mdt.model.ResourceNotFoundException	대상 MDTInstance를 찾을 수 없는 경우.
 	 */
 	default public void activate(MDTInstance instance) {
 		activate(instance.getInstanceManager());
@@ -49,8 +54,12 @@ public interface MDTSubmodelReference extends SubmodelReference {
 	
 	/**
 	 * Submodel을 포함한 MDTInstance의 식별자를 반환한다.
+	 * <p>
+	 * 인스턴스가 활성화 시점에 결정되는 구현(Submodel 식별자 기반 참조)에서는 활성화 전에 호출하면
+	 * {@link IllegalStateException}이 발생한다.
 	 * 
 	 * @return		MDTInstance 식별자.
+	 * @throws	IllegalStateException	인스턴스가 아직 결정되지 않은(비활성) 상태에서 호출된 경우.
 	 */
 	public String getInstanceId();
 	

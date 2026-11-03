@@ -24,6 +24,7 @@ import utils.json.JacksonDeserializationException;
 import utils.json.JacksonUtils;
 import utils.stream.FStream;
 
+import mdt.model.expr.MDTExpressionParser;
 import mdt.model.MDTModelSerDe;
 import mdt.model.ModelValidationException;
 import mdt.model.instance.MDTInstance;
@@ -58,6 +59,10 @@ import mdt.model.sm.value.PropertyValue;
  * @author Kang-Woo Lee (ETRI)
  */
 public class MDTParameterCollectionReference extends SubmodelBasedElementReference {
+	/**
+	 * Json 직렬화 타입 식별자({@code "mdt:ref:param"}). {@link MDTParameterReference}와 공유하며,
+	 * {@code parameterExpr} 필드가 {@code "*"}인 것으로 구분한다.
+	 */
 	public static final String SERIALIZATION_TYPE = "mdt:ref:param";
 	private static final String FIELD_INSTANCE_ID = "instanceId";
 	private static final String FIELD_PARAMETER_EXPR = "parameterExpr";
@@ -114,6 +119,16 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		return KeyValue.of(memberId, memberElm);
 	}
 	
+	/**
+	 * 참조가 가리키는 파라미터 집합의 값을 읽어 {@code ParameterID -> 값} 형태로 반환한다.
+	 * <p>
+	 * 각 멤버의 {@code ParameterID} 값을 키로, {@code ParameterValue}의 값을 값으로 하는
+	 * {@link ElementCollectionValue}를 파라미터 순서대로 만든다.
+	 *
+	 * @return 파라미터 값들을 담은 {@link ElementCollectionValue}.
+	 * @throws IOException 읽기 과정에서 예외가 발생하거나, 값이 {@link ElementListValue}가 아니거나,
+	 * 				멤버 구조가 올바르지 않은 경우.
+	 */
 	@Override
 	public ElementValue readValue() throws IOException {
 		ElementValue smev = super.readValue();
@@ -148,6 +163,19 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 											vfield.getClass().getName()));
 	}
 	
+	/**
+	 * 주어진 파라미터 값 목록으로 파라미터 집합 전체를 갱신한다.
+	 * <p>
+	 * {@code sme}는 {@link #read()}가 반환하는 것과 같은 형태, 즉 멤버의 idShort가 {@code ParameterID}인
+	 * {@link SubmodelElementList}여야 한다. 현재 파라미터 목록을 읽어 각 파라미터의 {@code ParameterValue}를
+	 * 같은 ID 멤버의 복사본(idShort를 {@code "ParameterValue"}로 바꾼 것)으로 교체한 뒤 기록한다. 주어진
+	 * {@code sme}와 그 멤버들은 변경되지 않는다.
+	 *
+	 * @param sme	{@code ParameterID}를 idShort로 갖는 파라미터 값들의 {@link SubmodelElementList}.
+	 * @throws IllegalArgumentException	{@code sme}가 {@code null}이거나 {@link SubmodelElementList}가 아닌 경우.
+	 * @throws IOException	현재 파라미터 중 {@code sme}에 값이 없는 것이 있거나, 읽기·쓰기 과정에서 예외가
+	 * 						발생한 경우.
+	 */
 	@Override
 	public void write(SubmodelElement sme) throws IOException {
 		Preconditions.checkNotNullArgument(sme, "sme is null");
@@ -177,9 +205,12 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 						String msg = String.format("Missing parameter value for ParameterID=%s", memberId);
 						throw new IOException(msg);
 					}
-					newValue.setIdShort("ParameterValue");
+					// 호출자의 요소를 바꾸지 않도록 복사본의 idShort를 바꿔서 넣는다.
+					SubmodelElement copied = MDTModelSerDe.readValue(MDTModelSerDe.toJsonString(newValue),
+																	SubmodelElement.class);
+					copied.setIdShort("ParameterValue");
 					SubmodelUtils.replaceFieldById((SubmodelElementCollection)paramValue, "ParameterValue",
-													newValue);
+													copied);
 				});
 		super.write(paramValues);
 	}
@@ -237,6 +268,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 	 * 값 JSON 객체 노드로 파라미터 값들을 ID별로 갱신한다. {@link #updateFromValueJson(String)}와 같다.
 	 *
 	 * @param valueNode	값 JSON 객체 노드.
+	 * @throws IllegalArgumentException	{@code valueNode}가 {@code null}이거나 모르는 ID가 있는 경우.
 	 * @throws IOException	{@link #updateFromValueJson(String)}와 같다.
 	 */
 	@Override
@@ -347,7 +379,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 
 	@Override
 	public String toStringExpr() {
-		return String.format("param:%s:*", getInstanceId());
+		return String.format("param:%s:*", MDTExpressionParser.toNameExpr(getInstanceId()));
 	}
 	
 	@Override
@@ -379,6 +411,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 	 *
 	 * @param instanceId	대상 MDT 인스턴스의 식별자.
 	 * @return 생성된 {@link MDTParameterCollectionReference} 객체.
+	 * @throws IllegalArgumentException	{@code instanceId}가 {@code null}이거나 빈 문자열인 경우.
 	 */
 	public static MDTParameterCollectionReference newInstance(String instanceId) {
 		return new MDTParameterCollectionReference(instanceId);

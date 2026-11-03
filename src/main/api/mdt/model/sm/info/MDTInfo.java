@@ -5,24 +5,33 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import mdt.model.MDTSemanticIds;
 
 /**
+ * InformationModel Submodel의 {@code MDTInfo} SubmodelElementCollection 인터페이스.
+ * <p>
+ * 트윈화 대상 자산의 타입, 이름과 MDT 모델의 상태를 갖는다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTInfo {
+	/**
+	 * MDTInfo의 semanticId 문자열.
+	 */
 	public static final String SEMANTIC_ID = MDTSemanticIds.MDT_INFO;
+	/**
+	 * MDTInfo의 semanticId 참조 ({@link #SEMANTIC_ID}로부터 생성).
+	 */
 	public static final Reference SEMANTIC_ID_REFERENCE = MDTSemanticIds.toReference(SEMANTIC_ID);
 	
 	/**
-	 * 트윈화 대상 자산 ID를 반환한다.
+	 * {@code MDTInfo} SubmodelElementCollection의 idShort를 반환한다.
 	 *
-	 * @return 자산 ID.
+	 * @return idShort.
 	 */
 	public String getIdShort();
 	
 	/**
-	 * 트윈화 대상 자산 ID를 설정한다.
+	 * {@code MDTInfo} SubmodelElementCollection의 idShort를 설정한다.
 	 *
-	 * @param idShort 설정할 자산 ID.
+	 * @param idShort 설정할 idShort.
 	 */
 	public void setIdShort(String idShort);
 	

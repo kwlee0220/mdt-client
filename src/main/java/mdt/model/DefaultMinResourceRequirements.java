@@ -8,6 +8,10 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
+ * {@link MinResourceRequirements}의 기본 구현으로, 최소 자원 요구사항을
+ * SubmodelElementCollection 엔티티로 표현한다.
+ * <p>
+ * 각 필드는 같은 이름의 하위 Property(GPUSpec, GPUNum, CPUSpec, MemorySize, MemorySpeed)에 매핑된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -28,7 +32,4 @@ public class DefaultMinResourceRequirements extends SubmodelElementCollectionEnt
 	
 	@PropertyField(idShort="MemorySpeed")
 	private String MemorySpeed;
-	
-	@PropertyField(idShort="InputType")
-	private String inputType;
 }

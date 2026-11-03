@@ -103,7 +103,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a submodel.
+     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a
+     * submodel.
      *
      * @param submodelId the id of the submodel
      * @param elementIds the ids of the path to the submodel element
@@ -118,7 +119,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a submodel.
+     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a
+     * submodel.
      *
      * @param submodelId the id of the submodel
      * @param elements the submodel elements in the path
@@ -146,7 +148,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a submodel.
+     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a
+     * submodel.
      *
      * @param submodel the submodel
      * @param elementIds the ids of the path to the submodel element
@@ -161,7 +164,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a submodel.
+     * Builds a {@link org.eclipse.digitaltwin.aas4j.v3.model.Reference} to a submodel element inside a
+     * submodel.
      *
      * @param submodel the submodel
      * @param elements the submodel elements in the path
@@ -176,8 +180,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Creates a reference by concatenating a parent reference with submodel element ids. Only leading keys pointing to
-     * an identifiable are kept from the parent reference.
+     * Creates a reference by concatenating a parent reference with submodel element ids. Only leading keys
+     * pointing to an identifiable are kept from the parent reference.
      *
      * @param parent the parent reference
      * @param elementIds the submodel element Ids
@@ -192,8 +196,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Creates a reference by concatenating a parent reference with submodel element ids. Only leading keys pointing to
-     * an identifiable are kept from the parent reference.
+     * Creates a reference by concatenating a parent reference with submodel element ids. Only leading keys
+     * pointing to an identifiable are kept from the parent reference.
      *
      * @param parent the parent reference
      * @param elements the submodel elements
@@ -221,7 +225,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Create a builder with an existing Reference as base, i.e. the builder will only add to the existing reference.
+     * Create a builder with an existing Reference as base, i.e. the builder will only add to the existing
+     * reference.
      *
      * @param reference the base reference
      * @return a new builder base of the existing reference
@@ -478,7 +483,8 @@ public class ReferenceBuilder extends AbstractBuilder<Reference> {
 
 
     /**
-     * Adds a key representing a SubmodelElement with a given index inside a SubmodelElementList using a given key type.
+     * Adds a key representing a SubmodelElement with a given index inside a SubmodelElementList using a given
+     * key type.
      *
      * @param index the index
      * @param type the key type

@@ -12,8 +12,10 @@ import utils.json.JacksonDeserializationException;
  * <p>
  * 각 데이터 타입은 다음 세 가지 외부 표현과 Java 값({@code T}) 사이의 변환을 정의한다.
  * <ul>
- *   <li>값 문자열: AAS {@code xs:*} 표기의 문자열({@link #toValueString(Object)} / {@link #parseValueString(String)})</li>
- *   <li>Json: Jackson {@link JsonNode} 표현({@link #toJsonObject(Object)} / {@link #fromJsonNode(JsonNode)})</li>
+ *   <li>값 문자열: AAS {@code xs:*} 표기의 문자열
+ *       ({@link #toValueString(Object)} / {@link #parseValueString(String)})</li>
+ *   <li>Json: Jackson {@link JsonNode} 표현
+ *       ({@link #toJsonObject(Object)} / {@link #fromJsonNode(JsonNode)})</li>
  *   <li>JDBC: 데이터베이스 컬럼 값 객체({@link #toJdbcObject(Object)} / {@link #fromJdbcObject(Object)})</li>
  * </ul>
  * 구현체는 보통 불변(immutable) 싱글턴이며 {@link DataTypes}에 상수로 등록되어 있다.

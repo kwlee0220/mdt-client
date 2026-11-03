@@ -56,7 +56,7 @@ public final class NodeTask {
 
 		m_taskId = taskId;
 		m_status = status;
-		m_dependents = Nullables.orElseGet(dependents, HashSet::new);
+		m_dependents = Nullables.orGet(dependents, HashSet::new);
 		m_startTime = startTime;
 		m_finishTime = finishTime;
 	}

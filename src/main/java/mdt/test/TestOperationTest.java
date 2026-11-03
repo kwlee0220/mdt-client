@@ -10,10 +10,17 @@ import mdt.model.AASUtils;
 import mdt.model.sm.PropertyUtils;
 
 /**
+ * Test 인스턴스의 {@code AddAndSleep} AAS 연산을 {@code AASOperationClient}로 호출하는 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestOperationTest {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		String id = AASUtils.encodeBase64UrlSafe("http://mdt.etri.re.kr/mdt/Test/sm/AddAndSleep");
 		String url = String.format("https://localhost:19000/api/v3.0/submodels/%s", id);

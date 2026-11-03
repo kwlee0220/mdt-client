@@ -21,8 +21,11 @@ import mdt.workflow.model.TaskDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTTask extends Cancellable {
+	/** 태스크 수행 제한 시간을 지정하는 옵션 이름 (선택). */
 	public static final String OPTION_TIMEOUT = "timeout";	// optional
+	/** 원격 연산의 상태 확인(polling) 주기를 지정하는 옵션 이름 (선택). */
 	public static final String OPTION_POLL_INTERVAL = "poll";    // optional
+	/** 태스크 수행 중 사용할 로그 레벨을 지정하는 옵션 이름. */
 	public static final String OPTION_LOG_LEVEL = "loglevel";
 	
 	/**
@@ -38,12 +41,13 @@ public interface MDTTask extends Cancellable {
 	/**
 	 * 태스크 작업을 수행한다.
 	 * <p>
-	 * 태스크 수행에 필요한 정보는 입력 파라미터, 출력 파라미터, 그리고 옵션을 통해 전달받는다.
-	 * 수행 
-	 * 제한 시간이 주어진 경우에는 태스크 수행이 그 시간을 초과한 경우에는 수행이 중단되고
-	 * {@link TimeoutException}가 발생되는 것을 요구한다.
-	 * 
+	 * 태스크 수행에 필요한 정보는 입력 인자, 출력 인자, 그리고 옵션을 통해 전달받는다.
+	 * 호출한 스레드에서 태스크가 끝날 때까지 대기(blocking)한다.
+	 * 제한 시간이 주어진 경우 태스크 수행이 그 시간을 초과하면 수행을 중단하고 {@link TaskException}을
+	 * 던져야 한다. 예외의 원인(cause)은 구현에 따라 다르다(예: {@link TimeoutException}).
+	 *
 	 * @param manager		MDT인스턴스 관리자 객체.
+	 * @return	출력 인자 이름을 키로 하는 태스크 수행 결과 맵. 결과가 없으면 빈 맵.
 	 * @throws InterruptedException	태스크 수행 중 인터럽트가 발생된 경우.
 	 * @throws CancellationException	태스크 수행 중 사용자 요청으로 중단된 경우.
 	 * @throws TaskException		태스크 수행 오류 발생으로 실패한 경우.

@@ -53,14 +53,21 @@ import mdt.workflow.model.TaskDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
+	/** Builder에서 polling 주기를 지정하지 않은 경우 사용하는 기본 주기 (3초). */
 	protected static final Duration DEFAULT_POLL_INTERVAL = Duration.ofSeconds(3);
 
+	/** 입력 인자 맵 (인자 이름 → 인자). 이름이 같은 연산 입력 변수에 반영된다. */
 	protected final Map<String,TaskArgument> m_inputArguments;
+	/** 입출력 인자 맵. 이름이 같은 연산 입출력 변수에 반영되고, 연산 결과가 다시 기록된다. */
 	protected final Map<String,TaskArgument.ReferenceArgument> m_inoutputArguments;
+	/** 출력 인자 맵. 이름이 같은 연산 출력 변수의 결과 값이 기록된다. */
 	protected final Map<String,TaskArgument.ReferenceArgument> m_outputArguments;
+	/** 연산 실행 상태 확인 주기. {@code null}이 아니다. */
 	protected final Duration m_pollInterval;
+	/** 연산 수행 전체 제한 시간. 지정하지 않은 경우 {@code null}. */
 	protected final Duration m_timeout;
 
+	/** {@link #run(MDTInstanceManager)} 수행 중 생성된 연산 클라이언트. 수행 전에는 {@code null}. */
 	protected AASOperationClient m_opClient = null;
 	private Logger m_logger = null;
 
@@ -75,6 +82,13 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 	protected abstract AASOperationClient newOperationClient(MDTInstanceManager manager)
 		throws IOException, TaskException;
 
+	/**
+	 * Builder에 설정된 인자, polling 주기, 제한 시간으로 태스크를 초기화한다.
+	 * <p>
+	 * Builder의 인자 맵은 복사하지 않고 그대로 사용한다.
+	 *
+	 * @param builder	태스크 builder.
+	 */
 	protected AbstractOperationTask(AbstractBuilder<?,?> builder) {
 		m_inputArguments = builder.m_inputArguments;
 		m_inoutputArguments = builder.m_inoutputArguments;
@@ -83,6 +97,11 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 		m_timeout = builder.m_timeout;
 	}
 
+	/**
+	 * Builder로 만든 태스크는 기술자가 없으므로 항상 {@code null}을 반환한다.
+	 *
+	 * @return	항상 {@code null}.
+	 */
 	@Override
 	public TaskDescriptor getTaskDescriptor() {
 		return null;
@@ -102,8 +121,11 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 	 * @param manager	MDT 인스턴스 관리자 객체.
 	 * @return	연산의 출력/입출력 변수 이름(idShort)을 키로 하는 결과 값 맵.
 	 * @throws InterruptedException		연산 완료를 대기하는 도중 인터럽트가 발생한 경우.
-	 * @throws CancellationException	연산이 취소되었거나 제한 시간을 초과한 경우.
-	 * @throws TaskException			연산 수행이 실패했거나, 인자를 읽고 쓰는 과정에서 오류가 발생한 경우.
+	 * @throws CancellationException	연산이 취소되었거나, 연산이 {@code CANCELED}/{@code TIMEOUT} 상태로
+	 * 									종료된 경우.
+	 * @throws TaskException			연산 수행이 실패했거나, 태스크의 제한 시간을 초과했거나(원인은
+	 * 									{@link java.util.concurrent.TimeoutException}), 인자를 읽고 쓰는
+	 * 									과정에서 오류가 발생한 경우.
 	 */
 	@Override
 	public Map<String, SubmodelElement> run(MDTInstanceManager manager)
@@ -183,7 +205,7 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 
 	@Override
 	public Logger getLogger() {
-		return Nullables.orElseGet(m_logger, () -> LoggerFactory.getLogger(getClass()));
+		return Nullables.orGet(m_logger, () -> LoggerFactory.getLogger(getClass()));
 	}
 
 	@Override
@@ -303,57 +325,123 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 	 * @param <T>	build 대상 {@link AbstractOperationTask} 타입
 	 */
 	public abstract static class AbstractBuilder<B extends AbstractBuilder<B,T>, T extends AbstractOperationTask> {
+		/** 설정된 입력 인자 맵. */
 		protected Map<String,TaskArgument> m_inputArguments = new HashMap<>();
+		/** 설정된 입출력 인자 맵. */
 		protected Map<String,TaskArgument.ReferenceArgument> m_inoutputArguments = new HashMap<>();
+		/** 설정된 출력 인자 맵. */
 		protected Map<String,TaskArgument.ReferenceArgument> m_outputArguments = new HashMap<>();
+		/** 설정된 polling 주기. 지정하지 않으면 {@code null}. */
 		protected Duration m_pollInterval = null;
+		/** 설정된 제한 시간. 지정하지 않으면 {@code null}. */
 		protected Duration m_timeout = null;
 
+		/**
+		 * 설정된 값으로 태스크 객체를 만든다.
+		 *
+		 * @return	태스크 객체.
+		 */
 		public abstract T build();
 
+		/**
+		 * method chaining을 위해 자신을 하위 builder 타입으로 반환한다.
+		 *
+		 * @return	이 builder.
+		 */
 		@SuppressWarnings("unchecked")
 		protected B self() {
 			return (B)this;
 		}
 
+		/**
+		 * 입력 인자들을 설정한다. 이전에 설정된 입력 인자는 모두 제거된다.
+		 *
+		 * @param args	인자 이름을 키로 하는 입력 인자 맵.
+		 * @return	이 builder.
+		 */
 		public B inputArguments(Map<String,TaskArgument> args) {
 			m_inputArguments.clear();
 			m_inputArguments.putAll(args);
 			return self();
 		}
 
+		/**
+		 * 입력 인자를 추가한다. 같은 이름의 인자가 있으면 대체한다.
+		 *
+		 * @param id	인자 이름 (연산 입력 변수의 idShort).
+		 * @param arg	입력 인자.
+		 * @return	이 builder.
+		 */
 		public B addInputArgument(String id, TaskArgument arg) {
 			m_inputArguments.put(id, arg);
 			return self();
 		}
 		
+		/**
+		 * 입출력 인자들을 설정한다. 이전에 설정된 입출력 인자는 모두 제거된다.
+		 *
+		 * @param args	인자 이름을 키로 하는 입출력 인자 맵.
+		 * @return	이 builder.
+		 */
 		public B inoutputArguments(Map<String,TaskArgument.ReferenceArgument> args) {
 			m_inoutputArguments.clear();
 			m_inoutputArguments.putAll(args);
 			return self();
 		}
 		
+		/**
+		 * 입출력 인자를 추가한다. 같은 이름의 인자가 있으면 대체한다.
+		 *
+		 * @param id	인자 이름 (연산 입출력 변수의 idShort).
+		 * @param arg	입출력 인자.
+		 * @return	이 builder.
+		 */
 		public B addInoutputArgument(String id, TaskArgument.ReferenceArgument arg) {
 			m_inoutputArguments.put(id, arg);
 			return self();
 		}
 
+		/**
+		 * 출력 인자들을 설정한다. 이전에 설정된 출력 인자는 모두 제거된다.
+		 *
+		 * @param args	인자 이름을 키로 하는 출력 인자 맵.
+		 * @return	이 builder.
+		 */
 		public B outputArguments(Map<String,TaskArgument.ReferenceArgument> args) {
 			m_outputArguments.clear();
 			m_outputArguments.putAll(args);
 			return self();
 		}
 
+		/**
+		 * 출력 인자를 추가한다. 같은 이름의 인자가 있으면 대체한다.
+		 *
+		 * @param id	인자 이름 (연산 출력 변수의 idShort).
+		 * @param arg	출력 인자.
+		 * @return	이 builder.
+		 */
 		public B addOutputArgument(String id, TaskArgument.ReferenceArgument arg) {
 			m_outputArguments.put(id, arg);
 			return self();
 		}
 
+		/**
+		 * 연산 실행 상태 확인 주기를 설정한다.
+		 *
+		 * @param interval	polling 주기. {@code null}이면 기본값(3초)을 사용한다.
+		 * @return	이 builder.
+		 */
 		public B pollInterval(Duration interval) {
 			m_pollInterval = interval;
 			return self();
 		}
 
+		/**
+		 * 연산 수행 전체 제한 시간을 설정한다.
+		 *
+		 * @param timeout	제한 시간. {@code null}이면 제한 없음.
+		 * @return	이 builder.
+		 */
 		public B timeout(Duration timeout) {
 			m_timeout = timeout;
 			return self();

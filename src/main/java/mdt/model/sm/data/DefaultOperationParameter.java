@@ -10,6 +10,12 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
+ * {@link OperationParameter} 인터페이스의 기본 구현 클래스이다.
+ * <p>
+ * 각 속성은 SubmodelElementCollection의 Property에 대응되며, 각 Property의 idShort는
+ * 인터페이스의 접근자 문서에 명시되어 있다.
+ * SubmodelElementCollection의 idShort는 파라미터 식별자 ({@code ParameterID})이다.
+ * {@code ParameterType}의 초기값은 {@code "String"}이다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -27,6 +33,10 @@ public class DefaultOperationParameter extends SubmodelElementCollectionEntity
 	@PropertyField(idShort="PeriodicDataCollectionIndicator") private String periodicDataCollectionIndicator;
 	@PropertyField(idShort="DataCollectionPeriod")private String dataCollectionPeriod;
 	
+	/**
+	 * semantic id가 {@link Parameter#SEMANTIC_ID_REFERENCE}인 빈 {@code DefaultOperationParameter}
+	 * 객체를 생성한다.
+	 */
 	public DefaultOperationParameter() {
 		setSemanticId(SEMANTIC_ID_REFERENCE);
 	}

@@ -24,24 +24,22 @@ public interface ParameterCollection {
 	/**
 	 * 파라미터 번호에 해당하는 {@link Parameter} 객체를 반환한다.
 	 * 
-	 * @param paramIdx	파라미터 번호
+	 * @param paramIdx	파라미터 번호 (0부터 시작하는 인덱스).
 	 * @return	{@link Parameter} 객체.
-	 * @throws IllegalArgumentException	파라미터 번호가 잘못된 경우
-	 * @throws ResourceNotFoundException	번호에 해당하는 파라미터가 존재하지 않는 경우.
+	 * @throws IndexOutOfBoundsException	번호가 범위를 벗어난 경우.
 	 */
-	public default Parameter getParameter(int paramIdx) throws ResourceNotFoundException {
+	public default Parameter getParameter(int paramIdx) {
 		return getParameterList().get(paramIdx);
 	}
 	
 	/**
 	 * 파라미터 번호에 해당하는 {@link ParameterValue} 객체를 반환한다.
 	 * 
-	 * @param paramIdx	파라미터 번호
+	 * @param paramIdx	파라미터 번호 (0부터 시작하는 인덱스).
 	 * @return	{@link ParameterValue} 객체.
-	 * @throws IllegalArgumentException	파라미터 번호가 잘못된 경우
-	 * @throws ResourceNotFoundException	번호에 해당하는 파라미터가 존재하지 않는 경우.
+	 * @throws IndexOutOfBoundsException	번호가 범위를 벗어난 경우.
 	 */
-	public default ParameterValue getParameterValue(int paramIdx) throws ResourceNotFoundException {
+	public default ParameterValue getParameterValue(int paramIdx) {
 		return getParameterValueList().get(paramIdx);
 	}
 	
@@ -110,9 +108,9 @@ public interface ParameterCollection {
 	/**
 	 * 파라미터 식별자에 해당하는 {@link Parameter}와 {@link ParameterValue} 객체 쌍을 반환한다.
 	 * 
-	 * @param paramId
+	 * @param paramId	파라미터 식별자.
 	 * @return	{@link Parameter} 객체와 {@link ParameterValue} 객체 쌍.
-	 * @throws ResourceNotFoundException	식별자에 해당하는 P파라미터가 존재하지 않는 경우.
+	 * @throws ResourceNotFoundException	식별자에 해당하는 파라미터가 존재하지 않는 경우.
 	 */
 	public default KeyValue<Parameter,ParameterValue> getParameterKeyValue(String paramId)
 		throws ResourceNotFoundException {

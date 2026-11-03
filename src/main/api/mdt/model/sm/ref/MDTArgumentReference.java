@@ -24,6 +24,8 @@ import mdt.model.sm.ai.AI;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdShortSubmodelReference;
 import mdt.model.sm.ref.DefaultSubmodelReference.ByIdSubmodelReference;
 import mdt.model.sm.simulation.Simulation;
+import mdt.model.sm.value.ElementValue;
+import mdt.model.sm.value.ElementValues;
 
 
 /**
@@ -43,6 +45,7 @@ import mdt.model.sm.simulation.Simulation;
  * @author Kang-Woo Lee (ETRI)
  */
 public class MDTArgumentReference extends SubmodelBasedElementReference {
+	/** Json 직렬화 타입 식별자({@code "mdt:ref:oparg"}). */
 	public static final String SERIALIZATION_TYPE = "mdt:ref:oparg";
 	private static final String FIELD_SUBMODEL_REF = "submodelReference";
 	private static final String FIELD_KIND = "kind";
@@ -85,10 +88,14 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 	 * 참조가 가리키는 인자 값을 읽어 반환한다.
 	 * <p>
 	 * 인자 명세가 {@code "*"}인 경우, 모든 인자를 모아 각 인자의 값 요소(idShort를 인자 이름으로 설정한
-	 * 것)를 담은 {@link SubmodelElementList}를 반환한다. 그 외에는 지정된 단일 인자의 값을 반환한다.
+	 * 것)를 담은 {@link SubmodelElementList}(idShort는 {@code InputArguments}/{@code OutputArguments})를
+	 * 반환한다. 그 외에는 지정된 단일 인자의 값({@code <Input|Output>Value} 요소)을 반환한다.
+	 * <p>
+	 * {@link #readValue()}도 같은 형식의 값을 반환한다. {@code "*"} 참조에는 쓰기를 지원하지 않는다.
 	 *
 	 * @return 인자 값에 해당하는 {@link SubmodelElement}.
 	 * @throws IOException 읽기 과정에서 예외가 발생한 경우.
+	 * @throws IllegalStateException	{@code "*"} 참조의 인자 목록 요소가 {@link SubmodelElementList}가 아닌 경우.
 	 */
 	@Override
 	public SubmodelElement read() throws IOException {
@@ -97,6 +104,8 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 			return arg;
 		}
 
+		Preconditions.checkState(arg instanceof SubmodelElementList,
+								"argument list is not a SubmodelElementList: %s", arg);
 		SubmodelElementList argSmel = (SubmodelElementList)arg;
 		String argKindStr = switch ( m_kind ) {
 			case INPUT -> "Input";
@@ -115,6 +124,59 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 												.toList();
 		String idShort = String.format("%sArguments", argKindStr);
 		return new DefaultSubmodelElementList.Builder().idShort(idShort).value(argList).build();
+	}
+
+	/**
+	 * 참조가 가리키는 인자 값을 읽어 반환한다.
+	 * <p>
+	 * 인자 명세가 {@code "*"}인 경우 {@link #read()}가 반환하는 인자 값 목록의 값을 반환한다.
+	 *
+	 * @return 인자 값.
+	 * @throws IOException 읽기 과정에서 예외가 발생한 경우.
+	 */
+	@Override
+	public ElementValue readValue() throws IOException {
+		return m_argSpec.equals(ALL_ARGS) ? ElementValues.getValue(read()) : super.readValue();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @throws UnsupportedOperationException	인자 명세가 {@code "*"}인 경우.
+	 */
+	@Override
+	public void write(SubmodelElement sme) throws IOException {
+		checkWritable();
+		super.write(sme);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @throws UnsupportedOperationException	인자 명세가 {@code "*"}인 경우.
+	 */
+	@Override
+	public void updateValue(ElementValue smev) throws IOException {
+		checkWritable();
+		super.updateValue(smev);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @throws UnsupportedOperationException	인자 명세가 {@code "*"}인 경우.
+	 */
+	@Override
+	public void updateFromValueJson(String valueJsonString) throws IOException {
+		checkWritable();
+		super.updateFromValueJson(valueJsonString);
+	}
+
+	// "*" 참조가 읽는 인자 값 목록은 원래 인자 목록과 구조가 달라, 쓴 값을 각 인자에 되돌릴 수 없다.
+	private void checkWritable() {
+		if ( m_argSpec.equals(ALL_ARGS) ) {
+			throw new UnsupportedOperationException("cannot write to all-arguments reference: " + this);
+		}
 	}
 
 	@Override
@@ -166,6 +228,7 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 		 * 지금까지 설정된 값으로 {@link MDTArgumentReference}를 생성한다.
 		 *
 		 * @return 생성된 {@link MDTArgumentReference} 객체.
+		 * @throws IllegalArgumentException	Submodel 참조, 종류, 인자 명세 중 설정되지 않은 것이 있는 경우.
 		 */
 		public MDTArgumentReference build() {
 			return MDTArgumentReference.newInstance(m_submodelRef, m_kind, m_argSpec);
@@ -212,6 +275,7 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 	 * @param kind		인자의 종류(입력/출력).
 	 * @param argSpec	인자 명세(이름, 인덱스 또는 {@code "*"}).
 	 * @return 생성된 {@link MDTArgumentReference} 객체.
+	 * @throws IllegalArgumentException	인자 중 하나가 {@code null}인 경우.
 	 */
 	public static MDTArgumentReference newInstance(MDTSubmodelReference smRef, MDTArgumentKind kind,
 													String argSpec) {
@@ -256,9 +320,12 @@ public class MDTArgumentReference extends SubmodelBasedElementReference {
 	 * Jackson 기반의 {@link ElementReferences.Deserializer}가 {@link ElementReference} 객체를
 	 * 역직렬화하는 과정에서 호출된다.
 	 *
-	 * @param jnode	{@code submodelReference}, {@code kind}, {@code argumentSpec} 필드를 담은 Json 노드.
+	 * @param jnode	{@code submodelReference}, {@code kind}({@code "input"}/{@code "output"} 등
+	 * 				{@link MDTArgumentKind#fromString(String)}가 받는 값), {@code argumentSpec} 필드를 담은 Json 노드.
 	 * @return 복원된 {@link MDTArgumentReference} 객체.
-	 * @throws IOException	Json 해석 과정에서 예외가 발생한 경우.
+	 * @throws IOException	필수 필드가 없거나 타입이 맞지 않는 등 Json 해석 과정에서 예외가 발생한 경우
+	 * 						({@link utils.json.JacksonDeserializationException}).
+	 * @throws IllegalArgumentException	{@code kind} 값을 인식할 수 없거나 {@code "*"}인 경우.
 	 */
 	public static MDTArgumentReference deserializeFields(JsonNode jnode) throws IOException {
 		JsonNode smRefNode = JacksonUtils.getField(jnode, FIELD_SUBMODEL_REF);

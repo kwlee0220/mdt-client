@@ -7,6 +7,9 @@ import mdt.model.sm.entity.SubmodelElementCollectionEntity;
 
 
 /**
+ * AI {@link Model}의 기본 구현 엔티티 ({@code Model} SubmodelElementCollection).
+ * <p>
+ * 각 필드는 같은 이름의 Property에 대응되며, {@code LastExecutionTime}은 {@code Duration} 타입으로 변환된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -26,6 +29,9 @@ public class DefaultModel extends SubmodelElementCollectionEntity implements Mod
 	@PropertyField(idShort="LastExecutionTime", valueType="Duration")
 	private Duration lastExecutionTime;
 	
+	/**
+	 * idShort가 {@code Model}인 빈 AI 모델 정보 엔티티를 생성한다.
+	 */
 	public DefaultModel() {
 		setIdShort("Model");
 	}

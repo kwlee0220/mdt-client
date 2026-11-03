@@ -17,10 +17,18 @@ import mdt.model.sm.ref.ElementReferences;
 import mdt.model.sm.ref.MDTElementReference;
 
 /**
+ * PressProcess 인스턴스의 PressSimulation 연산 입력 인자를 {@code oparg:} 참조로 읽어 연산을
+ * 호출하는 RCK 시뮬레이션 시험 프로그램.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public class TestRCKSimulation {
+	/**
+	 * 프로그램 진입점.
+	 *
+	 * @param args	사용하지 않음.
+	 * @throws Exception	실행 중 발생한 모든 예외.
+	 */
 	public static final void main(String... args) throws Exception {
 		HttpMDTManager mdt = HttpMDTManager.connect("http://localhost:12985");
 		HttpMDTInstanceManager manager = mdt.getInstanceManager();

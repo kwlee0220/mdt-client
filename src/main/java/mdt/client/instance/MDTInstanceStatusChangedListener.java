@@ -3,6 +3,7 @@ package mdt.client.instance;
 import mdt.model.instance.MDTInstanceStatus;
 
 /**
+ * {@link HttpMDTInstanceClient}의 상태 변경을 통보받기 위한 리스너 인터페이스.
  *
  * @author Kang-Woo Lee (ETRI)
  */

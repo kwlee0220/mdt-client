@@ -10,6 +10,7 @@ import org.eclipse.digitaltwin.aas4j.v3.model.Endpoint;
 import com.google.common.base.Preconditions;
 
 import okhttp3.Headers;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
 
@@ -27,6 +28,12 @@ import mdt.model.MDTModelSerDe;
 
 
 /**
+ * HTTP(REST)를 통해 원격 AAS 레지스트리 서버의 shell descriptor들을 관리하는 {@link ShellRegistry} 클라이언트.
+ * <p>
+ * 모든 요청은 동기적으로 전송되며, URL 경로에 포함되는 식별자는 Base64 URL-safe로 인코딩된다.
+ * 서버 오류는 {@link MDTRESTfulClients}에 등록된 MDT 예외 타입(예: {@link mdt.model.ResourceNotFoundException})
+ * 또는 {@link utils.http.RESTfulRemoteException}으로, 통신 오류는 {@link utils.http.RESTfulIOException}으로
+ * 전달된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -34,6 +41,13 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 	private final String m_endpoint;
 	private final HttpRESTfulClient m_restfulClient;
 	
+	/**
+	 * 클라이언트 객체를 생성한다.
+	 *
+	 * @param client	HTTP 요청 전송에 사용할 OkHttp 클라이언트.
+	 * @param endpoint	shell descriptor 레지스트리 endpoint (예: {@code <mdt-url>/aas_registry/shell-descriptors}).
+	 * @throws IllegalArgumentException	{@code endpoint}가 {@code null}인 경우.
+	 */
 	public HttpShellRegistryClient(OkHttpClient client, String endpoint) {
 		Preconditions.checkArgument(endpoint != null, getClass().getSimpleName() + ": endpoint is null");
 		
@@ -70,7 +84,7 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 	@Override
 	public List<AssetAdministrationShellDescriptor>
 	getAllAssetAdministrationShellDescriptorsByIdShort(String idShort) {
-		String url = String.format("%s?idShort=%s", m_endpoint, idShort);
+		String url = withQuery(m_endpoint, "idShort", idShort);
 		return m_restfulClient.get(url, m_shellListDeser);
 	}
 
@@ -110,6 +124,14 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 		m_restfulClient.delete(url);
 	}
 	
+	/**
+	 * 주어진 AAS의 descriptor에 등록된 endpoint 목록을 주어진 AAS 저장소 endpoint 하나로 교체한다.
+	 * <p>
+	 * descriptor를 읽어와 interface가 {@code AAS-3.0}인 endpoint로 대체한 후 다시 갱신한다.
+	 *
+	 * @param aasId	대상 AAS 식별자.
+	 * @param endpoint	새로 설정할 AAS 저장소 endpoint.
+	 */
 	public void setAASRepositoryEndpoint(String aasId, String endpoint) {
 		AssetAdministrationShellDescriptor desc = getAssetAdministrationShellDescriptorById(aasId);
 		
@@ -139,4 +161,9 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 			return MDTModelSerDe.readValueList(respBody, AssetAdministrationShellDescriptor.class);
 		}
 	};
+
+	// 쿼리 값에 '#', '&', 공백 등이 있어도 요청이 깨지지 않도록 percent-encoding 한다.
+	private static String withQuery(String endpoint, String name, String value) {
+		return HttpUrl.get(endpoint).newBuilder().addQueryParameter(name, value).build().toString();
+	}
 }

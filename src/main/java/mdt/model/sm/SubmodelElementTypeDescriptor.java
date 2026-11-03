@@ -24,6 +24,11 @@ import mdt.aas.DataTypes;
 
 
 /**
+ * AAS SubmodelElement 종류별 타입 기술자.
+ * <p>
+ * 각 기술자는 타입 이름(예: {@code "Property"}), {@link AasSubmodelElements} 값,
+ * 대응되는 aas4j 인터페이스 클래스를 갖는다. 미리 등록된 기술자 목록에서
+ * {@link #getTypeDescriptor(SubmodelElement)}로 SubmodelElement의 기술자를 찾을 수 있다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -32,6 +37,13 @@ public class SubmodelElementTypeDescriptor {
 	private final AasSubmodelElements m_type;
 	private final Class<? extends SubmodelElement> m_elementClass;
 	
+	/**
+	 * 타입 기술자를 생성한다.
+	 *
+	 * @param name	타입 이름.
+	 * @param type	{@link AasSubmodelElements} 타입 값.
+	 * @param elementClass	타입에 대응되는 aas4j SubmodelElement 인터페이스 클래스.
+	 */
 	public SubmodelElementTypeDescriptor(String name, AasSubmodelElements type,
 									Class<? extends SubmodelElement> elementClass) {
 		m_name = name;
@@ -39,23 +51,41 @@ public class SubmodelElementTypeDescriptor {
 		m_elementClass = elementClass;
 	}
 	
+	/**
+	 * 타입 이름을 반환한다.
+	 *
+	 * @return	타입 이름 (예: {@code "Property"}, {@code "SubmodelElementCollection"}).
+	 */
 	public String getName() {
 		return m_name;
 	}
 	
+	/**
+	 * {@link AasSubmodelElements} 타입 값을 반환한다.
+	 *
+	 * @return	타입 값.
+	 */
 	public AasSubmodelElements getType() {
 		return m_type;
 	}
 	
+	/**
+	 * 타입에 대응되는 aas4j SubmodelElement 인터페이스 클래스를 반환한다.
+	 *
+	 * @return	SubmodelElement 클래스.
+	 */
 	public Class<? extends SubmodelElement> getElementClass() {
 		return m_elementClass;
 	}
 	
 	/**
 	 * SubmodelElement에 해당하는 타입 기술자를 반환한다.
+	 * <p>
+	 * 등록된 기술자 목록을 순서대로 검사하여 {@code element}가 인스턴스인 첫 기술자를 반환한다.
 	 *
 	 * @param element	대상 {@link SubmodelElement} 객체.
 	 * @return	{@link SubmodelElementTypeDescriptor} 객체.
+	 * @throws IllegalArgumentException	등록되지 않은 종류의 SubmodelElement인 경우.
 	 */
 	public static SubmodelElementTypeDescriptor getTypeDescriptor(SubmodelElement element) {
 		return FStream.from(TYPE_DESCS)
@@ -66,9 +96,13 @@ public class SubmodelElementTypeDescriptor {
 	
 	/**
 	 * SubmodelElement의 value type 문자열을 반환한다.
+	 * <p>
+	 * {@link Property}인 경우는 value 타입에 해당하는 {@link DataTypes} 데이터 타입의 식별자를,
+	 * 그 외의 경우는 SubmodelElement 타입 이름(예: {@code "File"})을 반환한다.
 	 *
 	 * @param element	대상 {@link SubmodelElement} 객체.
-	 * @return	Value type 문자열
+	 * @return	Value type 문자열.
+	 * @throws IllegalArgumentException	등록되지 않은 종류의 SubmodelElement인 경우.
 	 */
 	public static String getValueTypeString(SubmodelElement element) {
 		if ( element instanceof Property prop ) {

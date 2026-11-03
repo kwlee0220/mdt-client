@@ -67,6 +67,14 @@ import mdt.model.sm.value.ElementValues;
 import mdt.model.timeseries.TimeSeries;
 
 /**
+ * AAS Submodel과 SubmodelElement를 다루기 위한 정적 유틸리티 메소드 모음.
+ * <p>
+ * idShort 경로 파싱/생성/탐색, SubmodelElementCollection 필드 접근, SubmodelElement 생성,
+ * semanticId 기반의 Submodel/SubmodelElement 종류 판별, 참조(Reference) 직렬화 문자열 파싱 등의
+ * 기능을 제공한다.
+ * <p>
+ * idShort 경로는 {@code '.'}로 구분된 idShort 세그먼트로 구성되며, SubmodelElementList의 원소는
+ * {@code "Inputs[0].InputValue"}처럼 세그먼트 뒤에 {@code [인덱스]}를 붙여 지정한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -96,8 +104,13 @@ public final class SubmodelUtils {
 	 * 주어진 idShort 경로 문자열을 '.' 구분자로 분할하여 각 세그먼트를 개별적으로 파싱한 후,
 	 * 모든 세그먼트를 순서대로 반환하는 스트림을 생성하여 반환한다.
 	 *
+	 * <p>
+	 * {@code [인덱스]} 표기는 별도의 세그먼트로 분리된다. 예를 들어 {@code "A.B[0][1].C"}는
+	 * {@code "A"}, {@code "B"}, {@code "0"}, {@code "1"}, {@code "C"}로 분할된다.
+	 *
 	 * @param idShortPath	idShort 경로 문자열.
 	 * @return	idShort 경로의 각 세그먼트를 순서대로 반환하는 스트림.
+	 * @throws IllegalArgumentException	형식에 맞지 않는 세그먼트가 포함된 경우(스트림 소비 시점).
 	 */
 	public static FStream<String> parseIdShortPath(String idShortPath) {
 		return CSV.parseCsv(idShortPath, '.')
@@ -125,6 +138,9 @@ public final class SubmodelUtils {
 	
 	/**
 	 * 주어진 idShort 리스트를 기반으로 idShort 경로 문자열을 생성하여 반환한다.
+	 * <p>
+	 * 정수로 파싱되는 세그먼트는 {@code [인덱스]} 형태로, 그 외의 세그먼트는 {@code '.'}로 연결된다.
+	 * {@link #parseIdShortPath(String)}의 역연산이다.
 	 *
 	 * @param segList idShort 경로의 세그먼트 리스트. 각 세그먼트는 idShort 또는 인덱스 형태일 수 있다.
 	 * @return 생성된 idShort 경로 문자열.
@@ -153,11 +169,15 @@ public final class SubmodelUtils {
 	 * @param <T>	변환 대상 class의 타입 매개변수.
 	 * @param prop	값을 읽을 대상	Property 객체.
 	 * @param cls	변환 대상 class 객체. Property의 valueType과 호환되는 class 객체여야 한다.
-	 * @return	Property의 값이 cls로 변환된 객체.
+	 * @return	Property의 값이 cls로 변환된 객체. Property 값이 없으면 {@code null}.
+	 * @throws IllegalArgumentException	파싱된 값이 {@code cls} 타입이 아닌 경우.
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T> T getPropertyValue(Property prop, Class<T> cls) {
 		Object value = DataTypes.fromAas4jDatatype(prop.getValueType()).parseValueString(prop.getValue());
+		if ( value == null ) {
+			return null;
+		}
 		if ( cls.isAssignableFrom(value.getClass()) ) {
 			return (T)value;
 		}
@@ -177,6 +197,8 @@ public final class SubmodelUtils {
 	 *                    class 객체여야 한다.
 	 * @return 탐색 결과로 도달한 Property의 값이 valueClass로 변환된 객체.
 	 * @throws ResourceNotFoundException 탐색 경로에 해당하는 SubmodelElement가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	도달한 요소가 Property가 아니거나 값이 {@code valueClass}
+	 * 									타입이 아닌 경우.
 	 */
 	public static <T> T getPropertyValueByPath(SubmodelElement start, String idShortPath, Class<T> valueClass)
 		throws ResourceNotFoundException {
@@ -195,6 +217,8 @@ public final class SubmodelUtils {
 	 *                    class 객체여야 한다.
 	 * @return 탐색 결과로 도달한 Property의 값이 valueClass로 변환된 객체.
 	 * @throws ResourceNotFoundException 탐색 경로에 해당하는 SubmodelElement가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	도달한 요소가 Property가 아니거나 값이 {@code valueClass}
+	 * 									타입이 아닌 경우.
 	 */
 	public static <T> T getPropertyValueByPath(Submodel submodel, String idShortPath, Class<T> valueClass)
 		throws ResourceNotFoundException {
@@ -258,6 +282,7 @@ public final class SubmodelUtils {
 	 * @param sme	 	타입 변환 대상 SubmodelElement 객체.
 	 * @param toClass	타입 변환 대상 class 객체.	
 	 * @return	타입 변환된 SubmodelElement 객체.
+	 * @throws IllegalArgumentException	{@code sme}가 {@code toClass} 타입이 아닌 경우.
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T extends SubmodelElement> T cast(SubmodelElement sme, Class<T> toClass) {
@@ -271,10 +296,15 @@ public final class SubmodelUtils {
 	
 	/**
 	 * 주어진 idShort 경로를 따라 SubmodelElement를 탐색하여 반환한다.
+	 * <p>
+	 * SubmodelElementCollection에서는 idShort로, SubmodelElementList에서는 정수 세그먼트이면
+	 * 인덱스로, 그렇지 않으면 원소의 idShort로 하위 요소를 찾는다.
 	 * 
 	 * @param root			탐색을 시작할 SubmodelElement 객체.
-	 * @param idShortPath	탐색 idShort 경로명.
+	 * @param idShortPath	탐색 idShort 경로명. {@code root}에 대한 상대 경로이다.
+	 * @return	탐색 결과 SubmodelElement 객체.
 	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	경로 세그먼트의 형식이 올바르지 않은 경우.
 	 */
 	public static SubmodelElement traverse(SubmodelElement root, String idShortPath) throws ResourceNotFoundException {
 		List<String> pathSegs = CSV.parseCsv(idShortPath, '.')
@@ -300,6 +330,7 @@ public final class SubmodelUtils {
 	 * @param targetClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
 	 * @return	탐색 결과 SubmodelElement 객체.
 	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	탐색 결과가 {@code targetClass} 타입이 아닌 경우.
 	 */
 	public static <T extends SubmodelElement> T traverse(SubmodelElement start, String idShortPath, Class<T> targetClass)
 		throws ResourceNotFoundException {
@@ -307,11 +338,14 @@ public final class SubmodelUtils {
 	}
 	
 	/**
-	 * Traverse the Submodel starting with the given idShort path.
+	 * 주어진 Submodel의 최상위 SubmodelElement들부터 idShort 경로를 따라 탐색하여
+	 * SubmodelElement를 반환한다.
 	 * 
 	 * @param submodel		탐색 대상 Submodel 객체.
 	 * @param idShortPath	탐색 경로명.
+	 * @return	탐색 결과 SubmodelElement 객체.
 	 * @throws ResourceNotFoundException 경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	{@code submodel} 또는 {@code idShortPath}가 {@code null}인 경우.
 	 */
 	public static SubmodelElement traverse(Submodel submodel, String idShortPath) throws ResourceNotFoundException {
 		Preconditions.checkNotNullArgument(submodel, "Submodel was null");
@@ -330,8 +364,9 @@ public final class SubmodelUtils {
 	 * @param submodel		탐색 대상 Submodel 객체.
 	 * @param idShortPath	탐색 idShort 경로명.
 	 * @param targetClass	탐색 결과로 기대되는 SubmodelElement의 class 객체.
-	 * @return
-	 * @throws ResourceNotFoundException
+	 * @return	탐색 결과 SubmodelElement 객체.
+	 * @throws ResourceNotFoundException	경로에 해당하는 SubmodeElement가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	탐색 결과가 {@code targetClass} 타입이 아닌 경우.
 	 */
 	public static <T extends SubmodelElement> T traverse(Submodel submodel, String idShortPath, Class<T> targetClass)
 		throws ResourceNotFoundException {
@@ -398,15 +433,15 @@ public final class SubmodelUtils {
 	/**
 	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 반환한다.
 	 * <p>
+	 * 탐색 결과가 존재하지 않는 경우에는 IllegalArgumentException이 발생한다.
 	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
-	 * IllegalArgumentException이 발생한다. 또한, 탐색 결과가 존재하지 않는 경우에도
-	 * IllegalArgumentException이 발생한다.
+	 * {@link ClassCastException}이 발생한다.
 	 *
 	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
 	 * @param fieldName 탐색할 idShort 이름.
 	 * @return idShort가 fieldName인 하위 요소.
-	 * @throws IllegalArgumentException 탐색 대상이 SubmodelElementCollection이 아닌 경우 또는
-	 *                                  탐색 결과가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException 탐색 결과가 존재하지 않는 경우.
+	 * @throws ClassCastException	탐색 대상이 SubmodelElementCollection이 아닌 경우.
 	 */
 	public static SubmodelElement getFieldById(SubmodelElement smc, String fieldName)
 		throws IllegalArgumentException {
@@ -426,17 +461,17 @@ public final class SubmodelUtils {
 	/**
 	 * 주어진 SubmodelElement에서 idShort가 fieldName인 하위 요소를 탐색하여 지정된 class 타입으로 반환한다.
 	 * <p>
-	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
-	 * IllegalArgumentException이 발생한다. 또한, 탐색 결과가 존재하지 않는 경우에도
-	 * IllegalArgumentException이 발생한다.
+	 * 탐색 결과가 존재하지 않거나 {@code outputClass} 타입이 아닌 경우에는
+	 * IllegalArgumentException이 발생한다. 탐색 대상 SubmodelElement 객체가
+	 * SubmodelElementCollection이 아닌 경우에는 {@link ClassCastException}이 발생한다.
 	 *
 	 * @param <T>         탐색 결과로 기대되는 SubmodelElement의 class 타입.
 	 * @param smc         탐색 대상 SubmodelElementCollection 객체.
 	 * @param fieldName   탐색할 idShort 이름.
 	 * @param outputClass 탐색 결과로 기대되는 SubmodelElement의 class 객체.
 	 * @return idShort가 fieldName인 하위 요소.
-	 * @throws IllegalArgumentException 탐색 대상이 SubmodelElementCollection이 아닌 경우 또는
-	 *                                  탐색 결과가 존재하지 않는 경우.
+	 * @throws IllegalArgumentException 탐색 결과가 존재하지 않거나 {@code outputClass} 타입이 아닌 경우.
+	 * @throws ClassCastException	탐색 대상이 SubmodelElementCollection이 아닌 경우.
 	 */
 	public static <T extends SubmodelElement> T getFieldById(SubmodelElement smc, String fieldName,
                                     						Class<T> outputClass) throws IllegalArgumentException {
@@ -446,22 +481,31 @@ public final class SubmodelUtils {
 	
 	/**
 	 * 주어진 SubmodelElementCollection에서 idShort가 fieldName인 하위 {@link Property} 요소를
-	 * 탐색하여 그 값을 반환한다.
+	 * 탐색하여 그 값 문자열을 반환한다.
 	 * <p>
-	 * 탐색 대상 SubmodelElement 객체가 SubmodelElementCollection이 아닌 경우에는
-	 * IllegalArgumentException이 발생한다. 또한, 탐색 결과가 존재하지 않는 경우에도
-	 * IllegalArgumentException이 발생한다.
+	 * 탐색 결과가 존재하지 않거나 Property가 아닌 경우에는 IllegalArgumentException이 발생한다.
 	 *
 	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
 	 * @param fieldName 탐색할 idShort 이름.
-	 * @return idShort가 fieldName인 하위 요소의 값.
-	 * @throws IllegalArgumentException 탐색 대상이 SubmodelElementCollection이 아닌 경우 또는
-	 *                                  탐색 결과가 존재하지 않는 경우.
+	 * @return idShort가 fieldName인 하위 Property의 값. 값이 없으면 {@code null}.
+	 * @throws IllegalArgumentException {@code smc}가 {@code null}이거나, 탐색 결과가 존재하지 않거나
+	 *                                  Property가 아닌 경우.
 	 */
 	public static String getStringFieldById(SubmodelElementCollection smc, String fieldName) {
 		Preconditions.checkNotNullArgument(smc, "SubmodelElementCollection is null");
 		return getFieldById(smc, fieldName, Property.class).getValue();
 	}
+	/**
+	 * 주어진 SubmodelElementCollection에서 idShort가 fieldName인 하위 {@link Property} 요소를
+	 * 탐색하여 그 값을 {@link Double}로 파싱하여 반환한다.
+	 *
+	 * @param smc       탐색 대상 SubmodelElementCollection 객체.
+	 * @param fieldName 탐색할 idShort 이름.
+	 * @return 하위 Property의 값을 파싱한 {@link Double}. 값이 없으면 {@code null}.
+	 * @throws IllegalArgumentException {@code smc}가 {@code null}이거나, 탐색 결과가 존재하지 않거나
+	 *                                  Property가 아닌 경우.
+	 * @throws NumberFormatException	Property 값이 실수 형식이 아닌 경우.
+	 */
 	public static Double getDoubleFieldById(SubmodelElementCollection smc, String fieldName) {
 		Preconditions.checkNotNullArgument(smc, "SubmodelElementCollection is null");
 		
@@ -481,6 +525,15 @@ public final class SubmodelUtils {
 		smc.getValue().removeIf(field -> field.getIdShort().equals(idShort));
 	}
 
+	/**
+	 * 주어진 SubmodelElementCollection에서 idShort가 일치하는 첫 하위 요소를 새 요소로 교체한다.
+	 * <p>
+	 * 해당 idShort의 하위 요소가 없는 경우는 아무 것도 하지 않는다.
+	 *
+	 * @param smc		대상 부모 SubmodelElementCollection 객체.
+	 * @param idShort	교체 대상 하위 요소의 idShort.
+	 * @param newField	새 하위 요소.
+	 */
 	public static void replaceFieldById(SubmodelElementCollection smc, String idShort, SubmodelElement newField) {
 		List<SubmodelElement> fieldList = smc.getValue();
 		for ( int i = 0; i < fieldList.size(); ++i ) {
@@ -500,7 +553,8 @@ public final class SubmodelUtils {
 	 * @param smeList	검색 대상 SubmodelElement 리스트.
 	 * @param fieldName	필드 이름.
 	 * @param value		찾을 값.
-	 * @return	검색된 SubmodelElementCollection
+	 * @return	처음으로 검색된 SubmodelElementCollection과 그 순번. 없으면 빈 {@link Optional}.
+	 * 			순번은 {@code smeList}에서 SubmodelElementCollection만 셌을 때의 위치이다.
 	 */
 	public static Optional<Indexed<SubmodelElementCollection>>
 	findFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) {
@@ -519,6 +573,16 @@ public final class SubmodelUtils {
 						})
 						.toOptional();
 	}
+	/**
+	 * {@link #findFieldSMCByIdValue(List, String, String)}와 동일하게 검색하되,
+	 * 검색 결과가 없으면 예외를 발생시킨다.
+	 *
+	 * @param smeList	검색 대상 SubmodelElement 리스트.
+	 * @param fieldName	필드 이름.
+	 * @param value		찾을 값.
+	 * @return	처음으로 검색된 SubmodelElementCollection과 그 순번.
+	 * @throws IllegalArgumentException	조건을 만족하는 SubmodelElementCollection이 없는 경우.
+	 */
 	public static Indexed<SubmodelElementCollection>
 	getFieldSMCByIdValue(List<SubmodelElement> smeList, String fieldName, String value) throws IllegalArgumentException {
 		return findFieldSMCByIdValue(smeList, fieldName, value)
@@ -528,6 +592,14 @@ public final class SubmodelUtils {
 				});
 	}
 	
+	/**
+	 * 주어진 idShort, 값 문자열, value 타입으로 {@link Property}를 생성한다.
+	 *
+	 * @param idShort	Property의 idShort.
+	 * @param value		값 문자열.
+	 * @param valueType	Property의 value 타입.
+	 * @return	생성된 Property 객체.
+	 */
 	public static DefaultProperty newProperty(String idShort, String value, DataTypeDefXsd valueType) {
 		return new DefaultProperty.Builder()
 									.idShort(idShort)
@@ -535,6 +607,16 @@ public final class SubmodelUtils {
 									.valueType(valueType)
 									.build();
 	}
+	/**
+	 * 주어진 Java 값으로부터 {@link Property}를 생성한다.
+	 * <p>
+	 * value 타입은 {@link DataTypes#fromJavaObject(Object)}로 결정하고, 값 문자열은 해당
+	 * 데이터 타입의 {@code toValueString}으로 변환한다.
+	 *
+	 * @param idShort	Property의 idShort.
+	 * @param value		Property 값 객체.
+	 * @return	생성된 Property 객체.
+	 */
 	public static DefaultProperty newProperty(String idShort, Object value) {
 		DataType<?> dtype = DataTypes.fromJavaObject(value);
 		return newProperty(idShort, dtype.toValueString(value), dtype.getTypeDefXsd());
@@ -565,6 +647,7 @@ public final class SubmodelUtils {
 	 * @param orderRelevant 생성될 SubmodelElementList의 요소 순서가 중요한지 여부.
 	 * @param elementType 생성될 SubmodelElementList의 요소 타입을 나타내는 AasSubmodelElements 열거형 값.
 	 * @return 생성된 SubmodelElementList 객체.
+	 * @throws IllegalArgumentException	{@code elementType}이 {@code PROPERTY}인 경우.
 	 */
 	public static DefaultSubmodelElementList newSubmodelElementList(String idShort, List<SubmodelElement> elements,
 			                                                        boolean orderRelevant,
@@ -587,6 +670,7 @@ public final class SubmodelUtils {
 	 * @param orderRelevant 생성될 SubmodelElementList의 요소 순서가 중요한지 여부.
 	 * @param xsdType	생성될 SubmodelElementList의 요소 타입을 나타내는 DataTypeDefXsd 열거형 값.
 	 * 					이 값은 Property의 valueType과 호환되어야 한다.
+	 * @return 생성된 SubmodelElementList 객체.
 	 */
 	public static DefaultSubmodelElementList newSubmodelElementList(String idShort, List<Property> elements,
 			                                                        boolean orderRelevant,
@@ -601,6 +685,18 @@ public final class SubmodelUtils {
 												.build();
 	}
 	
+	/**
+	 * {@code source}의 값으로 {@code target}의 값을 갱신한다.
+	 * <p>
+	 * 두 요소가 SubmodelElementList인 경우에는 먼저 {@code target}의 원소 수를 {@code source}에
+	 * 맞춘다. 원소가 많으면 뒤쪽 원소를 제거하고, 적으면 {@code source}의 나머지 원소 객체를
+	 * 그대로 추가한다. 이후 {@link ElementValues}를 이용해 {@code source}의 값을 {@code target}에
+	 * 반영한다. 빈 {@code target} 리스트에 원소를 추가한 경우는 값 반영 단계를 생략한다.
+	 *
+	 * @param target	값을 갱신할 SubmodelElement.
+	 * @param source	새 값을 가진 SubmodelElement.
+	 * @throws IllegalArgumentException	두 요소의 구현 클래스가 다른 경우.
+	 */
 	public static void updateValue(SubmodelElement target, SubmodelElement source) {
 		if ( target.getClass() != source.getClass() ) {
 			throw new IllegalArgumentException("Incompatible SubmodelElement type: " + target.getClass()
@@ -742,6 +838,20 @@ public final class SubmodelUtils {
 		return Operation.SEMANTIC_ID.equals(semanticId);
 	}
 	
+	/**
+	 * 파라미터 표현식을 해당 ParameterValue 요소의 idShort 경로로 변환한다.
+	 * <p>
+	 * {@code paramExpr}가 정수이면 이를 파라미터 인덱스로 사용한다. 그렇지 않으면 첫
+	 * {@code '.'}(없으면 첫 {@code '['}) 앞부분을 파라미터 식별자로, 나머지를 하위 경로로 보고
+	 * {@code resolveParameterIndex}로 식별자의 인덱스를 구한다. 결과 경로는
+	 * {@code <paramPathPrefix>[<인덱스>].ParameterValue<하위 경로>} 형태이다.
+	 *
+	 * @param paramPathPrefix	ParameterValue 리스트의 idShort 경로
+	 * 							(예: {@code DataInfo.Equipment.EquipmentParameterValues}).
+	 * @param paramExpr	파라미터 인덱스 또는 파라미터 식별자(뒤에 하위 경로가 붙을 수 있음).
+	 * @param resolveParameterIndex	파라미터 식별자를 인덱스로 변환하는 함수.
+	 * @return	ParameterValue 요소의 idShort 경로.
+	 */
 	public static String resolveParameterValueElementPath(String paramPathPrefix, String paramExpr,
 															Function<String,Integer> resolveParameterIndex) {
 		// parameter expression에서 parameter ID를 추출하여 해당 parameter의 인덱스를 구한다.
@@ -775,12 +885,25 @@ public final class SubmodelUtils {
 		return String.format("%s[%d].ParameterValue%s", paramPathPrefix, paramIdx, subPath);
 	}
 	
+	/**
+	 * 연산형(AI, Simulation) Submodel의 입출력 인자 구성을 기술하는 클래스.
+	 *
+	 * @see SubmodelUtils#loadOperationSubmodelDescriptor(Submodel)
+	 */
 	public static class OperationSubmodelDescriptor {
 		private final String m_id;
 		private final String m_semanticIdString;
 		private final Map<String,SubmodelArgumentDescriptor> m_inputs;
 		private final Map<String,SubmodelArgumentDescriptor> m_outputs;
 		
+		/**
+		 * 연산형 Submodel 기술자를 생성한다.
+		 *
+		 * @param id	Submodel 식별 이름 (idShort).
+		 * @param semanticIdStr	Submodel의 semanticId 문자열.
+		 * @param inputs	입력 인자 식별자와 인자 기술자의 맵.
+		 * @param outputs	출력 인자 식별자와 인자 기술자의 맵.
+		 */
 		public OperationSubmodelDescriptor(String id, String semanticIdStr,
 											Map<String,SubmodelArgumentDescriptor> inputs,
 											Map<String,SubmodelArgumentDescriptor> outputs) {
@@ -790,29 +913,60 @@ public final class SubmodelUtils {
 			m_outputs = outputs;
 		}
 		
+		/**
+		 * Submodel 식별 이름(idShort)을 반환한다.
+		 *
+		 * @return	Submodel idShort.
+		 */
 		public String getId() {
 			return m_id;
 		}
 		
+		/**
+		 * Submodel의 semanticId 문자열을 반환한다.
+		 *
+		 * @return	semanticId 문자열.
+		 */
 		public String getSemanticIdString() {
 			return m_semanticIdString;
 		}
 		
+		/**
+		 * 입력 인자 기술자 맵을 반환한다.
+		 *
+		 * @return	입력 인자 식별자와 인자 기술자의 맵.
+		 */
 		public Map<String,SubmodelArgumentDescriptor> getInputs() {
 			return m_inputs;
 		}
 		
+		/**
+		 * 출력 인자 기술자 맵을 반환한다.
+		 *
+		 * @return	출력 인자 식별자와 인자 기술자의 맵.
+		 */
 		public Map<String,SubmodelArgumentDescriptor> getOutputs() {
 			return m_outputs;
 		}
 	}
 	
+	/**
+	 * 연산형 Submodel의 입력 또는 출력 인자 하나를 기술하는 클래스.
+	 */
 	public static class SubmodelArgumentDescriptor {
 		private final String m_id;
 		private final int m_index;
 		private final String m_idShortPath;
 		private final SubmodelElement m_sme;
 		
+		/**
+		 * 인자 기술자를 생성한다.
+		 *
+		 * @param id	인자 식별자 ({@code InputID}/{@code OutputID} 필드 값).
+		 * @param index	인자 리스트에서의 인덱스.
+		 * @param idShortPath	인자 값 요소의 idShort 경로 (예: {@code AIInfo.Inputs[0].InputValue}).
+		 * @param sme	인자 값 SubmodelElement.
+		 */
 		public SubmodelArgumentDescriptor(String id, int index, String idShortPath, SubmodelElement sme) {
 			m_id = id;
 			m_index = index;
@@ -820,23 +974,56 @@ public final class SubmodelUtils {
 			m_sme = sme;
 		}
 		
+		/**
+		 * 인자 식별자를 반환한다.
+		 *
+		 * @return	인자 식별자.
+		 */
 		public String getId() {
 			return m_id;
 		}
 		
+		/**
+		 * 인자 리스트에서의 인덱스를 반환한다.
+		 *
+		 * @return	인자 인덱스.
+		 */
 		public int getIndex() {
 			return m_index;
 		}
 		
+		/**
+		 * Submodel 기준 인자 값 요소의 idShort 경로를 반환한다.
+		 *
+		 * @return	idShort 경로.
+		 */
 		public String idShortPath() {
 			return m_idShortPath;
 		}
 		
+		/**
+		 * 인자 값 SubmodelElement를 반환한다.
+		 *
+		 * @return	인자 값 SubmodelElement.
+		 */
 		public SubmodelElement getSubmodelElement() {
 			return m_sme;
 		}
 	}
 	
+	/**
+	 * 연산형 Submodel(AI 또는 Simulation)에서 입출력 인자 구성을 읽어 기술자를 생성한다.
+	 * <p>
+	 * Submodel의 semanticId에 따라 {@code AIInfo} 또는 {@code SimulationInfo} 하위의
+	 * {@code Inputs}/{@code Outputs} SubmodelElementList를 읽고, 각 원소의
+	 * {@code InputID}/{@code InputValue}(또는 {@code OutputID}/{@code OutputValue}) 필드로
+	 * 인자 기술자를 만든다.
+	 *
+	 * @param submodel	대상 Submodel.
+	 * @return	연산형 Submodel 기술자.
+	 * @throws ModelValidationException	semanticId가 없거나 AI/Simulation Submodel이 아닌 경우.
+	 * @throws ResourceNotFoundException	입출력 인자 리스트 또는 인자 필드가 없는 경우.
+	 */
 	public static OperationSubmodelDescriptor loadOperationSubmodelDescriptor(Submodel submodel) {
 		// 입출력 인자 SubmodelElement를 가져온다.
 		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
@@ -899,6 +1086,18 @@ public final class SubmodelUtils {
 		return null;
 	}
 
+	/**
+	 * AAS 참조(Reference)의 문자열 직렬화 표현을 파싱하여 {@link Reference} 객체를 생성한다.
+	 * <p>
+	 * 문자열은 선택적인 {@code [ModelRef]}/{@code [ExternalRef]} 접두어(대시 사이에 referred
+	 * semanticId를 넣은 {@code [ModelRef- ... -]} 형태도 가능)와 쉼표로 구분된
+	 * {@code (KeyType)value} 형태의 키 목록으로 구성된다. 접두어가 없으면 첫 키의 타입이
+	 * {@code GlobalReference}인 경우 외부 참조로, 그 외에는 모델 참조로 간주한다.
+	 *
+	 * @param serialized	참조 직렬화 문자열.
+	 * @return	파싱된 {@link Reference} 객체.
+	 * @throws IllegalArgumentException	문자열이 비어 있거나 참조 타입이 올바르지 않은 경우.
+	 */
 	public static Reference parseReferenceSerialization(String serialized) {
 		serialized = serialized.trim();
 		Preconditions.checkArgument(!serialized.isEmpty(), "empty reference serialization");
@@ -958,7 +1157,8 @@ public final class SubmodelUtils {
 	static {
 		KEY_TYPES_MAP.put("AnnotatedRelationshipElement", KeyTypes.ANNOTATED_RELATIONSHIP_ELEMENT);
 		KEY_TYPES_MAP.put("AssetAdministrationShell", KeyTypes.ASSET_ADMINISTRATION_SHELL);
-		KEY_TYPES_MAP.put("BaseEventElement", KeyTypes.BASIC_EVENT_ELEMENT);
+		KEY_TYPES_MAP.put("BasicEventElement", KeyTypes.BASIC_EVENT_ELEMENT);
+		KEY_TYPES_MAP.put("BaseEventElement", KeyTypes.BASIC_EVENT_ELEMENT);	// 이전에 쓰던 잘못된 이름도 읽는다.
 		KEY_TYPES_MAP.put("Blob", KeyTypes.BLOB);
 		KEY_TYPES_MAP.put("Capability", KeyTypes.CAPABILITY);
 		KEY_TYPES_MAP.put("ConceptDescription", KeyTypes.CONCEPT_DESCRIPTION);
@@ -983,11 +1183,23 @@ public final class SubmodelUtils {
 	}
 
 
+	/**
+	 * JSON 객체를 {@link DefaultSubmodelReference#parseJson(JsonNode)}로 파싱하여
+	 * {@link MDTSubmodelReference}로 역직렬화하는 Jackson deserializer.
+	 */
 	@SuppressWarnings("serial")
 	public static class Deserializer extends StdDeserializer<MDTSubmodelReference> {
+		/**
+		 * 대상 값 클래스 없이 deserializer를 생성한다.
+		 */
 		public Deserializer() {
 			this(null);
 		}
+		/**
+		 * deserializer를 생성한다.
+		 *
+		 * @param vc	역직렬화 대상 값 클래스.
+		 */
 		public Deserializer(Class<?> vc) {
 			super(vc);
 		}
@@ -1001,6 +1213,9 @@ public final class SubmodelUtils {
 		}
 	}
 
+	/**
+	 * {@link MDTSubmodelReference#serialize(JsonGenerator)}를 이용하는 Jackson serializer.
+	 */
 	@SuppressWarnings("serial")
 	public static class Serializer extends StdSerializer<MDTSubmodelReference> {
 		private Serializer() {

@@ -22,24 +22,49 @@ import utils.stream.FStream;
 
 
 /**
+ * AAS {@link ReferenceElement} SubmodelElement의 값({@link Reference})을 표현하는 클래스.
+ * <p>
+ * 값 객체({@link #toValueObject()})와 value-only JSON은 키 목록 {@code [{"type": ..., "value": ...}, ...]}
+ * 형태이며 참조 타입({@link ReferenceTypes})은 포함하지 않는다. polymorphic JSON의 타입 식별자는
+ * {@value #SERIALIZATION_TYPE}이며, 이 때의 {@code value}는 참조 타입을 포함한
+ * {@code {"type": ..., "keys": [...]}} 형태로 직렬화된다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
 public final class ReferenceElementValue extends AbstractElementValue implements DataElementValue {
+	/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
 	public static final String SERIALIZATION_TYPE = "mdt:value:reference";
 	
 	private final Reference m_reference;
 	
+	/**
+	 * 주어진 {@link Reference}로 {@code ReferenceElementValue} 객체를 생성한다.
+	 *
+	 * @param reference	참조 객체.
+	 * @throws IllegalArgumentException	{@code reference}가 {@code null}인 경우.
+	 */
 	public ReferenceElementValue(Reference reference) {
 		Preconditions.checkNotNullArgument(reference, "reference is null");
 
 		m_reference = reference;
 	}
 	
+	/**
+	 * AAS {@link ReferenceElement} 객체의 값으로 {@code ReferenceElementValue} 객체를 생성한다.
+	 *
+	 * @param refElm	값을 추출할 ReferenceElement 객체.
+	 * @return	생성된 {@code ReferenceElementValue} 객체.
+	 * @throws IllegalArgumentException	{@code refElm}의 값이 {@code null}인 경우.
+	 */
 	public static ReferenceElementValue from(ReferenceElement refElm) {
 		return new ReferenceElementValue(refElm.getValue());
 	}
 	
+	/**
+	 * 참조 객체를 반환한다.
+	 *
+	 * @return	참조 객체.
+	 */
 	public Reference getReference() {
 		return m_reference;
 	}
@@ -49,6 +74,12 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		return SERIALIZATION_TYPE;
 	}
 
+	/**
+	 * 참조의 키 목록을 {@code type}/{@code value} 키를 가진 {@link Map}의 리스트로 반환한다.
+	 * 참조 타입은 포함되지 않는다.
+	 *
+	 * @return	값 객체.
+	 */
 	@Override
 	public List<Map<String,String>> toValueObject() {
 		return FStream.from(m_reference.getKeys())
@@ -61,10 +92,25 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 						.toList();
 	}
 	
+	/**
+	 * 주어진 {@link ReferenceElement}의 값을 이 객체의 참조로 설정한다.
+	 *
+	 * @param refElm	갱신할 ReferenceElement 객체.
+	 */
 	public void update(ReferenceElement refElm) {
 		refElm.setValue(m_reference);
 	}
 	
+	/**
+	 * 값 객체({@code type}/{@code value} 키를 가진 {@link Map}의 {@link List})로부터
+	 * {@code ReferenceElementValue}를 생성한다.
+	 *
+	 * @param value		키 목록에 해당하는 값 객체.
+	 * @param refTypes	생성할 참조의 타입.
+	 * @return	생성된 {@code ReferenceElementValue} 객체.
+	 * @throws IOException	{@code value}가 {@link List}가 아닌 경우.
+	 * @throws IllegalArgumentException	키 타입이 {@link KeyTypes}에 정의되지 않은 이름인 경우.
+	 */
 	public static ReferenceElementValue fromValueObject(Object value, ReferenceTypes refTypes) throws IOException {
 		if ( value instanceof List keyObjsList ) {
 			DefaultReference.Builder builder = new DefaultReference.Builder().type(refTypes);
@@ -88,6 +134,18 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		}
 	}
 	
+	/**
+	 * value-only JSON 노드로부터 {@code ReferenceElementValue}를 생성한다.
+	 * <p>
+	 * 키 배열({@code [{"type": ..., "value": ...}, ...]}) 또는 {@code keys} 필드에 키 배열을 가진 JSON 객체를
+	 * 받는다. 객체의 {@code type} 필드는 무시되고 참조 타입은 {@code refTypes}로 정해진다.
+	 *
+	 * @param vnode		JSON 노드.
+	 * @param refTypes	생성할 참조의 타입.
+	 * @return	생성된 {@code ReferenceElementValue} 객체.
+	 * @throws IOException	{@code vnode}가 배열도 아니고 {@code keys} 필드를 가진 객체도 아니거나,
+	 * 						키의 {@code type}/{@code value} 필드가 없는 경우.
+	 */
 	public static ReferenceElementValue parseValueJsonNode(JsonNode vnode, ReferenceTypes refTypes)
 		throws IOException {
 		JsonNode keysNode;
@@ -123,6 +181,17 @@ public final class ReferenceElementValue extends AbstractElementValue implements
 		gen.writeEndObject();
 	}
 	
+	/**
+	 * polymorphic JSON의 {@code value} 하위 노드({@code {"type": ..., "keys": [...]}})로부터
+	 * {@code ReferenceElementValue}를 생성한다.
+	 * <p>
+	 * {@link ElementValues}의 역직렬화 등록부에서 사용된다.
+	 *
+	 * @param vnode	JSON 객체 노드.
+	 * @return	생성된 {@code ReferenceElementValue} 객체.
+	 * @throws IOException	{@code type} 필드가 없거나, {@code keys} 필드가 배열이 아니거나,
+	 * 						키의 {@code type}/{@code value} 필드가 없는 경우.
+	 */
 	public static ReferenceElementValue deserializeValue(JsonNode vnode) throws IOException {
 		String type = JacksonUtils.getStringField(vnode, "type");
 		JsonNode keysNode = JacksonUtils.getFieldOrNull(vnode, "keys");

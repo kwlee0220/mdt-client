@@ -19,6 +19,7 @@ import utils.KeyValue;
 import utils.LoggerSettable;
 import utils.Throwables;
 import utils.func.FOption;
+import utils.func.Nullables;
 import utils.stream.FStream;
 import utils.stream.KeyValueFStream;
 
@@ -78,7 +79,7 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 		m_inputArguments = builder.m_inputArguments;
 		m_inoutputArguments = builder.m_inoutputArguments;
 		m_outputArguments = builder.m_outputArguments;
-		m_pollInterval = FOption.getOrElse(builder.m_pollInterval, DEFAULT_POLL_INTERVAL);
+		m_pollInterval = Nullables.orElse(builder.m_pollInterval, DEFAULT_POLL_INTERVAL);
 		m_timeout = builder.m_timeout;
 	}
 
@@ -182,7 +183,7 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 
 	@Override
 	public Logger getLogger() {
-		return FOption.getOrElse(m_logger, () -> LoggerFactory.getLogger(getClass()));
+		return Nullables.orElseGet(m_logger, () -> LoggerFactory.getLogger(getClass()));
 	}
 
 	@Override

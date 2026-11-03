@@ -7,11 +7,12 @@ import com.google.common.collect.Lists;
 import lombok.Getter;
 import lombok.Setter;
 
-import utils.func.Optionals;
 
 import mdt.model.sm.entity.PropertyField;
 import mdt.model.sm.entity.SMListField;
 import mdt.model.sm.entity.SubmodelElementCollectionEntity;
+
+import utils.func.Nullables;
 
 /**
  *
@@ -31,6 +32,6 @@ public class DefaultTwinComposition extends SubmodelElementCollectionEntity
 	
 	@Override
 	public String getIdShort() {
-		return Optionals.getOrElse(super.getIdShort(), this.compositionID);
+		return Nullables.orElse(super.getIdShort(), this.compositionID);
 	}
 }

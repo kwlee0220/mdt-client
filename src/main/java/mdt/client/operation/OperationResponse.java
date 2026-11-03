@@ -94,12 +94,12 @@ public class OperationResponse {
 		
 		try {
 			@SuppressWarnings("unchecked")
-			Class<? extends Throwable> errorCls = Try.get(() -> (Class<? extends Throwable>)Class.forName(code)).get();
-			Constructor<? extends Throwable> ctor1 = Try.get(() -> errorCls.getDeclaredConstructor(String.class)).getOrNull();
+			Class<? extends Throwable> errorCls = Try.of(() -> (Class<? extends Throwable>)Class.forName(code)).get();
+			Constructor<? extends Throwable> ctor1 = Try.of(() -> errorCls.getDeclaredConstructor(String.class)).getOrNull();
 			if ( ctor1 != null ) {
 				return ctor1.newInstance(details);
 			}
-			Constructor<? extends Throwable> ctor0 = Try.get(() -> errorCls.getDeclaredConstructor()).getOrNull();
+			Constructor<? extends Throwable> ctor0 = Try.of(() -> errorCls.getDeclaredConstructor()).getOrNull();
 			if ( ctor0 != null ) {
 				return ctor0.newInstance();
 			}

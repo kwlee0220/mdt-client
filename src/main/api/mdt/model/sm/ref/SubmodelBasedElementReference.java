@@ -85,7 +85,7 @@ public abstract class SubmodelBasedElementReference extends AbstractElementRefer
 		Preconditions.checkNotNullArgument(manager, "manager must not be null");
 
 		m_idShortPath = null;
-		m_prototype.unload();
+		m_prototype.invalidate();
 
 		m_submodelRef.activate(manager);
 		String idShortPath = buildIdShortPath();

@@ -513,7 +513,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 	
 	@Override
 	public String toString() {
-		InstanceDescriptor desc = m_lazyDesc.peekUnchecked();
+		InstanceDescriptor desc = m_lazyDesc.peekOrNull();
 		return ( desc != null )
 				? String.format("[%s] AAS=%s status=%s", m_id, desc.getAasId(), desc.getStatus())
 				: String.format("[%s] (unloaded)", m_id);

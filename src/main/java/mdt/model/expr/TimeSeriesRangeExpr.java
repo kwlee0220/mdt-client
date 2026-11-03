@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import utils.Instants;
 import utils.Preconditions;
-import utils.func.FOption;
+import utils.func.Nullables;
 
 import mdt.model.expr.TimeSeriesRangeExpr.AbsoluteExpr;
 import mdt.model.expr.TimeSeriesRangeExpr.LengthExpr;
@@ -80,8 +80,8 @@ public sealed interface TimeSeriesRangeExpr extends MDTExpression
 				throw new IllegalArgumentException("end must be a String expression: " + end);
 			}
 			
-			Instant startTs = FOption.map(start, Instants::parse);  // validate startStr
-			Instant endTs = FOption.map(end, Instants::parse);  // validate endStr
+			Instant startTs = Nullables.map(start, Instants::parse);  // validate startStr
+			Instant endTs = Nullables.map(end, Instants::parse);  // validate endStr
 			return TimeSeriesRange.between(startTs, endTs);
 		}
 	}

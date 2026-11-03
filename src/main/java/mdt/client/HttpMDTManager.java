@@ -22,12 +22,12 @@ import okhttp3.OkHttpClient;
 import utils.InternalException;
 import utils.Throwables;
 import utils.Utilities;
-import utils.func.Optionals;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
 import utils.http.OkHttpClientUtils;
 import utils.io.FileUtils;
+import utils.func.Nullables;
 
 import mdt.aas.ShellRegistry;
 import mdt.aas.SubmodelRegistry;
@@ -280,7 +280,7 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 					builder = builder.readTimeout(m_readTimeout);
 				}
 				m_httpClient = builder.build();
-				m_mapper = Optionals.getOrElse(m_mapper, MDTModelSerDe::getJsonMapper);
+				m_mapper = Nullables.orElseGet(m_mapper, MDTModelSerDe::getJsonMapper);
 			}
 			catch ( KeyManagementException | NoSuchAlgorithmException e ) {
 				throw new InternalException("Failed to create HttpClient", e);

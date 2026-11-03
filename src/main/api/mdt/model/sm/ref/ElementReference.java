@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import utils.func.FOption;
+import utils.func.Nullables;
 
 import mdt.aas.DataTypes;
 import mdt.model.MDTModelSerDe;
@@ -229,7 +229,7 @@ public interface ElementReference {
 		Property prop = readAsProperty();
 		if ( prop.getValueType() == DataTypeDefXsd.INT ) {
 			try {
-				return FOption.map(prop.getValue(), Integer::parseInt);
+				return Nullables.map(prop.getValue(), Integer::parseInt);
 			}
 			catch ( NumberFormatException e ) {
 				String json = MDTModelSerDe.toJsonString(prop);
@@ -253,7 +253,7 @@ public interface ElementReference {
 		Property prop = readAsProperty();
 		if ( prop.getValueType() == DataTypeDefXsd.INTEGER ) {
 			try {
-				return FOption.map(prop.getValue(), BigInteger::new);
+				return Nullables.map(prop.getValue(), BigInteger::new);
 			}
 			catch ( NumberFormatException e ) {
 				String json = MDTModelSerDe.toJsonString(prop);
@@ -277,7 +277,7 @@ public interface ElementReference {
 		Property prop = readAsProperty();
 		if ( prop.getValueType() == DataTypeDefXsd.LONG ) {
 			try {
-				return FOption.map(prop.getValue(), Long::parseLong);
+				return Nullables.map(prop.getValue(), Long::parseLong);
 			}
 			catch ( NumberFormatException e ) {
 				String json = MDTModelSerDe.toJsonString(prop);
@@ -300,7 +300,7 @@ public interface ElementReference {
 	@Nullable public default Boolean readAsBoolean() throws IOException {
 		Property prop = readAsProperty();
 		if ( prop.getValueType() == DataTypeDefXsd.BOOLEAN ) {
-			return FOption.map(prop.getValue(), Boolean::parseBoolean);
+			return Nullables.map(prop.getValue(), Boolean::parseBoolean);
 		}
 		else {
 			String json = MDTModelSerDe.toJsonString(prop);
@@ -319,7 +319,7 @@ public interface ElementReference {
 		Property prop = readAsProperty();
 		if ( prop.getValueType() == DataTypeDefXsd.FLOAT ) {
 			try {
-				return FOption.map(prop.getValue(), Float::parseFloat);
+				return Nullables.map(prop.getValue(), Float::parseFloat);
 			}
 			catch ( NumberFormatException e ) {
 				String json = MDTModelSerDe.toJsonString(prop);
@@ -343,7 +343,7 @@ public interface ElementReference {
 		Property prop = readAsProperty();
 		if ( prop.getValueType() == DataTypeDefXsd.DURATION ) {
 			try {
-				return FOption.map(prop.getValue(), Duration::parse);
+				return Nullables.map(prop.getValue(), Duration::parse);
 			}
 			catch ( DateTimeParseException e ) {
 				String json = MDTModelSerDe.toJsonString(prop);

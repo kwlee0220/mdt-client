@@ -16,8 +16,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import utils.LoggerSettable;
-import utils.func.FOption;
-import utils.func.Optionals;
+import utils.func.Nullables;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
 import utils.http.RESTfulIOException;
@@ -89,7 +88,7 @@ public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 	}
 	
 	public OperationStatusResponse<Void> statusSimulation(String simulationHandle) {
-		String loc = FOption.mapOrElse(simulationHandle, String::trim, "");
+		String loc = Nullables.mapOrElse(simulationHandle, String::trim, "");
 		String url = (loc.length() > 0) ?  String.format("%s/%s", getEndpoint(), loc) : getEndpoint();
 
 		if ( s_logger.isDebugEnabled() ) {
@@ -111,7 +110,7 @@ public class HttpSimulationClient implements HttpClientProxy, LoggerSettable {
 
 	@Override
 	public Logger getLogger() {
-		return Optionals.getOrElse(m_logger, s_logger);
+		return Nullables.orElse(m_logger, s_logger);
 	}
 
 	@Override

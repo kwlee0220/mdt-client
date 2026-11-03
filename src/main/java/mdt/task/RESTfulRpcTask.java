@@ -22,6 +22,7 @@ import utils.LoggerSettable;
 import utils.Throwables;
 import utils.UnitUtils;
 import utils.func.FOption;
+import utils.func.Nullables;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
 import utils.rpc.restful.RESTfulRpcClient;
@@ -145,7 +146,7 @@ public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 
 	@Override
 	public Logger getLogger() {
-		return FOption.getOrElse(m_logger, s_logger);
+		return Nullables.orElse(m_logger, s_logger);
 	}
 
 	@Override

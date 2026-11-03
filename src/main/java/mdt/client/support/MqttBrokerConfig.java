@@ -5,7 +5,8 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 
-import utils.func.Optionals;
+import utils.func.Nullables;
+
 
 
 /**
@@ -32,7 +33,7 @@ public class MqttBrokerConfig {
 	private String m_reconnectInterval;	// null means using default values (see class document).
 	
 	public String getBrokerUrl() {
-		return Optionals.getOrElse(m_brokerUrl, DEFAULT_BROKER_URL);
+		return Nullables.orElse(m_brokerUrl, DEFAULT_BROKER_URL);
 	}
 	
 	public void setBrokerUrl(String brokerUrl) {

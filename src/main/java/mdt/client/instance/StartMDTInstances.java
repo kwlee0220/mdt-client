@@ -24,9 +24,8 @@ import utils.UnitUtils;
 import utils.async.Executions;
 import utils.async.StartableExecution;
 import utils.func.CheckedRunnableX;
-import utils.func.FOption;
+import utils.func.Nullables;
 import utils.func.Funcs;
-import utils.func.Optionals;
 import utils.stream.FStream;
 import utils.thread.Guard;
 
@@ -89,11 +88,11 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 		
 		m_manager = builder.m_manager;
         m_instanceIdList = builder.m_instanceIdList;
-        m_pollingInterval = Optionals.getOrElse(builder.m_pollingInterval, DEFAULT_POLLING_INTERVAL);
+        m_pollingInterval = Nullables.orElse(builder.m_pollingInterval, DEFAULT_POLLING_INTERVAL);
         m_timeout = builder.m_timeout;
         m_nowait = builder.m_nowait;
         m_startAll = builder.m_startAll;
-        m_executor = Optionals.getOrElse(builder.m_executor, DEFAULT_EXECUTOR);
+        m_executor = Nullables.orElse(builder.m_executor, DEFAULT_EXECUTOR);
         m_recursive = builder.m_recursive;
 	}
 	
@@ -173,7 +172,7 @@ public class StartMDTInstances implements CheckedRunnableX<InterruptedException>
 	private StartableExecution<Void> startInstanceAsync(MDTInstance instance) {
 		if ( s_logger.isDebugEnabled() ) {
 			String instId = instance.getId();
-			String toStr = FOption.mapOrElse(m_timeout, to -> to.toString(), "none");
+			String toStr = Nullables.mapOrElse(m_timeout, to -> to.toString(), "none");
             s_logger.debug("Submitting to start MDTInstance: id={}, poll={}, timeout={} ...", instId, m_pollingInterval, toStr);
 		}
 		

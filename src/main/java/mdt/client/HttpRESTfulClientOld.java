@@ -31,10 +31,10 @@ import okhttp3.Response;
 import utils.InternalException;
 import utils.LoggerSettable;
 import utils.Tuple;
-import utils.func.Optionals;
 import utils.http.HttpClientProxy;
 import utils.http.RESTfulIOException;
 import utils.http.RESTfulRemoteException;
+import utils.func.Nullables;
 
 import mdt.client.operation.HttpSimulationClient;
 import mdt.model.MDTExceptionEntity;
@@ -204,7 +204,7 @@ public class HttpRESTfulClientOld implements HttpClientProxy, LoggerSettable {
 
 	@Override
 	public Logger getLogger() {
-		return Optionals.getOrElse(m_logger, s_logger);
+		return Nullables.orElse(m_logger, s_logger);
 	}
 
 	@Override

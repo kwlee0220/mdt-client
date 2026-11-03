@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import utils.func.FOption;
+import utils.func.Nullables;
 import utils.http.RESTfulRemoteException;
 
 import mdt.model.MessageTypeEnum;
@@ -78,7 +78,7 @@ public class Fa3stMessage {
 	}
 	
 	public RESTfulRemoteException toClientException() {
-		String msg = FOption.mapOrSupply(m_text,
+		String msg = Nullables.mapOrElseGet(m_text,
 										t -> String.format("[%s] code=%s, details: %s", m_messageType, m_code, t),
 										() -> String.format("[%s] code=%s", m_messageType, m_code));
 		throw new RESTfulRemoteException(msg);

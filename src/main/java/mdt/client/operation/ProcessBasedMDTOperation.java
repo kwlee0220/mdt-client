@@ -25,9 +25,9 @@ import utils.async.AbstractThreadedExecution;
 import utils.async.AsyncState;
 import utils.async.CancellableWork;
 import utils.thread.Guard;
-import utils.func.Optionals;
 import utils.io.IOUtils;
 import utils.stream.FStream;
+import utils.func.Nullables;
 
 /**
  *
@@ -236,7 +236,7 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 					file.getParentFile().mkdirs();
 				}
 				
-				argValue = Optionals.getOrElse(argValue, "");
+				argValue = Nullables.orElse(argValue, "");
 				Files.writeString(file.toPath(), argValue, StandardCharsets.UTF_8);
 				
 				if ( m_addPortFileToCommandLine ) {

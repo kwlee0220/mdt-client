@@ -880,7 +880,7 @@ public final class SubmodelUtils {
 		else if ( sme instanceof SubmodelElementList sml ) {
 			// Navigate 대상이 SubmodelElementList인 경우에는 'seg'가 숫자일 수도 있기 때문에
 			// integer로의 파싱을 시도한다. 만일 숫자가 아닌 경우에는 'idx'가 -1로 설정된다.
-			int idx = Try.get(() -> Integer.parseInt(seg)).getOrElse(-1);
+			int idx = Try.of(() -> Integer.parseInt(seg)).getOrElse(-1);
 			if ( idx >= 0 ) {
 				if ( sml.getValue().size() > idx ) {
 					return sml.getValue().get(idx);

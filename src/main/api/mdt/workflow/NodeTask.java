@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import utils.Preconditions;
-import utils.func.Optionals;
+import utils.func.Nullables;
 
 
 /**
@@ -56,7 +56,7 @@ public final class NodeTask {
 
 		m_taskId = taskId;
 		m_status = status;
-		m_dependents = Optionals.getOrElse(dependents, HashSet::new);
+		m_dependents = Nullables.orElseGet(dependents, HashSet::new);
 		m_startTime = startTime;
 		m_finishTime = finishTime;
 	}

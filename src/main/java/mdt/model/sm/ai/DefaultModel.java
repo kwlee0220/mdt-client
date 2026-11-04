@@ -26,7 +26,7 @@ public class DefaultModel extends SubmodelElementCollectionEntity implements Mod
 	@PropertyField(idShort="ModelDescription")
 	private String modelDescription;
 	
-	@PropertyField(idShort="LastExecutionTime", valueType="Duration")
+	@PropertyField(idShort="LastExecutionTime", valueType="DURATION")
 	private Duration lastExecutionTime;
 	
 	/**

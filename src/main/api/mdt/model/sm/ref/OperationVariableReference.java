@@ -123,8 +123,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 	@Override
 	public void activate(MDTInstanceManager manager) {
 		// super.activate가 실패하면 m_opRef.activate가 호출되지 않아 m_opRef가 이전 대상으로 활성 상태로 남는다.
-		// 그래서 이 참조의 활성 여부는 자신과 m_opRef를 함께 본다(isActivated). 2026-11-01 이전에는 접근 메소드가
-		// m_opRef.isActivated()만 확인해, 재활성화가 실패한 뒤에도 이전 Operation에 접근했다.
+		// 그래서 이 참조의 활성 여부는 자신과 m_opRef를 함께 본다(isActivated).
 		super.activate(manager);
 		m_opRef.activate(manager);
 	}
@@ -364,7 +363,7 @@ public class OperationVariableReference extends SubmodelBasedElementReference {
 																	FIELD_AAS_OP_VAR, ref.getClass().getSimpleName()));
 		}
 		Kind kind = Kind.fromString(JacksonUtils.getTextField(jnode, FIELD_KIND));
-		// ordinal은 JSON 정수로 직렬화된다. 이전에는 문자열("1")도 받았다.
+		// ordinal은 JSON 정수로 직렬화된다.
 		int ordinal = JacksonUtils.getIntField(jnode, FIELD_ORDINAL);
 
 		return newInstance(opRef, kind, ordinal);

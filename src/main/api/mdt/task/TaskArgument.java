@@ -197,9 +197,6 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 	 * {@code @type} 필드를 가진 JSON 노드로부터 해당 타입의 {@link TaskArgument}를 복원한다.
 	 * <p>
 	 * Jackson을 거치지 않고 등록부에 바로 넘기므로, 구현체가 던진 예외가 그대로 전달된다.
-	 * 2026-11-01 이전에는 {@code MDTModelSerDe.readValue}(aas4j → Jackson)를 거쳐 일반 {@code IOException}이
-	 * {@code IllegalArgumentException}으로 바뀌었고, {@code null}·JSON {@code null}이면 {@code null}을 돌려줬다.
-	 * 같은 일을 하던 {@code parseTypedJsonNode}는 지웠다.
 	 *
 	 * @param jnode	{@code @type} 필드를 포함한 JSON 노드.
 	 * @return 복원된 {@link TaskArgument} 객체.
@@ -217,8 +214,6 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 	 * <p>
 	 * 문자열을 트리로 읽은 뒤 {@link #parseJsonNode(JsonNode)}에 넘기므로 예외와 {@code null} 처리가 같다.
 	 * 문자열 전체가 JSON 값 하나여야 한다. 첫 값 뒤에 다른 입력이 있으면(예: {@code {...} garbage}) 거부한다.
-	 * 2026-11-01 이전에는 {@code MDTModelSerDe.readValue}(aas4j → Jackson)를 거쳐 {@code "null"}이면 Java
-	 * {@code null}을 돌려줬고, 오류 메시지에 JSON 전체가 들어갔다.
 	 *
 	 * @param jsonString	JSON 문자열.
 	 * @return 복원된 {@link TaskArgument} 객체. {@code null}이 아니다.
@@ -242,10 +237,6 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 	 * 그 밖의 표현식(서브모델 참조 {@code inst:Data}, 대입식, {@code null})이나 문법에 맞지 않는 표현식
 	 * (빈 문자열, 따옴표 없는 날짜·기간 {@code 2024-01-01T00:00:00Z}·{@code PT5S}, 공백이 든 단어 등)은
 	 * {@link MDTParserException}으로 거부한다. 이런 값을 문자열로 넘기려면 따옴표로 감싼다(예: {@code 'PT5S'}).
-	 * <p>
-	 * 2026-11-01 이전에는 이름이 {@code parseTaskArgument}였고(별칭 없이 바꿈), 파싱에 실패하거나 참조·리터럴이
-	 * 아니면 <b>표현식 문자열 자체</b>를 값으로 갖는 문자열 리터럴로 조용히 대체했다(단, 후행 입력 오류는
-	 * {@code IllegalArgumentException}으로 그대로 나갔다).
 	 *
 	 * @param argSpecExpr	인자 표현식.
 	 * @return	인자.
@@ -301,7 +292,7 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 		}
 		
 		/**
-		 * 참조를 표현식 문자열로 돌려준다. 2026-11-01 이전 이름은 {@code getReferenceString}.
+		 * 참조를 표현식 문자열로 돌려준다.
 		 *
 		 * @return	참조 표현식.
 		 */
@@ -310,7 +301,7 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 		}
 		
 		/**
-		 * 감싼 참조를 돌려준다. 2026-11-01 이전 이름은 {@code getElementReference}.
+		 * 감싼 참조를 돌려준다.
 		 *
 		 * @return	MDT 요소 참조.
 		 */
@@ -325,9 +316,6 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 
 		/**
 		 * 참조가 가리키는 {@link SubmodelElement} 전체를 읽는다.
-		 * <p>
-		 * 2026-11-01 이전에는 상위 타입 {@link TaskArgument}에 선언되어 있었고, {@link LiteralArgument}에서는
-		 * {@code UnsupportedOperationException}을 던졌다.
 		 *
 		 * @return	읽은 요소.
 		 * @throws IOException	요소를 읽는 중 오류가 발생한 경우.
@@ -381,9 +369,7 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 		 * @throws IOException	참조를 해석하지 못한 경우.
 		 */
 		public static ReferenceArgument deserializeFields(JsonNode jnode) throws IOException {
-			// 참조는 등록부로 바로 읽는다. 이전에는 MDTModelSerDe.readValue(aas4j → Jackson)를 거치면서
-			// 필드 누락이 null이 되어 생성자의 IllegalArgumentException으로 나타났고, MDTElementReference가 아닌
-			// 참조(예: FileStoreReference)는 강제 형변환에서 ClassCastException이 났다.
+			// 참조는 등록부로 바로 읽는다.
 			JsonNode refNode = JacksonUtils.getField(jnode, FIELD_REFERENCE);
 			ElementReference ref = ElementReferences.parseJsonNode(refNode);
 			if ( ref instanceof MDTElementReference mdtRef ) {
@@ -469,8 +455,7 @@ public abstract sealed class TaskArgument implements MDTInstanceManagerAware
 		 * @throws IOException	값을 해석하지 못한 경우.
 		 */
 		public static LiteralArgument deserializeFields(JsonNode jnode) throws IOException {
-			// 필수 필드다. 이전에는 getFieldOrNull로 읽어, 누락 시 ElementValues.parseJsonNode(null)의
-			// IllegalArgumentException("JsonNode is null")으로 나타났다.
+			// 필수 필드다.
 			JsonNode valueNode = JacksonUtils.getField(jnode, FIELD_VALUE);
 			ElementValue value = ElementValues.parseJsonNode(valueNode);
 			return new LiteralArgument(value);

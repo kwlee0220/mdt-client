@@ -221,10 +221,6 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 	 * 값은 {@link #readValue()}가 돌려주는 것과 같은 {@code ParameterID -> 값} 형태의
 	 * {@link ElementCollectionValue}이다. 주어진 ID의 파라미터만 갱신하고 나머지는 그대로 둔다(부분 갱신).
 	 * 모르는 ID가 있거나 값의 타입이 파라미터와 맞지 않으면 아무것도 기록하지 않는다.
-	 * <p>
-	 * 2026-11-01 이전에는 값을 {@code ParameterID}/{@code ParameterValue} 목록으로 펼친 뒤 부모의 문자열 갱신을
-	 * 거쳐 이 클래스의 {@link #updateFromValueJson(String)}로 다시 들어왔고, 그 목록을 파라미터 값 목록으로
-	 * 해석해 문자열 파라미터에 {@code {"ParameterID":…,"ParameterValue":…}} 텍스트를 기록했다.
 	 *
 	 * @param smev	{@code ParameterID -> 값} 형태의 {@link ElementCollectionValue}.
 	 * @throws IllegalArgumentException	{@code smev}가 {@code null}이거나 {@link ElementCollectionValue}가 아니거나,
@@ -251,7 +247,6 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 	 * 값 JSON 객체({@code {"<ParameterID>": <값 JSON>, …}})로 파라미터 값들을 ID별로 갱신한다.
 	 * <p>
 	 * {@link #readValue()}의 값 JSON과 같은 형태이다. 주어진 ID의 파라미터만 갱신한다(부분 갱신).
-	 * 2026-11-01 이전에는 파라미터 순서대로 값을 나열한 JSON 배열을 받았다.
 	 *
 	 * @param valueJsonString	값 JSON 객체 문자열.
 	 * @throws JacksonDeserializationException	JSON 객체가 아니거나 값이 파라미터 타입과 맞지 않는 경우.

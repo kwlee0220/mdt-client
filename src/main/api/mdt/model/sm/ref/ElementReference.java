@@ -407,7 +407,7 @@ public interface ElementReference {
 	}
 	
 	/**
-	 * 참조가 가리키는 SubmodelElement을 주어진 SubmodelElement으로 갱신한다. 
+	 * 참조가 가리키는 SubmodelElement을 주어진 SubmodelElement으로 변경(replace)한다. 
 	 *
 	 * @param newElm	갱신할 새 값.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
@@ -432,8 +432,6 @@ public interface ElementReference {
 	
 	/**
 	 * 주어진 값 JSON 노드로 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
-	 * <p>
-	 * 2026-11-01 이전 이름은 {@code updateValue(JsonNode)}이다(별칭 없이 바꿈).
 	 *
 	 * @param valueNode	값 JSON 노드.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.
@@ -444,8 +442,6 @@ public interface ElementReference {
 	 * 주어진 값 JSON 문자열로 참조가 가리키는 SubmodelElement의 값 부분을 갱신한다.
 	 * <p>
 	 * 값 JSON은 {@link ElementValue#toValueJsonString()} 형식이다(예: 문자열 속성이면 따옴표를 포함한 {@code "abc"}).
-	 * 2026-11-01 이전 이름은 {@code updateValue(String)}이다(별칭 없이 바꿈). 이름이 같아 일반 문자열 값과
-	 * 헷갈렸다.
 	 *
 	 * @param valueJsonString	값 JSON 문자열.
 	 * @throws	IOException	갱신 과정에서 예외가 발생한 경우.

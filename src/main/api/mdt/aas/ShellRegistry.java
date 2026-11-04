@@ -12,8 +12,7 @@ import mdt.model.ResourceNotFoundException;
  * AAS Registry에 등록된 {@link AssetAdministrationShellDescriptor}들을 조회/등록/갱신/해제하는
  * 인터페이스를 정의한다.
  * <p>
- * {@link AssetAdministrationShellRegistry}와 같은 역할을 하며, 메소드 이름 체계만 다르다
- * ({@code add}/{@code update}/{@code remove}).
+ * 메소드 이름은 {@link SubmodelRegistry}와 같은 체계({@code get}/{@code post}/{@code put}/{@code delete})를 따른다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -59,7 +58,7 @@ public interface ShellRegistry {
 	 * @throws ResourceAlreadyExistsException	동일 식별자에 해당하는 AssetAdministrationShellDescriptor가
 	 * 									이미 존재하는 경우
 	 */
-	public AssetAdministrationShellDescriptor addAssetAdministrationShellDescriptor(
+	public AssetAdministrationShellDescriptor postAssetAdministrationShellDescriptor(
 																	AssetAdministrationShellDescriptor descriptor)
 		throws ResourceAlreadyExistsException;
 	
@@ -70,7 +69,7 @@ public interface ShellRegistry {
 	 * @return	갱신된 AssetAdministrationShellDescriptor 객체.
 	 * @throws ResourceNotFoundException	식별자에 해당하는 등록 AssetAdministrationShellDescriptor가 없는 경우
 	 */
-	public AssetAdministrationShellDescriptor updateAssetAdministrationShellDescriptor(
+	public AssetAdministrationShellDescriptor putAssetAdministrationShellDescriptor(
 																	AssetAdministrationShellDescriptor descriptor)
 		throws ResourceNotFoundException;
 	
@@ -80,6 +79,6 @@ public interface ShellRegistry {
 	 * @param shellId		해제시킬 AssetAdministrationShellDescriptor의 식별자.
 	 * @throws ResourceNotFoundException	식별자에 해당하는 AssetAdministrationShellDescriptor가 존재하지 않는 경우.
 	 */
-	public void removeAssetAdministrationShellDescriptorById(String shellId)
+	public void deleteAssetAdministrationShellDescriptorById(String shellId)
 		throws ResourceNotFoundException;
 }

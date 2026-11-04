@@ -65,7 +65,7 @@ public interface SubmodelRegistry {
 	 * @return	갱신된 SubmodelDescriptor 객체.
 	 * @throws ResourceNotFoundException	식별자에 해당하는 등록 SubmodelDescriptor가 없는 경우
 	 */
-	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor submodelDescriptor)
+	public SubmodelDescriptor putSubmodelDescriptor(SubmodelDescriptor submodelDescriptor)
 		throws ResourceNotFoundException;
 	
 	/**

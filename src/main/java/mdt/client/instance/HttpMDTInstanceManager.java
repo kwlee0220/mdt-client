@@ -163,13 +163,13 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	}
 
 	@Override
-	public List<HttpMDTInstanceClient> getInstanceAll() throws MDTInstanceManagerException {
+	public List<MDTInstance> getInstanceAll() throws MDTInstanceManagerException {
 		String url = String.format("%s/instances", getEndpoint());
 		return toInstances(m_restfulClient.get(url, MDTModelSerDes.INSTANCE_DESC_LIST));
 	}
 
 	@Override
-	public List<HttpMDTInstanceClient> getInstanceAllByFilter(String filter) {
+	public List<MDTInstance> getInstanceAllByFilter(String filter) {
 		String url = String.format("%s/instances", getEndpoint());
 		HttpUrl httpUrl = HttpUrl.parse(url).newBuilder()
 						 		.addQueryParameter("filter", filter)
@@ -180,7 +180,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	@Override
 	public HttpMDTInstanceClient getInstanceByAasId(String aasId) throws ResourceNotFoundException {
 		String filter = "instance.aasId = " + MDTInstanceManager.toFilterLiteral(aasId);
-		List<HttpMDTInstanceClient> instList = getInstanceAllByFilter(filter);
+		List<MDTInstance> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 0 ) {
 			throw new ResourceNotFoundException("MDTInstance", "aasId=" + aasId);
 		}
@@ -190,7 +190,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	}
 	
 	@Override
-	public List<HttpMDTInstanceClient> getInstanceAllByAasIdShort(String aasIdShort) {
+	public List<MDTInstance> getInstanceAllByAasIdShort(String aasIdShort) {
 		String filter = "instance.aasIdShort = " + MDTInstanceManager.toFilterLiteral(aasIdShort);
 		return getInstanceAllByFilter(filter);
 	}
@@ -520,9 +520,10 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		}
 	}
 	
-	private List<HttpMDTInstanceClient> toInstances(List<InstanceDescriptor> descList) {
-		return FStream.from(descList)
-						.map(desc -> new HttpMDTInstanceClient(HttpMDTInstanceManager.this, desc))
+	// 변경할 수 없는 목록을 돌려준다(Stream.toList).
+	private List<MDTInstance> toInstances(List<InstanceDescriptor> descList) {
+		return descList.stream()
+						.<MDTInstance>map(desc -> new HttpMDTInstanceClient(HttpMDTInstanceManager.this, desc))
 						.toList();
 	}
 }

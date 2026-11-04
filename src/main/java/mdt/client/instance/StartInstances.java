@@ -445,7 +445,7 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 		HttpMDTManager mdt = HttpMDTManager.connectWithDefault();
 		HttpMDTInstanceManager manager =  mdt.getInstanceManager();
 		
-		List<HttpMDTInstanceClient> instList = manager.getInstanceAll();
+		List<MDTInstance> instList = manager.getInstanceAll();
 		var innercase = manager.getInstance("innercase");
 		
 		List<HttpMDTInstanceClient> result = StartInstances.newInstance()

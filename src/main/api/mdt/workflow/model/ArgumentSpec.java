@@ -43,8 +43,7 @@ import mdt.model.sm.value.PropertyValue;
  * 	<li>{@link LiteralArgument}: 고정된 리터럴 값({@link ElementValue})을 갖는 인자.</li>
  * </ul>
  * 본 클래스는 인자를 <em>기술</em>하기만 하며, 인자 값을 실제로 읽고 쓰는 것은 명세를 해석하는 태스크의 몫이다
- * (예: {@code mdt.task.TaskUtils.readArgumentValue}). 2026-11-01 이전에는 {@code readValue(MDTInstanceManager)}가
- * 있었으나, task-output 인자는 읽을 수 없어 {@code IllegalStateException}을 던졌으므로 태스크 쪽으로 옮겼다.
+ * (예: {@code mdt.task.TaskUtils.readArgumentValue}).
  * <p>
  * 모든 인자 명세는 종류와 무관하게 필수 식별자({@link #getId()})와, 선택적인 이름({@link #getName()}) 및
  * 설명({@link #getDescription()})을 갖는다. 이름과 설명은 지정된 경우에만 JSON으로 직렬화된다.
@@ -108,7 +107,6 @@ public abstract sealed class ArgumentSpec
 	 */
 	protected ArgumentSpec(AbstractBuilder<?,?> builder) {
 		Preconditions.checkNotNullArgument(builder.m_id, "id is not set");
-		// 2026-11-01 이전에는 빈 식별자("", " ")도 받아들였다.
 		Preconditions.checkArgument(!builder.m_id.isBlank(), "id is blank");
 
 		m_id = builder.m_id;
@@ -251,7 +249,6 @@ public abstract sealed class ArgumentSpec
 	 * <p>
 	 * 숫자·불리언을 문자열로 바꿔 받지 않는다({@code "id": 1} 거부). 공백뿐인 값은 생성자의
 	 * {@code IllegalArgumentException} 대신 필드 이름을 담은 JSON 경로의 예외로 알린다.
-	 * 2026-11-01 이전에는 {@code getStringField}로 읽어 {@code 1}·{@code true}를 {@code "1"}·{@code "true"}로 받았다.
 	 */
 	static String readRequiredText(JsonNode jnode, String field) throws JacksonDeserializationException {
 		String value = JacksonUtils.getTextField(jnode, field);
@@ -383,9 +380,6 @@ public abstract sealed class ArgumentSpec
 	 * {@code @type} 필드를 가진 JSON 노드로부터 해당 타입의 {@link ArgumentSpec}를 복원한다.
 	 * <p>
 	 * Jackson을 거치지 않고 등록부에 바로 넘기므로, 구현체가 던진 예외가 그대로 전달된다.
-	 * 2026-11-01 이전에는 {@code MDTModelSerDe.readValue}(aas4j → Jackson)를 거쳐 일반 {@code IOException}이
-	 * {@code IllegalArgumentException}으로 바뀌었고, {@code null}·JSON {@code null}이면 {@code null}을 돌려줬다.
-	 * 같은 일을 하던 {@code parseTypedJsonNode}는 지웠다.
 	 *
 	 * @param jnode	{@code @type} 필드를 포함한 JSON 노드.
 	 * @return 복원된 {@link ArgumentSpec} 객체.
@@ -403,7 +397,6 @@ public abstract sealed class ArgumentSpec
 	 * <p>
 	 * 문자열을 트리로 읽은 뒤 {@link #parseJsonNode(JsonNode)}에 넘기므로 예외와 {@code null} 처리가 같다.
 	 * 문자열 전체가 JSON 값 하나여야 한다. 첫 값 뒤에 다른 입력이 있으면(예: {@code {...} garbage}) 거부한다.
-	 * 2026-11-01 이전에는 {@code "null"}이면 Java {@code null}을 돌려줬고, 오류 메시지에 JSON 전체가 들어갔다.
 	 *
 	 * @param jsonString	JSON 문자열.
 	 * @return 복원된 {@link ArgumentSpec} 객체. {@code null}이 아니다.
@@ -436,8 +429,6 @@ public abstract sealed class ArgumentSpec
 
 		/**
 		 * 참조 표현식의 문법을 확인한다. 참조 객체는 실행 시점에 다시 해석하므로 결과는 버린다.
-		 * <p>
-		 * 2026-11-01 이전에는 생성 시점에 검증하지 않아, 문법이 틀린 표현식이 태스크를 실행할 때에야 드러났다.
 		 */
 		private static void validateReferenceExpr(String refExpr) {
 			try {
@@ -452,7 +443,7 @@ public abstract sealed class ArgumentSpec
 		}
 
 		/**
-		 * 참조 표현식을 돌려준다. 2026-11-01 이전 이름은 {@code getReferenceString}.
+		 * 참조 표현식을 돌려준다.
 		 *
 		 * @return	참조 표현식.
 		 */
@@ -462,7 +453,6 @@ public abstract sealed class ArgumentSpec
 		
 		/**
 		 * 참조 표현식을 해석하고 주어진 관리자로 활성화한 참조 객체를 돌려준다. 부를 때마다 새로 해석한다.
-		 * 2026-11-01 이전 이름은 {@code getReference}.
 		 *
 		 * @param manager	MDT 인스턴스 관리자.
 		 * @return	활성화된 참조.
@@ -577,7 +567,6 @@ public abstract sealed class ArgumentSpec
 			super(builder);
 			Preconditions.checkNotNullArgument(builder.m_taskId, "taskId is not set");
 			Preconditions.checkNotNullArgument(builder.m_argumentName, "argumentName is not set");
-			// 2026-11-01 이전에는 공백뿐인 값도 받아들여, 찾을 태스크·출력이 없는 명세가 만들어졌다.
 			Preconditions.checkArgument(!builder.m_taskId.isBlank(), "taskId is blank");
 			Preconditions.checkArgument(!builder.m_argumentName.isBlank(), "argumentName is blank");
 
@@ -645,7 +634,6 @@ public abstract sealed class ArgumentSpec
 		 * 원래 태스크가 결과로 내놓는 출력 인자의 {@code id}와 같아야 한다. 실행 엔진은 이 값을 키로 그 태스크의
 		 * 출력을 찾는다(예: Airflow에서는 mdtpy {@code DagContext.get_task_output(task_id, arg_id)}). 표시용
 		 * 이름({@link #getName()})이 아니다. JSON 필드 이름은 저장 형식 호환을 위해 {@code argumentName}을 유지한다.
-		 * 2026-11-01 이전 이름은 {@code getArgumentName}.
 		 *
 		 * @return	출력 인자 식별자.
 		 */
@@ -764,7 +752,7 @@ public abstract sealed class ArgumentSpec
 			 * @return	본 builder 객체.
 			 */
 			public Builder value(Integer value) {
-				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다(2026-11-01 이전에는 받아들였다).
+				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다.
 				Preconditions.checkNotNullArgument(value, "value is null");
 				return value(PropertyValue.INTEGER(value));
 			}
@@ -776,7 +764,7 @@ public abstract sealed class ArgumentSpec
 			 * @return	본 builder 객체.
 			 */
 			public Builder value(Float value) {
-				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다(2026-11-01 이전에는 받아들였다).
+				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다.
 				Preconditions.checkNotNullArgument(value, "value is null");
 				return value(PropertyValue.FLOAT(value));
 			}
@@ -788,7 +776,7 @@ public abstract sealed class ArgumentSpec
 			 * @return	본 builder 객체.
 			 */
 			public Builder value(Double value) {
-				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다(2026-11-01 이전에는 받아들였다).
+				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다.
 				Preconditions.checkNotNullArgument(value, "value is null");
 				return value(PropertyValue.DOUBLE(value));
 			}
@@ -800,7 +788,7 @@ public abstract sealed class ArgumentSpec
 			 * @return	본 builder 객체.
 			 */
 			public Builder value(String value) {
-				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다(2026-11-01 이전에는 받아들였다).
+				// null이면 값이 빈 PropertyValue가 만들어지므로 거부한다.
 				Preconditions.checkNotNullArgument(value, "value is null");
 				return value(PropertyValue.STRING(value));
 			}
@@ -838,8 +826,7 @@ public abstract sealed class ArgumentSpec
 			Builder builder = builder();
 			deserializeCommonFields(jnode, builder);
 
-			// 필수 필드다. 이전에는 getFieldOrNull로 읽어, 누락 시 ElementValues.parseJsonNode(null)의
-			// IllegalArgumentException("JsonNode is null")으로 나타났다.
+			// 필수 필드다.
 			JsonNode valueNode = JacksonUtils.getField(jnode, FIELD_VALUE);
 			return builder.value(ElementValues.parseJsonNode(valueNode))
 							.build();

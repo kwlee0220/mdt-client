@@ -97,7 +97,7 @@ public interface MDTInstanceManager {
 		Preconditions.checkNotNullArgument(aasId, "AAS id is null");
 		
 		String filter = "instance.aasId = " + toFilterLiteral(aasId);
-		List<? extends MDTInstance> instList = getInstanceAllByFilter(filter);
+		List<MDTInstance> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 1 ) {
 			return instList.get(0);
 		}
@@ -119,7 +119,7 @@ public interface MDTInstanceManager {
 	 * @return		해당 AAS idShort를 갖는 {@link MDTInstance} 객체 리스트.
 	 * 				일치하는 MDTInstance가 없는 경우 빈 리스트를 반환한다.
 	 */
-	public default List<? extends MDTInstance> getInstanceAllByAasIdShort(String idShort) {
+	public default List<MDTInstance> getInstanceAllByAasIdShort(String idShort) {
 		Preconditions.checkNotNullArgument(idShort, "AAS idShort is null");
 		
 		String filter = "instance.aasIdShort = " + toFilterLiteral(idShort);
@@ -136,7 +136,7 @@ public interface MDTInstanceManager {
 	 * @return		해당 자산 식별자를 갖는 {@link MDTInstance} 객체 리스트.
 	 * 				일치하는 MDTInstance가 없는 경우 빈 리스트를 반환한다.
 	 */
-	public default List<? extends MDTInstance> getInstanceAllByAssetId(String assetId) {
+	public default List<MDTInstance> getInstanceAllByAssetId(String assetId) {
 		Preconditions.checkNotNullArgument(assetId, "AssetId is null");
 		
 		String filter = "instance.globalAssetId = " + toFilterLiteral(assetId);
@@ -155,7 +155,7 @@ public interface MDTInstanceManager {
 		Preconditions.checkNotNullArgument(submodelId, "Submodel id is null");
 
 		String filter = "submodel.id = " + toFilterLiteral(submodelId);
-		List<? extends MDTInstance> instList = getInstanceAllByFilter(filter);
+		List<MDTInstance> instList = getInstanceAllByFilter(filter);
 		if ( instList.size() == 1 ) {
 			return instList.get(0);
 		}
@@ -177,7 +177,7 @@ public interface MDTInstanceManager {
 	 * @return		해당 Submodel idShort를 포함한 {@link MDTInstance} 객체 리스트.
 	 * 				일치하는 MDTInstance가 없는 경우 빈 리스트를 반환한다.
 	 */
-	public default List<? extends MDTInstance> getInstanceAllBySubmodelIdShort(String submodelIdShort) {
+	public default List<MDTInstance> getInstanceAllBySubmodelIdShort(String submodelIdShort) {
 		Preconditions.checkNotNullArgument(submodelIdShort, "Submodel idShort is null");
 		
 		String filter = "submodel.idShort = " + toFilterLiteral(submodelIdShort);
@@ -190,7 +190,7 @@ public interface MDTInstanceManager {
 	 * @return	등록된 {@link MDTInstance} 객체 리스트.
 	 * 			등록된 인스턴스가 없는 경우 빈 리스트를 반환한다.
 	 */
-	public List<? extends MDTInstance> getInstanceAll();
+	public List<MDTInstance> getInstanceAll();
 
 	/**
 	 * 주어진 filter 조건을 만족하는 {@link MDTInstance} 객체를 반환한다.
@@ -256,7 +256,7 @@ public interface MDTInstanceManager {
 	 * @return		검색 조건에 해당하는 {@link MDTInstance} 객체 리스트.
 	 * 				일치하는 MDTInstance가 없는 경우 빈 리스트를 반환한다.
 	 */
-	public List<? extends MDTInstance> getInstanceAllByFilter(String filterExpr);
+	public List<MDTInstance> getInstanceAllByFilter(String filterExpr);
 	
 	/**
 	 * 새로운 MDTInstance를 등록한다.

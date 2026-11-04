@@ -169,9 +169,6 @@ public class TimeSeriesRecordsReference extends SubmodelBasedElementReference {
 	
 	/**
 	 * 대상 Submodel, 조회 범위, 조회 컬럼이 모두 같으면 같은 참조이다.
-	 * <p>
-	 * 2026-11-01 이전에는 대상 Submodel만 비교해서, 같은 Submodel의 {@code last=1}과 {@code last=100}
-	 * 참조가 같다고 판단했다.
 	 *
 	 * @param obj	비교할 객체.
 	 * @return 같은 참조이면 {@code true}.

@@ -71,8 +71,6 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 	 * {@code xs:int}). {@code xs:string} 속성에는 어떤 값이든 그 값 문자열로 기록한다.
 	 * 그 밖의 불일치(문자열 값 → 정수 속성, 3.7 → {@code xs:int}, 범위 초과 등)는 거부한다.
 	 * {@code valueType}이 없는 Property와 {@code null} 값은 검사하지 않는다.
-	 * <p>
-	 * 2026-11-01 이전에는 타입을 확인하지 않아 {@code xs:int} 속성에 {@code "abc"}나 {@code "3.7"}이 그대로 기록됐다.
 	 *
 	 * @param prop	값을 설정할 Property.
 	 * @throws IllegalArgumentException	Property의 데이터 타입과 맞지 않는 값인 경우.
@@ -125,8 +123,7 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 	 * <p>
 	 * 해석 결과로 다시 만든 문자열이 아니라 원래 문자열을 쓴다({@code xs:dateTime}의 시간대 표기 등을 바꾸지 않기 위해).
 	 * {@link DataTypes}에 없는 정수 타입({@code xs:integer}, {@code xs:byte})은 다른 정수 타입처럼 정수 문법과 범위를
-	 * 확인한다({@code "3.0"}, 앞뒤 공백, 지수 표기는 거부, 빈 문자열은 허용). 2026-11-01 이전에는 {@code "3.0"}이
-	 * 통과해 그대로 저장됐다. 그 밖에
+	 * 확인한다({@code "3.0"}, 앞뒤 공백, 지수 표기는 거부, 빈 문자열은 허용). 그 밖에
 	 * {@link DataTypes}에 없는 타입과 {@code valueType}이 없는 Property는 확인하지 않는다.
 	 *
 	 * @param prop	값을 설정할 Property.

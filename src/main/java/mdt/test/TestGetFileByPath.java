@@ -30,7 +30,7 @@ public class TestGetFileByPath {
 //		SubmodelElement sme = svc.getSubmodelElementByPath("testFile");
 
 		String idShortPath = "DataInfo.Equipment.EquipmentParameterValues[2].ParameterValue";
-		try ( TempFile tempFile = svc.getAASFileByPath(idShortPath) ) {
+		try ( TempFile tempFile = svc.readAttachmentToTempFile(idShortPath) ) {
 			System.out.println("Downloaded file: " + tempFile.getFile() + ", size=" + tempFile.getFile().length());
 		}
 	}

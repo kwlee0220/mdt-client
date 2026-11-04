@@ -312,7 +312,7 @@ public class SubmodelBasedElementReferenceTest {
 
 		TestElementReference ref = activated();
 		ref.readAttachment(out);
-		verify(m_svc).getAttachmentByPath(PATH, out);
+		verify(m_svc).readAttachmentByPath(PATH, out);
 	}
 
 	@Test

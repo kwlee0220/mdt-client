@@ -360,7 +360,7 @@ public class HttpSubmodelServiceClient extends Fa3stHttpClient implements Submod
 	}
 
 	@Override
-	public void getAttachmentByPath(String idShortPath, OutputStream output) {
+	public void readAttachmentByPath(String idShortPath, OutputStream output) {
 		String url = String.format("%s/submodel-elements/%s/attachment",
 									getEndpoint(), encodeIdShortPath(idShortPath));
 		Request req = new Request.Builder().url(url).get().build();

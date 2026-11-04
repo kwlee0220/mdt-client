@@ -28,13 +28,16 @@ public class DataSubmodelService implements SubmodelService {
 	 * 생성 시 {@code service}로부터 서브모델을 읽어 {@link Data} 객체로 변환한다.
 	 *
 	 * @param service	Data 서브모델에 대한 서브모델 서비스.
-	 * @throws IllegalArgumentException	서브모델의 semantic id가 {@link Data#SEMANTIC_ID_REFERENCE}가
-	 * 			아닌 경우.
+	 * @throws IllegalArgumentException	{@code service}가 {@code null}이거나, 서브모델의 semantic id가 없거나
+	 * 			{@link Data#SEMANTIC_ID_REFERENCE}가 아닌 경우.
 	 */
 	public DataSubmodelService(SubmodelService service) {
+		Preconditions.checkNotNullArgument(service, "SubmodelService is null");
+		
 		Submodel submodel = service.getSubmodel();
-		Preconditions.checkArgument(submodel.getSemanticId().equals(Data.SEMANTIC_ID_REFERENCE),
-									"Not Data Submodel, but=" + submodel); 
+		Preconditions.checkArgument(Data.SEMANTIC_ID_REFERENCE.equals(submodel.getSemanticId()),
+									"Not Data Submodel: id=%s, semanticId=%s",
+									submodel.getId(), submodel.getSemanticId());
 		
 		m_service = service;
 		

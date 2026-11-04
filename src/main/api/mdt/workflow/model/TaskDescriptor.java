@@ -278,8 +278,7 @@ public final class TaskDescriptor {
 	/**
 	 * 입력 인자 명세들을 설정한다. 기존 명세는 모두 지운다.
 	 * <p>
-	 * {@link #addInputArgument(ArgumentSpec)}와 같이 식별자가 중복되면 거부한다. 2026-11-01 이전에는 뒤에 오는 같은
-	 * 식별자의 명세가 앞의 것을 조용히 덮어썼다.
+	 * {@link #addInputArgument(ArgumentSpec)}와 같이 식별자가 중복되면 거부한다.
 	 *
 	 * @param vars	입력 인자 명세들.
 	 * @throws IllegalArgumentException	식별자가 중복된 명세가 있는 경우.
@@ -334,7 +333,6 @@ public final class TaskDescriptor {
 	 * 출력 인자 명세들을 설정한다. 기존 명세는 모두 지운다.
 	 * <p>
 	 * {@link #addOutputArgument(ArgumentSpec.ReferenceArgument)}와 같이 식별자가 중복되면 거부한다.
-	 * 2026-11-01 이전에는 이름이 {@code setOutputVariables}였고(별칭 없이 바꿈), 중복 식별자를 조용히 덮어썼다.
 	 *
 	 * @param args	출력 인자 명세들.
 	 * @throws IllegalArgumentException	식별자가 중복된 명세가 있는 경우.

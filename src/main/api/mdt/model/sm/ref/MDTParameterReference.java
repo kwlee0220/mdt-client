@@ -185,8 +185,7 @@ public class MDTParameterReference extends SubmodelBasedElementReference {
 			// path로 구성될 수도 있기 때문에 parameter expr에 '.' 또는 '['가 포함되는지를 확인한다.
 			// 만일 path인 경우에는 가장 첫번째 path segment를 'ParameterValue'로 치환시켜서
 			// parameter의 idShortPath를 구성한다.
-			// '.'과 '[' 중 먼저 나오는 곳에서 자른다(idShort에는 둘 다 쓸 수 없다). 2026-11-01 이전에는 '.'을 먼저
-			// 찾아 "Samples[0].value"의 parameter id를 "Samples[0]"으로 잘랐다.
+			// '.'과 '[' 중 먼저 나오는 곳에서 자른다(idShort에는 둘 다 쓸 수 없다).
 			int idx = firstSeparator(m_parameterExpr);
 			if ( idx >= 0 ) {
 				paramId = m_parameterExpr.substring(0, idx);

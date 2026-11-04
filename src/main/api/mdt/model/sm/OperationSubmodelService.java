@@ -153,7 +153,7 @@ public class OperationSubmodelService implements SubmodelService {
 	 * 원격에 반영하려면 {@link #save()}를 호출해야 한다.
 	 */
 	public class ArgumentCollection {
-		private final String m_argKind;
+		private final String m_argKind;	// Inputs or Outputs
 		private final String m_path;
 		private SubmodelElementList m_arguments;
 		private Map<String,SubmodelElement> m_argMap;
@@ -215,8 +215,8 @@ public class OperationSubmodelService implements SubmodelService {
 		public ArgumentCollection setValue(Map<String,ElementValue> values) {
 			for ( SubmodelElement sme: m_arguments.getValue() ) {
 				if ( sme instanceof SubmodelElementCollection smc ) {
-					String id = SubmodelUtils.getStringFieldById(smc, String.format("%sID", m_argKind));
-					ElementValue ev = values.get(id);
+					String argId = SubmodelUtils.getStringFieldById(smc, String.format("%sID", m_argKind));
+					ElementValue ev = values.get(argId);
 					if ( ev != null ) {
 						SubmodelElement value = SubmodelUtils.getFieldById(sme, String.format("%sValue", m_argKind));
 						ElementValues.update(value, ev);

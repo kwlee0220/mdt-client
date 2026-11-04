@@ -2,7 +2,7 @@ package mdt.model.sm;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
@@ -134,7 +134,7 @@ public final class PropertyUtils {
 	 * @param value	날짜 값. {@code null}일 수 있다.
 	 * @return	생성된 {@link Property}.
 	 */
-	public static Property DATE(String id, @Nullable Date value) {
+	public static Property DATE(String id, @Nullable LocalDate value) {
 		return newProperty(id, DataTypes.DATE.getTypeDefXsd(), DataTypes.DATE.toValueString(value));
 	}
 

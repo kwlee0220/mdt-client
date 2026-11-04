@@ -178,7 +178,7 @@ public interface SubmodelService {
 	 * @throws ResourceNotFoundException 해당 idShortPath에 해당하는 SubmodelElement 객체가
 	 *                                   존재하지 않는 경우
 	 */
-	public void deleteSubmodelElementByPath(String idShortPath);
+	public void deleteSubmodelElementByPath(String idShortPath) throws ResourceNotFoundException;
 	
 	/**
 	 * 주어진 idShortPath에 해당하는 File SubmodelElement 객체에 해당하는 파일의 내용을
@@ -190,7 +190,7 @@ public interface SubmodelService {
 	 *                                   존재하지 않는 경우.
 	 * @throws IOException	파일 입출력 오류 발생한 경우.
 	 */
-	public void getAttachmentByPath(String idShortPath, OutputStream output)
+	public void readAttachmentByPath(String idShortPath, OutputStream output)
 		throws ResourceNotFoundException, IOException;
 	
 	/**
@@ -203,10 +203,10 @@ public interface SubmodelService {
 	 * 								 존재하지 않는 경우.
 	 * @throws IOException	파일 입출력 오류 발생한 경우.
 	 */
-	public default TempFile getAASFileByPath(String idShortPath) throws ResourceNotFoundException,
+	public default TempFile readAttachmentToTempFile(String idShortPath) throws ResourceNotFoundException,
 																		IOException {
 		TempFile tempFile = TempFile.create();
-		getAttachmentByPath(idShortPath, tempFile.getOutputStream());
+		readAttachmentByPath(idShortPath, tempFile.getOutputStream());
 		
 		return tempFile;
 	}
@@ -253,7 +253,7 @@ public interface SubmodelService {
 	 * @throws ResourceNotFoundException 해당 idShortPath에 해당하는 SubmodelElement 객체가
 	 *                                   존재하지 않는 경우.
 	 */
-	public void deleteAttachmentByPath(String idShortPath) throws ResourceNotFoundException;;
+	public void deleteAttachmentByPath(String idShortPath) throws ResourceNotFoundException;
 	
 	/**
 	 * idShortPath에 해당하는 SubmodelElement 객체의 Operation을 동기적으로 실행한다.

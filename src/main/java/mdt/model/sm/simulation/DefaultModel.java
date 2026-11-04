@@ -26,7 +26,7 @@ public class DefaultModel extends SubmodelElementCollectionEntity implements Mod
 	@SMCollectionField(idShort="ModelFileVersion", adaptorClass=DefaultModelFileVersion.class)
 	private ModelFileVersion modelFileVersion;
 	
-	@PropertyField(idShort="LastExecutionTime", valueType="Duration")
+	@PropertyField(idShort="LastExecutionTime", valueType="DURATION")
 	private Duration lastExecutionTime;
 	
 	/**

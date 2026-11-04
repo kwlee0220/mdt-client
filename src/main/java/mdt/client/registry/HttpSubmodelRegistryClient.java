@@ -105,7 +105,7 @@ public class HttpSubmodelRegistryClient implements SubmodelRegistry, HttpMDTServ
 	}
 
 	@Override
-	public SubmodelDescriptor putSubmodelDescriptorById(SubmodelDescriptor descriptor) {
+	public SubmodelDescriptor putSubmodelDescriptor(SubmodelDescriptor descriptor) {
 		String url = String.format("%s", m_endpoint);
 		String reqBodyStr = MDTModelSerDe.toJsonString(descriptor);
 		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody(reqBodyStr);
@@ -134,7 +134,7 @@ public class HttpSubmodelRegistryClient implements SubmodelRegistry, HttpMDTServ
 			Endpoint ep = DescriptorUtils.newEndpoint(endpoint, "SUBMODEL-3.0");
 			desc.setEndpoints(Arrays.asList(ep));
 			
-			putSubmodelDescriptorById(desc);
+			putSubmodelDescriptor(desc);
 		}
 	}
 	

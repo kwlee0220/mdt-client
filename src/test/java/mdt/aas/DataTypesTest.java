@@ -85,6 +85,19 @@ public class DataTypesTest {
 	}
 
 	@Test
+	public void durationJdbcValuesAreSeconds() {
+		// 정수·실수 모두 초 단위로 읽고, 쓸 때도 초 단위 실수로 쓴다.
+		assertEquals(Duration.ofSeconds(90), DataTypes.DURATION.fromJdbcObject(90L));
+		assertEquals(Duration.ofSeconds(90), DataTypes.DURATION.fromJdbcObject(90));
+		assertEquals(Duration.ofMillis(1500), DataTypes.DURATION.fromJdbcObject(1.5));
+		assertEquals(Duration.ofMillis(1500), DataTypes.DURATION.fromJdbcObject(1.5f));
+		assertEquals(1.5, DataTypes.DURATION.toJdbcObject(Duration.ofMillis(1500)));
+		assertEquals(Duration.ofMillis(1500),
+					DataTypes.DURATION.fromJdbcObject(DataTypes.DURATION.toJdbcObject(Duration.ofMillis(1500))));
+		assertNull(DataTypes.DURATION.toJdbcObject(null));
+	}
+
+	@Test
 	public void numericTypesAcceptJdbcNumbers() {
 		// PostgreSQL NUMERIC 컬럼이나 avg() 결과는 BigDecimal로 온다.
 		java.math.BigDecimal avg = new java.math.BigDecimal("12.75");
@@ -203,5 +216,37 @@ public class DataTypesTest {
 		assertRejected(DataTypes.DURATION, "5");
 		assertRejected(DataTypes.DATE_TIME, "\"not-a-date\"");
 		assertRejected(DataTypes.TIME, "{}");
+	}
+
+	/**
+	 * {@link DataTypes#TYPES}와 {@link DataTypes#NAME_TO_TYPES}는 수정할 수 없다(mdt-client API 검토 D7, 2026-11-03).
+	 * 이전에는 {@code TYPES}가 {@code Arrays.asList}라서 {@code set()}이 되었고 내부 배열까지 바뀌었다.
+	 */
+	@Test
+	public void typesAndNameMapAreImmutable() {
+		assertThrows(UnsupportedOperationException.class, () -> DataTypes.TYPES.set(0, DataTypes.INT));
+		assertThrows(UnsupportedOperationException.class, () -> DataTypes.NAME_TO_TYPES.put("X", DataTypes.INT));
+		assertEquals(DataTypes.STRING, DataTypes.TYPES.get(0));
+	}
+
+	/**
+	 * {@code xs:date}는 {@link java.time.LocalDate}로 다룬다(mdt-client API 검토 I7).
+	 */
+	@Test
+	public void dateIsLocalDate() {
+		java.time.LocalDate day = java.time.LocalDate.of(2026, 10, 28);
+		assertEquals(java.time.LocalDate.class, DataTypes.DATE.getJavaClass());
+		assertEquals(day, DataTypes.DATE.parseValueString("2026-10-28"));
+		assertEquals(day, DataTypes.DATE.parseValueString("2026-10-28Z"));
+		assertEquals(day, DataTypes.DATE.parseValueString("2026-10-28+09:00"));
+		assertNull(DataTypes.DATE.parseValueString(""));
+		assertThrows(IllegalArgumentException.class, () -> DataTypes.DATE.parseValueString("2026-10-28xyz"));
+		assertThrows(IllegalArgumentException.class, () -> DataTypes.DATE.parseValueString("2026/10/28"));
+		assertEquals(java.sql.Date.valueOf(day), DataTypes.DATE.toJdbcObject(day));
+
+		// JDBC 드라이버·utils.jdbc.SQLDataTypes.DATE의 날짜 클래스로도 찾는다(mdt-instance JDBC 컬럼 매핑).
+		assertEquals(DataTypes.DATE, DataTypes.fromJavaClass(java.time.LocalDate.class));
+		assertEquals(DataTypes.DATE, DataTypes.fromJavaClass(java.sql.Date.class));
+		assertEquals(DataTypes.DATE, DataTypes.fromJavaClass(java.util.Date.class));
 	}
 }

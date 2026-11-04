@@ -57,30 +57,22 @@ public interface DataInfo {
 	 * 포함된 첫번째 {@link Equipment} 엔티티를 반환한다.
 	 *
 	 * @return	{@link Equipment} 객체.
-	 * @throws ResourceNotFoundException	{@link Equipment} 엔티티가 없는 경우.
+	 * @throws ResourceNotFoundException	{@link Equipment} 엔티티가 없는 경우. 메시지는
+	 * 			{@code "DataInfo entity(type=Equipment)"}이다.
 	 */
 	public default Equipment getEquipment() {
-		try {
-			return getFirstSubmodelElementEntityByClass(Equipment.class);
-		}
-		catch ( ResourceNotFoundException e ) {
-			throw new ResourceNotFoundException("Equipment", "");
-		}
+		return getFirstSubmodelElementEntityByClass(Equipment.class);
 	}
 	
 	/**
 	 * 포함된 첫번째 {@link Operation} 엔티티를 반환한다.
 	 *
 	 * @return	{@link Operation} 객체.
-	 * @throws ResourceNotFoundException	{@link Operation} 엔티티가 없는 경우.
+	 * @throws ResourceNotFoundException	{@link Operation} 엔티티가 없는 경우. 메시지는
+	 * 			{@code "DataInfo entity(type=Operation)"}이다.
 	 */
 	public default Operation getOperation() {
-		try {
-			return getFirstSubmodelElementEntityByClass(Operation.class);
-		}
-		catch ( ResourceNotFoundException e ) {
-			throw new ResourceNotFoundException("Operation", "");
-		}
+		return getFirstSubmodelElementEntityByClass(Operation.class);
 	}
 	
 	/**
@@ -101,7 +93,8 @@ public interface DataInfo {
 	 * @param <T>	엔티티 타입.
 	 * @param intfc	검색할 엔티티 타입 (인터페이스).
 	 * @return	{@code intfc} 타입의 첫번째 엔티티.
-	 * @throws ResourceNotFoundException	해당 타입의 엔티티가 없는 경우.
+	 * @throws ResourceNotFoundException	해당 타입의 엔티티가 없는 경우. 메시지는
+	 * 			{@code "DataInfo entity(type=<타입의 단순 이름>)"}이다.
 	 */
 	public default <T> T getFirstSubmodelElementEntityByClass(Class<T> intfc)
 		throws ResourceNotFoundException {
@@ -109,6 +102,6 @@ public interface DataInfo {
 						.filter(intfc::isInstance)
 						.findFirst()
 						.cast(intfc)
-						.getOrThrow(() -> new ResourceNotFoundException("TopLevelEntity", "interface=" + intfc));
+						.getOrThrow(() -> new ResourceNotFoundException("DataInfo entity", "type=" + intfc.getSimpleName()));
 	}
 }

@@ -31,10 +31,10 @@ public class DefaultSimulationTool extends SubmodelElementCollectionEntity imple
 	@PropertyField(idShort="SimulatorEndpoint")
 	private String simulatorEndpoint;
 	
-	@PropertyField(idShort="SimulationTimeout", valueType="Duration")
+	@PropertyField(idShort="SimulationTimeout", valueType="DURATION")
 	private Duration simulationTimeout;
 	
-	@PropertyField(idShort="SessionRetainTimeout", valueType="Duration")
+	@PropertyField(idShort="SessionRetainTimeout", valueType="DURATION")
 	private Duration sessionRetainTimeout;
 	
 	/**

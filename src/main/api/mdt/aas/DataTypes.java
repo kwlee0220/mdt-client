@@ -3,17 +3,16 @@ package mdt.aas;
 import java.math.BigDecimal;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -89,7 +88,7 @@ public final class DataTypes {
 	/**
 	 * 타입 이름으로부터 {@link DataType}을 반환한다.
 	 * <p>
-	 * 이름은 대소문자를 구분하지 않으며, {@code DataTypeDefXsd}의 이름(예: {@code "INT"})과
+	 * 이름은 대소문자를 구분하며, {@code DataTypeDefXsd}의 이름(예: {@code "INT"})과
 	 * {@code xs:} 식별자(예: {@code "xs:int"}) 모두를 키로 사용할 수 있다.
 	 *
 	 * @param name	데이터 타입 이름.
@@ -97,7 +96,7 @@ public final class DataTypes {
 	 * @throws ModelGenerationException	이름에 해당하는 타입이 없는 경우.
 	 */
 	public static DataType<?> fromDataTypeName(String name) {
-		DataType<?> dtype = _NAME_TO_TYPES.get(name.toUpperCase());
+		DataType<?> dtype = _NAME_TO_TYPES.get(name);
 		if ( dtype == null ) {
 			throw new ModelGenerationException("unknown DataType name=" + name);
 		}
@@ -160,9 +159,12 @@ public final class DataTypes {
 			
 			_CLSSS_TO_TYPES.put(dtype.getJavaClass(), dtype);
 		}
+		// JDBC 드라이버·utils.jdbc.SQLDataTypes.DATE가 쓰는 날짜 클래스도 xs:date로 찾는다.
+		_CLSSS_TO_TYPES.put(java.sql.Date.class, DATE);
+		_CLSSS_TO_TYPES.put(Date.class, DATE);
 	}
 	/** 지원하는 모든 {@link DataType}의 목록(불변). */
-	public static final List<DataType<?>> TYPES = Arrays.asList(_TYPES);
+	public static final List<DataType<?>> TYPES = List.of(_TYPES);
 	/** 타입 이름/{@code xs:} 식별자 → {@link DataType} 매핑(불변). */
 	public static final Map<String,DataType<?>> NAME_TO_TYPES = Collections.unmodifiableMap(_NAME_TO_TYPES);
 	
@@ -185,9 +187,6 @@ public final class DataTypes {
 		/**
 		 * {@code xs:boolean} 값 문자열을 해석한다. {@code "true"}/{@code "false"}(대소문자 무관)와 XSD가 허용하는
 		 * {@code "1"}/{@code "0"}만 받는다. 빈 문자열은 {@code null}이다.
-		 * <p>
-		 * 2026-11-01 이전에는 {@code Boolean.parseBoolean}을 써서 {@code "yes"} 같은 값을 오류 없이 {@code false}로,
-		 * 빈 문자열을 {@code false}로 읽었다.
 		 *
 		 * @throws IllegalArgumentException	그 밖의 문자열인 경우.
 		 */
@@ -308,11 +307,27 @@ public final class DataTypes {
 			return (str != null && str.trim().length() > 0) ? Duration.parse(str) : null;
 		}
 
+		/**
+		 * {@link Duration} 값을 초 단위 실수로 변환한다(밀리초 정밀도, 예: 1.5초 → {@code 1.5}).
+		 *
+		 * @param value	변환할 {@link Duration}. {@code null}이면 {@code null}을 반환한다.
+		 * @return 초 단위 값 또는 {@code null}.
+		 */
 		@Override
-		public Long toJdbcObject(Duration value) {
-			return (value != null) ? value.toMillis() : null;
+		public Double toJdbcObject(Duration value) {
+			return (value != null) ? value.toMillis() / 1000.0 : null;
 		}
 
+		/**
+		 * JDBC 값을 {@link Duration}으로 변환한다.
+		 * <p>
+		 * 숫자는 정수·실수 모두 초 단위로 해석하고(실수는 밀리초까지 반올림), 문자열은 ISO-8601 표기
+		 * (예: {@code "PT1.5S"})로 해석한다.
+		 *
+		 * @param jdbcObj	변환할 값. {@code null}이면 {@code null}을 반환한다.
+		 * @return 변환된 {@link Duration} 또는 {@code null}.
+		 * @throws IllegalArgumentException	지원하지 않는 타입의 값인 경우.
+		 */
 		@Override
 		public Duration fromJdbcObject(Object jdbcObj) {
 			if ( jdbcObj == null ) {
@@ -322,10 +337,10 @@ public final class DataTypes {
 				return dur;
 			}
 			else if ( jdbcObj instanceof Long longv ) {
-				return Duration.ofMillis(longv);
+				return Duration.ofSeconds(longv);
 			}
 			else if ( jdbcObj instanceof Integer intv ) {
-				return Duration.ofMillis(intv.longValue());
+				return Duration.ofSeconds(intv.longValue());
 			}
 			else if ( jdbcObj instanceof Double dbv ) {
 				long millis = Math.round(dbv.doubleValue() * 1000);
@@ -344,49 +359,58 @@ public final class DataTypes {
 		}
 	}
 
-	/** {@code xs:date} ↔ {@link Date} 데이터 타입. 값 문자열은 {@code "yyyy-MM-dd"} 형식이다. */
-	public static class DateType extends AbstractDataType<Date> implements DataType<Date> {
-		// SimpleDateFormat은 thread-safe하지 않으므로 스레드별 인스턴스를 사용한다.
-		private static final ThreadLocal<SimpleDateFormat> DATE_FORMATTER
-									= ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy-MM-dd"));
-
+	/**
+	 * {@code xs:date} ↔ {@link LocalDate} 데이터 타입. 값 문자열은 ISO 날짜({@code "yyyy-MM-dd"})이다.
+	 * <p>
+	 * 값 문자열을 읽을 때 시간대 접미사({@code "2026-10-28Z"}, {@code "2026-10-28+09:00"})는 받되 버리고, 날짜 뒤에 다른
+	 * 문자가 있으면 거부한다. 빈 문자열은 {@code null}이다. JDBC로는 {@link java.sql.Date}로 쓴다. 날짜가 아닌 시각 객체
+	 * ({@link Timestamp}, {@link java.util.Date}, {@link Instant})는 JVM 기본 시간대의 날짜로 바꾼다.
+	 */
+	public static class DateType extends AbstractDataType<LocalDate> implements DataType<LocalDate> {
 		private DateType() {
-			super("xs:date", DataTypeDefXsd.DATE, Date.class);
+			super("xs:date", DataTypeDefXsd.DATE, LocalDate.class);
 		}
 
 		@Override
 		public String toValueString(Object obj) {
-			java.sql.Date date = DataUtils.asDate(obj);
-			return (date != null) ? DATE_FORMATTER.get().format(date) : null;
+			LocalDate date = toLocalDate(obj);
+			return (date != null) ? DateTimeFormatter.ISO_LOCAL_DATE.format(date) : null;
 		}
 
 		@Override
-		public Date parseValueString(String str) {
-			try {
-				return (str != null) ? DATE_FORMATTER.get().parse(str) : null;
-			}
-			catch ( ParseException e ) {
-				throw new IllegalArgumentException("Invalid string (not xs:date string): " + str);
-			}
-		}
-
-		@Override
-		public java.sql.Date toJdbcObject(Date value) {
-			return (value != null) ? new java.sql.Date(value.getTime()) : null;
-		}
-
-		@Override
-		public Date fromJdbcObject(Object jdbcObj) {
-			if ( jdbcObj == null ) {
+		public LocalDate parseValueString(String str) {
+			if ( str == null || str.isBlank() ) {
 				return null;
 			}
-			else if ( jdbcObj instanceof String str ) {
-				return parseValueString(str);
+			try {
+				return LocalDate.from(DateTimeFormatter.ISO_DATE.parse(str.trim()));
 			}
-			else {
-				// java.sql.Date 외에 LocalDate, Timestamp 등 java.util.Date도 받는다.
-				return new Date(DataUtils.asDate(jdbcObj).getTime());
+			catch ( DateTimeParseException e ) {
+				throw new IllegalArgumentException("Invalid string (not xs:date string): " + str, e);
 			}
+		}
+
+		@Override
+		public java.sql.Date toJdbcObject(LocalDate value) {
+			return (value != null) ? java.sql.Date.valueOf(value) : null;
+		}
+
+		@Override
+		public LocalDate fromJdbcObject(Object jdbcObj) {
+			return (jdbcObj instanceof String str) ? parseValueString(str) : toLocalDate(jdbcObj);
+		}
+		
+		private static LocalDate toLocalDate(Object obj) {
+			return switch ( obj ) {
+				case null -> null;
+				case LocalDate ld -> ld;
+				case java.sql.Date d -> d.toLocalDate();
+				case Timestamp ts -> ts.toLocalDateTime().toLocalDate();
+				case java.util.Date d -> d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+				case LocalDateTime ldt -> ldt.toLocalDate();
+				case Instant inst -> inst.atZone(ZoneId.systemDefault()).toLocalDate();
+				default -> throw new IllegalArgumentException("Not a date object: " + obj);
+			};
 		}
 	}
 

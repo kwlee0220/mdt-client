@@ -231,11 +231,6 @@ public final class ElementValues {
 	 * {@link #parseJsonNode(JsonNode, ElementValue)}와 동일하지만, {@code proto}를 얻는 작업이
 	 * 원격 접근 등으로 비용이 큰 경우를 위해 실제로 필요한 경우(= {@code @type} 필드가 없는 경우)에만
 	 * {@code protoSupplier}를 호출한다. {@code @type}과 {@code proto}의 타입이 같은지 확인하지 않는 것도 같다.
-	 * <p>
-	 * 2026-11-01 이전 이름은 {@code parseGeneralJsonNode}이다(별칭 없이 바꿈). 또 그 이전에는 {@code @type}을 {@code asText()}로
-	 * 읽어 숫자(예: {@code 5})도 타입 이름으로 받았고, 빈 문자열은 '없음'으로 보았으며, {@code mdt:value:}로 시작하지 않는 타입은
-	 * {@code IllegalArgumentException}으로 거부했다(같은 접두어의 미등록 타입은
-	 * {@code JacksonDeserializationException}이어서 예외 계열이 달랐다).
 	 *
 	 * @param jnode			파싱할 JSON 노드.
 	 * @param protoSupplier	{@code @type} 필드가 없는 경우 참조할 {@link ElementValue} 공급자.
@@ -297,8 +292,7 @@ public final class ElementValues {
 	 * {@link ElementValue} 객체로 반환한다.
 	 * <p>
 	 * 문자열 전체가 JSON 값 하나여야 한다. 첫 값 뒤에 다른 입력이 있으면(예: {@code "3.5 sec"}, {@code "5 garbage"})
-	 * 거부한다. 뒤의 공백·개행은 허용한다. 2026-11-01 이전에는 {@code readTree}로 읽어 첫 값만 쓰고 나머지를 무시했다
-	 * ({@code "5 garbage"} → 5). {@link #updateFromValueJson(SubmodelElement, String)}도 이 메소드를 거친다.
+	 * 거부한다. 뒤의 공백·개행은 허용한다. {@link #updateFromValueJson(SubmodelElement, String)}도 이 메소드를 거친다.
 	 *
 	 * @param valueJsonString 파싱할 JSON 문자열.
 	 * @param proto           참조할 {@link ElementValue} 객체.
@@ -341,7 +335,6 @@ public final class ElementValues {
 	 * 									맞지 않는 경우.
 	 */
 	public static SubmodelElement update(SubmodelElement sme, ElementValue smev) {
-		// 2026-11-01 이전에는 smev가 null이면 오류 메시지를 만들다(smev.getClass()) NullPointerException이 났다.
 		Preconditions.checkNotNullArgument(sme, "SubmodelElement is null");
 		Preconditions.checkNotNullArgument(smev, "ElementValue is null");
 
@@ -375,8 +368,6 @@ public final class ElementValues {
 	/**
 	 * value-only JSON 노드로 {@link SubmodelElement}를 갱신한다. 값은 {@code sme}의 현재 값을 proto로 삼아 해석한다
 	 * ({@link #parseValueJsonNode(JsonNode, ElementValue)}).
-	 * <p>
-	 * 2026-11-01 이전 이름은 {@code update(SubmodelElement, JsonNode)}이다(별칭 없이 바꿈).
 	 *
 	 * @param sme		갱신할 SubmodelElement.
 	 * @param valueNode	값 JSON 노드. JSON {@code null}이면 {@code NullNode}로 넘긴다.
@@ -398,12 +389,10 @@ public final class ElementValues {
 	/**
 	 * AAS 값 문자열({@code xs:*} 표기, 예: {@code abc}, {@code 42})로 {@link SubmodelElement}를 갱신한다.
 	 * JSON 문자열이 아니다 — JSON은 {@link #updateFromValueJson(SubmodelElement, String)}를 쓴다.
-	 * 2026-11-01 이전 이름은 {@code update(SubmodelElement, String)}이다(별칭 없이 바꿈).
 	 * <p>
 	 * {@code sme}가 {@code valueType}이 있는 {@link Property}이면 문자열을 그 데이터 타입으로 해석할 수 있는지 확인한 뒤
 	 * 그대로 기록한다(예: {@code xs:int} 속성에 {@code "42"}는 받고 {@code "abc"}는 거부). 그 밖의 경우는
 	 * {@code xs:string} 값({@link PropertyValue#STRING(String)})으로 갱신한다.
-	 * 2026-11-01 이전에는 대상 타입과 상관없이 문자열 리터럴을 그대로 기록했다.
 	 *
 	 * @param sme	갱신할 SubmodelElement.
 	 * @param value	값 문자열.
@@ -429,8 +418,6 @@ public final class ElementValues {
 	 * {@link #update(SubmodelElement, ElementValue)}에 넘긴다. 따라서 Property의 데이터 타입과 다르면 숫자끼리의
 	 * 손실 없는 변환만 허용된다(예: {@code 5} → {@code xs:long}).
 	 * {@code null}이면 속성 값을 비운다.
-	 * <p>
-	 * 2026-11-01 이전에는 {@code update(SubmodelElement, Integer|Float|Double)} overload였다(별칭 없이 바꿈).
 	 *
 	 * @param sme	갱신할 SubmodelElement.
 	 * @param value	값({@code null} 허용).
@@ -456,7 +443,6 @@ public final class ElementValues {
 	/**
 	 * value-only JSON 문자열로 대상 {@link SubmodelElement}를 갱신한다(예: 문자열 속성이면 {@code "\"abc\""},
 	 * 정수 속성이면 {@code "42"}). AAS 값 문자열은 {@link #updateFromValueString(SubmodelElement, String)}를 쓴다.
-	 * 2026-11-01 이전 이름은 {@code updateWithValueJsonString}이고 반환형이 {@code void}였다(별칭 없이 바꿈).
 	 *
 	 * @param target			갱신할 SubmodelElement.
 	 * @param valueJsonString	값에 해당하는 JSON 문자열.

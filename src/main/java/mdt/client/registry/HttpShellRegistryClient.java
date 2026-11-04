@@ -99,7 +99,7 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 
 	@Override
 	public AssetAdministrationShellDescriptor
-	addAssetAdministrationShellDescriptor(AssetAdministrationShellDescriptor desc) {
+	postAssetAdministrationShellDescriptor(AssetAdministrationShellDescriptor desc) {
 		String url = String.format("%s", m_endpoint);
 		
 		String reqBodyStr = MDTModelSerDe.toJsonString(desc);
@@ -109,7 +109,7 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 
 	@Override
 	public AssetAdministrationShellDescriptor
-	updateAssetAdministrationShellDescriptor(AssetAdministrationShellDescriptor descriptor) {
+	putAssetAdministrationShellDescriptor(AssetAdministrationShellDescriptor descriptor) {
 		String url = String.format("%s", m_endpoint);
 
 		String reqBodyStr = MDTModelSerDe.toJsonString(descriptor);
@@ -118,7 +118,7 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 	}
 
 	@Override
-	public void removeAssetAdministrationShellDescriptorById(String aasId) {
+	public void deleteAssetAdministrationShellDescriptorById(String aasId) {
 		String url = String.format("%s/%s", m_endpoint, AASUtils.encodeBase64UrlSafe(aasId));
 		
 		m_restfulClient.delete(url);
@@ -138,7 +138,7 @@ public class HttpShellRegistryClient implements ShellRegistry, HttpMDTServicePro
 		Endpoint ep = DescriptorUtils.newEndpoint(endpoint, "AAS-3.0");
 		desc.setEndpoints(Arrays.asList(ep));
 		
-		updateAssetAdministrationShellDescriptor(desc);
+		putAssetAdministrationShellDescriptor(desc);
 	}
 	
 	@Override

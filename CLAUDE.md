@@ -1,63 +1,111 @@
 # CLAUDE.md
 
-이 파일은 이 저장소에서 코드를 다룰 때 Claude Code가 참고하는 가이드다.
+Guidance for coding agents working in this repository.
 
-## 프로젝트 개요
+## What this is
 
-`mdt-client`는 ETRI MDT(Manufacturing Digital Twin) 시스템에 접근하기 위한 Java 17
-클라이언트 **라이브러리**다. (실행 가능한 애플리케이션이 아니라 다른 프로젝트가 의존하는 라이브러리)
-MDT Manager의 REST/MQTT 서비스에 HTTP로 접속하여 AAS(Asset Administration Shell) 모델,
-Submodel, 레지스트리, MDTInstance, 워크플로우/태스크를 조작한다.
+`mdt-client` is a Java 21 **library** (no main application) for the ETRI MDT (Manufacturing Digital Twin) system.
+It talks HTTP to MDT Manager and to each MDTInstance's AAS services, and it also holds the model / reference /
+value / workflow types shared by the other MDT projects. Changes to public types ripple into the sibling repos
+under `/home/kwlee/development/mdt/` (`mdt-cli`, `mdt-manager`, `mdt-instance`, `mdt-workflow`,
+`mdt-operation-http`, `mdt-samples`, `mdt-robot-client`).
 
-## 빌드 / 테스트 명령
+User-facing docs (Korean): [README.md](README.md) (whole library),
+[src/main/api/mdt/model/README.md](src/main/api/mdt/model/README.md) (public API by package),
+[src/main/api/mdt/model/sm/ref/README.md](src/main/api/mdt/model/sm/ref/README.md) (references + MdtExpr grammar),
+[src/main/api/mdt/model/sm/ref/CLAUDE.md](src/main/api/mdt/model/sm/ref/CLAUDE.md) (internals of `sm.ref` / `expr`).
+Read the relevant README before changing behavior; update it in the same change when behavior changes.
+
+## Build and test
+
+Gradle is installed globally; there is **no wrapper** (`./gradlew` does not exist). `settings.gradle` includes the
+sibling project `../../common/utils` as `:utils` (composite build).
 
 ```bash
-./gradlew build              # 컴파일 + 테스트
-./gradlew shadowJar          # 의존성 포함 fat jar 생성
-./gradlew test               # 전체 테스트 (JUnit 5)
-./gradlew test --tests "mdt.model.sm.*"   # 특정 패키지 테스트
+gradle compileJava
+gradle :test --tests 'mdt.model.sm.ref.*'       # scope tests; ':test' avoids also running :utils:test
+gradle :test --tests mdt.aas.DataTypesTest
+gradle :test                                    # full mdt-client suite (~340 tests); run it once, alone
+gradle shadowJar                                # fat jar in build/libs (no fixed name / main class)
 ```
 
-- 빌드 버전은 `MDT_BUILD_VERSION` 환경변수로 주입된다(미지정 시 `"unknown"`).
-- 테스트는 JUnit 5(Jupiter) + Mockito 사용. `--add-opens=java.base/java.lang=ALL-UNNAMED` JVM 옵션이 필요하다(`build.gradle`에 설정됨).
+- `MDT_BUILD_VERSION` sets the project version (default `unknown`).
+- JUnit 5 + Mockito; `--add-opens=java.base/java.lang=ALL-UNNAMED` is configured in `build.gradle`.
+- Dependency versions live in `gradle/libs.versions.toml`.
+- After changing a public signature, compile the downstream repos that use it, e.g.
+  `(cd ../mdt-instance && gradle -q compileJava)`. Find users first with
+  `grep -rn --include='*.java' '<name>' /home/kwlee/development/mdt | grep -v /build/`.
+- Iterate with package-scoped test runs. Do not chain several full-suite runs in one command.
 
-## 소스 레이아웃 (중요)
+## Source layout
 
-`build.gradle`에서 main 소스셋은 **세 개의 srcDir**로 구성된다:
+One main source set compiled from three roots, so the same package (`mdt.*`) is split across directories:
 
-- `src/main/java`  — 구현 코드
-- `src/main/api`   — 공개 인터페이스 (예: `mdt.model.MDTManager`, `mdt.model.instance.MDTInstanceManager`)
-- `src/main/antlr` — ANTLR 문법(`MdtExpr.g4`)과 생성/연동 코드
+| Root | Contents |
+| --- | --- |
+| `src/main/api` | Public API: service interfaces, domain types, `ElementReference`/`ElementValue` hierarchies, workflow model. Contains real logic, not just interfaces. |
+| `src/main/java` | HTTP clients (`mdt.client.*`), `Default*` implementations, `mdt.model.expr` (MdtExpr evaluation), `mdt.task.*`, `mdt.rt` (ROS2 conversion), utilities (`AASUtils`, `MDTModelSerDe`, `SubmodelUtils`, `DescriptorUtils`) |
+| `src/main/antlr` | `MdtExpr.g4` + **generated** lexer/parser/visitor under `mdt/model/expr/`. Never hand-edit generated files; regenerate with `(cd src/main/antlr && bash antlr4_script.sh)`. |
+| `src/main/java/mdt/test` | Manual programs that hit a live server. Not JUnit; don't run them as tests. |
+| `src/test/java` | JUnit tests (`mdt.aas`, `mdt.client.*`, `mdt.model.*`, `mdt.task`, `mdt.workflow.model`) |
 
-따라서 인터페이스를 찾을 때는 `src/main/api`를, 구현을 찾을 때는 `src/main/java`를 보라.
-같은 패키지명(`mdt.*`)이 세 디렉토리에 걸쳐 있다.
+`bin/` and `build/` are IDE/Gradle output (git-ignored); ignore them when searching.
 
-## 핵심 진입점
+## Architecture map
 
-- `mdt.model.MDTManager` (api) — 시스템 최상위 인터페이스. `getInstanceManager()`, `getSubmodelRegistry()`, `getWorkflowManager()` 제공.
-- `mdt.client.HttpMDTManager` (java) — `MDTManager`의 HTTP 구현. Builder 패턴으로 생성. MQTT 구독 지원.
-- `mdt.client.MDTClientConfig` — `mdt_client_config.yaml` 로딩 (YAML, 환경변수 보간 지원).
-- `mdt.task.*` — 워크플로 task 유형. 새 유형을 추가할 때는 `TaskDescriptors.CLASS_TO_SHORT_ID_MAP` 등록과 Airflow DAG
-  생성기 연결까지 함께 필요하다. 절차는 `../mdt-workflow/docs/adding-operator.md`를 따른다.
+- **Entry point**: `mdt.model.MDTManager` → `HttpMDTManager` (`connect(url)`, `connect(config)`,
+  `connectWithConfigFile`, `connectWithDefault` via `MDT_CLIENT_HOME`/`mdt_client_config.yaml`/`MDT_URL`).
+  Provides `MDTInstanceManager`, `SubmodelRegistry`, `WorkflowManager`; `getService(Class)` returns `null` for
+  unsupported classes.
+- **Instances** (`mdt.model.instance`, `mdt.client.instance`): `MDTInstanceManager` (lookup, single-condition
+  filter `"<attr> = '<literal>'"` — build literals with `MDTInstanceManager.toFilterLiteral`), `MDTInstance`
+  (`start/stop(pollInterval, timeout)`, AAS/Submodel services, descriptors, parameters). `HttpMDTInstanceClient`
+  caches the descriptor for 3 s.
+- **AAS access** (`mdt.aas`, `mdt.client.registry|repository|resource`): Registry = descriptors, Repository =
+  collections, `SubmodelService` / `AssetAdministrationShellService` = one resource. Elements are addressed by
+  idShortPath (`a.b[0].c`). HTTP `SubmodelService` rejects `Modifier.VALUE`.
+- **Values** (`mdt.model.sm.value`): `ElementValue` = value part of a SubmodelElement. Two JSON forms:
+  typed (`{"@type":"mdt:value:…","value":…}`, self-describing) and value-only (needs a prototype to parse).
+  `ElementValues` is the façade (`getValue`, `update`, `parse*`, `updateFromValueJson`, `updateFromValueString`).
+- **Types** (`mdt.aas.DataTypes`): XSD ↔ Java ↔ JSON ↔ JDBC conversion. `fromDataTypeName` is case-sensitive
+  (`"INT"` or `"xs:int"`). JDBC durations are seconds. Conversions reject lossy input instead of coercing.
+- **References** (`mdt.model.sm.ref`): `ElementReference` = handle to a location. Parse with
+  `ElementReferences.parseExpr` / `parseJsonNode`; MDT references must be `activate(manager)`-ed before use
+  (otherwise `IllegalStateException`); parsing never touches the network. New reference or value types must be
+  registered in the `@type` registry of `ElementReferences` / `ElementValues`.
+- **Entities** (`mdt.model.sm.entity`): annotation-driven mapping (`@PropertyField`, `@SMCollectionField`,
+  `@SMListField`, …) between Java beans and AAS elements via `AbstractSMEContainerEntity` (reflection + public
+  getters/setters, usually Lombok). Domain submodels: `sm.data`, `sm.info`, `sm.ai`, `sm.simulation`, `sm.shape`,
+  `mdt.model.timeseries`.
+- **Operations / tasks**: `SubmodelService.runOperation`, `AASOperationClient`, `mdt.task.*`
+  (`AASOperationTask`, `OperationSubmodelTask`, `SetTask`, `RESTfulRpcTask`, `RESTfulAsyncRpcTask`). Adding a task
+  type also needs `TaskDescriptors.CLASS_TO_SHORT_ID_MAP` and the Airflow side — see
+  `../mdt-workflow/docs/adding-operator.md`.
+- **Workflow** (`mdt.workflow`, `mdt.workflow.model`): `WorkflowModel`, `TaskDescriptor`, `ArgumentSpec`
+  (spec, `mdt:task_arg:*`) vs `mdt.task.TaskArgument` (runtime, `mdt:argument:*`) — different types with similar
+  nested class names. `HttpWorkflowManager` delegates to a remote workflow manager.
 
-## 의존성 메모
+## Conventions
 
-- `:utils` — `../../common/utils`에 위치한 형제 프로젝트(`settings.gradle`). Lombok, logback, 다양한 유틸리티(`utils.*` 패키지)를 이 프로젝트에서 가져온다.
-- AAS 모델: `org.eclipse.digitaltwin.aas4j` (JSON / AASX 데이터포맷)
-- HTTP: Spring `spring-web` (RestClient/HTTP Interface) + OkHttp
-- 직렬화: Jackson (databind, jsr310, yaml)
-- MQTT: Eclipse Paho
-- 표현식: ANTLR 4.13.2
+- Fields: `m_` prefix for instance fields, `s_` for static loggers etc. Lombok is common
+  (`@Getter @Setter`, `@Accessors(prefix="m_")`, `@Delegate`).
+- Argument checks: use `utils.Preconditions` (`checkNotNullArgument`, `checkArgument`, `checkState`) in new code,
+  not Guava's. Its message templates take only `%s` placeholders.
+- Exceptions: domain errors are unchecked (`MDTException` family: `ResourceNotFoundException`,
+  `ResourceAlreadyExistsException`, `InvalidResourceStatusException`, …); remote I/O paths expose `IOException`.
+  HTTP failures surface as `utils.http.RESTfulRemoteException` / `RESTfulIOException`.
+- Lookups returning "maybe absent" use `utils.func.FOption` (not `java.util.Optional`).
+- Comments and Javadoc are written in **Korean**; keep new ones in Korean. Javadoc/comment lines ≤ 110 columns
+  (tab = 4). `@author Kang-Woo Lee (ETRI)`.
+- Javadoc must pass doclint (`-Xdoclint:all`): every public type/member documented, `@param`/`@return`/`@throws`
+  present and accurate.
+- Docs and Javadoc describe current behavior only — no history sentences ("before 2026-11-01 …",
+  "renamed from …"). History belongs in commit messages.
+- Source files use LF line endings; preserve existing endings when editing.
 
-## 코드 컨벤션
+## Working rules
 
-- 필드는 `m_` 접두사를 사용한다 (예: `m_endpoint`, `m_restfulClient`).
-- Lombok 사용 (`@Nullable`은 jetbrains, `@GuardedBy`는 jsr305 — 둘 다 `compileOnly`).
-- Builder 패턴이 클라이언트/매니저 클래스에 광범위하게 쓰인다.
-- 주석/Javadoc은 **한국어**로 작성되어 있다. 새 주석도 한국어로 맞춘다.
-- 저자 태그: `@author Kang-Woo Lee (ETRI)`.
-
-## 코드 수정 정책
-
-- 명시적으로 코드 수정/작성을 요청한 경우에만 코드를 수정한다.
-- 질문·설명·의견 요청에는 답변만 하고 코드는 건드리지 않는다.
+- Modify code only when asked; questions get answers, not edits.
+- Renames of public API are the user's decision: propose (with downstream usage counts), don't apply unasked.
+- Commit or push only when asked. Commit messages are English, imperative subject.
+- Review tracking documents go under `docs/reviews/` (local, not committed) and are deleted when all items are done.

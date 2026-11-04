@@ -42,8 +42,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	/**
 	 * 활성화 시점에 찾은 대상 Submodel의 소속 {@link MDTInstance}. 비활성 상태이면 {@code null}이다.
 	 * <p>
-	 * 이 필드가 활성화 여부({@link #isActivated()})를 결정한다. 재활성화가 실패하면 {@code null}이 된다
-	 * (2026-11-01 이전에는 이전 인스턴스가 남아 활성 상태로 보였다).
+	 * 이 필드가 활성화 여부({@link #isActivated()})를 결정한다. 재활성화가 실패하면 {@code null}이 된다.
 	 */
 	protected volatile MDTInstance m_instance;
 
@@ -252,9 +251,7 @@ public abstract class DefaultSubmodelReference implements MDTSubmodelReference {
 	 * <p>
 	 * {@code submodelId} 필드가 있으면 {@link ByIdSubmodelReference}로, 그렇지 않으면
 	 * {@code instanceId}/{@code submodelIdShort} 필드로 {@link ByIdShortSubmodelReference}를 복원한다.
-	 * 식별자 필드는 비어 있지 않은 JSON 문자열이어야 한다(생성자와 같은 규칙). 2026-11-01 이전에는 숫자·불리언도
-	 * 문자열로 받았고({@code true:42:x} 같은 참조가 만들어졌다), 오류 메시지에 노드 전체를 넣은 일반
-	 * {@link IOException}을 던졌다.
+	 * 식별자 필드는 비어 있지 않은 JSON 문자열이어야 한다(생성자와 같은 규칙).
 	 *
 	 * @param jnode	Submodel 참조 정보를 담은 Json 객체 노드.
 	 * @return 복원된 {@link DefaultSubmodelReference} 객체.

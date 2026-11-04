@@ -92,8 +92,7 @@ public final class OperationVariableValue extends AbstractElementValue {
 	 * value 원소에 순서대로 반영한다.
 	 *
 	 * <p>
-	 * 세 종류 변수의 개수와 {@code null} 값은 반영 전에 모두 확인하므로 이때는 아무 변수도 바뀌지 않는다
-	 * (2026-11-01 이전에는 종류별로 확인해, output 개수가 틀려도 input은 이미 바뀌었다).
+	 * 세 종류 변수의 개수와 {@code null} 값은 반영 전에 모두 확인하므로 이때는 아무 변수도 바뀌지 않는다.
 	 * 그러나 변수 하나의 반영이 실패하면(타입 불일치 등) 앞선 변수들은 이미 바뀐 상태로 남는다(원자적이지 않음).
 	 *
 	 * @param op	갱신할 Operation.

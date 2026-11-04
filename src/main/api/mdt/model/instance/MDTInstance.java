@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import utils.func.FOption;
 
-import mdt.aas.AssetAdministrationShellRegistry;
+import mdt.aas.ShellRegistry;
 import mdt.model.AssetAdministrationShellService;
 import mdt.model.InvalidResourceStatusException;
 import mdt.model.ResourceNotFoundException;
@@ -211,7 +211,7 @@ public interface MDTInstance {
 	 *
 	 * @see	SubmodelService
 	 */
-	@NotNull public List<? extends SubmodelService> getSubmodelServiceAll()
+	@NotNull public List<SubmodelService> getSubmodelServiceAll()
 		throws MDTInstanceManagerException;
 	
 	/**
@@ -277,13 +277,13 @@ public interface MDTInstance {
 	 * <p>
 	 * {@link AssetAdministrationShellDescriptor}를 활용하여 AssetAdministrationShell의
 	 * 등록 정보를 접근할 수 있다.
-	 * {@link AssetAdministrationShellRegistry} 인터페이스를 활용하면 AAS의 식별자를 통해
+	 * {@link ShellRegistry} 인터페이스를 활용하면 AAS의 식별자를 통해
 	 * 동일 정보를 접근할 수 있다.
 	 * 
 	 * @return	{@link AssetAdministrationShellDescriptor} 객체.
 	 *
 	 * @see	AssetAdministrationShellDescriptor
-	 * @see	AssetAdministrationShellRegistry
+	 * @see	ShellRegistry
 	 */
 	@NotNull public AssetAdministrationShellDescriptor getAASShellDescriptor();
 	

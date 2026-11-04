@@ -31,8 +31,7 @@ import mdt.model.sm.ref.timeseries.TimeSeriesRecordsReference;
  * 표현식으로 만든 참조는 모두 {@link MDTElementReference}이므로 {@link #parseExpr(String)}는
  * {@link MDTElementReference}를 돌려준다. 반면 JSON으로만 만들 수 있는 {@link FileStoreReference}는
  * {@link MDTElementReference}가 아니므로 JSON 역직렬화는 {@link ElementReference}를 돌려준다.
- * 참조 활성화는 {@link MDTElementReference#activate(MDTInstanceManager)}를 직접 부른다
- * (2026-11-01에 {@code ElementReferences.activate(ElementReference, MDTInstanceManager)}를 지웠다).
+ * 참조 활성화는 {@link MDTElementReference#activate(MDTInstanceManager)}를 직접 부른다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -46,9 +45,7 @@ public final class ElementReferences {
 	 *
 	 * <p>
 	 * 문자열 전체가 JSON 값 하나여야 하며({@link MDTModelSerDe#readSingleJsonNode(String)}), 읽은 노드를
-	 * {@link #parseJsonNode(JsonNode)}에 넘기므로 예외와 메시지도 그와 같다. 2026-11-01 이전에는
-	 * {@code MDTModelSerDe.readValue}를 거쳐 {@code "null"}이면 {@code null}을 돌려주고, 첫 값 뒤의 입력을
-	 * 무시했으며, 오류 메시지에 JSON 전체를 넣었다.
+	 * {@link #parseJsonNode(JsonNode)}에 넘기므로 예외와 메시지도 그와 같다.
 	 *
 	 * @param jsonStr	{@code @type} 필드를 포함한 Json 문자열.
 	 * @return 복원된 {@link ElementReference} 객체({@code null}이 아님).
@@ -85,17 +82,13 @@ public final class ElementReferences {
 	/**
 	 * 표현식 문자열로부터 {@link DefaultSubmodelReference}를 파싱한다.
 	 * <p>
-	 * 2026-11-01 이전 이름은 {@code parseSubmodelReference}이다(별칭 없이 바꿈). {@link #parseExpr(String)}와
-	 * 짝을 맞췄다.
-	 * <p>
 	 * MdtExpr 문법의 {@code submodelSpec} 규칙을 따른다:
 	 * {@code <instanceId>:[idShort=]<submodelIdShort>} 또는 {@code submodel:id=<submodelId>}.
 	 *
 	 * @param exprStr	Submodel 참조 표현식.
 	 * @return 파싱된 {@link DefaultSubmodelReference} 객체.
 	 * @throws IllegalArgumentException	{@code exprStr}이 {@code null}인 경우.
-	 * @throws MDTParserException	표현식의 문법이 틀렸거나 뒤에 남는 입력이 있는 경우(2026-11-01 이전 문서는
-	 * 								{@code IllegalArgumentException}이라고 잘못 적었다).
+	 * @throws MDTParserException	표현식의 문법이 틀렸거나 뒤에 남는 입력이 있는 경우.
 	 * @see #parseExpr(String)
 	 */
 	public static DefaultSubmodelReference parseSubmodelExpr(String exprStr) {
@@ -123,8 +116,7 @@ public final class ElementReferences {
 	 * @param refExpr	ElementReference 표현식.
 	 * @return 파싱된 {@link MDTElementReference} 객체.
 	 * @throws IllegalArgumentException	{@code refExpr}이 {@code null}이거나, 문법은 맞지만 참조로 만들 수 없는 경우.
-	 * @throws MDTParserException	표현식의 문법이 틀렸거나 뒤에 남는 입력이 있는 경우(2026-11-01 이전에는 후행 입력만
-	 * 								{@code IllegalArgumentException}이었다).
+	 * @throws MDTParserException	표현식의 문법이 틀렸거나 뒤에 남는 입력이 있는 경우.
 	 */
 	public static MDTElementReference parseExpr(String refExpr) {
 		Preconditions.checkNotNullArgument(refExpr, "ElementReference expression is null");

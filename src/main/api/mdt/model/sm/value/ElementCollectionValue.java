@@ -204,8 +204,6 @@ public final class ElementCollectionValue extends AbstractElementValue {
 	 * 않으며(부분 갱신), JSON null인 필드는 그 필드 타입의 null 값으로 변환한다: Property는 값이 {@code null}인
 	 * {@link PropertyValue}(값 지우기)가 되고, 그 밖의 타입은 {@code IOException}으로 거부된다.
 	 * 각 필드의 타입은 템플릿으로부터 결정된다.
-	 * <p>
-	 * 2026-11-01 이전에는 없는 필드와 JSON null 필드를 모두 Java {@code null}로 채워 둘을 구분할 수 없었다.
 	 *
 	 * @param vnode	필드들을 담은 JSON 객체 노드.
 	 * @param smcv	각 필드의 타입 결정에 사용할 대상 ElementCollectionValue.

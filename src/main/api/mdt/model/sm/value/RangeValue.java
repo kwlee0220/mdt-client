@@ -63,8 +63,7 @@ public final class RangeValue<T> extends AbstractElementValue implements DataEle
 	 * 타입 규칙은 {@link PropertyValue#update(org.eclipse.digitaltwin.aas4j.v3.model.Property)}와 같다:
 	 * Range의 {@code valueType}과 같은 타입이면 그대로, {@code xs:string} Range에는 값 문자열로 쓰고,
 	 * 숫자끼리는 손실 없는 변환만 허용하며 그 밖의 불일치는 거부한다. min/max를 모두 변환한 뒤에 기록하므로
-	 * 실패하면 Range는 바뀌지 않는다. 2026-11-01 이전에는 타입을 확인하지 않아 {@code xs:int} Range에
-	 * {@code "abc"}가 그대로 기록됐다.
+	 * 실패하면 Range는 바뀌지 않는다.
 	 *
 	 * @param rg	값을 설정할 Range.
 	 * @throws IllegalArgumentException	Range의 데이터 타입과 맞지 않는 값인 경우.

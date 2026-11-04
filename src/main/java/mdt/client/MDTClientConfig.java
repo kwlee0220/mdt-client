@@ -17,6 +17,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.jetbrains.annotations.Nullable;
 
 import utils.UnitUtils;
+import utils.Utilities;
+import utils.func.FOption;
+import utils.io.FileUtils;
 import utils.io.IOUtils;
 
 
@@ -67,6 +70,47 @@ public final class MDTClientConfig {
 		MDTClientConfig config = mapper.readValue(confYamlString, MDTClientConfig.class);
 		
 		return config;
+	}
+	
+	/** 기본 위치에서 찾는 클라이언트 설정 파일 이름. */
+	public static final String CONFIG_FILE_NAME = "mdt_client_config.yaml";
+	/** {@code MDT_URL} 환경 변수로 설정을 만들 때 쓰는 읽기 제한 시간. */
+	private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
+	
+	/**
+	 * 클라이언트 홈 디렉토리를 반환한다.
+	 *
+	 * @return	환경 변수 {@code MDT_CLIENT_HOME}이 가리키는 디렉토리. 설정되지 않았으면 현재 작업 디렉토리.
+	 */
+	public static File getClientHomeDir() {
+		return Utilities.getEnvironmentVariableFile("MDT_CLIENT_HOME")
+						.orElseGet(FileUtils::getCurrentWorkingDirectory);
+	}
+	
+	/**
+	 * 기본 위치에서 클라이언트 설정을 찾는다.
+	 * <p>
+	 * 클라이언트 홈 디렉토리({@link #getClientHomeDir()})의 {@value #CONFIG_FILE_NAME}을 읽을 수 있으면 그 파일을
+	 * 읽는다. 파일이 없으면 환경 변수 {@code MDT_URL}로 설정을 만든다(읽기 제한 시간 30초). 파일이 있는데 읽지 못하면
+	 * 환경 변수로 넘어가지 않고 예외를 던진다.
+	 *
+	 * @return	찾은 설정. 파일도 {@code MDT_URL}도 없으면 빈 값.
+	 * @throws IOException	설정 파일을 읽거나 해석하지 못한 경우.
+	 */
+	public static FOption<MDTClientConfig> loadDefault() throws IOException {
+		File configFile = FileUtils.path(getClientHomeDir(), CONFIG_FILE_NAME);
+		if ( configFile.canRead() ) {
+			return FOption.of(load(configFile));
+		}
+		
+		String mdtUrl = System.getenv("MDT_URL");
+		if ( mdtUrl == null ) {
+			return FOption.empty();
+		}
+		s_logger.debug("using environment variable 'MDT_URL': {}", mdtUrl);
+		MDTClientConfig config = of(mdtUrl);
+		config.setReadTimeout(DEFAULT_READ_TIMEOUT);
+		return FOption.of(config);
 	}
 	
 	/**

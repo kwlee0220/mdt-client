@@ -1,6 +1,7 @@
 package mdt.client;
 
 import java.io.File;
+import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
@@ -21,7 +22,6 @@ import okhttp3.OkHttpClient;
 
 import utils.InternalException;
 import utils.Throwables;
-import utils.Utilities;
 import utils.http.HttpClientProxy;
 import utils.http.HttpRESTfulClient;
 import utils.http.JacksonErrorEntityDeserializer;
@@ -64,7 +64,6 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 
 //	private static final String RESTFUL_API_VERSION = "/api/v1.0";
 	private static final String RESTFUL_API_VERSION = "";
-	private static final String CLIENT_CONFIG_FILE = "mdt_client_config.yaml";
 	private static final String INSTANCE_MANAGER_SUFFIX = "/instance-manager";
 	private static final String SHELL_REGISTRY_SUFFIX = "/aas_registry/shell-descriptors";
 	/** MDTManager endpoint에 덧붙여 Submodel 레지스트리 endpoint를 구성하는 경로. */
@@ -122,38 +121,19 @@ public class HttpMDTManager implements MDTManager, HttpClientProxy {
 	 * @throws IllegalStateException	설정 파일이 없고 환경변수 {@code MDT_URL}도 설정되지 않은 경우.
 	 */
 	public static HttpMDTManager connectWithDefault() {
-		// 환경변수 MDT_CLIENT_HOME이 설정된 경우 해당 디렉토리에 'mdt_client_config.yaml' 파일이
-		// 존재하면 이를 통해 MDTManager에 접속한다.
-		// 환경변수 MDT_CLIENT_HOME가 존재하지 않는 경우에는 현재 working 디렉토리에서
-		// 'mdt_client_config.yaml' 파일을 확인한다.
-
-		File clientHomeDir = Utilities.getEnvironmentVariableFile("MDT_CLIENT_HOME")
-										.orElseGet(FileUtils::getCurrentWorkingDirectory);
-		File clientConfigFile = FileUtils.path(clientHomeDir, CLIENT_CONFIG_FILE);
-		if ( clientConfigFile.canRead() ) {
-			try {
-				MDTClientConfig config = MDTClientConfig.load(clientConfigFile);
-				return connect(config);
-			}
-			catch ( Throwable e ) {
-				Throwable cause = Throwables.unwrapThrowable(e);
-				String msg = String.format("Failed to read client-config-file (%s), cause=%s", clientConfigFile, cause);
-				s_logger.error(msg);
-				
-				throw new InternalException(msg, cause);
-			}
+		MDTClientConfig config;
+		try {
+			config = MDTClientConfig.loadDefault()
+									.getOrThrow(() -> new IllegalStateException("MDTPlatform URL is missing"));
 		}
-		
-		// client config file이 존재하지 않는 경우에는 환경변수 MDT_URL에 기록된
-		// endpoint 정보를 사용하여 접속을 시도한다.
-		String endpoint = System.getenv("MDT_URL");
-		if ( endpoint == null ) {
-			throw new IllegalStateException("MDTPlatform URL is missing");
+		catch ( IOException e ) {
+			String msg = String.format("Failed to read client-config-file (%s), cause=%s",
+										FileUtils.path(MDTClientConfig.getClientHomeDir(),
+														MDTClientConfig.CONFIG_FILE_NAME), e);
+			s_logger.error(msg);
+			throw new InternalException(msg, e);
 		}
-		
-//		System.out.println("Connecting to MDTManager with URL: " + URL);
-		
-		return connect(endpoint);
+		return connect(config);
 	}
 	
 	/**

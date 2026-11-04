@@ -227,7 +227,7 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	/**
 	 * 인스턴스 시작 실패 시 호출될 리스너를 설정한다.
 	 * <p>
-	 * 별도로 지정하지 않는 경우에는 실패 원인을 표준 출력에 출력하는 기본 리스너가 사용된다.
+	 * 별도로 지정하지 않는 경우에는 실패 원인을 표준 에러에 출력하는 기본 리스너가 사용된다.
 	 *
 	 * @param listener	실패 리스너. 첫 번째 인자는 실패한 인스턴스, 두 번째 인자는 원인 예외.
 	 * 					{@code null}이면 실패 통지를 받지 않음.
@@ -400,13 +400,13 @@ public final class StartInstances extends AbstractThreadedExecution<List<HttpMDT
 	}
 	
 	/**
-	 * 기본 실패 리스너. 인스턴스 시작 실패 정보를 표준 출력에 출력한다.
+	 * 기본 실패 리스너. 인스턴스 시작 실패 정보를 표준 에러에 출력한다.
 	 *
 	 * @param inst	시작에 실패한 인스턴스.
 	 * @param cause	실패 원인.
 	 */
 	private void printStartFailure(HttpMDTInstanceClient inst, Exception cause) {
-		System.out.println("MDTInstance failed to start: " + inst.getId() + ", cause: " + cause);
+		System.err.println("MDTInstance failed to start: " + inst.getId() + ", cause: " + cause);
 	}
 
 	/**

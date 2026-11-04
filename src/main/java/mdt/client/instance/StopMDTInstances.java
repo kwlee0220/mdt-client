@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -79,6 +80,8 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	@GuardedBy("m_guard") private final Map<String,MDTInstance> m_instanceMap = Maps.newHashMap();
 	// 종료 작업을 제출했으나 아직 끝나지 않은 instance 식별자들. 다시 제출하지 않기 위해 관리한다.
 	@GuardedBy("m_guard") private final Set<String> m_inFlight = Sets.newHashSet();
+	/** 마지막 {@link #run()}에서 처리한 인스턴스별 결과(조회 실패 포함). */
+	private final List<InstanceOperationResult> m_results = new CopyOnWriteArrayList<>();
 	
 	private StopMDTInstances(@Nonnull Builder builder) {
 		Preconditions.checkNotNullArgument(builder, "Builder is not provided");
@@ -98,7 +101,8 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	/**
 	 * 설정된 인스턴스들을 종료시킨다.
 	 * <p>
-	 * {@code instanceIdList}로 지정된 인스턴스 중 조회에 실패한 것은 표준 출력에 원인을 출력하고 건너뛴다.
+	 * {@code instanceIdList}로 지정된 인스턴스 중 조회에 실패한 것은 건너뛴다. 인스턴스별 결과(조회·정지 실패 포함)는
+	 * {@link #getResults()}로 알 수 있다.
 	 * 종료 요청 시점에 RUNNING 상태가 아닌 인스턴스에 대해서는 아무 작업도 하지 않는다.
 	 * 모든 대상 인스턴스가 처리될 때까지 대기한다. 직접 만든 실행기는 마지막에 {@code shutdown()} 한다.
 	 *
@@ -110,6 +114,7 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 		boolean ownsExecutor = (m_givenExecutor == null);
 		m_executor = ownsExecutor ? Executors.newFixedThreadPool(m_nthreads) : m_givenExecutor;
 		try {
+			m_results.clear();
 			runWith();
 		}
 		finally {
@@ -141,7 +146,7 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 			List<StartableExecution<Void>> execList
 				= FStream.from(targetInstList)
 						.map(inst -> {
-							StartableExecution<Void> exec = Executions.toExecution(() -> stopInstance(inst),
+							StartableExecution<Void> exec = Executions.toExecution(() -> stopAndRecordFailure(inst),
 																					m_executor);
 							exec.start();
 							return exec;
@@ -173,7 +178,7 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 			
 			for ( MDTInstance freeAgent: freeAgents ) {
 				if ( freeAgent.getStatus() == MDTInstanceStatus.RUNNING ) {
-					StartableExecution<Void> exec = Executions.toExecution(() -> stopInstance(freeAgent),
+					StartableExecution<Void> exec = Executions.toExecution(() -> stopAndRecordFailure(freeAgent),
 																			m_executor);
 					exec.whenFinished(result -> onInstanceFinished(freeAgent));
 					exec.start();
@@ -221,7 +226,7 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	private Try<MDTInstance> tryGetInstance(String id) {
 		return Try.of(() -> m_manager.getInstance(id))
 					.ifFailed(error -> {
-						System.out.printf("Cannot get MDTInstance: id=%s, cause=%s%n", id, error);
+						m_results.add(InstanceOperationResult.failure(id, null, error));
 					});
 	}
 	
@@ -237,23 +242,61 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 		}
 	}
 	
-	private void stopInstance(MDTInstance instance) throws TimeoutException, InterruptedException,
+	/**
+	 * 마지막 {@link #run()}에서 처리한 인스턴스별 결과를 반환한다.
+	 * <p>
+	 * 이 클래스는 메시지를 직접 출력하지 않는다. 출력과 종료 코드는 호출자가 이 결과로 정한다.
+	 * 조회에 실패한 인스턴스는 상태가 {@code null}인 실패 결과로 들어 있다.
+	 *
+	 * @return	결과 목록(변경 불가). 처리 순서는 보장하지 않는다.
+	 */
+	public List<InstanceOperationResult> getResults() {
+		return List.copyOf(m_results);
+	}
+	
+	/**
+	 * 마지막 {@link #run()}에서 조회하지 못했거나 정지 중 오류가 난 인스턴스의 id를 반환한다.
+	 *
+	 * @return	실패한 인스턴스 id 집합(변경 불가). 모두 성공했으면 빈 집합.
+	 */
+	public Set<String> getFailedInstanceIds() {
+		return FStream.from(m_results)
+						.filterNot(InstanceOperationResult::succeeded)
+						.map(InstanceOperationResult::instanceId)
+						.toSet();
+	}
+	
+	private void stopAndRecordFailure(MDTInstance instance) throws TimeoutException, InterruptedException,
+																		ExecutionException {
+		try {
+			MDTInstanceStatus status = stopInstance(instance);
+			m_results.add(InstanceOperationResult.success(instance.getId(), status));
+		}
+		catch ( TimeoutException | InterruptedException | ExecutionException | RuntimeException e ) {
+			m_results.add(InstanceOperationResult.failure(instance.getId(), null, e));
+			throw e;
+		}
+	}
+	
+	private MDTInstanceStatus stopInstance(MDTInstance instance) throws TimeoutException, InterruptedException,
 																ExecutionException {
-		if ( instance.getStatus() == MDTInstanceStatus.RUNNING ) {
+		MDTInstanceStatus status = instance.getStatus();
+		if ( status == MDTInstanceStatus.RUNNING ) {
 			if ( s_logger.isDebugEnabled() ) {
 				s_logger.debug("Stopping MDTInstance[{}]", instance.getId());
 			}
 			
 			if ( m_nowait ) {
-				instance.stop(null, null);
+				status = instance.stop(null, null);
 			}
 			else {
-				instance.stop(m_pollingInterval, m_timeout);
+				status = instance.stop(m_pollingInterval, m_timeout);
 			}
 			if ( s_logger.isInfoEnabled() ) {
 				s_logger.info("Stopped MDTInstance[{}]", instance.getId());
 			}
 		}
+		return status;
 	}
 	
 	/**

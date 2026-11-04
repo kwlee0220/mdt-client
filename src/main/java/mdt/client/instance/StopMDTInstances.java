@@ -268,33 +268,47 @@ public class StopMDTInstances implements CheckedRunnableX<InterruptedException> 
 	
 	private void stopAndRecordFailure(MDTInstance instance) throws TimeoutException, InterruptedException,
 																		ExecutionException {
+		String id = instance.getId();
 		try {
-			MDTInstanceStatus status = stopInstance(instance);
-			m_results.add(InstanceOperationResult.success(instance.getId(), status));
+			// 실행 중이 아니면 정지를 요청하지 않고 현재 상태 그대로 성공으로 기록한다.
+			MDTInstanceStatus status = instance.getStatus();
+			if ( status == MDTInstanceStatus.RUNNING ) {
+				status = requestStop(instance);
+				if ( !isStopSucceeded(status) ) {
+					String msg = String.format("MDTInstance did not stop: id=%s, status=%s", id, status);
+					m_results.add(InstanceOperationResult.failure(id, status, new IllegalStateException(msg)));
+					return;
+				}
+			}
+			m_results.add(InstanceOperationResult.success(id, status));
 		}
 		catch ( TimeoutException | InterruptedException | ExecutionException | RuntimeException e ) {
-			m_results.add(InstanceOperationResult.failure(instance.getId(), null, e));
+			m_results.add(InstanceOperationResult.failure(id, null, e));
 			throw e;
 		}
 	}
 	
-	private MDTInstanceStatus stopInstance(MDTInstance instance) throws TimeoutException, InterruptedException,
+	/**
+	 * 정지를 요청한 뒤의 상태가 성공인지 판정한다.
+	 * <p>
+	 * 완료를 기다리는 경우는 {@link MDTInstanceStatus#STOPPED}만 성공이다. {@code nowait}이면 정지 요청이
+	 * 받아들여진 상태({@link MDTInstanceStatus#STOPPING})도 성공으로 본다.
+	 */
+	private boolean isStopSucceeded(MDTInstanceStatus status) {
+		return status == MDTInstanceStatus.STOPPED
+				|| (m_nowait && status == MDTInstanceStatus.STOPPING);
+	}
+	
+	private MDTInstanceStatus requestStop(MDTInstance instance) throws TimeoutException, InterruptedException,
 																ExecutionException {
-		MDTInstanceStatus status = instance.getStatus();
-		if ( status == MDTInstanceStatus.RUNNING ) {
-			if ( s_logger.isDebugEnabled() ) {
-				s_logger.debug("Stopping MDTInstance[{}]", instance.getId());
-			}
-			
-			if ( m_nowait ) {
-				status = instance.stop(null, null);
-			}
-			else {
-				status = instance.stop(m_pollingInterval, m_timeout);
-			}
-			if ( s_logger.isInfoEnabled() ) {
-				s_logger.info("Stopped MDTInstance[{}]", instance.getId());
-			}
+		if ( s_logger.isDebugEnabled() ) {
+			s_logger.debug("Stopping MDTInstance[{}]", instance.getId());
+		}
+		
+		MDTInstanceStatus status = m_nowait ? instance.stop(null, null)
+											: instance.stop(m_pollingInterval, m_timeout);
+		if ( s_logger.isInfoEnabled() ) {
+			s_logger.info("Stop requested for MDTInstance[{}]: status={}", instance.getId(), status);
 		}
 		return status;
 	}

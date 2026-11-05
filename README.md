@@ -602,12 +602,13 @@ Builder로, REST RPC 태스크는 descriptor를 받는 생성자로 만든다.
 | `startWorkflow(modelId)` | `POST /models/{id}/start` |
 | `getWorkflowAll()`, `getWorkflow(name)` | `GET /workflows`, `GET /workflows/{name}` |
 | `stopWorkflow(name)` | `PUT /workflows/{name}/stop` |
-| `suspendWorkflow(name)`, `resumeWorkflow(name)` | `PUT /workflows/{name}/suspend`, `/resume` |
 | `getWorkflowLog(name, podName)` | `GET /workflows/{name}/log/{podName}` |
 
 모델 id와 실행 이름은 다른 식별자다. `startWorkflow()`가 돌려준 `Workflow.getName()`으로 이후 실행을 조회·중지한다.
 `listWorkflowIds()`와 `getWorkflowStatus()`는 `UnsupportedOperationException`을 던지므로, 목록과 상태는
 `getWorkflowAll()`과 `getWorkflow(name).getStatus()`로 얻는다.
+`suspendWorkflow()`와 `resumeWorkflow()`도 `UnsupportedOperationException`을 던진다(Airflow 엔진에 대응 기능이 없어
+2026-11-05에 서버 엔드포인트를 지웠다).
 
 ---
 

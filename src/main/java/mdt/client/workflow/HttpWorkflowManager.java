@@ -136,22 +136,6 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	}
 
 	@Override
-	public Workflow suspendWorkflow(String wfName) throws ResourceNotFoundException {
-		String url = String.format("%s/workflows/%s/suspend", m_endpoint, wfName);
-
-		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody("");
-		return m_restfulClient.put(url, reqBody, m_wfDeser);
-	}
-
-	@Override
-	public Workflow resumeWorkflow(String wfName) throws ResourceNotFoundException {
-		String url = String.format("%s/workflows/%s/resume", m_endpoint, wfName);
-
-		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody("");
-		return m_restfulClient.put(url, reqBody, m_wfDeser);
-	}
-
-	@Override
 	public String getWorkflowLog(String wfName, String podName) throws ResourceNotFoundException {
 		String url = String.format("%s/workflows/%s/log/%s", m_endpoint, wfName, podName);
 		

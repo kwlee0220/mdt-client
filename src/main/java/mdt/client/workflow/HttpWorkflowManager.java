@@ -1,7 +1,11 @@
 package mdt.client.workflow;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
@@ -118,10 +122,13 @@ public class HttpWorkflowManager implements WorkflowManager, HttpClientProxy {
 	}
 
 	@Override
-	public Workflow startWorkflow(String wfModelId) throws ResourceNotFoundException {
+	public Workflow startWorkflow(String wfModelId, @Nullable String runId) throws ResourceNotFoundException {
 		Preconditions.checkArgument(wfModelId != null, "WorkflowModel id is null");
 		
 		String url = String.format("%s/models/%s/start", m_endpoint, wfModelId);
+		if ( runId != null ) {
+			url += "?runId=" + URLEncoder.encode(runId, StandardCharsets.UTF_8);
+		}
 
 		RequestBody reqBody = HttpRESTfulClient.newJsonRequestBody("");
 		return m_restfulClient.post(url, reqBody, m_wfDeser);

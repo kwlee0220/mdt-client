@@ -599,12 +599,14 @@ Builder로, REST RPC 태스크는 descriptor를 받는 생성자로 만든다.
 | `getWorkflowModelAll()`, `getWorkflowModel(id)` | `GET /models`, `GET /models/{id}` |
 | `addWorkflowModel(model)` | `POST /models` |
 | `addOrReplaceWorkflowModel(model)` | `POST /models?updateIfExists=true` |
-| `startWorkflow(modelId)` | `POST /models/{id}/start` |
+| `startWorkflow(modelId)`, `startWorkflow(modelId, runId)` | `POST /models/{id}/start[?runId=..]` |
 | `getWorkflowAll()`, `getWorkflow(name)` | `GET /workflows`, `GET /workflows/{name}` |
 | `stopWorkflow(name)` | `PUT /workflows/{name}/stop` |
 | `getWorkflowLog(name, podName)` | `GET /workflows/{name}/log/{podName}` |
 
 모델 id와 실행 이름은 다른 식별자다. `startWorkflow()`가 돌려준 `Workflow.getName()`으로 이후 실행을 조회·중지한다.
+`startWorkflow(modelId, runId)`는 실행 id를 클라이언트가 정한다. 같은 `runId`의 실행이 이미 있으면 새로 시작하지 않고 그
+실행을 돌려주므로, 응답을 받지 못한(시간 초과 등) 시작 요청을 같은 `runId`로 다시 보내도 실행은 하나만 생긴다.
 `listWorkflowIds()`와 `getWorkflowStatus()`는 `UnsupportedOperationException`을 던지므로, 목록과 상태는
 `getWorkflowAll()`과 `getWorkflow(name).getStatus()`로 얻는다.
 `suspendWorkflow()`와 `resumeWorkflow()`도 `UnsupportedOperationException`을 던진다(Airflow 엔진에 대응 기능이 없어

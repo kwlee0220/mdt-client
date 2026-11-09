@@ -2,6 +2,8 @@ package mdt.workflow;
 
 import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
 import mdt.model.ResourceNotFoundException;
 
 
@@ -47,13 +49,34 @@ public interface WorkflowInstanceManager {
 	public Workflow getWorkflow(String wfId) throws ResourceNotFoundException;
 
 	/**
-	 * 주어진 워크플로우 모델로부터 새 워크플로우 인스턴스를 생성하고 실행을 시작한다.
+	 * 주어진 워크플로우 모델로부터 새 워크플로우 인스턴스를 생성하고 실행을 시작한다. 실행 식별자는 서버가 정한다.
+	 * <p>
+	 * {@code startWorkflow(wfModelId, null)}과 같다. 응답을 받지 못했을 때 다시 보내도 안전해야 하면
+	 * {@link #startWorkflow(String, String)}에 실행 식별자를 준다.
 	 *
 	 * @param wfModelId	실행할 워크플로우 모델의 식별자.
 	 * @return	새로 생성되어 시작된 워크플로우 인스턴스의 등록정보.
 	 * @throws ResourceNotFoundException	식별자에 해당하는 워크플로우 모델이 존재하지 않는 경우.
 	 */
-	public Workflow startWorkflow(String wfModelId) throws ResourceNotFoundException;
+	public default Workflow startWorkflow(String wfModelId) throws ResourceNotFoundException {
+		return startWorkflow(wfModelId, null);
+	}
+
+	/**
+	 * 주어진 워크플로우 모델로부터 새 워크플로우 인스턴스를 생성하고 실행을 시작한다.
+	 * <p>
+	 * {@code runId}를 주면 그 식별자로 실행을 만든다. 같은 모델에 같은 {@code runId}의 실행이 이미 있으면 새로
+	 * 시작하지 않고 그 실행의 등록정보를 돌려준다. 그래서 응답을 받지 못한 시작 요청을 같은 {@code runId}로 다시
+	 * 보내도 워크플로우는 하나만 생기고, 돌아온 등록정보가 그 요청의 실행임이 보장된다.
+	 *
+	 * @param wfModelId	실행할 워크플로우 모델의 식별자.
+	 * @param runId		실행 식별자. 영문자·숫자·{@code .}·{@code _}·{@code -}로 된 1~200자.
+	 * 					{@code null}이면 서버가 정한다.
+	 * @return	시작된(또는 이미 있던) 워크플로우 인스턴스의 등록정보.
+	 * @throws ResourceNotFoundException	식별자에 해당하는 워크플로우 모델이 존재하지 않는 경우.
+	 * @throws IllegalArgumentException	{@code runId}의 형식이 맞지 않는 경우.
+	 */
+	public Workflow startWorkflow(String wfModelId, @Nullable String runId) throws ResourceNotFoundException;
 
 	/**
 	 * 주어진 식별자에 해당하는 워크플로우 인스턴스의 실행을 중단한다.

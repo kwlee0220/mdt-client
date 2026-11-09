@@ -43,9 +43,9 @@ public class OperationSubmodelTask extends AbstractOperationTask {
 
 	@Override
 	protected AASOperationClient newOperationClient(MDTInstanceManager manager) throws IOException {
-		m_submodelRef.activate(manager);
-
+		// 요소 참조를 활성화하면 m_submodelRef도 함께 활성화된다.
 		var opRef = DefaultElementReference.newInstance(m_submodelRef, IDSHORT_OPERATION);
+		opRef.activate(manager);
 		return new AASOperationClient(opRef, m_pollInterval);
 	}
 

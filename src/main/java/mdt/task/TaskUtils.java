@@ -48,15 +48,19 @@ public final class TaskUtils {
 			opSmRef.activate(manager);
 			Submodel submodel = opSmRef.get().getSubmodel();
 			String semanticId = ReferenceUtils.getSemanticIdStringOrNull(submodel.getSemanticId());
+			String path;
 			if ( AI.SEMANTIC_ID.equals(semanticId) ) {
-				return DefaultElementReference.newInstance(opSmRef, "AIInfo.Model.LastExecutionTime");
+				path = "AIInfo.Model.LastExecutionTime";
 			}
 			else if ( Simulation.SEMANTIC_ID.equals(semanticId) ) {
-				return DefaultElementReference.newInstance(opSmRef, "SimulationInfo.Model.LastExecutionTime");
+				path = "SimulationInfo.Model.LastExecutionTime";
 			}
 			else {
 				throw new TaskException("Invalid Submodel for 'LastExecutionTime': smRef=" + opSmRef);
 			}
+			DefaultElementReference ref = DefaultElementReference.newInstance(opSmRef, path);
+			ref.activate(manager);
+			return ref;
 		}
 		
 		return null;

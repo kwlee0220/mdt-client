@@ -1,19 +1,34 @@
 package mdt.task;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import java.time.Instant;
 
+import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
+import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultSubmodel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
+import utils.func.FOption;
+
+import mdt.model.SubmodelService;
+import mdt.model.instance.MDTInstance;
 import mdt.model.instance.MDTInstanceManager;
+import mdt.model.sm.ai.AI;
+import mdt.model.sm.simulation.Simulation;
 import mdt.model.sm.value.PropertyValue;
 import mdt.workflow.model.ArgumentSpec;
 import mdt.workflow.model.TaskDescriptor;
 
 /**
- * {@link TaskUtils#readArgumentValue}와, 이를 쓰는 RPC 태스크의 입력 처리를 검증한다.
+ * {@link TaskUtils#readArgumentValue}와 이를 쓰는 RPC 태스크의 입력 처리, 그리고
+ * {@link TaskUtils#updateLastExecutionTime}의 갱신 대상을 검증한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -44,4 +59,33 @@ public class TaskUtilsTest {
 		e = Assertions.assertThrows(TaskException.class, () -> new RESTfulAsyncRpcTask(desc).run(manager));
 		Assertions.assertTrue(e.getMessage().startsWith("task-output argument is not resolved"), e.getMessage());
 	}
+
+	@Test
+	public void updateLastExecutionTime_updatesActivatedReferenceOfSimulation() throws Exception {
+		SubmodelService service = mock(SubmodelService.class);
+		runUpdateLastExecutionTime(service, Simulation.SEMANTIC_ID_REFERENCE);
+		verify(service).updateSubmodelElementValueByPath(eq("SimulationInfo.Model.LastExecutionTime"), anyString());
+	}
+
+	@Test
+	public void updateLastExecutionTime_updatesActivatedReferenceOfAI() throws Exception {
+		SubmodelService service = mock(SubmodelService.class);
+		runUpdateLastExecutionTime(service, AI.SEMANTIC_ID_REFERENCE);
+		verify(service).updateSubmodelElementValueByPath(eq("AIInfo.Model.LastExecutionTime"), anyString());
+	}
+
+	private static void runUpdateLastExecutionTime(SubmodelService service, Reference semanticId) throws Exception {
+		when(service.getSubmodel()).thenReturn(new DefaultSubmodel.Builder().semanticId(semanticId).build());
+		MDTInstance instance = mock(MDTInstance.class);
+		when(instance.getSubmodelServiceByIdShort("Op")).thenReturn(FOption.of(service));
+		MDTInstanceManager manager = mock(MDTInstanceManager.class);
+		when(manager.getInstance("inst")).thenReturn(instance);
+
+		TaskDescriptor desc = new TaskDescriptor("t", "", RESTfulRpcTask.class.getName());
+		desc.addLabel(TaskUtils.LABEL_MDT_OPERATION, "inst:Op");
+
+		// 요소 참조가 활성화되지 않으면 IllegalStateException이 발생한다.
+		TaskUtils.updateLastExecutionTime(manager, desc, Instant.now(), LoggerFactory.getLogger(TaskUtilsTest.class));
+	}
 }
+

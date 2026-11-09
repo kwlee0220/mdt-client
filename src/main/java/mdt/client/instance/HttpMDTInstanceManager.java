@@ -8,7 +8,6 @@ import java.util.Map;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import org.apache.commons.io.FilenameUtils;
 import org.eclipse.digitaltwin.aas4j.v3.model.Reference;
 import org.eclipse.digitaltwin.aas4j.v3.model.SubmodelElement;
 
@@ -195,64 +194,21 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 		return getInstanceAllByFilter(filter);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 * <p>
+	 * 원격 매니저의 {@code GET /instances/$count}를 부른다. 2026-11-05 이전에는 서버에 없는
+	 * {@code GET /instances?aggregate=count}를 불러, 서버가 돌려준 목록 JSON을 숫자로 읽다 실패했다.
+	 */
 	@Override
 	public long countInstances() {
-		String url = String.format("%s/instances?aggregate=count", getEndpoint());
+		String url = String.format("%s/instances/$count", getEndpoint());
 		String respBody = m_restfulClient.get(url);
 		return Long.parseLong(respBody);
 	}
 	
-	private static final MediaType OCTET_TYPE = MediaType.parse("application/octet-stream");
-	private static final MediaType JSON_TYPE = MediaType.parse("text/json");
 	private static final MediaType ZIP_TYPE = MediaType.parse("application/zip");
 
-	/**
-	 * 주어진 jar 파일, 초기 모델 파일, 설정 파일을 업로드하여 새 MDTInstance를 추가한다.
-	 * <p>
-	 * 각 파일은 multipart form 데이터로 {@code /instances}에 POST 된다. {@code null}인 파일은 전송하지 않는다.
-	 * 모델 파일의 확장자가 {@code aasx}인 경우에는 {@link MDTInstanceManager#MODEL_AASX_NAME}으로,
-	 * 그렇지 않으면 JSON 모델 파일로 간주하여 {@link MDTInstanceManager#MODEL_FILE_NAME}으로 전송한다.
-	 *
-	 * @param id	추가할 MDTInstance의 식별자.
-	 * @param jarFile	MDTInstance 실행 jar 파일. {@code null}이면 전송하지 않는다.
-	 * @param modelFile	초기 모델 파일 (AASX 또는 JSON). {@code null}이면 전송하지 않는다.
-	 * @param confFile	MDTInstance 설정 파일. {@code null}이면 전송하지 않는다.
-	 * @return	추가된 MDTInstance에 대한 클라이언트 객체.
-	 * @throws MDTInstanceManagerException	MDTInstance 추가에 실패한 경우.
-	 * @throws ResourceAlreadyExistsException	원격 매니저에 동일 식별자의 MDTInstance가 이미 등록된 경우.
-	 */
-	public HttpMDTInstanceClient addInstance(String id, File jarFile, File modelFile, File confFile)
-		throws MDTInstanceManagerException {
-		MultipartBody.Builder builder = new MultipartBody.Builder()
-											.setType(MultipartBody.FORM)
-											.addFormDataPart("id", id);
-		if ( jarFile != null ) {
-			builder = builder.addFormDataPart("jar", MDTInstanceManager.MDT_INSTANCE_JAR_FILE_NAME,
-												RequestBody.create(jarFile, OCTET_TYPE));
-		}
-		if ( modelFile != null ) {
-			if ( FilenameUtils.getExtension(modelFile.getName()).equals("aasx") ) {
-				builder = builder.addFormDataPart("initialModel", MDTInstanceManager.MODEL_AASX_NAME,
-													RequestBody.create(modelFile, OCTET_TYPE));
-			}
-			else {
-				builder = builder.addFormDataPart("initialModel", MDTInstanceManager.MODEL_FILE_NAME,
-													RequestBody.create(modelFile, JSON_TYPE));
-			}
-		}
-		if ( confFile != null ) {
-			builder = builder.addFormDataPart("instanceConf", MDTInstanceManager.CONF_FILE_NAME,
-												RequestBody.create(confFile, JSON_TYPE));
-		}
-
-		String url = String.format("%s/instances", getEndpoint());
-		RequestBody reqBody = builder.build();
-		InstanceDescriptor desc = m_restfulClient.post(url, reqBody, MDTModelSerDes.INSTANCE_DESC_RESP);
-		
-//		return new HttpMDTInstanceClient(this, desc);
-		return createInstance(desc);
-	}
-	
 	/**
 	 * {@inheritDoc}
 	 * <p>
@@ -354,42 +310,6 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 			m_instances.put(desc.getId(), inst);
 			return inst;
 		});
-	}
-
-	/**
-	 * 주어진 jar 파일, 초기 모델 파일, 설정 파일로 MDTInstance 번들 생성을 원격 매니저에 요청한다.
-	 * <p>
-	 * 각 파일은 multipart form 데이터로 {@code /bundles}에 POST 되며, {@code null}인 파일은 전송하지 않는다.
-	 * {@link #addInstance(String, File, File, File)}와 달리 모델 파일은 항상 JSON 모델 파일로 전송된다.
-	 *
-	 * @param id	MDTInstance의 식별자.
-	 * @param jarFile	MDTInstance 실행 jar 파일. {@code null}이면 전송하지 않는다.
-	 * @param modelFile	초기 모델 파일 (JSON). {@code null}이면 전송하지 않는다.
-	 * @param confFile	MDTInstance 설정 파일. {@code null}이면 전송하지 않는다.
-	 * @return	서버가 응답 본문으로 반환한 문자열.
-	 * @throws MDTInstanceManagerException	번들 생성에 실패한 경우.
-	 */
-	public String bundleInstance(String id, File jarFile, File modelFile, File confFile)
-		throws MDTInstanceManagerException {
-		MultipartBody.Builder builder = new MultipartBody.Builder()
-											.setType(MultipartBody.FORM)
-											.addFormDataPart("id", id);
-		if ( jarFile != null ) {
-			builder = builder.addFormDataPart("jar", MDTInstanceManager.MDT_INSTANCE_JAR_FILE_NAME,
-												RequestBody.create(jarFile, OCTET_TYPE));
-		}
-		if ( modelFile != null ) {
-			builder = builder.addFormDataPart("initialModel", MDTInstanceManager.MODEL_FILE_NAME,
-												RequestBody.create(modelFile, JSON_TYPE));
-		}
-		if ( confFile != null ) {
-			builder = builder.addFormDataPart("instanceConf", MDTInstanceManager.CONF_FILE_NAME,
-												RequestBody.create(confFile, JSON_TYPE));
-		}
-
-		String url = String.format("%s/bundles", getEndpoint());
-		RequestBody reqBody = builder.build();
-		return m_restfulClient.post(url, reqBody, HttpRESTfulClient.STRING_DESER);
 	}
 
     // @DeleteMapping("/instances/{id}")

@@ -30,7 +30,7 @@ import mdt.model.MDTModelSerDe;
  * {@code "<예외 클래스 이름>: <예외 메시지>"} 형식을 가지며, {@link #toJavaException()}으로 예외 객체를 복원할 수 있다.
  *
  * @author Kang-Woo Lee (ETRI)
- * @deprecated	{@code mdt-operation-http}의 {@code RpcServerDispatcher}와 URL 및 메시지 형식이 맞지 않아
+ * @deprecated	{@code mdt-operation-http}의 {@code OperationController}와 URL 및 메시지 형식이 맞지 않아
  * 			사용할 수 없다. 대신 {@link utils.rpc.restful.RESTfulAsyncRpcClient}를 사용한다.
  */
 @Deprecated(forRemoval = true)

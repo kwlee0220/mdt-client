@@ -47,7 +47,7 @@ import mdt.model.MDTModelSerDe;
  * 제한 시간이 설정된 경우, 제한 시간이 경과하면 취소를 요청하고 취소된 경우 {@link TimeoutException}을 던진다.
  *
  * @author Kang-Woo Lee (ETRI)
- * @deprecated	{@code mdt-operation-http}의 {@code RpcServerDispatcher}와 URL 및 메시지 형식이 맞지 않아
+ * @deprecated	{@code mdt-operation-http}의 {@code OperationController}와 URL 및 메시지 형식이 맞지 않아
  * 			사용할 수 없다. 대신 {@link utils.rpc.restful.RESTfulAsyncRpcClient}를 사용한다.
  */
 @Deprecated(forRemoval = true)

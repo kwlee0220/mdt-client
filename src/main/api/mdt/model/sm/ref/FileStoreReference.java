@@ -93,7 +93,7 @@ public final class FileStoreReference extends AbstractElementReference implement
 	@Override
 	public void write(SubmodelElement newElm) throws IOException {
 		String jsonStr = MDTModelSerDe.toJsonString(newElm);
-		IOUtils.toFile(jsonStr, m_file);
+		IOUtils.writeString(m_file, jsonStr);
 	}
 
 	@Override

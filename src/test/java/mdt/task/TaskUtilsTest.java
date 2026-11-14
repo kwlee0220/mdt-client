@@ -82,7 +82,7 @@ public class TaskUtilsTest {
 		when(manager.getInstance("inst")).thenReturn(instance);
 
 		TaskDescriptor desc = new TaskDescriptor("t", "", RESTfulRpcTask.class.getName());
-		desc.addLabel(TaskUtils.LABEL_MDT_OPERATION, "inst:Op");
+		desc.addLabel(TaskDescriptor.LABEL_MDT_OPERATION, "inst:Op");
 
 		// 요소 참조가 활성화되지 않으면 IllegalStateException이 발생한다.
 		TaskUtils.updateLastExecutionTime(manager, desc, Instant.now(), LoggerFactory.getLogger(TaskUtilsTest.class));

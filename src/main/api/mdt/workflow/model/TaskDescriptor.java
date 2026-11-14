@@ -1,13 +1,11 @@
 package mdt.workflow.model;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,10 +15,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonIncludeProperties;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -28,7 +26,6 @@ import com.google.common.collect.Sets;
 import utils.InternalException;
 import utils.Preconditions;
 import utils.func.FOption;
-import utils.io.IOUtils;
 import utils.stream.FStream;
 
 import mdt.model.MDTModelSerDe;
@@ -40,8 +37,8 @@ import mdt.model.NameValue;
  * <p>
  * task 식별자, 이름, type(task 구현 클래스 이름 등), 설명, 선행 task 식별자({@code dependencies}),
  * trigger rule, 입력·출력 인자 명세({@link ArgumentSpec}), 옵션({@link Option}), 레이블로 구성된다.
- * 입력·출력 인자 명세와 옵션은 추가된 순서를 유지한다. JSON으로 직렬화되며 {@code null}인 필드는 출력하지
- * 않는다.
+ * 선행 task 식별자, 입력·출력 인자 명세, 옵션은 추가된 순서를 유지한다. JSON으로 직렬화되며 {@code null}인
+ * 필드는 출력하지 않는다. JSON을 읽을 때 알 수 없는 필드(예: {@code inputVariables})가 있으면 오류로 처리한다.
  * <p>
  * <b>동등성:</b> {@code equals}/{@code hashCode}는 식별자({@link #getId()})만 비교한다.
  *
@@ -49,8 +46,6 @@ import mdt.model.NameValue;
  */
 @JsonPropertyOrder({"id", "name", "type", "description", "dependencies", "triggerRule",
 					"inputArguments", "outputArguments", "options", "labels"})
-@JsonIncludeProperties({ "id", "name", "type", "description", "dependencies", "triggerRule",
-					"inputArguments", "outputArguments", "options", "labels" })
 @JsonInclude(Include.NON_NULL)
 public final class TaskDescriptor {
 	/** 호출할 연산 element의 참조 표현식을 지정하는 옵션 이름. */
@@ -63,7 +58,10 @@ public final class TaskDescriptor {
 	public static final String OPTION_POLL_INTERVAL = "poll";    // optional
 	/** task 수행 중 사용할 로그 레벨을 지정하는 옵션 이름. */
 	public static final String OPTION_LOG_LEVEL = "loglevel";
-	/** task가 수행하는 연산 Submodel의 참조 표현식을 담는 레이블 이름. */
+	/**
+	 * task가 수행하는 연산 Submodel의 참조 표현식을 담는 레이블 이름. 이 레이블이 가리키는 AI 또는 Simulation
+	 * Submodel의 {@code LastExecutionTime}은 {@code mdt.task.TaskUtils.updateLastExecutionTime}으로 갱신된다.
+	 */
 	public static final String LABEL_MDT_OPERATION = "mdt-operation";
 	
 	private String m_id;
@@ -71,7 +69,7 @@ public final class TaskDescriptor {
 	private String m_type;
 	private @Nullable String m_description;
 	
-	private Set<String> m_dependencies = new HashSet<>();
+	private Set<String> m_dependencies = new LinkedHashSet<>();
 	private TriggerRule m_triggerRule = TriggerRule.ALL_SUCCESS;
 	private LinkedHashMap<String,ArgumentSpec> m_inputArgumentSpecs = new LinkedHashMap<>();
 	private LinkedHashMap<String,ArgumentSpec.ReferenceArgument> m_outputArgumentSpecs = new LinkedHashMap<>();
@@ -79,10 +77,30 @@ public final class TaskDescriptor {
 	private List<NameValue> m_labels = new ArrayList<>();
 	
 	/**
-	 * 모든 필드가 비어 있는 기술자를 만든다. 주로 JSON 역직렬화에서 사용된다.
+	 * 모든 필드가 비어 있는 기술자를 만든다. 식별자와 type은 {@link #setId(String)}, {@link #setType(String)}으로
+	 * 설정한다.
 	 */
 	public TaskDescriptor() { }
-	
+
+	/**
+	 * JSON 역직렬화에서 식별자와 type으로 기술자를 만든다. 나머지 필드는 setter로 채워진다.
+	 *
+	 * @param id	task 식별자.
+	 * @param type	task type.
+	 * @return	task 기술자.
+	 * @throws IllegalArgumentException	{@code id} 또는 {@code type}이 없거나 공백뿐인 경우.
+	 */
+	@JsonCreator
+	private static TaskDescriptor fromJson(@JsonProperty("id") String id, @JsonProperty("type") String type) {
+		Preconditions.checkArgument(id != null && !id.isBlank(), "task id is missing");
+		Preconditions.checkArgument(type != null && !type.isBlank(), "task type is missing: task=%s", id);
+
+		TaskDescriptor task = new TaskDescriptor();
+		task.m_id = id;
+		task.m_type = type;
+		return task;
+	}
+
 	/**
 	 * 식별자, 이름, type을 갖는 기술자를 만든다. 인자는 검사하지 않는다.
 	 *
@@ -178,7 +196,7 @@ public final class TaskDescriptor {
 	/**
 	 * 이 task보다 먼저 수행되어야 하는 선행 task들의 식별자 집합을 반환한다.
 	 *
-	 * @return	선행 task 식별자 집합 (수정 불가 뷰).
+	 * @return	선행 task 식별자 집합 (추가된 순서, 수정 불가 뷰).
 	 */
 	public Set<String> getDependencies() {
 		return Collections.unmodifiableSet(m_dependencies);
@@ -196,16 +214,12 @@ public final class TaskDescriptor {
 		FStream.of(dependency).forEach(m_dependencies::add);
 	}
 	
-	/**
-	 * 선행 task 식별자 집합을 설정한다. 기존 집합은 대체된다.
-	 *
-	 * @param dependencies	선행 task 식별자들.
-	 * @throws IllegalArgumentException	{@code dependencies}가 {@code null}인 경우.
-	 */
-	public void setDependencies(Iterable<String> dependencies) {
+	// JSON 역직렬화용. 코드에서는 addDependency()로 추가한다.
+	@JsonProperty("dependencies")
+	private void setDependencies(Iterable<String> dependencies) {
 		Preconditions.checkNotNullArgument(dependencies, "dependencies must not be null");
 
-		m_dependencies = Sets.newHashSet(dependencies);
+		m_dependencies = Sets.newLinkedHashSet(dependencies);
 	}
 
 	/**
@@ -242,15 +256,6 @@ public final class TaskDescriptor {
 		m_triggerRule = (rule != null) ? rule : TriggerRule.ALL_SUCCESS;
 	}
 
-	/**
-	 * 주어진 식별자의 입력 인자 명세를 반환한다.
-	 *
-	 * @param argId	입력 인자 식별자.
-	 * @return	입력 인자 명세. 없으면 {@code null}.
-	 */
-	public ArgumentSpec getInputArgument(String argId) {
-		return m_inputArgumentSpecs.get(argId);
-	}
 	/**
 	 * 입력 인자 명세를 추가한다.
 	 *
@@ -351,13 +356,13 @@ public final class TaskDescriptor {
 	}
 	
 	/**
-	 * 옵션 이름을 키로 하는 옵션 맵을 반환한다. 내부 맵을 그대로 반환하므로 수정하면 기술자에 반영된다.
+	 * 옵션 이름을 키로 하는 옵션 맵을 반환한다. 옵션은 {@link #addOption(String, String)}으로 추가한다.
 	 *
-	 * @return	옵션 맵.
+	 * @return	옵션 맵 (추가된 순서, 수정 불가 뷰).
 	 */
 	@NotNull
 	public Map<String,Option> getOptions() {
-		return m_options;
+		return Collections.unmodifiableMap(m_options);
 	}
 	
 	/**
@@ -443,16 +448,33 @@ public final class TaskDescriptor {
 		m_labels.add(NameValue.of(name, value));
 	}
 
-	/**
-	 * 레이블 목록을 설정한다. 기존 목록은 대체된다.
-	 *
-	 * @param labels	레이블들.
-	 * @throws IllegalArgumentException	{@code labels}가 {@code null}인 경우.
-	 */
-	public void setLabels(Iterable<NameValue> labels) {
+	// JSON 역직렬화용. 코드에서는 addLabel()로 추가한다.
+	@JsonProperty("labels")
+	private void setLabels(Iterable<NameValue> labels) {
 		Preconditions.checkNotNullArgument(labels, "labels must not be null");
 		
 		m_labels = Lists.newArrayList(labels);
+	}
+
+	/**
+	 * JSON 역직렬화에서 알 수 없는 필드를 만나면 호출되어 오류를 낸다.
+	 * <p>
+	 * 알 수 없는 필드를 무시하면, 인자를 다른 이름(예: {@code inputVariables})으로 적은 기술자가 인자 없는
+	 * task로 조용히 읽히기 때문이다.
+	 *
+	 * @param name	필드 이름.
+	 * @param value	필드 값 (사용하지 않음).
+	 * @throws IllegalArgumentException	항상.
+	 */
+	@JsonAnySetter
+	private void rejectUnknownField(String name, Object value) {
+		String hint = switch ( name ) {
+			case "inputVariables" -> " (use 'inputArguments')";
+			case "outputVariables" -> " (use 'outputArguments')";
+			default -> "";
+		};
+		throw new IllegalArgumentException(String.format("unknown task descriptor field: '%s'%s, task=%s",
+															name, hint, m_id));
 	}
 
 	/**
@@ -465,29 +487,7 @@ public final class TaskDescriptor {
 	public static TaskDescriptor parseJsonString(String json) throws IOException {
 		return MDTModelSerDe.getJsonMapper().readValue(json, TaskDescriptor.class);
 	}
-	/**
-	 * JSON 파일을 읽어 기술자를 만든다.
-	 *
-	 * @param jsonFile	기술자 JSON 파일.
-	 * @return	task 기술자.
-	 * @throws IOException	파일을 읽지 못했거나, JSON을 기술자로 변환할 수 없는 경우.
-	 */
-	public static TaskDescriptor parseJsonFile(File jsonFile) throws IOException {
-		return MDTModelSerDe.getJsonMapper().readValue(jsonFile, TaskDescriptor.class);
-	}
-	
-	/**
-	 * 기술자 JSON 배열을 담은 파일을 읽어 기술자 목록을 만든다.
-	 *
-	 * @param jsonFile	기술자 JSON 배열 파일.
-	 * @return	task 기술자 목록.
-	 * @throws IOException	파일을 읽지 못했거나, JSON을 기술자 목록으로 변환할 수 없는 경우.
-	 */
-	public static List<TaskDescriptor> parseListJsonFile(File jsonFile) throws IOException {
-		return MDTModelSerDe.getJsonMapper().readValue(jsonFile,
-													new TypeReference<List<TaskDescriptor>>() {});
-	}
-	
+
 	/**
 	 * task의 서명 문자열 {@code <짧은 type>[<id>]: (<입력 인자들>) -> (<출력 인자들>)}을 만든다.
 	 *
@@ -522,55 +522,6 @@ public final class TaskDescriptor {
 			throw new InternalException(msg, e);
 		}
 	}
-	private static final int CHUNK_SIZE = 200;
-	/**
-	 * 이 기술자의 JSON 문자열을 UTF-8 바이트의 Base64 문자열로 인코딩한 뒤 200자 단위 조각으로 나눈다.
-	 * <p>
-	 * {@link #parseEncodedString(List)}로 다시 복원할 수 있다.
-	 *
-	 * @return	Base64 문자열 조각 목록.
-	 * @throws InternalException	JSON 직렬화에 실패한 경우.
-	 */
-	public List<String> toEncodedString() {
-		byte[] bytes = toJsonString().getBytes(StandardCharsets.UTF_8);
-		String fullStr = IOUtils.stringify(bytes);
-		
-	    int length = fullStr.length();
-	    List<String> chunks = new ArrayList<>();
-	    for (int i = 0; i < length; i += CHUNK_SIZE) {
-	        int endIndex = Math.min(i + CHUNK_SIZE, length);
-	        chunks.add(fullStr.substring(i, endIndex));
-	    }
-	    
-	    return chunks;
-	}
-	
-	/**
-	 * {@link #toEncodedString()}으로 만든 Base64 문자열 조각들을 이어 붙여 기술자를 복원한다.
-	 *
-	 * @param chunks	Base64 문자열 조각 목록.
-	 * @return	task 기술자.
-	 * @throws IOException	복원된 JSON을 기술자로 변환할 수 없는 경우.
-	 * @throws InternalException	Base64 디코딩 등 그 밖의 오류가 발생한 경우.
-	 */
-	public static TaskDescriptor parseEncodedString(List<String> chunks) throws IOException {
-		try {
-			String encodedStr = FStream.from(chunks)
-										.fold(new StringBuilder(), StringBuilder::append)
-										.toString();
-
-			byte[] bytes = IOUtils.destringify(encodedStr);
-			String jsonStr = new String(bytes, StandardCharsets.UTF_8);
-			return parseJsonString(jsonStr);
-		}
-		catch ( IOException e ) {
-			// IOException는 그대로 던진다.(InternalException로 wrapping하지 않도록 함)
-			throw e;
-		}
-		catch ( Exception e ) {
-			throw new InternalException("Failed to parse encoded TaskDescriptor", e);
-		}
-	}
 
 	@Override
 	public boolean equals(Object obj) {
@@ -600,20 +551,7 @@ public final class TaskDescriptor {
 	 */
 	@Override
 	public String toString() {
-		String shortType = toShortTaskTypeOrRaw(m_type);
-		String taskName = (m_type == null) ? shortType : switch ( m_type ) {
-			case "mdt.task.SetTask" -> "Set";
-//			case "mdt.task.CopyTask" -> "Copy";
-			case "mdt.task.ProgramTask" -> "Program";
-			case "mdt.task.HttpTask" -> "Http";
-			case "mdt.task.AASOperationTask" -> "AAS";
-			default -> shortType;
-		};
-
-//		String optList = FStream.from(m_options)
-//								.flatMapIterable(Option::toCommandOptionSpec)
-//								.join(", ", "[", "]");
-		return String.format("%s: %s, opts:%s", taskName, formatSignature(shortType), m_options);
+		return String.format("%s, opts:%s", formatSignature(toShortTaskTypeOrRaw(m_type)), m_options);
 	}
 	
 	private static String toShortTaskTypeOrRaw(String type) {

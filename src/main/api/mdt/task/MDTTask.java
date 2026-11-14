@@ -21,13 +21,6 @@ import mdt.workflow.model.TaskDescriptor;
  * @author Kang-Woo Lee (ETRI)
  */
 public interface MDTTask extends Cancellable {
-	/** 태스크 수행 제한 시간을 지정하는 옵션 이름 (선택). {@link TaskDescriptor#OPTION_TIMEOUT}과 같다. */
-	public static final String OPTION_TIMEOUT = TaskDescriptor.OPTION_TIMEOUT;
-	/** 원격 연산의 상태 확인(polling) 주기를 지정하는 옵션 이름 (선택). {@link TaskDescriptor#OPTION_POLL_INTERVAL}과 같다. */
-	public static final String OPTION_POLL_INTERVAL = TaskDescriptor.OPTION_POLL_INTERVAL;
-	/** 태스크 수행 중 사용할 로그 레벨을 지정하는 옵션 이름. {@link TaskDescriptor#OPTION_LOG_LEVEL}과 같다. */
-	public static final String OPTION_LOG_LEVEL = TaskDescriptor.OPTION_LOG_LEVEL;
-	
 	/**
 	 * 태스크 기술자를 반환한다.
 	 * <p>

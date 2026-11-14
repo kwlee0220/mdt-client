@@ -524,7 +524,7 @@ Map<String,SubmodelElement> outputs = task.run(manager);
 | 타입 | 역할 |
 | --- | --- |
 | `WorkflowModel` | 재사용할 모델. id·이름·설명·`taskDescriptors`·`gui` |
-| `TaskDescriptor` | 태스크의 id·Java 타입 이름·dependencies·triggerRule(기본 `all_success`)·입출력 명세·options·labels |
+| `TaskDescriptor` | 태스크의 id·Java 타입 이름·dependencies·triggerRule(기본 `all_success`)·입출력 명세·options·labels. dependencies·명세·options는 추가 순서를 지킨다. JSON에 `id`·`type`이 없거나 알 수 없는 필드(예: `inputVariables`)가 있으면 읽기 오류다. 옵션 이름(`timeout`·`poll`·`loglevel`·`operation`·`operationSubmodel`)과 레이블 이름(`mdt-operation`) 상수도 여기에 있다 |
 | `ArgumentSpec` | 명세 안의 인자. reference·literal·다른 태스크 출력(task-output) |
 | `Workflow` | 실행 한 건의 이름·모델 id·상태·시각·노드 목록 |
 | `NodeTask` | 실행 노드의 메타데이터 |
@@ -712,7 +712,6 @@ gradle test --tests 'mdt.workflow.model.ArgumentSpecRoundTripTest'
 | `HttpOperationClient` | 폐기 예정이며 현재 RPC 서버 계약과 맞지 않는다 |
 | Builder로 만든 태스크 | `getTaskDescriptor()`는 `null`, `cancel()`은 `false` |
 | REST RPC 태스크 | 결과를 돌려줄 뿐 원격 참조에 저장하지 않는다 |
-| `BuiltInTaskTemplates` | 등록된 내장 템플릿이 없다 |
 | `HttpMDTInstanceManager` | MQTT 상태 이벤트를 받아도 인스턴스 정보를 갱신하지 않는다 |
 
 ## 저자

@@ -277,7 +277,7 @@ public class HttpMDTInstanceClient implements MDTInstance, HttpClientProxy {
 					return status;
 				}
 			default:
-				throw new InvalidResourceStatusException("MDTInstance", getId(), status);
+				throw new InvalidResourceStatusException("MDTInstance", "id=" + getId(), status);
 		}
 	}
 

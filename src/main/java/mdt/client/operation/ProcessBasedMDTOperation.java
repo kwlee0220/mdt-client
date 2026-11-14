@@ -233,7 +233,7 @@ public class ProcessBasedMDTOperation extends AbstractThreadedExecution<Map<Stri
 		 */
 		public String read() throws IOException {
 			try {
-				return IOUtils.toString(m_argFile);
+				return IOUtils.readString(m_argFile);
 			}
 			catch ( IOException e ) {
 				throw new IOException("Failed to read output file: " + m_argFile + ", cause=" + e.getMessage());

@@ -83,7 +83,9 @@ One main source set compiled from three roots, so the same package (`mdt.*`) is 
   `../mdt-workflow/docs/adding-operator.md`.
 - **Workflow** (`mdt.workflow`, `mdt.workflow.model`): `WorkflowModel`, `TaskDescriptor`, `ArgumentSpec`
   (spec, `mdt:task_arg:*`) vs `mdt.task.TaskArgument` (runtime, `mdt:argument:*`) — different types with similar
-  nested class names. `HttpWorkflowManager` delegates to a remote workflow manager.
+  nested class names. `HttpWorkflowManager` delegates to a remote workflow manager. `TaskDescriptor` JSON
+  rejects unknown fields (a `@JsonAnySetter` throws, so this holds under Spring's lenient mapper too); a new
+  descriptor field needs a getter/setter pair, not just a JSON key.
 
 ## Conventions
 

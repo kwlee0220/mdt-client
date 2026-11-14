@@ -48,8 +48,8 @@ import mdt.workflow.model.TaskDescriptor;
  * <ul>
  * 	<li>{@value #OPTION_BASE_URL}: RPC 서버의 base URL (필수).</li>
  * 	<li>{@value #OPTION_OPERATION_ENDPOINT}: 호출할 연산의 endpoint (필수).</li>
- * 	<li>{@value MDTTask#OPTION_POLL_INTERVAL}: 세션 상태 확인 주기 (선택, 기본 3초).</li>
- * 	<li>{@value MDTTask#OPTION_TIMEOUT}: 전체 제한 시간 (선택).</li>
+ * 	<li>{@value TaskDescriptor#OPTION_POLL_INTERVAL}: 세션 상태 확인 주기 (선택, 기본 3초).</li>
+ * 	<li>{@value TaskDescriptor#OPTION_TIMEOUT}: 전체 제한 시간 (선택).</li>
  * </ul>
  * 숫자 옵션 값은 초 단위로, 그 밖의 값은 duration 문자열로 해석한다.
  *
@@ -158,7 +158,7 @@ public class RESTfulAsyncRpcTask implements MDTTask, LoggerSettable {
 	}
 	
 	/**
-	 * 기술자의 {@value #OPTION_POLL_INTERVAL} 옵션 값을 초 단위 duration으로 해석해 반환한다.
+	 * 기술자의 {@value TaskDescriptor#OPTION_POLL_INTERVAL} 옵션 값을 초 단위 duration으로 해석해 반환한다.
 	 * <p>
 	 * 접미사 없는 숫자는 초 단위로, 그 밖의 값은 duration 문자열로 해석한다({@link UnitUtils#parseSecondDuration}).
 	 * 실제 호출에도 이 값이 쓰인다.
@@ -167,18 +167,18 @@ public class RESTfulAsyncRpcTask implements MDTTask, LoggerSettable {
 	 * @throws IllegalArgumentException	옵션 값을 duration으로 해석할 수 없는 경우.
 	 */
 	public FOption<Duration> getPollInterval() {
-		return m_descriptor.findOptionValue(OPTION_POLL_INTERVAL)
+		return m_descriptor.findOptionValue(TaskDescriptor.OPTION_POLL_INTERVAL)
 							.map(UnitUtils::parseSecondDuration);
 	}
 	
 	/**
-	 * 기술자의 {@value #OPTION_TIMEOUT} 옵션 값을 초 단위 duration으로 해석해 반환한다.
+	 * 기술자의 {@value TaskDescriptor#OPTION_TIMEOUT} 옵션 값을 초 단위 duration으로 해석해 반환한다.
 	 *
 	 * @return	제한 시간. 옵션이 없으면 {@link FOption#empty()}.
 	 * @throws IllegalArgumentException	옵션 값을 duration으로 해석할 수 없는 경우.
 	 */
 	public FOption<Duration> getTimeout() {
-		return m_descriptor.findOptionValue(OPTION_TIMEOUT)
+		return m_descriptor.findOptionValue(TaskDescriptor.OPTION_TIMEOUT)
 							.map(UnitUtils::parseSecondDuration);
 	}
 

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Objects;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
@@ -30,8 +31,8 @@ import mdt.aas.DataTypes;
  * <p>
  * XSD 데이터 타입별로 구체 하위 클래스({@link StringPropertyValue}, {@link IntegerPropertyValue},
  * {@link FloatPropertyValue}, {@link DoublePropertyValue}, {@link BooleanPropertyValue},
- * {@link DateTimePropertyValue}, {@link DurationPropertyValue}, {@link LongPropertyValue},
- * {@link ShortPropertyValue}, {@link DecimalPropertyValue})가 정의되어 있으며, 각 타입에 대응하는
+ * {@link DateTimePropertyValue}, {@link DatePropertyValue}, {@link DurationPropertyValue},
+ * {@link LongPropertyValue}, {@link ShortPropertyValue}, {@link DecimalPropertyValue})가 정의되어 있으며, 각 타입에 대응하는
  * 정적 팩토리({@link #STRING(String)}, {@link #INTEGER(Integer)} 등)를 제공한다.
  * 값과 문자열/JSON 사이의 변환은 {@link DataType}({@link #getDataType()})이 담당한다.
  * <p>
@@ -248,6 +249,8 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 				return BOOLEAN((v != null) ? DataUtils.asBoolean(v) : null);
 			case DATE_TIME:
 				return DATE_TIME((v != null) ? DataUtils.asInstant(v) : null);
+			case DATE:
+				return DATE(asDate(v));
 			case DURATION:
 				return DURATION(asDuration(v));
 			case LONG:
@@ -270,6 +273,22 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 		}
 		else {
 			return DataTypes.DURATION.parseValueString(v.toString());
+		}
+	}
+
+	private static LocalDate asDate(Object v) {
+		if ( v == null ) {
+			return null;
+		}
+		else if ( v instanceof LocalDate date ) {
+			return date;
+		}
+		else if ( v instanceof String str ) {
+			return DataTypes.DATE.parseValueString(str);
+		}
+		else {
+			// java.sql.Date, Instant, LocalDateTime 등은 DateType이 날짜로 바꾼다.
+			return DataTypes.DATE.parseValueString(DataTypes.DATE.toValueString(v));
 		}
 	}
 
@@ -305,8 +324,8 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 	 * <p>
 	 * 해석은 각 하위 타입의 {@code deserializeValue}(즉 {@link DataType#fromJsonNode(JsonNode)})가 담당한다.
 	 * 지원하는 데이터 타입은 {@code xs:string}, {@code xs:int}, {@code xs:float}, {@code xs:double},
-	 * {@code xs:boolean}, {@code xs:dateTime}, {@code xs:duration}, {@code xs:long}, {@code xs:short},
-	 * {@code xs:decimal}이다.
+	 * {@code xs:boolean}, {@code xs:dateTime}, {@code xs:date}, {@code xs:duration}, {@code xs:long},
+	 * {@code xs:short}, {@code xs:decimal}이다.
 	 *
 	 * @param vnode		값에 해당하는 JSON 노드.
 	 * @param xsdType	값의 XSD 데이터 타입.
@@ -328,6 +347,8 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 				return BooleanPropertyValue.deserializeValue(vnode);
 			case DATE_TIME:
 				return DateTimePropertyValue.deserializeValue(vnode);
+			case DATE:
+				return DatePropertyValue.deserializeValue(vnode);
 			case DURATION:
 				return DurationPropertyValue.deserializeValue(vnode);
 			case LONG:
@@ -394,6 +415,8 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 				return BOOLEAN(DataTypes.BOOLEAN.parseValueString(value));
 			case DATE_TIME:
 				return DATE_TIME(DataTypes.DATE_TIME.parseValueString(value));
+			case DATE:
+				return DATE(DataTypes.DATE.parseValueString(value));
 			case DURATION:
 				return DURATION(DataTypes.DURATION.parseValueString(value));
 			case LONG:
@@ -734,6 +757,82 @@ public abstract sealed class PropertyValue<T> extends AbstractElementValue imple
 		 */
 		public static DateTimePropertyValue deserializeValue(JsonNode vnode) throws IOException {
 			return new DateTimePropertyValue(DataTypes.DATE_TIME.fromJsonNode(vnode));
+		}
+	}
+
+	/**
+	 * 주어진 값을 갖는 {@code xs:date} 타입의 {@link DatePropertyValue}를 생성한다.
+	 *
+	 * @param value	날짜 값({@code null} 허용).
+	 * @return	생성된 {@link DatePropertyValue}.
+	 */
+	public static DatePropertyValue DATE(LocalDate value) {
+		return new DatePropertyValue(value);
+	}
+	/**
+	 * XSD {@code xs:date} 타입 Property 값. 값의 Java 타입은 {@link LocalDate}이다.
+	 * <p>
+	 * 값을 ISO-8601 날짜 문자열({@code "2026-10-19"})로 직렬화한다
+	 * ({@link #toValueJsonString()}/{@link #toValueJsonNode()}/{@link #serializeValue(JsonGenerator)} 재정의).
+	 */
+	public static final class DatePropertyValue extends PropertyValue<LocalDate> {
+		/** polymorphic JSON 직렬화에 사용되는 타입 식별자. */
+		public static final String SERIALIZATION_TYPE = "mdt:value:date";
+		
+		/**
+		 * 주어진 값으로 객체를 생성한다.
+		 *
+		 * @param value	날짜 값({@code null} 허용).
+		 */
+		public DatePropertyValue(LocalDate value) {
+			super(value);
+		}
+
+		@Override
+		public DataType<LocalDate> getDataType() {
+			return DataTypes.DATE;
+		}
+		
+		@Override
+		public LocalDate toValueObject() {
+			return m_value;
+		}
+
+		@Override
+		public String toValueJsonString() {
+			return m_value != null ? "\"" + DataTypes.DATE.toValueString(m_value) + "\"" : "null";
+		}
+
+		@Override
+		public JsonNode toValueJsonNode() {
+			return (m_value != null) ? TextNode.valueOf(DataTypes.DATE.toValueString(m_value))
+										: NullNode.getInstance();
+		}
+
+		@Override
+		public String getSerializationType() {
+			return SERIALIZATION_TYPE;
+		}
+
+		@Override
+		public void serializeValue(JsonGenerator gen) throws IOException {
+			// value-only JSON(toValueJsonString/toValueJsonNode)과 같은 문자열 표현을 쓴다.
+			String str = (m_value != null) ? DataTypes.DATE.toValueString(m_value) : null;
+			gen.writeObject(str);
+		}
+		
+		/**
+		 * JSON 노드를 {@code xs:date} 값으로 해석하여 객체를 생성한다.
+		 * <p>
+		 * polymorphic JSON의 {@code value} 하위 노드나 value-only JSON 노드에 사용된다. JSON {@code null}은
+		 * {@code null} 값으로 해석된다.
+		 *
+		 * @param vnode	값에 해당하는 JSON 노드.
+		 * @return	생성된 객체.
+		 * @throws IOException	JSON 노드를 {@code xs:date} 값으로 해석할 수 없는 경우.
+		 */
+		public static DatePropertyValue deserializeValue(JsonNode vnode) throws IOException {
+			return new DatePropertyValue(DataTypes.DATE.fromJsonNode(vnode));
 		}
 	}
 

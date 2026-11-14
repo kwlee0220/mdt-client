@@ -31,17 +31,10 @@ public final class TaskUtils {
 		throw new AssertionError("Should not be called: class=" + TaskUtils.class.getName());
 	}
 	
-	/**
-	 * 태스크 기술자에서 태스크가 수행하는 연산 Submodel의 참조 표현식을 담는 레이블 이름.
-	 * <p>
-	 * 이 레이블이 가리키는 AI 또는 Simulation Submodel의 {@code LastExecutionTime}이
-	 * {@link #updateLastExecutionTime(MDTInstanceManager, TaskDescriptor, Instant, Logger)}로 갱신된다.
-	 */
-	public static final String LABEL_MDT_OPERATION = "mdt-operation";
 	static DefaultElementReference loadLastExecutionTimeRef(MDTInstanceManager manager,
 															TaskDescriptor descriptor) throws TaskException {
 		DefaultSubmodelReference opSmRef
-						= descriptor.findLabel(LABEL_MDT_OPERATION)
+						= descriptor.findLabel(TaskDescriptor.LABEL_MDT_OPERATION)
 									.map(smExprStr -> MDTExpressionParser.parseSubmodelReference(smExprStr).evaluate())
 									.getOrNull();
 		if ( opSmRef != null ) {
@@ -67,7 +60,7 @@ public final class TaskUtils {
 	}
 
 	/**
-	 * 태스크 기술자에 {@link #LABEL_MDT_OPERATION} 레이블이 있으면, 그 레이블이 가리키는 연산 Submodel의
+	 * 태스크 기술자에 {@link TaskDescriptor#LABEL_MDT_OPERATION} 레이블이 있으면, 그 레이블이 가리키는 연산 Submodel의
 	 * {@code LastExecutionTime}을 {@code startTime}부터 현재까지의 경과 시간으로 갱신한다.
 	 * <p>
 	 * 대상 Submodel이 AI이면 {@code AIInfo.Model.LastExecutionTime}을, Simulation이면

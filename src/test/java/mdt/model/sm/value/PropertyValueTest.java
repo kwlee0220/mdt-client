@@ -3,14 +3,18 @@ package mdt.model.sm.value;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
 import org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.databind.node.TextNode;
+
 import mdt.aas.DataTypes;
 import mdt.model.sm.value.PropertyValue.BooleanPropertyValue;
+import mdt.model.sm.value.PropertyValue.DatePropertyValue;
 import mdt.model.sm.value.PropertyValue.DateTimePropertyValue;
 import mdt.model.sm.value.PropertyValue.DoublePropertyValue;
 import mdt.model.sm.value.PropertyValue.DurationPropertyValue;
@@ -203,6 +207,45 @@ public class PropertyValueTest {
 		prop.setValueType(DataTypeDefXsd.DATE_TIME);
 		ElementValues.updateFromValueJson(prop, DATE_TIME_VALUE_JSON);
 		Assertions.assertEquals("2023-10-01T12:00:00", prop.getValue());
+	}
+	
+	private static final String DATE_JSON = "{\"@type\":\"mdt:value:date\",\"value\":\"2026-10-19\"}";
+	private static final String DATE_NULL_JSON = "{\"@type\":\"mdt:value:date\",\"value\":null}";
+	private static final String DATE_VALUE_JSON = "\"2026-10-19\"";
+	@Test
+	public void testDatePropertyValue() throws IOException {
+		LocalDate date = LocalDate.of(2026, 10, 19);
+		DatePropertyValue value = PropertyValue.DATE(date);
+		Assertions.assertEquals(DATE_JSON, value.toJsonString());
+		Assertions.assertEquals(DATE_VALUE_JSON, value.toValueJsonString());
+		Assertions.assertEquals("2026-10-19", value.toValueJsonNode().asText());
+
+		value = PropertyValue.DATE(null);
+		Assertions.assertEquals(DATE_NULL_JSON, value.toJsonString());
+		Assertions.assertEquals("null", value.toValueJsonString());
+
+		ElementValue ev = ElementValues.parseJsonString(DATE_JSON);
+		Assertions.assertEquals(date, ((DatePropertyValue)ev).toValueObject());
+		ev = ElementValues.parseJsonString(DATE_NULL_JSON);
+		Assertions.assertNull(((DatePropertyValue)ev).toValueObject());
+
+		// xs:date Property 갱신·생성
+		DefaultProperty prop = new DefaultProperty();
+		prop.setValueType(DataTypeDefXsd.DATE);
+		ElementValues.updateFromValueJson(prop, DATE_VALUE_JSON);
+		Assertions.assertEquals("2026-10-19", prop.getValue());
+		Assertions.assertEquals(date, ((DatePropertyValue)PropertyValue.from(prop)).toValueObject());
+
+		// 값 JSON 노드·값 객체로부터 생성
+		PropertyValue<?> pv = PropertyValue.parseValueJsonNode(new TextNode("2026-10-19"), DataTypeDefXsd.DATE);
+		Assertions.assertEquals(date, pv.toValueObject());
+		Assertions.assertEquals(date, PropertyValue.fromValueObject("2026-10-19", DataTypeDefXsd.DATE).toValueObject());
+		Assertions.assertEquals(date, PropertyValue.fromValueObject(date, DataTypeDefXsd.DATE).toValueObject());
+		Assertions.assertEquals(date, PropertyValue.fromValueObject(java.sql.Date.valueOf(date), DataTypeDefXsd.DATE)
+												.toValueObject());
+		Assertions.assertNull(PropertyValue.fromValueObject(null, DataTypeDefXsd.DATE).toValueObject());
+		Assertions.assertThrows(IOException.class,
+								() -> PropertyValue.parseValueJsonNode(new TextNode("2026/10/19"), DataTypeDefXsd.DATE));
 	}
 	
 	private static final String DURATION_JSON = "{\"@type\":\"mdt:value:duration\",\"value\":\"PT11S\"}";

@@ -30,6 +30,7 @@ import mdt.model.MDTModelSerDe;
 import mdt.model.expr.MDTExpressionParser;
 import mdt.model.expr.MDTParserException;
 import mdt.model.sm.value.PropertyValue.BooleanPropertyValue;
+import mdt.model.sm.value.PropertyValue.DatePropertyValue;
 import mdt.model.sm.value.PropertyValue.DateTimePropertyValue;
 import mdt.model.sm.value.PropertyValue.DecimalPropertyValue;
 import mdt.model.sm.value.PropertyValue.DoublePropertyValue;
@@ -80,6 +81,7 @@ public final class ElementValues {
 			.register(DoublePropertyValue.SERIALIZATION_TYPE, onValue(DoublePropertyValue::deserializeValue))
 			.register(BooleanPropertyValue.SERIALIZATION_TYPE, onValue(BooleanPropertyValue::deserializeValue))
 			.register(DateTimePropertyValue.SERIALIZATION_TYPE, onValue(DateTimePropertyValue::deserializeValue))
+			.register(DatePropertyValue.SERIALIZATION_TYPE, onValue(DatePropertyValue::deserializeValue))
 			.register(DurationPropertyValue.SERIALIZATION_TYPE, onValue(DurationPropertyValue::deserializeValue))
 			.register(LongPropertyValue.SERIALIZATION_TYPE, onValue(LongPropertyValue::deserializeValue))
 			.register(ShortPropertyValue.SERIALIZATION_TYPE, onValue(ShortPropertyValue::deserializeValue))

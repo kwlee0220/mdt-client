@@ -22,7 +22,6 @@ import mdt.task.SetTask;
 import mdt.task.OperationSubmodelTask;
 import mdt.task.RESTfulAsyncRpcTask;
 import mdt.task.RESTfulRpcTask;
-import mdt.task.TaskUtils;
 
 
 /**
@@ -79,7 +78,7 @@ public class TaskDescriptors {
 	 * 참조가 가리키는 AAS 연산의 입력·출력 변수마다 연산 인자 참조({@code oparg:...})를 가리키는 인자 명세를
 	 * 만들어 기술자에 추가한다. 인자 이름은 변수의 idShort이다.
 	 * <p>
-	 * 연산이 속한 Submodel이 AI 또는 Simulation Submodel이면 {@link TaskUtils#LABEL_MDT_OPERATION} 레이블에
+	 * 연산이 속한 Submodel이 AI 또는 Simulation Submodel이면 {@link TaskDescriptor#LABEL_MDT_OPERATION} 레이블에
 	 * 그 Submodel 참조 표현식을 추가한다. 입출력(inoutput) 변수는 다루지 않는다.
 	 *
 	 * @param opRef			활성화된 연산 element 참조. Submodel 참조가 {@link DefaultSubmodelReference}여야 한다.
@@ -113,7 +112,7 @@ public class TaskDescriptors {
 
 		Submodel sm = smRef.get().getSubmodel();
 		if ( SubmodelUtils.isAISubmodel(sm) || SubmodelUtils.isSimulationSubmodel(sm) ) {
-			descriptor.addLabel(TaskUtils.LABEL_MDT_OPERATION, smRef.toStringExpr());
+			descriptor.addLabel(TaskDescriptor.LABEL_MDT_OPERATION, smRef.toStringExpr());
 		}
 	}
 	

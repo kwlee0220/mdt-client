@@ -45,7 +45,7 @@ import mdt.workflow.model.TaskDescriptor;
  * 대기한다. 응답의 출력 중 기술자의 출력 인자와 이름이 같은 값을 해당 인자가 가리키는 요소의 현재 값에
  * 반영하여 반환한다. 이때 반영된 값을 요소에 다시 기록하지는 않는다.
  * <p>
- * 사용하는 기술자 옵션은 {@value #OPTION_URL}(연산 URL, 필수)과 {@value MDTTask#OPTION_TIMEOUT}(호출 전체
+ * 사용하는 기술자 옵션은 {@value #OPTION_URL}(연산 URL, 필수)과 {@value TaskDescriptor#OPTION_TIMEOUT}(호출 전체
  * 제한 시간, 초 단위, 선택)이다. 제한 시간이 없으면 응답을 무제한 기다린다.
  *
  * @author Kang-Woo Lee (ETRI)
@@ -171,7 +171,7 @@ public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 	}
 	
 	/**
-	 * 기술자의 {@value #OPTION_POLL_INTERVAL} 옵션 값을 초 단위 duration으로 해석해 반환한다.
+	 * 기술자의 {@value TaskDescriptor#OPTION_POLL_INTERVAL} 옵션 값을 초 단위 duration으로 해석해 반환한다.
 	 * <p>
 	 * 동기 호출에서는 polling을 하지 않으므로 이 값은 태스크 수행에 사용되지 않는다.
 	 *
@@ -179,18 +179,18 @@ public class RESTfulRpcTask implements MDTTask, LoggerSettable {
 	 * @throws IllegalArgumentException	옵션 값을 duration으로 해석할 수 없는 경우.
 	 */
 	public FOption<Duration> getPollInterval() {
-		return m_descriptor.findOptionValue(OPTION_POLL_INTERVAL)
+		return m_descriptor.findOptionValue(TaskDescriptor.OPTION_POLL_INTERVAL)
 							.map(UnitUtils::parseSecondDuration);
 	}
 	
 	/**
-	 * 기술자의 {@value #OPTION_TIMEOUT} 옵션 값을 초 단위 duration으로 해석해 반환한다.
+	 * 기술자의 {@value TaskDescriptor#OPTION_TIMEOUT} 옵션 값을 초 단위 duration으로 해석해 반환한다.
 	 *
 	 * @return	제한 시간. 옵션이 없으면 {@link FOption#empty()}.
 	 * @throws IllegalArgumentException	옵션 값을 duration으로 해석할 수 없는 경우.
 	 */
 	public FOption<Duration> getTimeout() {
-		return m_descriptor.findOptionValue(OPTION_TIMEOUT)
+		return m_descriptor.findOptionValue(TaskDescriptor.OPTION_TIMEOUT)
 							.map(UnitUtils::parseSecondDuration);
 	}
 

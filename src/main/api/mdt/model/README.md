@@ -372,7 +372,7 @@ stateDiagram-v2
 
 | 클래스 | AAS 요소 | `@type` | 값 JSON 형태 |
 | --- | --- | --- | --- |
-| `PropertyValue<T>` (하위 10종) | Property | `mdt:value:string`, `integer`, `float`, `double`, `boolean`, `dateTime`, `duration`, `long`, `short`, `decimal` | Java 값 그대로 (Duration은 ISO-8601 문자열) |
+| `PropertyValue<T>` (하위 11종) | Property | `mdt:value:string`, `integer`, `float`, `double`, `boolean`, `dateTime`, `date`, `duration`, `long`, `short`, `decimal` | Java 값 그대로 (Duration·Date는 ISO-8601 문자열) |
 | `MultiLanguagePropertyValue` | MultiLanguageProperty | `mdt:value:mlprop` | `[{"ko": "…"}, …]` |
 | `RangeValue<T>` | Range | `mdt:value:range` | `{"min": …, "max": …}` |
 | `FileValue` | File | `mdt:value:file` | `{"contentType": …, "value": …}` |

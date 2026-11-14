@@ -62,7 +62,7 @@ public final class MDTClientConfig {
 	public static MDTClientConfig load(File configFile) throws IOException {
 		s_logger.debug("reading a configuration from {}", configFile.getAbsolutePath());
 		
-		String confYamlString = IOUtils.toString(configFile);
+		String confYamlString = IOUtils.readString(configFile);
 		StringSubstitutor interpolator = StringSubstitutor.createInterpolator();
 		confYamlString = interpolator.replace(confYamlString);
 		

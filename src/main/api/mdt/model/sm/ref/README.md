@@ -897,9 +897,9 @@ task.run(manager);
 
 ```bash
 # 요소 조회
-mdt get element --ref 'param:line-01:Temperature' -o value
-mdt get element --ref 'line-01:Data:DataInfo.Equipment' -o json
-mdt get element --ref 'timeseries:line-01:Log#last=10|current,power' -o json
+mdt get element 'param:line-01:Temperature' -o value
+mdt get element 'line-01:Data:DataInfo.Equipment' -o json
+mdt get element 'timeseries:line-01:Log#last=10|current,power' -o json
 
 # 파일 요소
 mdt get file    'param:line-01:Manual' -f ./manual.pdf

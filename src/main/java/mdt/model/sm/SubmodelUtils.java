@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import org.eclipse.digitaltwin.aas4j.v3.model.AasSubmodelElements;
 import org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd;
+import org.eclipse.digitaltwin.aas4j.v3.model.Entity;
 import org.eclipse.digitaltwin.aas4j.v3.model.Key;
 import org.eclipse.digitaltwin.aas4j.v3.model.KeyTypes;
 import org.eclipse.digitaltwin.aas4j.v3.model.Property;
@@ -41,6 +42,7 @@ import com.google.common.collect.Maps;
 import utils.CSV;
 import utils.Indexed;
 import utils.InternalException;
+import utils.KeyValue;
 import utils.Preconditions;
 import utils.func.Funcs;
 import utils.func.Try;
@@ -335,6 +337,55 @@ public final class SubmodelUtils {
 	public static <T extends SubmodelElement> T traverse(SubmodelElement start, String idShortPath, Class<T> targetClass)
 		throws ResourceNotFoundException {
 		return cast(traverse(start, idShortPath), targetClass);
+	}
+	
+	/**
+	 * 주어진 Submodel에 포함된 모든 SubmodelElement를 깊이 우선 순서로 순회하여
+	 * (idShortPath, SubmodelElement) 쌍의 스트림으로 반환한다.
+	 * <p>
+	 * {@link SubmodelElementCollection}, {@link SubmodelElementList}, {@link Entity}(statements)의
+	 * 하위 요소까지 순회하며, 부모 요소가 자식 요소보다 먼저 나온다.
+	 * {@link SubmodelElementList}의 하위 요소는 경로에 {@code [index]} 형태로 표현된다
+	 * (예: {@code "Collection.List[0].Field"}).
+	 *
+	 * @param submodel	순회 대상 Submodel.
+	 * @return	(idShortPath, SubmodelElement) 쌍의 스트림.
+	 */
+	public static FStream<KeyValue<String,SubmodelElement>> walk(Submodel submodel) {
+		Preconditions.checkNotNullArgument(submodel, "submodel is null");
+		
+		List<KeyValue<String,SubmodelElement>> collected = Lists.newArrayList();
+		walkChildren("", submodel.getSubmodelElements(), collected);
+		return FStream.from(collected);
+	}
+	
+	private static void walkChildren(String parentPath, List<SubmodelElement> children,
+									List<KeyValue<String,SubmodelElement>> collected) {
+		if ( children == null ) {
+			return;
+		}
+		for ( SubmodelElement child: children ) {
+			String path = parentPath.isEmpty() ? child.getIdShort() : parentPath + "." + child.getIdShort();
+			walkElement(path, child, collected);
+		}
+	}
+	
+	private static void walkElement(String path, SubmodelElement sme,
+									List<KeyValue<String,SubmodelElement>> collected) {
+		collected.add(KeyValue.of(path, sme));
+		
+		if ( sme instanceof SubmodelElementCollection smc ) {
+			walkChildren(path, smc.getValue(), collected);
+		}
+		else if ( sme instanceof Entity entity ) {
+			walkChildren(path, entity.getStatements(), collected);
+		}
+		else if ( sme instanceof SubmodelElementList sml && sml.getValue() != null ) {
+			List<SubmodelElement> members = sml.getValue();
+			for ( int i = 0; i < members.size(); ++i ) {
+				walkElement(path + "[" + i + "]", members.get(i), collected);
+			}
+		}
 	}
 	
 	/**
@@ -827,13 +878,15 @@ public final class SubmodelUtils {
 	}
 	
 	/**
-	 * 주어진 SubmodelElement가 Operation SubmodelElement인지 여부를 반환한다.
+	 * 주어진 SubmodelElement가 공정 인스턴스({@link Operation}, semanticId가
+	 * {@link Operation#SEMANTIC_ID})를 표현하는 요소인지 여부를 반환한다.
+	 * <p>
+	 * AAS의 {@code Operation} SubmodelElement 여부를 검사하는 것이 아니다.
 	 *
 	 * @param element 검사 대상 SubmodelElement 객체.
-	 * @return 주어진 SubmodelElement가 Operation SubmodelElement인 경우에는 true, 그렇지 않은
-	 *         경우에는 false.
+	 * @return 주어진 SubmodelElement가 공정 인스턴스인 경우에는 true, 그렇지 않은 경우에는 false.
 	 */
-	public static boolean isAASOperation(SubmodelElement element) {
+	public static boolean isProcessInstance(SubmodelElement element) {
 		String semanticId = ReferenceUtils.getSemanticIdStringOrNull(element.getSemanticId());
 		return Operation.SEMANTIC_ID.equals(semanticId);
 	}

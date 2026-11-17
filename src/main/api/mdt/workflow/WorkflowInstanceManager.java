@@ -95,8 +95,7 @@ public interface WorkflowInstanceManager {
 	 * @return	일시정지된 후의 워크플로우 등록정보.
 	 * @throws ResourceNotFoundException	식별자에 해당하는 워크플로우가 존재하지 않는 경우.
 	 * @throws UnsupportedOperationException	워크플로우 엔진이 일시정지를 지원하지 않는 경우(기본 구현).
-	 * 			현재 엔진(Airflow)은 지원하지 않으며, 2026-11-05에 RESTful 엔드포인트
-	 * 			{@code PUT /workflows/{id}/suspend}를 지웠다.
+	 * 			현재 엔진(Airflow)은 지원하지 않으며, RESTful 엔드포인트도 없다.
 	 */
 	public default Workflow suspendWorkflow(String wfId) throws ResourceNotFoundException {
 		throw new UnsupportedOperationException("suspendWorkflow is not supported");
@@ -109,8 +108,7 @@ public interface WorkflowInstanceManager {
 	 * @return	재개된 후의 워크플로우 등록정보.
 	 * @throws ResourceNotFoundException	식별자에 해당하는 워크플로우가 존재하지 않는 경우.
 	 * @throws UnsupportedOperationException	워크플로우 엔진이 재개를 지원하지 않는 경우(기본 구현).
-	 * 			현재 엔진(Airflow)은 지원하지 않으며, 2026-11-05에 RESTful 엔드포인트
-	 * 			{@code PUT /workflows/{id}/resume}을 지웠다.
+	 * 			현재 엔진(Airflow)은 지원하지 않으며, RESTful 엔드포인트도 없다.
 	 */
 	public default Workflow resumeWorkflow(String wfId) throws ResourceNotFoundException {
 		throw new UnsupportedOperationException("resumeWorkflow is not supported");

@@ -112,7 +112,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void literalWithoutValue_isRejected() {
-		// 이전에는 IllegalArgumentException("JsonNode is null")이었다.
+		// value 필드 누락은 필드 이름을 담은 JacksonDeserializationException으로 보고한다.
 		String json = "{\"@type\":\"mdt:task_arg:literal\",\"id\":\"x\"}";
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
 															() -> ArgumentSpec.parseJsonNode(tree(json)));
@@ -121,7 +121,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void parseJsonNodeAndString_rejectNull() {
-		// 이전에는 MDTModelSerDe를 거쳐 null·JSON null·"null"에 대해 null을 돌려줬다.
+		// null·JSON null·"null"에 대해 null을 돌려주지 않고 거부한다.
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ArgumentSpec.parseJsonNode(null));
 		Assertions.assertThrows(JacksonDeserializationException.class,
 								() -> ArgumentSpec.parseJsonNode(com.fasterxml.jackson.databind.node.NullNode.getInstance()));
@@ -131,7 +131,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void parseJsonString_reportsMissingFieldWithoutDumpingJson() {
-		// 이전에는 MDTModelSerDe가 JSON 전체를 메시지에 넣은 IOException으로 감쌌다.
+		// 필드 누락 메시지에 JSON 전체를 넣지 않는다.
 		String json = "{\"@type\":\"mdt:task_arg:task-output\",\"id\":\"x\",\"taskId\":\"t\"}";
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
 															() -> ArgumentSpec.parseJsonString(json));
@@ -155,7 +155,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void reference_rejectsInvalidExpressionAtConstruction() {
-		// 이전에는 생성 시점에 검증하지 않아 태스크를 실행할 때에야 드러났다.
+		// 잘못된 표현식은 태스크를 실행할 때가 아니라 생성 시점에 거부한다.
 		MDTParserException e = Assertions.assertThrows(MDTParserException.class,
 															() -> ArgumentSpec.reference("x", "param:"));
 		Assertions.assertTrue(e.getMessage().startsWith("invalid reference expression: 'param:'"), e.getMessage());
@@ -179,7 +179,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void blankId_isRejected() {
-		// 이전에는 빈 식별자도 받아들였다.
+		// 빈 식별자는 거부한다.
 		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
 															() -> ArgumentSpec.literal(" ", 1));
 		Assertions.assertEquals("id is blank", e.getMessage());
@@ -191,7 +191,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void nullBoxedLiteral_isRejected() {
-		// 이전에는 값이 빈 PropertyValue를 가진 리터럴이 만들어졌다.
+		// 값이 빈 PropertyValue를 가진 리터럴을 만들지 않고 거부한다.
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ArgumentSpec.literal("a", (Integer)null));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ArgumentSpec.literal("a", (String)null));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> LiteralArgument.builder().id("a").value((Double)null));
@@ -218,11 +218,11 @@ public class ArgumentSpecRoundTripTest {
 		Assertions.assertEquals(spec, ArgumentSpec.parseJsonString(spec.toJsonString()));
 	}
 
-	// --- 외부 검토(argument-spec-review.md AS-01 ~ AS-04, AS-07) ---
+	// --- task-output 인자, 식별자, 후행 입력, toString ---
 
 	@Test
 	public void taskOutput_rejectsBlankSource() {
-		// AS-01: 이전에는 공백뿐인 taskId·argumentName도 받아들였다.
+		// 공백뿐인 taskId·argumentName은 거부한다.
 		Assertions.assertEquals("taskId is blank", Assertions.assertThrows(IllegalArgumentException.class,
 														() -> ArgumentSpec.taskOutput("in", " ", "out")).getMessage());
 		Assertions.assertEquals("argumentName is blank", Assertions.assertThrows(IllegalArgumentException.class,
@@ -235,7 +235,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void identifiers_mustBeJsonStrings() throws IOException {
-		// AS-02: 이전에는 1·true를 "1"·"true"로 받아들였다.
+		// 1·true를 "1"·"true"로 바꾸어 받지 않는다.
 		for ( String field: new String[] { "id", "taskId", "argumentName" } ) {
 			for ( String bad: new String[] { "1", "true", "[]", "{}" } ) {
 				String json = taskOutputJson("in", "t", "out").replace("\"" + field + "\":\"" + valueOf(field) + "\"",
@@ -265,7 +265,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void parseJsonString_rejectsTrailingInput() throws IOException {
-		// AS-03: 이전에는 첫 JSON 값 뒤의 입력을 무시했다.
+		// 첫 JSON 값 뒤에 입력이 남아 있으면 거부한다.
 		String json = taskOutputJson("in", "t", "out");
 		for ( String tail: new String[] { " garbage", " {}", " []", " 1", " {\"x\"" } ) {
 			Assertions.assertThrows(IOException.class, () -> ArgumentSpec.parseJsonString(json + tail), tail);
@@ -278,10 +278,10 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void taskOutput_outputArgumentIdAndToString() {
-		// AS-04: argumentName은 원래 태스크의 출력 인자 id다(getter 이름 변경).
+		// argumentName은 원래 태스크의 출력 인자 id다.
 		TaskOutputArgument spec = ArgumentSpec.taskOutput("in", "prev", "result");
 		Assertions.assertEquals("result", spec.getOutputArgumentId());
-		// AS-07: toString에 식별자를 넣는다.
+		// toString에 식별자를 넣는다.
 		Assertions.assertEquals("in=task_output(prev:result)", spec.toString());
 		Assertions.assertEquals("r=reference(param:i:x)", ArgumentSpec.reference("r", "param:i:x").toString());
 		Assertions.assertEquals("a=literal(1)", ArgumentSpec.literal("a", 1).toString());
@@ -289,7 +289,7 @@ public class ArgumentSpecRoundTripTest {
 
 	@Test
 	public void nullElementValue_isReportedAsNull() {
-		// value(ElementValue)에 null을 넘기면 편의 메소드와 같은 메시지를 낸다(이전에는 "value is not set").
+		// value(ElementValue)에 null을 넘기면 편의 메소드와 같은 메시지를 낸다.
 		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
 															() -> ArgumentSpec.literal("a", (ElementValue)null));
 		Assertions.assertEquals("value is null", e.getMessage());

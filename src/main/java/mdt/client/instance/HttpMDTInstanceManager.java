@@ -197,8 +197,7 @@ public class HttpMDTInstanceManager implements MDTInstanceManager, HttpMDTServic
 	/**
 	 * {@inheritDoc}
 	 * <p>
-	 * 원격 매니저의 {@code GET /instances/$count}를 부른다. 2026-11-05 이전에는 서버에 없는
-	 * {@code GET /instances?aggregate=count}를 불러, 서버가 돌려준 목록 JSON을 숫자로 읽다 실패했다.
+	 * 원격 매니저의 {@code GET /instances/$count}를 부른다.
 	 */
 	@Override
 	public long countInstances() {

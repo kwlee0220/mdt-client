@@ -22,8 +22,8 @@ import mdt.model.sm.ref.timeseries.TimeSeriesRange.Anchor;
 /**
  * {@link TimeSeriesRecordsReference}의 단위 테스트.
  * <p>
- * range/columns의 보존은 {@code toStringExpr()}(이 둘을 인코딩) 문자열로 검증한다. 2026-11-01부터 {@code equals}도
- * range/columns를 비교한다(이전에는 submodel 참조만 비교했다).
+ * range/columns의 보존은 {@code toStringExpr()}(이 둘을 인코딩) 문자열로 검증한다. {@code equals}도
+ * range/columns를 비교한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */
@@ -230,7 +230,7 @@ public class TimeSeriesRecordsReferenceTest {
 
 	@Test
 	public void equals_comparesRangeAndColumns() {
-		// 이전에는 submodel 참조만 비교해서 아래가 모두 같다고 판단했다.
+		// submodel 참조가 같아도 range나 columns가 다르면 같지 않다.
 		Assertions.assertNotEquals(builder().last(1).build(), builder().last(100).build());
 		Assertions.assertNotEquals(builder().build(), builder().last(7).build());
 		Assertions.assertNotEquals(builder().columns(List.of("current")).build(),

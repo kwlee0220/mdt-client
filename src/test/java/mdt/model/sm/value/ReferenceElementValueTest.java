@@ -54,7 +54,7 @@ public class ReferenceElementValueTest {
 
 	@Test
 	public void equalsComparesReference() throws IOException {
-		// 2026-11-01 이전에는 equals가 없어 같은 참조라도 다른 객체로 판단했다.
+		// 같은 참조를 가진 값은 같다고 판단한다.
 		ElementValue parsed = ElementValues.parseJsonString(JSON);
 		Assertions.assertEquals(new ReferenceElementValue(REFFERENCE), parsed);
 		Assertions.assertEquals(new ReferenceElementValue(REFFERENCE).hashCode(), parsed.hashCode());

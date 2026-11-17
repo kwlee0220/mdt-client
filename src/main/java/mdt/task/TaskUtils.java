@@ -96,8 +96,6 @@ public final class TaskUtils {
 	 *   <li>리터럴 인자: 명세의 값을 돌려준다.</li>
 	 *   <li>task-output 인자: 선행 태스크의 결과로부터 실행 엔진이 정해야 하므로 읽을 수 없다.</li>
 	 * </ul>
-	 * 2026-11-01 이전에는 {@code ArgumentSpec.readValue(MDTInstanceManager)}였고, task-output 인자이면
-	 * {@code IllegalStateException}을 던졌다.
 	 *
 	 * @param arg		입력 인자 명세.
 	 * @param manager	참조를 활성화할 MDT 인스턴스 관리자.

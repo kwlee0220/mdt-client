@@ -16,10 +16,10 @@ import mdt.model.SubmodelService;
 
 
 /**
- * {@link DataSubmodelService} 생성자의 인자 검사(mdt-client API 검토 D4, 2026-11-03).
+ * {@link DataSubmodelService} 생성자의 인자 검사.
  * <p>
- * 2026-11-03 이전에는 semantic id가 없는 서브모델에서 {@link IllegalArgumentException} 대신
- * {@link NullPointerException}이 났다.
+ * semantic id가 없는 서브모델이면 {@link NullPointerException}이 아니라 {@link IllegalArgumentException}을
+ * 던진다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

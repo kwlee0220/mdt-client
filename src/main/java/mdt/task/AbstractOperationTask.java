@@ -141,7 +141,6 @@ public abstract class AbstractOperationTask implements MDTTask, LoggerSettable {
 
 			// 출력·입출력 변수의 값을 같은 이름의 인자가 가리키는 요소에 기록한다.
 			// 하나가 실패해도 나머지는 모두 시도한 뒤, 실패가 있으면 태스크를 실패로 처리한다.
-			// (2026-11-01 이전에는 실패를 경고 로그로만 남기고 태스크는 성공으로 끝났다.)
 			List<String> failedIds = new ArrayList<>();
 			List<IOException> failures = new ArrayList<>();
 			writeResults("output", result.getOutputArguments(), m_outputArguments, manager, failedIds, failures);

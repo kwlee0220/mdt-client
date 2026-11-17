@@ -1261,7 +1261,7 @@ public final class SubmodelUtils {
 		public MDTSubmodelReference deserialize(JsonParser parser, DeserializationContext ctxt)
 			throws IOException, JacksonException {
 			JsonNode node = parser.getCodec().readTree(parser);
-			// 객체가 아니면 parseJson이 JacksonDeserializationException으로 거부한다(이전에는 IllegalStateException).
+			// 객체가 아니면 parseJson이 JacksonDeserializationException으로 거부한다.
 			return DefaultSubmodelReference.parseJson(node);
 		}
 	}

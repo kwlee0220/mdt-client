@@ -142,7 +142,7 @@ public class SubmodelBasedElementReferenceTest {
 	}
 
 	/**
-	 * 활성화 전에는 서비스 접근을 막는다(2026-11-01 이전에는 막지 않았다).
+	 * 활성화 전에는 서비스 접근을 막는다.
 	 */
 	@Test
 	public void getSubmodelService_notActivated_throws() {
@@ -335,7 +335,7 @@ public class SubmodelBasedElementReferenceTest {
 	// --- 재활성화 ---
 
 	/**
-	 * 다시 활성화하면 원형 캐시를 버리고 새로 적재해야 한다. 이전에는 이전 대상의 원형을 계속 반환했다.
+	 * 다시 활성화하면 원형 캐시를 버리고 새로 적재해야 한다(이전 대상의 원형을 반환하지 않는다).
 	 */
 	@Test
 	public void reactivate_reloadsPrototype() {
@@ -351,7 +351,7 @@ public class SubmodelBasedElementReferenceTest {
 	}
 
 	/**
-	 * 재활성화가 실패하면 비활성 상태로 남아야 한다. 이전에는 이전 경로가 남아 활성 상태로 보였다.
+	 * 재활성화가 실패하면 비활성 상태로 남아야 한다(이전 경로로 활성 상태처럼 보이지 않는다).
 	 */
 	@Test
 	public void reactivate_failure_leavesDeactivated() {
@@ -404,7 +404,7 @@ public class SubmodelBasedElementReferenceTest {
 
 	/**
 	 * {@link OperationVariableReference}: 재활성화가 실패하면 대상 Operation 참조가 이전 상태로 남더라도
-	 * 접근하지 않는다(2026-11-01 이전에는 대상 참조의 활성 상태만 확인했다).
+	 * 접근하지 않는다(대상 참조의 활성 상태만으로 판단하지 않는다).
 	 */
 	@Test
 	public void reactivate_failure_operationVariableReference() throws IOException {

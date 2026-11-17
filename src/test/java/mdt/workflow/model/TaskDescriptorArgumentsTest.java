@@ -15,7 +15,7 @@ public class TaskDescriptorArgumentsTest {
 	@Test
 	public void setters_rejectDuplicateIds() {
 		TaskDescriptor task = new TaskDescriptor("t", "", "mdt.task.SetTask");
-		// 이전에는 뒤에 오는 같은 식별자가 앞의 것을 조용히 덮어썼다.
+		// 같은 식별자가 두 번 나오면 뒤의 것으로 덮어쓰지 않고 거부한다.
 		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
 						() -> task.setInputArguments(List.of(ArgumentSpec.literal("a", 1), ArgumentSpec.literal("a", 2))));
 		Assertions.assertEquals("Input argument spec already exists: a", e.getMessage());

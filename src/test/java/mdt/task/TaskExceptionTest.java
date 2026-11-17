@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * {@link TaskException#getMessage()}가 원인을 한 번만 보여 주는지 확인한다(mdt-client API 검토 D3, 2026-11-03).
+ * {@link TaskException#getMessage()}가 원인을 한 번만 보여 주는지 확인한다.
  *
  * @author Kang-Woo Lee (ETRI)
  */

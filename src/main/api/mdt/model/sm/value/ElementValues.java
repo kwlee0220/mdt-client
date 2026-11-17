@@ -357,7 +357,7 @@ public final class ElementValues {
 		return sme;
 	}
 	
-	/** {@code smev}가 {@code cls} 타입이 아니면 거부한다. 메시지는 이전 형식("Expecting X, but Y")을 유지한다. */
+	/** {@code smev}가 {@code cls} 타입이 아니면 거부한다. 메시지는 "Expecting X, but Y" 형식이다. */
 	@SuppressWarnings("unchecked")
 	private static <V extends ElementValue> V expect(Class<V> cls, ElementValue smev) {
 		if ( !cls.isInstance(smev) ) {

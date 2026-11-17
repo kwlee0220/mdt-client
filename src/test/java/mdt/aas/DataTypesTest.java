@@ -160,7 +160,7 @@ public class DataTypesTest {
 		assertEquals(42, DataTypes.INT.fromJsonNode(json("\"42\"")));		// 숫자 문자열은 받는다
 		assertEquals(3, DataTypes.INT.fromJsonNode(json("3.0")));			// 손실 없는 실수는 받는다
 		assertNull(DataTypes.INT.fromJsonNode(json("null")));
-		// 이전에는 "abc"→0, 3.9→3, 3000000000→-1294967296으로 오류 없이 바꿨다.
+		// 정수가 아니거나 범위를 넘는 값은 다른 값으로 바꾸지 않고 거부한다("abc"→0, 3.9→3 같은 변환 없음).
 		for ( String bad: new String[] { "\"abc\"", "3.9", "\"3.9\"", "3000000000", "true", "{}", "[]" } ) {
 			assertRejected(DataTypes.INT, bad);
 		}
@@ -197,7 +197,7 @@ public class DataTypesTest {
 		assertEquals(true, DataTypes.BOOLEAN.fromJsonNode(json("true")));
 		assertEquals(false, DataTypes.BOOLEAN.fromJsonNode(json("\"FALSE\"")));
 		assertEquals(true, DataTypes.BOOLEAN.fromJsonNode(json("\"1\"")));
-		// 이전에는 "yes"를 false로 읽었다.
+		// "yes" 같은 다른 문자열은 false로 읽지 않고 거부한다.
 		for ( String bad: new String[] { "\"yes\"", "1", "{}" } ) {
 			assertRejected(DataTypes.BOOLEAN, bad);
 		}
@@ -219,8 +219,7 @@ public class DataTypesTest {
 	}
 
 	/**
-	 * {@link DataTypes#TYPES}와 {@link DataTypes#NAME_TO_TYPES}는 수정할 수 없다(mdt-client API 검토 D7, 2026-11-03).
-	 * 이전에는 {@code TYPES}가 {@code Arrays.asList}라서 {@code set()}이 되었고 내부 배열까지 바뀌었다.
+	 * {@link DataTypes#TYPES}와 {@link DataTypes#NAME_TO_TYPES}는 수정할 수 없다.
 	 */
 	@Test
 	public void typesAndNameMapAreImmutable() {
@@ -230,7 +229,7 @@ public class DataTypesTest {
 	}
 
 	/**
-	 * {@code xs:date}는 {@link java.time.LocalDate}로 다룬다(mdt-client API 검토 I7).
+	 * {@code xs:date}는 {@link java.time.LocalDate}로 다룬다.
 	 */
 	@Test
 	public void dateIsLocalDate() {

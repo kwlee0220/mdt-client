@@ -215,7 +215,7 @@ public class MDTParameterCollectionReferenceTest {
 
 	/**
 	 * {@code updateValue}는 {@code readValue()}와 같은 {@code ParameterID -> 값} 형태를 받아 ID별로 갱신해야 한다.
-	 * 이전에는 펼친 목록이 문자열 갱신으로 재진입해 {@code {"ParameterID":…}} 텍스트가 값으로 기록됐다.
+	 * 펼친 목록이 문자열 갱신으로 재진입해 {@code {"ParameterID":…}} 텍스트가 값으로 기록되지 않아야 한다.
 	 */
 	@Test
 	public void updateValue_updatesByIdAndKeepsOthers() throws IOException {

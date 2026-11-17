@@ -221,8 +221,8 @@ public class MDTParameterReferenceTest {
 	}
 
 	/**
-	 * 배열 접근 뒤에 필드 접근이 오면 '['에서 잘라야 한다. 이전에는 '.'을 먼저 찾아 parameter id를
-	 * {@code "Samples[0]"}로 조회했다.
+	 * 배열 접근 뒤에 필드 접근이 오면 '['에서 잘라야 한다. '.'을 먼저 찾으면 parameter id를
+	 * {@code "Samples[0]"}로 잘못 조회한다.
 	 */
 	@Test
 	public void buildIdShortPath_bracketThenDotSubPath() {

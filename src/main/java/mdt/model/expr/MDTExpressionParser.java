@@ -198,8 +198,6 @@ public class MDTExpressionParser {
 	 * <p>
 	 * 어휘/구문 오류가 나거나, 규칙이 입력 전체를 소비하지 않고 남은 토큰이 있으면(후행 토큰, EOF 강제)
 	 * {@link MDTParserException}을 던진다. {@code exprStr}이 {@code null}이면 {@link IllegalArgumentException}이다.
-	 * <p>
-	 * 2026-11-01 이전에는 후행 토큰만 {@link IllegalArgumentException}으로 보고해, 호출자마다 두 예외를 함께 잡아야 했다.
 	 *
 	 * @param <T>	파서 규칙의 결과 컨텍스트 타입.
 	 * @param exprStr	파싱할 문자열.

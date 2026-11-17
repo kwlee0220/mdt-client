@@ -232,7 +232,7 @@ public class DefaultElementReferenceTest {
 		node.putNull("submodelReference");
 		node.put("elementPath", PATH);
 
-		// 필수 필드의 JSON null은 필드를 읽을 때 거부한다(이전에는 해석 단계의 IllegalArgumentException).
+		// 필수 필드의 JSON null은 필드를 읽을 때 거부한다.
 		Assertions.assertThrows(JacksonDeserializationException.class,
 								() -> DefaultElementReference.deserializeFields(node));
 	}

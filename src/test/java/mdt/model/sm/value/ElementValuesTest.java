@@ -65,7 +65,7 @@ public class ElementValuesTest {
 
 	@Test
 	public void parseJsonString_rejectsTrailingInput() throws IOException {
-		// 이전에는 첫 JSON 값 뒤의 입력을 무시했다.
+		// 첫 JSON 값 뒤에 입력이 남아 있으면 거부한다.
 		String json = MDTModelSerDe.getJsonMapper().writeValueAsString(PropertyValue.INTEGER(17));
 		Assertions.assertThrows(IOException.class, () -> ElementValues.parseJsonString(json + " garbage"));
 		Assertions.assertEquals(PropertyValue.INTEGER(17), ElementValues.parseJsonString(json + " "));
@@ -73,7 +73,7 @@ public class ElementValuesTest {
 
 	@Test
 	public void parseJsonString_rejectsLossyPropertyValues() {
-		// 이전에는 "abc"→0, 3.9→3, 넘침, "yes"→false로 오류 없이 바꿨다.
+		// "abc"→0, 3.9→3, 넘침, "yes"→false처럼 값을 바꾸지 않고 거부한다.
 		for ( String json: new String[] {
 				"{\"@type\":\"mdt:value:integer\",\"value\":\"abc\"}",
 				"{\"@type\":\"mdt:value:integer\",\"value\":3.9}",
@@ -88,7 +88,7 @@ public class ElementValuesTest {
 		org.eclipse.digitaltwin.aas4j.v3.model.Property prop
 			= new org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultProperty.Builder()
 					.idShort("p").valueType(org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd.INT).value("1").build();
-		// 이전에는 정수 속성이 0으로 바뀌었다.
+		// 정수 속성을 0으로 바꾸지 않고 거부하며, 기존 값을 유지한다.
 		Assertions.assertThrows(JacksonDeserializationException.class, () -> ElementValues.updateFromValueJson(prop, tree("\"abc\"")));
 		Assertions.assertEquals("1", prop.getValue());
 		ElementValues.updateFromValueJson(prop, tree("\"42\""));
@@ -106,7 +106,7 @@ public class ElementValuesTest {
 	@Test
 	public void update_rejectsTypeMismatch() {
 		var p = prop(org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd.INT, "1");
-		// 이전에는 xs:int 속성에 "abc", 3.7, true가 그대로 기록됐다.
+		// xs:int 속성에 "abc", 3.7, true를 그대로 기록하지 않고 거부한다.
 		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
 														() -> ElementValues.update(p, PropertyValue.STRING("abc")));
 		Assertions.assertEquals("value type mismatch: property 'p' is INT, but value is STRING", e.getMessage());
@@ -148,7 +148,7 @@ public class ElementValuesTest {
 		var intProp = prop(org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd.INT, "0");
 		ElementValues.updateFromValueString(intProp, "42");
 		Assertions.assertEquals("42", intProp.getValue());
-		// 이전에는 "abc"가 그대로 기록됐다.
+		// 정수가 아닌 문자열은 그대로 기록하지 않고 거부한다.
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementValues.updateFromValueString(intProp, "abc"));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementValues.updateFromValueString(intProp, "3.7"));
 		Assertions.assertEquals("42", intProp.getValue());
@@ -164,7 +164,7 @@ public class ElementValuesTest {
 		ElementValues.updateFromValueString(integerProp, "123456789012345678901");
 		Assertions.assertEquals("123456789012345678901", integerProp.getValue());
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementValues.updateFromValueString(integerProp, "1.5"));
-		// 이전에는 "3.0"이 통과해 xs:integer 값으로 그대로 저장됐다. xs:int처럼 정수 문법만 받는다.
+		// xs:int처럼 정수 문법만 받으므로 "3.0"도 거부한다.
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementValues.updateFromValueString(integerProp, "3.0"));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> ElementValues.updateFromValueString(integerProp, " 3 "));
 		Assertions.assertEquals("123456789012345678901", integerProp.getValue());
@@ -186,7 +186,7 @@ public class ElementValuesTest {
 	@Test
 	public void update_rejectsNullArguments() {
 		var p = prop(org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd.INT, "1");
-		// 이전에는 오류 메시지를 만들다 NullPointerException이 났다.
+		// null 인자는 NullPointerException이 아니라 IllegalArgumentException으로 거부한다.
 		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
 														() -> ElementValues.update(p, (ElementValue)null));
 		Assertions.assertEquals("ElementValue is null", e.getMessage());
@@ -217,7 +217,7 @@ public class ElementValuesTest {
 
 	@Test
 	public void parseValueJsonString_rejectsTrailingInput() throws IOException {
-		// 이전에는 첫 JSON 값만 읽고 나머지를 무시했다("5 garbage" → 5).
+		// 첫 JSON 값 뒤의 입력을 무시하지 않고 거부한다("5 garbage" 등).
 		for ( String json: new String[] { "5 garbage", "3.5 sec", "5 6", "\"a\" {}" } ) {
 			Assertions.assertThrows(IOException.class,
 									() -> ElementValues.parseValueJsonString(json, PropertyValue.INTEGER(1)), json);
@@ -232,7 +232,7 @@ public class ElementValuesTest {
 		Assertions.assertEquals("7", p.getValue());
 	}
 
-	// --- parseJsonNode(node, proto)의 @type 검사 (이전 이름 parseGeneralJsonNode) ---
+	// --- parseJsonNode(node, proto)의 @type 검사 ---
 
 	@Test
 	public void parseGeneralJsonNode_typeField() throws IOException {
@@ -242,7 +242,7 @@ public class ElementValuesTest {
 				ElementValues.parseJsonNode(tree("{\"@type\":\"mdt:value:string\",\"value\":\"x\"}"), proto));
 		Assertions.assertEquals(PropertyValue.INTEGER(7), ElementValues.parseJsonNode(tree("7"), proto));
 
-		// 이전에는 숫자 @type을 "5"로 읽었고, 모르는 타입은 IllegalArgumentException, 빈 문자열은 '없음'이었다.
+		// @type은 비어 있지 않은 문자열이어야 하고, 등록된 타입이어야 한다.
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
 						() -> ElementValues.parseJsonNode(tree("{\"@type\":5,\"value\":1}"), proto));
 		Assertions.assertEquals("invalid field '@type': string expected, but number", e.getMessage());
@@ -292,7 +292,7 @@ public class ElementValuesTest {
 	@Test
 	public void updateRange_rejectsTypeMismatch() {
 		var rg = range(org.eclipse.digitaltwin.aas4j.v3.model.DataTypeDefXsd.INT);
-		// 이전에는 xs:int Range에 min=abc, max=xyz가 그대로 기록됐다.
+		// xs:int Range에 문자열 min/max를 기록하지 않고 거부한다.
 		var strRange = new RangeValue<>(mdt.aas.DataTypes.STRING, "abc", "xyz");
 		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
 														() -> ElementValues.update(rg, strRange));
@@ -322,7 +322,7 @@ public class ElementValuesTest {
 	public void parseJsonNode_listOrCollection_rejectsWrongNodeKind() {
 		String list = ElementListValue.SERIALIZATION_TYPE;
 		String coll = ElementCollectionValue.SERIALIZATION_TYPE;
-		// 이전에는 모두 빈 리스트·컬렉션이 됐다.
+		// value 노드의 종류가 틀리면 빈 리스트·컬렉션을 만들지 않고 거부한다.
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
 					() -> ElementValues.parseJsonNode(tree("{\"@type\":\"" + list + "\",\"value\":42}")));
 		Assertions.assertTrue(e.getMessage().contains("array expected, but number"), e.getMessage());
@@ -359,7 +359,7 @@ public class ElementValuesTest {
 					.inputVariables(new org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable.Builder().value(in).build())
 					.outputVariables(new org.eclipse.digitaltwin.aas4j.v3.model.impl.DefaultOperationVariable.Builder().value(out).build())
 					.build();
-		// output 개수가 틀리면 input도 바뀌지 않는다(이전에는 input이 먼저 기록됐다).
+		// output 개수가 틀리면 input도 바뀌지 않는다.
 		var value = new OperationVariableValue(java.util.List.of(PropertyValue.INTEGER(1)), java.util.List.of(),
 												java.util.List.of());
 		IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class,
@@ -391,7 +391,7 @@ public class ElementValuesTest {
 		ElementValues.updateFromValueJson(c, tree("{\"a\":10}"));
 		Assertions.assertEquals("10", a.getValue());
 		Assertions.assertEquals("2", b.getValue());
-		// JSON null 필드(b)는 값을 지운다. 이전에는 조용히 무시됐다.
+		// JSON null 필드(b)는 값을 지운다.
 		ElementValues.updateFromValueJson(c, tree("{\"b\":null}"));
 		Assertions.assertEquals("10", a.getValue());
 		Assertions.assertNull(b.getValue());

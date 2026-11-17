@@ -107,7 +107,7 @@ public class AbstractOperationTaskTest {
 
 	@Test
 	public void failsWhenAnyResultCannotBeWritten() throws Exception {
-		// 이전에는 기록 실패를 경고 로그로만 남기고 태스크는 성공으로 끝났다.
+		// 결과 기록이 하나라도 실패하면 태스크는 실패로 끝난다.
 		MDTElementReference out1 = mock(MDTElementReference.class);
 		MDTElementReference out2 = mock(MDTElementReference.class);
 		MDTElementReference io1 = mock(MDTElementReference.class);

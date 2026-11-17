@@ -40,7 +40,6 @@ public class TaskUtilsTest {
 								TaskUtils.readArgumentValue(ArgumentSpec.literal("a", 3), manager));
 
 		// task-output 인자는 실행 엔진이 정해야 하므로 읽지 않는다.
-		// 이전에는 ArgumentSpec.readValue()가 IllegalStateException을 던졌다.
 		TaskException e = Assertions.assertThrows(TaskException.class,
 						() -> TaskUtils.readArgumentValue(ArgumentSpec.taskOutput("in", "prev", "out"), manager));
 		Assertions.assertTrue(e.getMessage().startsWith("task-output argument is not resolved: id=in, source=prev:out"),

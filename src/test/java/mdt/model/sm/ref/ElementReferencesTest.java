@@ -149,7 +149,7 @@ public class ElementReferencesTest {
 
 	@Test
 	public void parseTimeSeries_invalidRangeKey_throws() {
-		// 후행 입력도 문법 오류(MDTParserException)다. 2026-11-01 이전에는 IllegalArgumentException이었다.
+		// 후행 입력도 문법 오류(MDTParserException)다.
 		Assertions.assertThrows(MDTParserException.class,
 				() -> ElementReferences.parseExpr("timeseries:inst:Data(bogus=1):"));
 	}
@@ -188,7 +188,7 @@ public class ElementReferencesTest {
 
 	/**
 	 * 구현체가 던진 {@link IOException}이 그대로 전달되어야 한다.
-	 * (이전에는 Jackson {@code treeToValue}를 거치면서 {@link IllegalArgumentException}으로 바뀌었다.)
+	 * (Jackson {@code treeToValue}를 거치면서 {@link IllegalArgumentException}으로 바뀌지 않는다.)
 	 */
 	@Test
 	public void parseJsonNode_missingRequiredField_throwsIOException() throws IOException {
@@ -200,7 +200,7 @@ public class ElementReferencesTest {
 	}
 
 	/**
-	 * {@code null}은 거부한다. (이전에는 {@code null}과 JSON {@code null} 노드에 대해 예외 없이 {@code null}을 반환했다.)
+	 * {@code null}과 JSON {@code null} 노드는 {@code null}을 반환하지 않고 거부한다.
 	 */
 	@Test
 	public void parseJsonNode_null_throws() {
@@ -210,8 +210,8 @@ public class ElementReferencesTest {
 	}
 
 	/**
-	 * {@code parseJsonString}은 {@code parseJsonNode}와 같이 동작한다. 이전에는 {@code "null"}이면 {@code null}을
-	 * 돌려주고, 뒤에 붙은 입력을 무시했으며, 오류 메시지에 JSON 전체를 넣었다.
+	 * {@code parseJsonString}은 {@code parseJsonNode}와 같이 동작한다. {@code "null"}과 뒤에 붙은 입력을 거부하고,
+	 * 오류 메시지에 JSON 전체를 넣지 않는다.
 	 */
 	@Test
 	public void parseJsonString_strict() throws IOException {
@@ -221,7 +221,7 @@ public class ElementReferencesTest {
 		Assertions.assertThrows(IOException.class, () -> ElementReferences.parseJsonString(json + " garbage"));
 		Assertions.assertThrows(IOException.class, () -> ElementReferences.parseJsonString("{"));
 
-		// 필드 누락 메시지는 필드 이름만 담는다(이전에는 JSON 전체를 담은 IOException).
+		// 필드 누락 메시지는 필드 이름만 담는다(JSON 전체를 담지 않는다).
 		String noPath = "{\"@type\":\"" + DefaultElementReference.SERIALIZATION_TYPE + "\","
 						+ "\"submodelReference\":{\"instanceId\":\"secret-inst\",\"submodelIdShort\":\"Data\"}}";
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
@@ -231,8 +231,8 @@ public class ElementReferencesTest {
 	}
 
 	/**
-	 * 문자열 필드는 JSON 문자열만 받는다. 이전에는 JSON {@code null}을 {@code "null"}로, 숫자를 문자열로 받아
-	 * 오류 없이 참조를 만들었다. 오류 메시지에는 필드 이름만 들어가고 값은 들어가지 않는다.
+	 * 문자열 필드는 JSON 문자열만 받는다. JSON {@code null}이나 숫자를 문자열로 바꾸어 받지 않는다.
+	 * 오류 메시지에는 필드 이름만 들어가고 값은 들어가지 않는다.
 	 */
 	@Test
 	public void parseJsonNode_stringFieldRejectsNullAndNumber() throws IOException {
@@ -253,8 +253,8 @@ public class ElementReferencesTest {
 	}
 
 	/**
-	 * 중첩된 Submodel 참조의 식별자도 비어 있지 않은 JSON 문자열만 받는다. 이전에는 {@code true}·{@code 42}를
-	 * 문자열로 받아 {@code true:42:x} 참조를 만들었다.
+	 * 중첩된 Submodel 참조의 식별자도 비어 있지 않은 JSON 문자열만 받는다. {@code true}·{@code 42}를
+	 * 문자열로 바꾸어 {@code true:42:x} 같은 참조를 만들지 않는다.
 	 */
 	@Test
 	public void parseJsonNode_nestedSubmodelReferenceIdsMustBeText() throws IOException {
@@ -280,7 +280,7 @@ public class ElementReferencesTest {
 	}
 
 	/**
-	 * {@code ordinal}은 JSON 정수만 받는다(직렬화 형식). 이전에는 문자열 {@code "1"}도 받았다.
+	 * {@code ordinal}은 JSON 정수만 받는다(직렬화 형식). 문자열 {@code "1"}은 거부한다.
 	 */
 	@Test
 	public void parseJsonNode_opvarOrdinalMustBeInt() throws IOException {

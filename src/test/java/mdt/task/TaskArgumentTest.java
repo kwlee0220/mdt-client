@@ -76,7 +76,7 @@ public class TaskArgumentTest {
 	public void reference_missingReferenceField_throws() {
 		ObjectNode jnode = MDTModelSerDe.getJsonMapper().createObjectNode();
 		jnode.put("@type", TaskArgument.ReferenceArgument.SERIALIZATION_TYPE);
-		// 이전에는 생성자의 IllegalArgumentException("ref must not be null")이었다.
+		// 필드 누락은 필드 이름을 담은 JacksonDeserializationException으로 보고한다.
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
 														() -> TaskArgument.parseJsonNode(jnode));
 		Assertions.assertEquals("Field not found: field=reference, available fields=[@type]", e.getMessage());
@@ -85,7 +85,7 @@ public class TaskArgumentTest {
 	@Test
 	public void reference_nonMDTReference_throws() throws IOException {
 		// FileStoreReference는 ElementReference이지만 MDTElementReference가 아니다.
-		// 이전에는 강제 형변환에서 ClassCastException이 났다.
+		// 강제 형변환으로 ClassCastException을 내지 않고 필드 오류로 보고한다.
 		ObjectNode jnode = MDTModelSerDe.getJsonMapper().createObjectNode();
 		jnode.put("@type", TaskArgument.ReferenceArgument.SERIALIZATION_TYPE);
 		jnode.set("reference", new FileStoreReference(new File("/tmp/x.bin")).toJsonNode());
@@ -99,7 +99,7 @@ public class TaskArgumentTest {
 	public void literal_missingValueField_throws() {
 		ObjectNode jnode = MDTModelSerDe.getJsonMapper().createObjectNode();
 		jnode.put("@type", TaskArgument.LiteralArgument.SERIALIZATION_TYPE);
-		// 이전에는 IllegalArgumentException("JsonNode is null")이었다.
+		// 필드 누락은 필드 이름을 담은 JacksonDeserializationException으로 보고한다.
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
 														() -> TaskArgument.parseJsonNode(jnode));
 		Assertions.assertEquals("Field not found: field=value, available fields=[@type]", e.getMessage());
@@ -109,7 +109,7 @@ public class TaskArgumentTest {
 
 	@Test
 	public void parseJsonNode_rejectsNull() {
-		// 이전에는 MDTModelSerDe를 거쳐 null·JSON null에 대해 null을 돌려줬다.
+		// null·JSON null에 대해 null을 돌려주지 않고 거부한다.
 		Assertions.assertThrows(IllegalArgumentException.class, () -> TaskArgument.parseJsonNode(null));
 		Assertions.assertThrows(JacksonDeserializationException.class,
 								() -> TaskArgument.parseJsonNode(NullNode.getInstance()));
@@ -123,7 +123,7 @@ public class TaskArgumentTest {
 								() -> MDTModelSerDe.getJsonMapper().readValue(json, TaskArgument.class));
 	}
 
-	// --- parseExpr (이전 이름 parseTaskArgument) ---
+	// --- parseExpr ---
 
 	@Test
 	public void parseExpr_acceptsReferencesAndLiterals() {
@@ -141,8 +141,7 @@ public class TaskArgumentTest {
 
 	@Test
 	public void parseExpr_rejectsOtherExpressions() {
-		// 이전에는 아래 입력을 모두 표현식 문자열 자체를 값으로 갖는 문자열 리터럴로 바꿨다
-		// (후행 입력 오류인 'a.b'만 IllegalArgumentException으로 나갔다).
+		// 아래 입력은 표현식 문자열 자체를 값으로 갖는 문자열 리터럴로 바꾸지 않고 모두 거부한다.
 		for ( String expr: new String[] { "", "PT5S", "2024-01-01T00:00:00Z", "inst:Data",
 											"param:inst:Speed=3", "null", "a.b", "hello world" } ) {
 			Assertions.assertThrows(MDTParserException.class, () -> TaskArgument.parseExpr(expr), expr);
@@ -184,10 +183,10 @@ public class TaskArgumentTest {
 	public void parseJsonString_followsParseJsonNode() throws IOException {
 		TaskArgument arg = TaskArgument.literal(17);
 		Assertions.assertEquals(arg, TaskArgument.parseJsonString(arg.toJsonString()));
-		// 이전에는 MDTModelSerDe를 거쳐 "null"이면 null을 돌려줬다. 이제 parseJsonNode와 같이 거부한다.
+		// "null"은 parseJsonNode와 같이 거부한다.
 		Assertions.assertThrows(JacksonDeserializationException.class, () -> TaskArgument.parseJsonString("null"));
 		Assertions.assertThrows(IllegalArgumentException.class, () -> TaskArgument.parseJsonString(null));
-		// 필드 누락도 parseJsonNode와 같은 예외·메시지다(이전에는 JSON 전체를 담은 IOException).
+		// 필드 누락도 parseJsonNode와 같은 예외·메시지다(JSON 전체를 담지 않는다).
 		String json = "{\"@type\":\"" + TaskArgument.LiteralArgument.SERIALIZATION_TYPE + "\"}";
 		JacksonDeserializationException e = Assertions.assertThrows(JacksonDeserializationException.class,
 														() -> TaskArgument.parseJsonString(json));
@@ -209,7 +208,7 @@ public class TaskArgumentTest {
 
 	@Test
 	public void parseJsonString_rejectsTrailingInput() throws IOException {
-		// 이전에는 첫 JSON 값 뒤의 입력을 무시했다(argument-spec-review.md AS-03과 같은 문제).
+		// 첫 JSON 값 뒤에 입력이 남아 있으면 거부한다.
 		String json = TaskArgument.literal(1).toJsonString();
 		Assertions.assertThrows(IOException.class, () -> TaskArgument.parseJsonString(json + " xyz"));
 		Assertions.assertThrows(IOException.class, () -> TaskArgument.parseJsonString(json + " {}"));

@@ -512,8 +512,7 @@ Map<String,SubmodelElement> outputs = task.run(manager);
   기록하려면 호출하는 쪽에서 저장한다.
 - 두 구현의 `cancel()`은 `false`를 돌려준다.
 - `HttpOperationClient`는 `@Deprecated(forRemoval=true)`이고 mdt-operation-http의 `OperationController`와 URL·메시지
-  형식이 맞지 않는다. `HttpSimulationClient`, `OperationRequest`·`OperationResponse`도 새 RPC 계약의 예제로 쓰지
-  않는다.
+  형식이 맞지 않는다. `OperationRequest`·`OperationResponse`도 새 RPC 계약의 예제로 쓰지 않는다.
 
 ---
 

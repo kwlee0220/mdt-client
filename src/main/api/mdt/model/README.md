@@ -267,7 +267,7 @@ MDTException
 | 필터 조회 | `getInstanceAllByFilter(filterExpr)` | 아래 필터 문법 참고 |
 | 편의 조회 | `getInstanceByAasId`, `getInstanceBySubmodelId` | 0건이면 `ResourceNotFoundException`, 2건 이상이면 `MDTInstanceManagerException` |
 | | `getInstanceAllByAasIdShort`, `getInstanceAllByAssetId`, `getInstanceAllBySubmodelIdShort` | 목록 반환 |
-| 등록 | `addInstance(id, port, instanceFile)`, `addInstance(id, instanceFile)` | 디렉터리 또는 zip을 받는다. `port = -1`이면 자동 할당 |
+| 등록 | `addInstance(id, port, instanceFile)`, `addInstance(id, instanceFile)` | 디렉터리 또는 zip을 받는다. `port = -1`이면 포트를 지정하지 않는다(이때는 `config.json`의 `port`가 있어야 시작할 수 있다) |
 | 제거 | `removeInstance(id)`, `removeInstanceAll()` | 없는 id는 무시한다. RUNNING이면 `InvalidResourceStatusException` |
 
 **필터 문법**은 `<속성> (= | !=) '<리터럴>'` 형식의 단일 조건이다.

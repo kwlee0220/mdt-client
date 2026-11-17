@@ -264,7 +264,8 @@ public interface MDTInstanceManager {
 	 * 구현체가 디렉터리인 경우 zip으로 압축된 뒤 등록된다.
 	 *
 	 * @param id           등록할 MDTInstance의 식별자.
-	 * @param port         사용할 포트 번호. {@code -1}이면 자동 할당.
+	 * @param port         사용할 포트 번호. {@code -1}이면 포트를 지정하지 않으며, 이때는 인스턴스 구현체의
+	 *                     {@code config.json}에 {@code port}가 있어야 MDTInstance를 시작할 수 있다.
 	 * @param instanceFile 인스턴스 구현체 경로 (디렉터리 또는 zip 파일).
 	 * @return 등록된 {@link MDTInstance} 객체.
 	 * @throws ModelValidationException		인스턴스 구현체에 포함된 모델의 검증에 실패한 경우.
@@ -275,9 +276,10 @@ public interface MDTInstanceManager {
 		throws ModelValidationException, IOException, MDTInstanceManagerException;
 
 	/**
-	 * 새로운 MDTInstance를 자동 할당 포트로 등록한다.
+	 * 새로운 MDTInstance를 포트 지정 없이 등록한다.
 	 * <p>
-	 * {@link #addInstance(String, int, File)}에 포트 번호 {@code -1}(자동 할당)을 전달하는 것과 같다.
+	 * {@link #addInstance(String, int, File)}에 포트 번호 {@code -1}을 전달하는 것과 같다. 인스턴스 구현체의
+	 * {@code config.json}에 {@code port}가 있어야 MDTInstance를 시작할 수 있다.
 	 *
 	 * @param id           등록할 MDTInstance의 식별자.
 	 * @param instanceFile 인스턴스 구현체 경로 (디렉터리 또는 zip 파일).

@@ -153,6 +153,12 @@ public class MDTParameterCollectionReferenceTest {
 	}
 
 	@Test
+	public void buildIdShortPath_material() {
+		MDTParameterCollectionReference ref = activate(MDTAssetType.Material);
+		Assertions.assertEquals(EQUIP_PATH, ref.getIdShortPathString());
+	}
+
+	@Test
 	public void buildIdShortPath_process() {
 		MDTParameterCollectionReference ref = activate(MDTAssetType.Process);
 		Assertions.assertEquals("DataInfo.Operation.OperationParameterValues", ref.getIdShortPathString());

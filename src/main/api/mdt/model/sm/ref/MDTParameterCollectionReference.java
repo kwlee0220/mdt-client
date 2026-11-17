@@ -432,7 +432,7 @@ public class MDTParameterCollectionReference extends SubmodelBasedElementReferen
 		}
 	
 		String assetTypeName = switch ( assetType ) {
-			case Machine -> "Equipment";
+			case Machine, Material -> "Equipment";
             case Process -> "Operation";
             default -> throw new IllegalArgumentException("MDTParameter is not supported for assetType: "
             											+ assetType);

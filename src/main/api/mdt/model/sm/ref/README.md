@@ -360,7 +360,7 @@ param:<instanceId>:<parameterId | index | parameterId 하위경로 | *>
 
 | asset type | 실제 경로 |
 |------------|-----------|
-| `Machine` | `DataInfo.Equipment.EquipmentParameterValues[i].ParameterValue<하위경로>` |
+| `Machine`, `Material` | `DataInfo.Equipment.EquipmentParameterValues[i].ParameterValue<하위경로>` |
 | `Process` | `DataInfo.Operation.OperationParameterValues[i].ParameterValue<하위경로>` |
 
 그 밖의 asset type에서는 `param:` 참조를 쓸 수 없다. `Data` Submodel의 다른 필드는 기본 요소 참조로 지정한다.

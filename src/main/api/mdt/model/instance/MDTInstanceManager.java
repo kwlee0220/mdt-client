@@ -225,7 +225,7 @@ public interface MDTInstanceManager {
 	 * 	</tr>
 	 * 	<tr>
 	 * 		<td>assetType</td>
-	 * 		<td>자산 타입. Machine, Process, Line, Factory 중 하나</td>
+	 * 		<td>자산 타입. Machine, Process, Line, Factory, Material 중 하나</td>
 	 * 	</tr>
 	 * 	<tr>
 	 * 		<td>submodel.id</td>

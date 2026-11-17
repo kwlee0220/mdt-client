@@ -341,7 +341,7 @@ stateDiagram-v2
 | `InstanceStatusChangeEvent` | `eventType`, `instanceId`, `statusChange`, `serviceEndpoint` | `statusChange`는 상태 이름 또는 `ADDED`, `ADD_FAILED`. `getInstanceStatus()`는 이 둘을 STOPPED, REMOVED로 바꾼다 |
 
 `InstanceDescriptor.getParameterEndpoint(idx, smEndpoint)`는 파라미터 값의 REST 주소를 만든다. 자산 타입이
-`Machine`이면 `DataInfo.Equipment.EquipmentParameterValues[idx].ParameterValue`, `Process`면 `Equipment` 대신
+`Machine`·`Material`이면 `DataInfo.Equipment.EquipmentParameterValues[idx].ParameterValue`, `Process`면 `Equipment` 대신
 `Operation`을 쓴 경로이고, 그 밖의 타입은 `IllegalStateException`이다.
 
 ### 4.5 파라미터 서비스
@@ -607,7 +607,7 @@ modelType, valueType, semanticId, typeValueListElement)를 담는 불변 클래�
 
 | 타입 | 내용 |
 | --- | --- |
-| `MDTInfo` | `MDTInfo` SMC. idShort, AssetType(`MDTAssetType`: `Machine`, `Process`, `Line`, `Factory`), AssetName, Status(`MDTAssetStatus`: `Created`, `Registered`, `Executed`) |
+| `MDTInfo` | `MDTInfo` SMC. idShort, AssetType(`MDTAssetType`: `Machine`, `Process`, `Line`, `Factory`, `Material`), AssetName, Status(`MDTAssetStatus`: `Created`, `Registered`, `Executed`) |
 | `TwinComposition` | CompositionID, CompositionType, CompositionItems(`ID`, `Reference`, `Description`), CompositionDependencies(`SourceId`, `TargetId`, `DependencyType`) |
 
 `MDTInstance`의 의존 조회(`getComponentInstanceAll` 등)는 TwinComposition의 구성 정보를 따른다.

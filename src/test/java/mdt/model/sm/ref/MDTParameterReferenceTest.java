@@ -177,6 +177,14 @@ public class MDTParameterReferenceTest {
 	}
 
 	@Test
+	public void buildIdShortPath_numericIndex_material() {
+		MDTInstance instance = mockInstance(MDTAssetType.Material);
+		MDTParameterReference ref = activate("inst", "1", instance);
+		Assertions.assertEquals("DataInfo.Equipment.EquipmentParameterValues[1].ParameterValue",
+								ref.getIdShortPathString());
+	}
+
+	@Test
 	public void buildIdShortPath_numericIndex_process() {
 		MDTInstance instance = mockInstance(MDTAssetType.Process);
 		MDTParameterReference ref = activate("inst", "2", instance);

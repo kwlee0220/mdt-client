@@ -218,8 +218,8 @@ public class InstanceDescriptor {
 	/**
 	 * 주어진 인덱스에 해당하는 MDTParameter의 endpoint URL을 구성하여 반환한다.
 	 * <p>
-	 * 자산 타입({@link #getAssetType()})이 {@link MDTAssetType#Machine}인 경우 {@code Equipment},
-	 * {@link MDTAssetType#Process}인 경우 {@code Operation}을 기준으로 idShortPath를 구성하며,
+	 * 자산 타입({@link #getAssetType()})이 {@link MDTAssetType#Machine}·{@link MDTAssetType#Material}인 경우
+	 * {@code Equipment}, {@link MDTAssetType#Process}인 경우 {@code Operation}을 기준으로 idShortPath를 구성하며,
 	 * 그 외의 자산 타입은 지원되지 않는다.
 	 *
 	 * @param paramIdx		MDTParameter의 인덱스(0-based).
@@ -229,7 +229,7 @@ public class InstanceDescriptor {
 	 * 						{@code smEndpoint}가 {@code null}이거나 {@code paramIdx}가 음수인 경우.
 	 * @throws IllegalStateException
 	 * 						{@code assetType}이 설정되지 않았거나,
-	 * 						{@code assetType}이 {@code Machine}/{@code Process}가 아닌 경우.
+	 * 						{@code assetType}이 {@code Machine}/{@code Material}/{@code Process}가 아닌 경우.
 	 */
 	public String getParameterEndpoint(int paramIdx, String smEndpoint) {
 		Preconditions.checkNotNullArgument(smEndpoint, "smEndpoint should not be null in InstanceDescriptor");
@@ -237,7 +237,7 @@ public class InstanceDescriptor {
 		Preconditions.checkState(m_assetType != null, "assetType should not be null in InstanceDescriptor");
 
 		String assetTypeName = switch ( m_assetType ) {
-			case Machine -> "Equipment";
+			case Machine, Material -> "Equipment";
             case Process -> "Operation";
             default -> throw new IllegalStateException("MDTParameter is not supported for assetType: " + m_assetType);
 		};
